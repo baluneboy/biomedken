@@ -1,4 +1,4 @@
-Circuit: * C:\Documents and Settings\HP_Administrator\My Documents\Visual Studio 2008\Projects\biomedken\churro\pulse_stretcher.asc
+Circuit: * C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\churro\pulse_stretcher.asc
 
 Direct Newton iteration failed to find .op point.  (Use ".option noopiter" to skip.)
 Starting Gmin stepping
@@ -31,22 +31,21 @@ Source Step = 93.9394%
 Source stepping succeeded in finding the operating point.
 
 
-Date: Sun Jun 06 15:03:59 2010
-Total elapsed time: 1.892 seconds.
+Date: Mon Jun 07 07:19:07 2010
+Total elapsed time: 2.640 seconds.
 
 tnom = 27
 temp = 27
 method = modified trap
-totiter = 15615
-traniter = 13682
-tranpoints = 3868
-accept = 3193
-rejected = 675
+totiter = 19963
+traniter = 18030
+tranpoints = 4859
+accept = 3915
+rejected = 944
 matrix size = 127
-fillins = 196
+fillins = 206
 solver = Normal
-Thread vector: 55.9/46.4[2] 24.4/17.2[2] 19.5/8.7[2] 4.4/6.3[1]  2592/500
-Matrix Compiler1: 15.4 KB object code size  13.5/10.4/[4.8]
-Matrix Compiler2: off  [7.6]/9.0/21.5
+Matrix Compiler1: 16.1 KB object code size  14.2/8.6/[4.6]
+Matrix Compiler2: 13.2 KB object code size  9.2/8.4/[3.3]
 
 
