@@ -10,3 +10,15 @@ C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Downloads\cropper-3782
 C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Downloads\cropper-37823\src\Cropper.ClipboardFormat\obj\Debug\Cropper.ClipboardFormat.csproj.GenerateResource.Cache
 C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Downloads\cropper-37823\src\Cropper.ClipboardFormat\obj\Debug\Cropper.ClipboardFormat.dll
 C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Downloads\cropper-37823\src\Cropper.ClipboardFormat\obj\Debug\Cropper.ClipboardFormat.pdb
+C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\cropper\src\Cropper.ClipboardFormat\bin\Debug\Cropper.ClipboardFormat.dll
+C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\cropper\src\Cropper.ClipboardFormat\bin\Debug\Cropper.ClipboardFormat.pdb
+C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\cropper\src\Cropper.ClipboardFormat\bin\Debug\Cropper.Extensibility.dll
+C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\cropper\src\Cropper.ClipboardFormat\bin\Debug\Skybound.VisualStyles.dll
+C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\cropper\src\Cropper.ClipboardFormat\bin\Debug\Cropper.Extensibility.pdb
+C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\cropper\src\Cropper.ClipboardFormat\bin\Debug\Skybound.VisualStyles.xml
+C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\cropper\src\Cropper.ClipboardFormat\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\cropper\src\Cropper.ClipboardFormat\obj\Debug\Fusion8.Cropper.Options.resources
+C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\cropper\src\Cropper.ClipboardFormat\obj\Debug\Fusion8.Cropper.Resources.SR.resources
+C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\cropper\src\Cropper.ClipboardFormat\obj\Debug\Cropper.ClipboardFormat.csproj.GenerateResource.Cache
+C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\cropper\src\Cropper.ClipboardFormat\obj\Debug\Cropper.ClipboardFormat.dll
+C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\cropper\src\Cropper.ClipboardFormat\obj\Debug\Cropper.ClipboardFormat.pdb
