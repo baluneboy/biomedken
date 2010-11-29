@@ -8,6 +8,8 @@
 # http://www.shearersoftware.com/personal/weblog/2005/01/14/dupinator-ii
 #
 # Updated by Ken Hrovat on 2010-11-27 to use modular approach
+# FileBySizer can be a generic class of itself.
+# PotentialDupeFinder & RealDupeFinder code should be folded under base class called Dupinator.
 
 import os
 import sys
