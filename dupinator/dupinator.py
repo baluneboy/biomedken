@@ -11,6 +11,19 @@
 # FileBySizer can be a generic class of itself.
 # PotentialDupeFinder & RealDupeFinder code should be folded under base class called Dupinator.
 
+# TO DO
+# dupinator listing for /Users/ken's top 3 extensions (mostly mp3, m4a?)
+# use cygwin to take action on dupinator output listing to consolidate dalyuser/ken accts
+# dupinator for ALL locations of zmusic, zunage, mp3 & m4a file locations
+# what is md5sum of zero byte files
+# columns for dupinator listing output:
+#  - number of path separators
+#  - last [max of 3 | count - 1forbasename] subdirs -- exclude basename
+#  - basename
+#  - mp3/m4a tag#1 (artist)
+#  - mp3/m4a tag#2 (title)
+#  - mp3/m4a tag#: (etc.)
+
 import os
 import sys
 import stat
