@@ -12,7 +12,7 @@ recipient = 'leftbent@gmail.com'
 
 # Create message container - the correct MIME type is multipart/alternative.
 msg = MIMEMultipart('alternative')
-msg['Subject'] = "HyperLink"
+msg['Subject'] = "FinalHyperLink"
 msg['From'] = gmailUser
 msg['To'] = recipient
 
