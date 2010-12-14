@@ -222,7 +222,7 @@ function editSigmaMove_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of editSigmaMove as text
 %        str2double(get(hObject,'String')) returns contents of editSigmaMove as a double
-set(handles.textMsg,'vis','on');
+locSetLimboState(handles);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -246,7 +246,8 @@ function editSigmaRest_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of editSigmaRest as text
 %        str2double(get(hObject,'String')) returns contents of editSigmaRest as a double
-set(handles.textMsg,'vis','on');
+%SET(handles.textMsg,'vis','on');
+locSetLimboState(handles);;
 
 
 % --- Executes during object creation, after setting all properties.
@@ -278,7 +279,7 @@ function editNumMove_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of editNumMove as text
 %        str2double(get(hObject,'String')) returns contents of editNumMove as a double
-set(handles.textMsg,'vis','on');
+locSetLimboState(handles);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -302,7 +303,7 @@ function editNumRest_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of editNumRest as text
 %        str2double(get(hObject,'String')) returns contents of editNumRest as a double
-set(handles.textMsg,'vis','on');
+locSetLimboState(handles);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -317,6 +318,10 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+
+
+function locSetLimboState(h)
+set(h.textMsg,'vis','on');
 
 %% FIXME:
 % any event/condition that would result in negative power points should be detected/corrected with msg to user (changes to: std,mean,randn,others?)
