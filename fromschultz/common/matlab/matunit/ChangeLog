@@ -1,0 +1,9 @@
+2005-07-05  Timothy Wall  <twall@oculustech.com>
+
+	* assertEquals.m(toString): treat logical as numeric
+	* frameworkTest.m: Check for logical output.
+	
+2005-07-01  Timothy Wall  <twall@oculustech.com>
+
+	* Initial Checkin
+

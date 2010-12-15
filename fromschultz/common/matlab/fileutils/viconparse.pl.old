@@ -1,0 +1,14 @@
+# parse command line args
+if ($#ARGV < 0) {die "NEED INPUT ARG FOR FILENAME ... Usage: viconparse.pl FILENAME\n";}
+$filename = $ARGV[0];
+
+# open file and seek header size in bytes and number of data columns
+open(MYINPUTFILE, $filename) || die "ERROR: could not open dat file '$filename'\n";
+while (<MYINPUTFILE>)
+{
+    chomp;   #newline characters
+    if ( /^\s*$/ ) { 
+        print "$.\n"; 
+		exit;
+    }
+}
