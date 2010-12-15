@@ -22,7 +22,7 @@ function varargout = powergui(varargin)
 
 % Edit the above text to modify the response to help powergui
 
-% Last Modified by GUIDE v2.5 07-Dec-2010 09:28:08
+% Last Modified by GUIDE v2.5 14-Dec-2010 18:56:39
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -53,9 +53,14 @@ function powergui_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for powergui
 handles.output = hObject;
-handles.hFig = hObject;
+handles.fig = hObject;
 
 %% Init
+
+% Deal with checkbox for synchronizing numMove & numRest (of The FEW)
+set(handles.checkboxShowNumRest,'Value',0); % unchecked -> not visible
+set(handles.editNumRest,'vis','off');
+
 % This sets up the initial plot - only do when we are invisible
 % so window can get raised using powergui.
 if strcmp(get(hObject,'Visible'),'off')
@@ -88,39 +93,46 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 s = locGather(handles);
 
 % Populate sliders/text
-axes(handles.axPower); cla
-set(gca,'box','on');
-xCushion = 0.9*[-1 1];
-yLim = [-0.02 1.02];
-set(gca,'DataAspectRatio',[3 1 1],'XLim',[1 2]+xCushion,'YLim',yLim);
-set(gca,'xtick',[1 2]); set(gca,'xticklabel',{'MOVE','REST'});
-hVertMove = line([1 1],yLim);
-hVertRest = line([2 2],yLim);
-set([hVertMove hVertRest],'color',0.8*[1 1 1]);
-hold on;
-
-% move
-colorMove = 0.5*[0 1 0];
-handles.hSliderMove = locCreateSlider(colorMove,[-1 4],s.muMove*[1 1],'move');
-set(handles.textMeanMove,'string',sprintf('%0.2f',s.muMove));
-[handles.hPlotMove,yMove,fiveptsMove] = generate_power_points(gca,1,s.muMove,s.sigmaMove,s.numMove,'move');
-set(handles.hPlotMove,'color',colorMove);
-linkmeans(handles.hSliderMove,handles.hPlotMove,handles.textMeanMove);
-set(handles.textMeanMove,'string',sprintf('%.3f',mean(yMove)));
-set(handles.editSigmaMove,'string',sprintf('%.3f',std(yMove)));
-
-% rest
-colorRest = 0.5*[1 0 0];
-handles.hSliderRest = locCreateSlider(colorRest,[-1 4],s.muRest*[1 1],'rest');
-set(handles.textMeanRest,'string',sprintf('%0.2f',s.muRest));
-[handles.hPlotRest,yRest,fiveptsRest] = generate_power_points(gca,2,s.muRest,s.sigmaRest,s.numRest,'rest');
-set(handles.hPlotRest,'color',colorRest);
-linkmeans(handles.hSliderRest,handles.hPlotRest,handles.textMeanRest);
-set(handles.textMeanRest,'string',sprintf('%.3f',mean(yRest)));
-set(handles.editSigmaRest,'string',sprintf('%.3f',std(yRest)));
+hax = [handles.axPowerFew handles.axPowerMany];
+for ihax = 1:length(hax)
+    hi = hax(ihax);
+    axes(hi); cla
+    set(gca,'box','on');
+    xCushion = 0.9*[-1 1];
+    yLim = [-0.02 1.02];
+    set(gca,'DataAspectRatio',[3 2 1],'XLim',[1 2]+xCushion,'YLim',yLim);
+    set(gca,'xtick',[1 2]); set(gca,'xticklabel',{'MOVE','REST'});
+    hVertMove = line([1 1],yLim);
+    hVertRest = line([2 2],yLim);
+    set([hVertMove hVertRest],'color',0.8*[1 1 1]);
+    hold on;
+%     pos = get(gca,'pos');
+%     set(gca,'pos',[0.01*pos(1) pos(2) 2*pos(3) pos(4)]);
+    
+    % move
+    colorMove = rgb('Green'); % greenish
+    handles.hSliderMove = locCreateSlider(colorMove,[-1 4],s.muMove*[1 1],'move');
+    set(handles.textMeanMove,'string',sprintf('%0.2f',s.muMove));
+    [handles.hPlotMove,yMove,fiveptsMove] = generate_power_points(gca,1,s.muMove,s.sigmaMove,s.numMove,'move');
+    set(handles.hPlotMove,'color',colorMove);
+    linkmeans(handles.hSliderMove,handles.hPlotMove,handles.textMeanMove);
+    set(handles.textMeanMove,'string',sprintf('%.3f',mean(yMove)));
+    set(handles.editSigmaMove,'string',sprintf('%.3f',std(yMove)));
+    
+    % rest
+    colorRest = rgb('Red'); % redish
+    handles.hSliderRest = locCreateSlider(colorRest,[-1 4],s.muRest*[1 1],'rest');
+    set(handles.textMeanRest,'string',sprintf('%0.2f',s.muRest));
+    [handles.hPlotRest,yRest,fiveptsRest] = generate_power_points(gca,2,s.muRest,s.sigmaRest,s.numRest,'rest');
+    set(handles.hPlotRest,'color',colorRest);
+    linkmeans(handles.hSliderRest,handles.hPlotRest,handles.textMeanRest);
+    set(handles.textMeanRest,'string',sprintf('%.3f',mean(yRest)));
+    set(handles.editSigmaRest,'string',sprintf('%.3f',std(yRest)));
+    
+end
 
 % update handles
-guidata(handles.hFig,handles);
+guidata(handles.fig,handles);
 set(handles.textMsg,'vis','off');
 
 % --------------------------------------------------------------------
@@ -269,7 +281,10 @@ s.sigmaMove = str2double(get(h.editSigmaMove,'string'));
 s.numMove = str2double(get(h.editNumMove,'string'));
 s.muRest = str2double(get(h.textMeanRest,'string'));
 s.sigmaRest = str2double(get(h.editSigmaRest,'string'));
-s.numRest = str2double(get(h.editNumRest,'string'));    
+if ~get(h.checkboxShowNumRest,'value')
+   set(h.editNumRest,'string',get(h.editNumMove,'string'))
+end
+s.numRest = str2double(get(h.editNumRest,'string'));
 
 
 function editNumMove_Callback(hObject, eventdata, handles)
@@ -329,3 +344,18 @@ set(h.textMsg,'vis','on');
 % instead of power pts, do 5-number summary objects instead
 
 
+
+
+% --- Executes on button press in checkboxShowNumRest.
+function checkboxShowNumRest_Callback(hObject, eventdata, handles)
+% hObject    handle to checkboxShowNumRest (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkboxShowNumRest
+if get(hObject,'Value')
+    set(handles.editNumRest,'vis','on');
+else
+    set(handles.editNumRest,'vis','off');
+end
+locSetLimboState(handles);
