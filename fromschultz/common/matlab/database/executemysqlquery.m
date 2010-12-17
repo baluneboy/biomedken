@@ -1,8 +1,9 @@
-function r = executemysqlquery(strQuery)
+function r = executemysqlquery(strQuery,strSchema)
 % executemysqlquery.m - executes given MYSQL-syntax query and returns result
 % 
 % INPUTS
 % strQuery - string, MYSQL syntax - query to be executed
+% strSchema - string, schema to look for table (default is 'daly')
 % 
 % OUTPUTS
 % r - struct, result of query.  
@@ -14,9 +15,13 @@ function r = executemysqlquery(strQuery)
 % Author - Krisanne Litinas
 % $Id$
 
+if nargin == 1
+    strSchema = 'daly';
+end
+
 % Establish connection
 mym('open', 'schultz', 'klitinas', 'mpw4mysql');
-mym('use','daly');
+mym('use',strSchema);
 
 % Execute query
 r = mym(strQuery);
