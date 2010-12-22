@@ -22,7 +22,7 @@ function varargout = powergui(varargin)
 
 % Edit the above text to modify the response to help powergui
 
-% Last Modified by GUIDE v2.5 15-Dec-2010 07:21:37
+% Last Modified by GUIDE v2.5 22-Dec-2010 13:19:48
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;

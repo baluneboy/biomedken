@@ -1,4 +1,8 @@
 function [hPlot,y,fivepts] = generate_power_points(hax,xval,mu,sigma,num,str)
+strTag = get(hax,'tag');
+if strcmpi(strTag(end-3:end),'many')
+    num = num*15;
+end
 axes(hax);
 hold on;
 y = mu + sigma.*randn(num,1);
@@ -9,6 +13,7 @@ y = locClip(y,ymin,ymax);
 fivepts = prctile(y,[2.5 25 50 75 97.5]);
 x = xval*ones(size(y));
 hPlot = plot(x,y,'.');
+set(hPlot,'markersize',22);
 set(hPlot,'tag',['linePoints_' str]);
 
 %---------------------------------
