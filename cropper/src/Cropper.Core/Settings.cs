@@ -81,7 +81,7 @@ namespace Fusion8.Cropper.Core
 
         #region Member Variables
 
-        private const string OutputFolder = "Cropper Captures";
+        private const string OutputFolder = "CropperCaptures";
 
         private string imageFormat = "Bmp";
         private double userOpacity = 0.40d;
