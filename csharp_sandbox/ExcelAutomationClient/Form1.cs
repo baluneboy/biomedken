@@ -6,7 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-
+// KH says the next 2 were added to accomodate COM/Excel
 using Excel = Microsoft.Office.Interop.Excel;
 using System.Reflection; 
 
@@ -18,7 +18,7 @@ namespace ExcelAutomationClient
         {
             InitializeComponent();
         }
-
+        // KH says the next method was the only real code that was added beyond built-in Windows/Form App stuff
         private void button1_Click(object sender, System.EventArgs e)
         {
             Excel.Application oXL;
