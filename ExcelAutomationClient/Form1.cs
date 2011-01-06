@@ -19,7 +19,7 @@ namespace ExcelAutomationClient
             InitializeComponent();
         }
         // KH says the next method was the only real code that was added beyond built-in Windows/Form App stuff
-        private void button1_Click(object sender, System.EventArgs e)
+        private void buttonCreateDummyData_Click(object sender, System.EventArgs e)
         {
             Excel.Application oXL;
             Excel._Workbook oWB;
@@ -183,6 +183,26 @@ namespace ExcelAutomationClient
             oWS.Shapes.Item("Chart 1").Top = (float)(double)oResizeRange.Top;
             oResizeRange = (Excel.Range)oWS.Columns.get_Item(2, Missing.Value);
             oWS.Shapes.Item("Chart 1").Left = (float)(double)oResizeRange.Left;
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            //this.openFileDialog1.FileName = "*.xls";
+            //if (this.openFileDialog1.ShowDialog() == DialogResult.OK)
+            //{
+            //    Excel.Workbook theWorkbook = ExcelObj.Workbooks.Open(
+            //       openFileDialog1.FileName, 0, true, 5,
+            //        "", "", true, Excel.XlPlatform.xlWindows, "\t", false, false,
+            //        0, true);
+            //    Excel.Sheets sheets = theWorkbook.Worksheets;
+            //    Excel.Worksheet worksheet = (Excel.Worksheet)sheets.get_Item(1);
+            //    for (int i = 1; i <= 10; i++)
+            //    {
+            //        Excel.Range range = worksheet.get_Range("A" + i.ToString(), "J" + i.ToString());
+            //        System.Array myvalues = (System.Array)range.Cells.Value;
+            //        string[] strArray = ConvertToStringArray(myvalues);
+            //    }
+            //}
         }
     }
 }
