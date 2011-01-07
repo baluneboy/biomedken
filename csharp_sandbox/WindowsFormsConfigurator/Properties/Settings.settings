@@ -2,14 +2,14 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="WindowsFormsConfigurator.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="SettingOne" Type="System.String" Scope="User">
-      <Value Profile="(Default)">c:\temp\trashbar.xlsx</Value>
+    <Setting Name="strPathLaunch" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">c:\temp</Value>
     </Setting>
-    <Setting Name="SomeWidth" Type="System.Int32" Scope="Application">
-      <Value Profile="(Default)">11</Value>
+    <Setting Name="strFileXLSX" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">trashbar.xlsx</Value>
     </Setting>
-    <Setting Name="myColor" Type="System.Drawing.Color" Scope="User">
-      <Value Profile="(Default)">Blue</Value>
+    <Setting Name="uintTimeoutMsecMessageBox" Type="System.UInt32" Scope="Application">
+      <Value Profile="(Default)">1234</Value>
     </Setting>
   </Settings>
 </SettingsFile>
