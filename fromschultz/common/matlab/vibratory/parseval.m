@@ -1,9 +1,10 @@
-function grms=parseval(f,b,fc,franges);
+function grms = parseval(f,b,fc,franges,hFun)
 
 % parseval - grms from Parseval's Theorem for PSD input(s) using
-%            fancy indexing
+%            fancy indexing when hFun is empty; otherwise apply function
+%            associated with function handle (hFun) to [bsums*deltaf]
 %
-%grms=parseval(f,b,fc,franges);
+%grms=parseval(f,b,fc,franges,hFun);
 %
 %Inputs: f - vector of frequencies for PSDs in b; length must match number of rows in b matrix
 %        b - [multi-page] F-by-T matrix of PSDs (like from pimsspecgram)
@@ -12,12 +13,21 @@ function grms=parseval(f,b,fc,franges);
 %                  like [f1 f2; f3 f4], so that the ranges here would be
 %                  f1 <= f < f2  note how lower bounds are included, but
 %                  f3 <= f < f4  upper bounds are excluded
+%        hFun - function handle (NOTE: hFun=@sqrt; or hFun = []; is typical PIMS usage)
 %
-%Output: grms - [multi-page] B-by-T matrix of grms values from Parseval's theorem
+%Output: grms - [multi-page] B-by-T matrix of grms values from Parseval's
+%               theorem...OR appropriate quantity associated with hFun
 
 %Author: Ken Hrovat, 4/11/2001
-%$Id: parseval.m 4160 2009-12-11 19:10:14Z khrovat $
+%$Id: parseval.m 6579 2011-01-07 19:47:57Z khrovat $
 % modified by: Ken Hrovat on 5/19/2001 - incorporated findbands fancy indexing algorithm to improve performance
+% modified by: Ken Hrovat on 1/6/2011 - to include arbitrary hFun (for
+%                                       uV^2 version of power output)
+
+% Check/set inputs
+if nargin == 4 || isempty(hFun)
+    hFun = @sqrt;
+end
 
 % Indices for rows in b matrix over which to integrate
 indM=findbands(f,franges);  %[  band#   ind(f(1st4band))   ind(f(last4band)) ]
@@ -54,13 +64,14 @@ end
 
 % Calculate RMS value from integration [sum] bands
 deltaf=f(2)-f(1);
-grms=sqrt(bsums*deltaf);
+% grms=sqrt(bsums*deltaf);
+grms = hFun(bsums*deltaf);
 
 % Debug print info
 %locDebugPrint(indM,inan,franges,f);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function locDebugPrint(indM,inan,franges,f);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function locDebugPrint(indM,inan,franges,f)
 
 fprintf('\n              Empty Bands                   ')
 fprintf('\n  Band #    from           to\n')

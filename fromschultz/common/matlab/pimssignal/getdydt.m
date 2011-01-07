@@ -17,8 +17,12 @@ function [dydt,t] = getdydt(y,fs)
 % Author - Krisanne Litinas
 % $Id$
 
+% Transpose y into column if necessary
+y = y(:);
+
 % Take derivitive of y
-dy = [nan diff(y)];
+% dy = [nan; diff(y)];
+dy = diff(y);
 
 % Get dydt
 dydt = dy/(1/fs);

@@ -20,8 +20,8 @@ if nargin == 1
 end
 
 % Establish connection
-mym('open', 'schultz', 'klitinas', 'mpw4mysql');
-mym('use',strSchema);
+foo = mym('open', 'schultz', 'klitinas', 'mpw4mysql'); %#ok<NASGU>
+foo = mym('use',strSchema); %#ok<NASGU>
 
 % Execute query
 r = mym(strQuery);

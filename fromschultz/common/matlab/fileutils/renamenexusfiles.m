@@ -22,17 +22,18 @@ for j = 1:length(casExtension)
     
     % if incrementing up, have to do it in reverse order so files don't get
     % overwritten
-    if increment > 0
+    if increment > 0 
         bounds_to_change = [range_to_change(2) range_to_change(1)];
         stepsize = -1;
-    else
+    elseif increment < 0 && nargin == 4
+        bounds_to_change = [range_to_change(1) range_to_change(2)];
         stepsize = 1;
     end
     
     cas = {};
     
     % step through casFiles and increment/decrement
-    for i = bounds_to_change(1):stepsize:bounds_to_change(2)
+    for i = bounds_to_change(1)-1:stepsize:bounds_to_change(2)-1
         strFile = casFiles{i};
         m = regexp(strFile,strPattern,'names');
         strOldNum = m.num(1:end-1);
