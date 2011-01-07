@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Data.OleDb;
+using System.IO;
 using WindowsFormsConfigurator.Properties;
 
 namespace WindowsFormsConfigurator
@@ -25,15 +26,16 @@ namespace WindowsFormsConfigurator
 
         private void buttonOne_Click(object sender, EventArgs e)
         {
-
+            string strFileXLSX = System.IO.Path.Combine(Properties.Settings.Default.strPathLaunch,
+                Properties.Settings.Default.strFileXLSX);
             DataTable fooData = new DataTable();
             OleDbConnection dbConnection = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;"
-                + @"Data Source=C:\temp\trashbar.xlsx;"
+                + @"Data Source=" + strFileXLSX + ";"
                 + @"Extended Properties=""Excel 12.0;HDR=Yes;""");
             dbConnection.Open();
             try
             {
-                OleDbDataAdapter dbAdapter = new OleDbDataAdapter("SELECT * FROM [foo$]", dbConnection);
+                OleDbDataAdapter dbAdapter = new OleDbDataAdapter("SELECT * FROM [config$]", dbConnection);
                 dbAdapter.Fill(fooData);
                 dataGridView1.DataSource = fooData;
             }
@@ -51,7 +53,7 @@ namespace WindowsFormsConfigurator
 
         private void buttonShowConfigPath_Click(object sender, EventArgs e)
         {
-            MessageBox.Show(Properties.Settings.Default.SettingOne);
+            MessageBoxEx.Show(Properties.Settings.Default.strPathLaunch, Properties.Settings.Default.uintTimeoutMsecMessageBox);
         }
 
         // how about the following?
@@ -74,12 +76,12 @@ namespace WindowsFormsConfigurator
                     if (UserClosing)
                     {
                         //what should happen if the user hit the button?
-                        MessageBox.Show("user hit exit button");
+                        MessageBoxEx.Show("user hit exit button",555);
                     }
                     else
                     {
                         //what should happen if the user hitted the x in the upper right corner?
-                        MessageBox.Show("user hit X");
+                        MessageBoxEx.Show("user hit X",555);
                     }
                     break;
                 case CloseReason.WindowsShutDown:

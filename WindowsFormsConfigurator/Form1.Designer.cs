@@ -32,6 +32,7 @@
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.buttonShowConfigPath = new System.Windows.Forms.Button();
             this.buttonExit = new System.Windows.Forms.Button();
+            this.txtPathConfig = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -74,11 +75,20 @@
             this.buttonExit.UseVisualStyleBackColor = true;
             this.buttonExit.Click += new System.EventHandler(this.buttonExit_Click);
             // 
+            // txtPathConfig
+            // 
+            this.txtPathConfig.Location = new System.Drawing.Point(51, 8);
+            this.txtPathConfig.Name = "txtPathConfig";
+            this.txtPathConfig.Size = new System.Drawing.Size(599, 20);
+            this.txtPathConfig.TabIndex = 4;
+            this.txtPathConfig.Text = "path to config file";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(736, 294);
+            this.Controls.Add(this.txtPathConfig);
             this.Controls.Add(this.buttonExit);
             this.Controls.Add(this.buttonShowConfigPath);
             this.Controls.Add(this.dataGridView1);
@@ -88,6 +98,7 @@
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -97,6 +108,7 @@
         private System.Windows.Forms.DataGridView dataGridView1;
         private System.Windows.Forms.Button buttonShowConfigPath;
         private System.Windows.Forms.Button buttonExit;
+        private System.Windows.Forms.TextBox txtPathConfig;
     }
 }
 
