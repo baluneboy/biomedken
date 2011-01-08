@@ -48,11 +48,12 @@ namespace WindowsFormsConfigurator
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            MessageBox.Show("you cannot make changes by clicking on datagrid (yet)");
+            MessageBox.Show("you do not make changes by clicking on datagrid");
         }
 
         private void buttonShowConfigPath_Click(object sender, EventArgs e)
         {
+            this.toolStripStatusLabel1.Text = "You clicked show config button.";
             MessageBoxEx.Show(Properties.Settings.Default.strPathLaunch, Properties.Settings.Default.uintTimeoutMsecMessageBox);
         }
 
@@ -94,6 +95,7 @@ namespace WindowsFormsConfigurator
         private void Form1_Load(object sender, EventArgs e)
         {
             //MessageBox.Show(Properties.Settings.Default.SettingOne);
+            this.toolStripStatusLabel1.Text = "Load";
         }
 
         private void buttonExit_Click(object sender, EventArgs e)

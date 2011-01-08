@@ -3,10 +3,10 @@
   <Profiles />
   <Settings>
     <Setting Name="strPathLaunch" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">c:\temp</Value>
+      <Value Profile="(Default)">C:\Users\dalyuser\MyPrograms\csharp_sandbox\fmri_kave</Value>
     </Setting>
     <Setting Name="strFileXLSX" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">trashbar.xlsx</Value>
+      <Value Profile="(Default)">fmri_customized.xlsm</Value>
     </Setting>
     <Setting Name="uintTimeoutMsecMessageBox" Type="System.UInt32" Scope="Application">
       <Value Profile="(Default)">1234</Value>
