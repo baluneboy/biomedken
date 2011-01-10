@@ -34,7 +34,8 @@
             this.buttonExit = new System.Windows.Forms.Button();
             this.txtPathConfig = new System.Windows.Forms.TextBox();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-            this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabelConfigPath = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabelConfigFile = new System.Windows.Forms.ToolStripStatusLabel();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -89,25 +90,32 @@
             // statusStrip1
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripStatusLabel1});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 272);
+            this.toolStripStatusLabelConfigPath,
+            this.toolStripStatusLabelConfigFile});
+            this.statusStrip1.Location = new System.Drawing.Point(0, 330);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional;
-            this.statusStrip1.Size = new System.Drawing.Size(736, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(771, 22);
             this.statusStrip1.TabIndex = 5;
             this.statusStrip1.Text = "statusStrip1";
             // 
-            // toolStripStatusLabel1
+            // toolStripStatusLabelConfigPath
             // 
-            this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(118, 17);
-            this.toolStripStatusLabel1.Text = "toolStripStatusLabel1";
+            this.toolStripStatusLabelConfigPath.Name = "toolStripStatusLabelConfigPath";
+            this.toolStripStatusLabelConfigPath.Size = new System.Drawing.Size(60, 17);
+            this.toolStripStatusLabelConfigPath.Text = "ConfigPath";
+            // 
+            // toolStripStatusLabelConfigFile
+            // 
+            this.toolStripStatusLabelConfigFile.Name = "toolStripStatusLabelConfigFile";
+            this.toolStripStatusLabelConfigFile.Size = new System.Drawing.Size(54, 17);
+            this.toolStripStatusLabelConfigFile.Text = "ConfigFile";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(736, 294);
+            this.ClientSize = new System.Drawing.Size(771, 352);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.txtPathConfig);
             this.Controls.Add(this.buttonExit);
@@ -133,7 +141,8 @@
         private System.Windows.Forms.Button buttonExit;
         private System.Windows.Forms.TextBox txtPathConfig;
         private System.Windows.Forms.StatusStrip statusStrip1;
-        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabelConfigPath;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabelConfigFile;
     }
 }
 
