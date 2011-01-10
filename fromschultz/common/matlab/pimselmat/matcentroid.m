@@ -1,4 +1,4 @@
-function [iCentroid, weightCentroid] = matcentroid(m)
+function [iCentroid, weightCentroid] = matcentroid(m,strOrient)
 % matcentroid.m - returns index and value at index of centroid of a 2D or
 % 3D matrix
 %
@@ -10,11 +10,11 @@ function [iCentroid, weightCentroid] = matcentroid(m)
 % weightCentroid - weight of the centroid, sum for no
 %
 % EXAMPLE
-% m = [1 1 1; 1 2 1; 1 1 1];
+% m = [1 1 1 1; 1 2 1 1; 1 1 1 1];
 % [iCentroid, weightCentroid] = matcentroid(m)
 % OR
 % m = ones(3,3,3);
-% m(:,:,2) = [1 1 1; 1 2 1; 1 1 1];
+% m(:,:,2) = [1 1 1; 1 1 2; 1 1 1];
 % [iCentroid, weightCentroid] = matcentroid(m)
 
 % Author - Krisanne Litinas
@@ -23,6 +23,12 @@ function [iCentroid, weightCentroid] = matcentroid(m)
 mDims = size(m);
 y = 1:mDims(1);
 x = 1:mDims(2);
+
+if nargin == 1
+    strOrient = 'xyz';
+elseif ~strcmpi(strOrient,'ras') && ~strcmpi(strOrient,'xyz')
+    error('elmat:invalidindexmode','strOrient should be "xyz" or "ras"');
+end
 
 % Account for 2D or 3D input
 switch numel(mDims)
@@ -35,9 +41,14 @@ switch numel(mDims)
         [x,y,z] = meshgrid(x,y,z);
         iCentroid = [sum(m(:).*x(:)) sum(m(:).*y(:)) sum(m(:).*z(:))]/sum(m(:));
 
-        % For 3D do conversion [wtf?  I don't know why this works]
-        xOffset = mDims(1) + 1;
-        % iCentroid = [158-iCentroid(2) iCentroid(1) iCentroid(3)];
+        % For 3D do conversion flip x, y dims
+        % Apply offset for x-dim [wtf?  I don't know why this works]
+        if strcmpi(strOrient,'ras')
+            xOffset = mDims(1) + 1;
+        else
+            xOffset = 0;
+            iCentroid(2) = -iCentroid(2);
+        end
         iCentroid = [xOffset-iCentroid(2) iCentroid(1) iCentroid(3)];
 end
 
