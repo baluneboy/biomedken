@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual C# Express 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelloWorld", "HelloWorld\HelloWorld.csproj", "{AFDBD4C0-9B87-41F6-B19E-A84311CBFB5A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsFormsApplication1", "WindowsFormsApplication1\WindowsFormsApplication1.csproj", "{BE61FCCB-ACBB-4536-9188-7239C150532A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsFormsApplication1", "WindowsFormsApplication1\WindowsFormsApplication1.csproj", "{7B0C7609-81A2-4911-8CA2-7B8FC7D14E64}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +15,10 @@ Global
 		{AFDBD4C0-9B87-41F6-B19E-A84311CBFB5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AFDBD4C0-9B87-41F6-B19E-A84311CBFB5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AFDBD4C0-9B87-41F6-B19E-A84311CBFB5A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BE61FCCB-ACBB-4536-9188-7239C150532A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BE61FCCB-ACBB-4536-9188-7239C150532A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BE61FCCB-ACBB-4536-9188-7239C150532A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BE61FCCB-ACBB-4536-9188-7239C150532A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B0C7609-81A2-4911-8CA2-7B8FC7D14E64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B0C7609-81A2-4911-8CA2-7B8FC7D14E64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B0C7609-81A2-4911-8CA2-7B8FC7D14E64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B0C7609-81A2-4911-8CA2-7B8FC7D14E64}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
