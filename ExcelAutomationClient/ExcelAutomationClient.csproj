@@ -104,6 +104,12 @@
       <Isolated>False</Isolated>
     </COMReference>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\WindowsFormsConfigurator\WindowsFormsConfigurator.csproj">
+      <Project>{BE61FCCB-ACBB-4536-9188-7239C150532A}</Project>
+      <Name>WindowsFormsConfigurator</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

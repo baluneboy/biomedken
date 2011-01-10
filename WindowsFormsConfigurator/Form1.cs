@@ -26,11 +26,11 @@ namespace WindowsFormsConfigurator
 
         private void buttonOne_Click(object sender, EventArgs e)
         {
-            string strFileXLSX = System.IO.Path.Combine(Properties.Settings.Default.strPathLaunch,
-                Properties.Settings.Default.strFileXLSX);
+            string ConfigFile = System.IO.Path.Combine(Properties.Settings.Default.ConfigPath,
+                Properties.Settings.Default.ConfigFile);
             DataTable fooData = new DataTable();
             OleDbConnection dbConnection = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;"
-                + @"Data Source=" + strFileXLSX + ";"
+                + @"Data Source=" + ConfigFile + ";"
                 + @"Extended Properties=""Excel 12.0;HDR=Yes;""");
             dbConnection.Open();
             try
@@ -53,8 +53,8 @@ namespace WindowsFormsConfigurator
 
         private void buttonShowConfigPath_Click(object sender, EventArgs e)
         {
-            this.toolStripStatusLabel1.Text = "You clicked show config button.";
-            MessageBoxEx.Show(Properties.Settings.Default.strPathLaunch, Properties.Settings.Default.uintTimeoutMsecMessageBox);
+            this.toolStripStatusLabelConfigPath.Text = "You clicked show config button.";
+            MessageBoxEx.Show(Properties.Settings.Default.ConfigPath, Properties.Settings.Default.uintTimeoutMsecMessageBox);
         }
 
         // how about the following?
@@ -94,8 +94,8 @@ namespace WindowsFormsConfigurator
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            //MessageBox.Show(Properties.Settings.Default.SettingOne);
-            this.toolStripStatusLabel1.Text = "Load";
+            this.toolStripStatusLabelConfigPath.Text = Properties.Settings.Default.ConfigPath;
+            this.toolStripStatusLabelConfigFile.Text = Properties.Settings.Default.ConfigFile;
         }
 
         private void buttonExit_Click(object sender, EventArgs e)

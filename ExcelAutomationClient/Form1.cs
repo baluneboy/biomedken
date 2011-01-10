@@ -185,7 +185,7 @@ namespace ExcelAutomationClient
             oWS.Shapes.Item("Chart 1").Left = (float)(double)oResizeRange.Left;
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void buttonReadExistingData_Click(object sender, EventArgs e)
         {
             //this.openFileDialog1.FileName = "*.xls";
             //if (this.openFileDialog1.ShowDialog() == DialogResult.OK)
@@ -207,7 +207,7 @@ namespace ExcelAutomationClient
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            MessageBoxEx.Show("H E L L O", 3000);
         }
     }
 }
