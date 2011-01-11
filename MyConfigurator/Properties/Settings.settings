@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="ConfigPath" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\csharp_sandbox\fmri_kave</Value>
+      <Value Profile="(Default)">C:\Users\dalyuser\MyPrograms\csharp_sandbox\fmri_kave</Value>
     </Setting>
     <Setting Name="ConfigFile" Type="System.String" Scope="Application">
       <Value Profile="(Default)">fmri_customized.xlsm</Value>
