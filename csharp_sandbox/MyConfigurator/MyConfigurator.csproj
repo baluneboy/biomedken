@@ -16,7 +16,7 @@
     <ManifestCertificateThumbprint>11995FCC7AB624D54818D4B6E788D533ECD7F158</ManifestCertificateThumbprint>
     <ManifestKeyFile>WindowsFormsConfigurator_TemporaryKey.pfx</ManifestKeyFile>
     <GenerateManifests>true</GenerateManifests>
-    <SignManifests>true</SignManifests>
+    <SignManifests>false</SignManifests>
     <PublishUrl>\\Lazarus\mark\wfc\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Unc</InstallFrom>

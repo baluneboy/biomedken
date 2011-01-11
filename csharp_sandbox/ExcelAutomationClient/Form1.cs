@@ -207,7 +207,7 @@ namespace ExcelAutomationClient
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            MessageBoxEx.Show("H E L L O", 3000);
+            MessageBox.Show("H E L L O");
         }
     }
 }
