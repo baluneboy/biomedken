@@ -1,0 +1,1 @@
+﻿How best to glob: (1) regexp filter FileSelector output, (2) use Shell call with stream filtering?
