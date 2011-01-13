@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual C# Express 2008
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleTreeWalker", "ConsoleTreeWalker\ConsoleTreeWalker.csproj", "{1E9DB1AE-BA96-409E-99A8-1B1D585EA196}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleTreeWalker", "ConsoleTreeWalker.csproj", "{1E9DB1AE-BA96-409E-99A8-1B1D585EA196}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
