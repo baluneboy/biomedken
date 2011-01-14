@@ -13,11 +13,13 @@ namespace ConsoleTreeWalker
         
         static void Main()
         {
+            // We need detailed parsing and work on something like this:
+            // (?<DIR>c:\\temp\\dupstin[^\\]*)\\(?<FILE>file[^\\]*\.txt)
             // Create the regular expression to find "c:\temp\dupstination\t*o".
             System.Text.RegularExpressions.Regex patternDir =
                 new System.Text.RegularExpressions.Regex(@"^c:\\temp\\dupstination\\t[^\\]*o$");
 
-            // Start with drives if you have to search the entire computer.
+            // Establish root directory
             DirectoryInfo diRootDir = new DirectoryInfo(@"c:\temp\dupstination");
             WalkDirectoryTree(diRootDir,patternDir);
 
