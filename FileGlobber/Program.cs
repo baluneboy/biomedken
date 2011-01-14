@@ -169,6 +169,11 @@ namespace FileGlobber
             this.textSubject.Size = new System.Drawing.Size(887, 136);
             this.textSubject.TabIndex = 8;
             this.textSubject.Text = "c:\\temp\\dupstination\\fileABC.txt";
+
+            // test public method "AddTwoNumbers" of "SimpleMath" class
+            SimpleMath sm = new SimpleMath(3,9);
+            MessageBox.Show("sum is " + sm.sum + " sqrFirst is " + sm.sqrFirst);
+
             //int result = SimpleMath.AddTwoNumbers(1,2);
             //StringReverser p = new StringReverser();
             //p.RevStr = "green";
