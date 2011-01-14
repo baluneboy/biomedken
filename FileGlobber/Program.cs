@@ -9,6 +9,8 @@ using System.Data;
 // without having to spell out the entire location.
 using System.Text.RegularExpressions;
 
+using ClassLibraryDemo;
+
 namespace FileGlobber
 {
     /// <summary>
@@ -165,7 +167,11 @@ namespace FileGlobber
             this.textSubject.Name = "textSubject";
             this.textSubject.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.textSubject.Size = new System.Drawing.Size(887, 136);
+            TestClass test = new TestClass(10);
             this.textSubject.TabIndex = 8;
+            this.textSubject.TabIndex = test.myVar;
+            //StringReverser p = new StringReverser();
+            //p.RevStr = "green";
             this.textSubject.Text = "c:\\temp\\dupstination\\fileABC.txt";
             // 
             // textResults
