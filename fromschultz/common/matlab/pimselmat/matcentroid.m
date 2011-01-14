@@ -34,17 +34,29 @@ end
 switch numel(mDims)
     case 2
         [x,y] = meshgrid(x,y);
-        iCentroid = [sum(m(:).*x(:)) sum(m(:).*y(:))]/sum(m(:));
+        iCentroid = [nansum(m(:).*x(:)) nansum(m(:).*y(:))]/nansum(m(:));
 
     case 3
         z = 1:mDims(3);
         [x,y,z] = meshgrid(x,y,z);
-        iCentroid = [sum(m(:).*x(:)) sum(m(:).*y(:)) sum(m(:).*z(:))]/sum(m(:));
+        iZero = find(m==0);
+        m(iZero) = nan;
+
+        % Normalize (shady)
+            scaler = min(m(:));
+            if scaler < 0
+                m = m + abs(scaler);
+            else
+                m = m-abs(scaler);
+            end
+        
+        iCentroid = [nansum(m(:).*x(:)) nansum(m(:).*y(:)) nansum(m(:).*z(:))]/nansum(m(:));
 
         % For 3D do conversion flip x, y dims
         % Apply offset for x-dim [wtf?  I don't know why this works]
         if strcmpi(strOrient,'ras')
             xOffset = mDims(1) + 1;
+            error('probably broken/wrong strOrient')
         else
             xOffset = 0;
             iCentroid(2) = -iCentroid(2);
@@ -53,4 +65,4 @@ switch numel(mDims)
 end
 
 % Get the mass
-weightCentroid = sum(m(:));
+weightCentroid = nansum(m(:));
