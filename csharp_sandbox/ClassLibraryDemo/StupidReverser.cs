@@ -68,6 +68,9 @@ namespace ClassLibraryDemo
 
     public class SimpleMath
     {
+        public int sum;
+        public int sqrFirst;
+
         public int AddTwoNumbers(int number1, int number2)
         {
             return number1 + number2;
@@ -76,6 +79,12 @@ namespace ClassLibraryDemo
         public int SquareANumber(int number)
         {
             return number * number;
+        }
+
+        public SimpleMath(int number1, int number2)
+        {
+            sum = this.AddTwoNumbers(number1,number2);
+            sqrFirst = this.SquareANumber(number1);
         }
     }
 
