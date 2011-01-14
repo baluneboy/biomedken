@@ -51,15 +51,31 @@ namespace ClassLibraryDemo
         }
     }
 
-    public class TestClass
+    public class Employee
     {
-        int myVar;
+        public int salary;
 
-        // Default constructor
-        public int TestClass(int x)
+        public Employee(int annualSalary)
         {
-            myVar = x;
-            return myVar;
+            salary = annualSalary;
+        }
+
+        public Employee(int weeklySalary, int numberOfWeeks)
+        {
+            salary = weeklySalary * numberOfWeeks;
+        }
+    }
+
+    public class SimpleMath
+    {
+        public int AddTwoNumbers(int number1, int number2)
+        {
+            return number1 + number2;
+        }
+
+        public int SquareANumber(int number)
+        {
+            return number * number;
         }
     }
 
