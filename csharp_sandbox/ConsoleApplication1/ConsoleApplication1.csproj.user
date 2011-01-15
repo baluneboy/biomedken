@@ -1,0 +1,5 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <StartArguments>c:\temp\sub*\file*.txt ^(?&lt;DIR&gt;c:\\\\temp\\\\dup[^\\\\]*)\\\\(?&lt;FILE&gt;file[^\\\\]*\\.txt)$</StartArguments>
+  </PropertyGroup>
+</Project>
