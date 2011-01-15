@@ -19,14 +19,15 @@ namespace ClassLibraryFileGlobber
         // constructor
         public FileGlobber(string pat)
         {
-            globparts = new GlobParts(pat);
             globpattern = pat;
+            globparts = new GlobParts(globpattern);
 
             // if valid glob pattern, populate the file queue
             if (globparts.AreValid)
             {
-                filequeue.Enqueue(globpattern);
-                filequeue.Enqueue("bye for now");
+                RecursiveFileSearch rfs = new RecursiveFileSearch(globparts.BasePath,
+                    globparts.RegexDirPattern);
+                filequeue = rfs.FileQueue;
             }
             else // do something not so awesome
             {

@@ -11,16 +11,20 @@ namespace ClassLibraryFileGlobber
     {
         private Regex rxpat = new Regex(@"^(?<PATHSTUB>[^\*]*)\\(?<SUBDIR>.*)\\(?<FILE>.*)$");
         private Match m;
-
+        
         private Boolean arevalid = false;
-        private string pathstub;
-        private string subdir;
-        private string filename;
+        private string basepath;
+        private string dirpattern;
+        private string filepattern;
+        private Regex regexdirpattern = new Regex("");
+        private Regex regexfilepattern = new Regex("");
 
         public Boolean AreValid { get { return arevalid; } } 
-        public string PathStub { get { return pathstub; } }
-        public string SubDir { get { return subdir; } }
-        public string FileName { get { return filename; } }
+        public string BasePath { get { return basepath; } }
+        public string DirPattern { get { return dirpattern; } }
+        public string FilePattern { get { return filepattern; } }
+        public Regex RegexDirPattern { get { return regexdirpattern; } }
+        public Regex RegexFilePattern { get { return regexfilepattern; } }
 
         // constructor
         public GlobParts()
@@ -32,10 +36,17 @@ namespace ClassLibraryFileGlobber
             m = rxpat.Match(str);
             if (m.Success)
             {
-                pathstub = m.Groups["PATHSTUB"].Value;
-                subdir = m.Groups["PATHSTUB"].Value + "\\" + m.Groups["SUBDIR"].Value + "\\";
-                filename = m.Groups["FILE"].Value;
-                if ( Directory.Exists(pathstub) )
+                basepath = m.Groups["PATHSTUB"].Value;
+
+                dirpattern = m.Groups["PATHSTUB"].Value + "\\" + m.Groups["SUBDIR"].Value + "\\";
+                dirpattern = @"^" + dirpattern.Replace(@"\", @"\\").Replace(@"*", @"[^\\]*") + "$";
+                regexdirpattern = new Regex(dirpattern);
+
+                filepattern = m.Groups["FILE"].Value;
+                filepattern = filepattern.Replace(@"\", @"\\").Replace(@"*", @"[^\\]*");
+                regexfilepattern = new Regex(filepattern);
+                                
+                if ( Directory.Exists(basepath) )
                     arevalid = true;
             }
 
