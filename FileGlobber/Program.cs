@@ -9,9 +9,9 @@ using System.Data;
 // without having to spell out the entire location.
 using System.Text.RegularExpressions;
 
-using ClassLibraryDemo;
+using ClassLibraryFileGlobber;
 
-namespace FileGlobber
+namespace RegexDemo
 {
     /// <summary>
     /// Application to demonstrate the use of regular expressions in the .NET framework
@@ -129,6 +129,7 @@ namespace FileGlobber
             this.textRegex.Size = new System.Drawing.Size(1167, 49);
             this.textRegex.TabIndex = 2;
             this.textRegex.Text = "^(?<DIR>c:\\\\temp\\\\dup[^\\\\]*)\\\\(?<FILE>file[^\\\\]*\\.txt)";
+
             // 
             // labelRegex
             // 
@@ -169,14 +170,6 @@ namespace FileGlobber
             this.textSubject.Size = new System.Drawing.Size(887, 136);
             this.textSubject.TabIndex = 8;
             this.textSubject.Text = "c:\\temp\\dupstination\\fileABC.txt";
-
-            // test public method "AddTwoNumbers" of "SimpleMath" class
-            SimpleMath sm = new SimpleMath(3,9);
-            MessageBox.Show("sum is " + sm.sum + " sqrFirst is " + sm.sqrFirst);
-
-            //int result = SimpleMath.AddTwoNumbers(1,2);
-            //StringReverser p = new StringReverser();
-            //p.RevStr = "green";
 
             // 
             // textResults
