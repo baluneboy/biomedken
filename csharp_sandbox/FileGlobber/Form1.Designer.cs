@@ -1,4 +1,4 @@
-﻿namespace FileGlobber
+﻿namespace RegexDemo
 {
     partial class Form1
     {
