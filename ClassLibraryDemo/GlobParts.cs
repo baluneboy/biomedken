@@ -26,7 +26,7 @@ namespace ClassLibraryFileGlobber
         public Regex RegexDirPattern { get { return regexdirpattern; } }
         public Regex RegexFilePattern { get { return regexfilepattern; } }
 
-        // constructor
+        // constructors
         public GlobParts()
         {
         }
@@ -38,12 +38,12 @@ namespace ClassLibraryFileGlobber
             {
                 basepath = m.Groups["PATHSTUB"].Value;
 
-                dirpattern = m.Groups["PATHSTUB"].Value + "\\" + m.Groups["SUBDIR"].Value + "\\";
-                dirpattern = @"^" + dirpattern.Replace(@"\", @"\\").Replace(@"*", @"[^\\]*") + "$";
+                dirpattern = m.Groups["PATHSTUB"].Value + "\\" + m.Groups["SUBDIR"].Value;
+                dirpattern = @dirpattern.Replace(@"\", @"\\").Replace(@"*", @"[^\\]*");
                 regexdirpattern = new Regex(dirpattern);
 
                 filepattern = m.Groups["FILE"].Value;
-                filepattern = filepattern.Replace(@"\", @"\\").Replace(@"*", @"[^\\]*");
+                filepattern = filepattern.Replace(@"\", @"\\").Replace(@"*", @"[^\\]*").Replace(@".", @"\.");
                 regexfilepattern = new Regex(filepattern);
                                 
                 if ( Directory.Exists(basepath) )
