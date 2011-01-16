@@ -11,9 +11,9 @@ namespace ConAppLINQ
     {
         public static void Main()
         {
-            string startFolder = @"c:\temp\dupstination\";
-            string folderPattern = @".*x.*";
-            string namePattern = @".*Y.*";
+            string startFolder = @"C:\temp\abpost\";
+            string folderPattern = @".*ob.*";
+            string namePattern = @".*Nt0[67].*\.dap";
 
             // Take a snapshot of the file system!
             IEnumerable<FileInfo> fileList = GetFiles(startFolder);
@@ -28,8 +28,7 @@ namespace ConAppLINQ
             foreach (var v in queryMatchingFiles)
             {
                 // Write the file name in which a match was found.
-                Console.WriteLine(v.DirectoryName);
-                Console.WriteLine(v.Name);
+                Console.WriteLine("dir: " + v.DirectoryName + " & file: " + v.Name);
 
             }
 
