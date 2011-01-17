@@ -28,7 +28,7 @@ namespace MyConfigurator
         {
             string ConfigFile = System.IO.Path.Combine(Properties.Settings.Default.ConfigPath,
                 Properties.Settings.Default.ConfigFile);
-            DataTable fooData = new DataTable();
+            DataTable theData = new DataTable();
             OleDbConnection dbConnection = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;"
                 + @"Data Source=" + ConfigFile + ";"
                 + @"Extended Properties=""Excel 12.0;HDR=Yes;""");
@@ -36,8 +36,8 @@ namespace MyConfigurator
             try
             {
                 OleDbDataAdapter dbAdapter = new OleDbDataAdapter("SELECT * FROM [config$]", dbConnection);
-                dbAdapter.Fill(fooData);
-                dataGridView1.DataSource = fooData;
+                dbAdapter.Fill(theData);
+                dataGridView1.DataSource = theData;
             }
             finally
             {
