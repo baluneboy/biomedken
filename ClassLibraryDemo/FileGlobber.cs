@@ -35,7 +35,7 @@ namespace ClassLibraryFileGlobber
             var queryMatchingFiles =
                 from file in fileList
                 where Regex.IsMatch(file.Name, namepattern) &&
-                    Regex.IsMatch(file.DirectoryName, folderpattern)
+                    Regex.IsMatch(file.DirectoryName, @"^" + folderpattern + "$")
                 select file;
 
             return queryMatchingFiles;
