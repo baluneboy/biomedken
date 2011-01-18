@@ -11,15 +11,23 @@ namespace ClassLibraryFileGlobber
     {
         private GlobParts globparts = new GlobParts();
         private IEnumerable<FileInfo> matchingfiles;
+        private int matchcount;
 
         public GlobParts GlobParts { get { return globparts; } }
         public IEnumerable<FileInfo> MatchingFiles { get { return matchingfiles; } }
+        public int MatchCount { get { return matchcount; } }
 
         // constructor(s)
         public FileGlobber(string globpattern)
         {
+            matchcount = 0;
             globparts = new GlobParts(globpattern);
-            matchingfiles = GetMatchingFiles(globparts.BasePath, globparts.DirPattern, globparts.FilePattern);
+            matchingfiles = GetMatchingFiles(globparts.BasePath,
+                                             globparts.DirPattern,
+                                             globparts.FilePattern);
+            foreach (var f in matchingfiles)
+                matchcount = matchcount + 1;
+
         }
 
         private IEnumerable<FileInfo> GetMatchingFiles(
@@ -35,7 +43,7 @@ namespace ClassLibraryFileGlobber
             var queryMatchingFiles =
                 from file in fileList
                 where Regex.IsMatch(file.Name, namepattern) &&
-                    Regex.IsMatch(file.DirectoryName, @"^" + folderpattern + "$")
+                      Regex.IsMatch(file.DirectoryName, @"^" + folderpattern + "$")
                 select file;
 
             return queryMatchingFiles;
@@ -44,20 +52,20 @@ namespace ClassLibraryFileGlobber
 
         // This method assumes that the application has discovery 
         // permissions for all folders under the specified path.
-        static IEnumerable<FileInfo> GetFiles(string path)
+        private IEnumerable<FileInfo> GetFiles(string path)
         {
-            if (!Directory.Exists(path))
-                throw new DirectoryNotFoundException();
-
             string[] fileNames = null;
             List<FileInfo> files = new List<FileInfo>();
 
-            fileNames = Directory.GetFiles(path, "*.*",
-                SearchOption.AllDirectories);
-
-            foreach (string name in fileNames)
+            if (Directory.Exists(path)) //CHANGED LOGIC: throw new DirectoryNotFoundException();
             {
-                files.Add(new FileInfo(name));
+                fileNames = Directory.GetFiles(path, "*.*",
+                    SearchOption.AllDirectories);
+
+                foreach (string name in fileNames)
+                {
+                    files.Add(new FileInfo(name));
+                }
             }
             return files;
         }
