@@ -31,9 +31,10 @@
             this.btnGlob = new System.Windows.Forms.Button();
             this.clbFiles = new System.Windows.Forms.CheckedListBox();
             this.txtGlobPattern = new System.Windows.Forms.TextBox();
-            this.btnProcess = new System.Windows.Forms.Button();
+            this.btnValidate = new System.Windows.Forms.Button();
             this.btnSelectAll = new System.Windows.Forms.Button();
             this.btnUnselectAll = new System.Windows.Forms.Button();
+            this.btnProcess = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnGlob
@@ -70,22 +71,22 @@
             this.txtGlobPattern.Text = "c:\\temp\\dupstination\\t*o\\tra*.txt";
             this.txtGlobPattern.TextChanged += new System.EventHandler(this.txtGlobPattern_TextChanged);
             // 
-            // btnProcess
+            // btnValidate
             // 
-            this.btnProcess.Font = new System.Drawing.Font("MS Reference Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnProcess.Location = new System.Drawing.Point(12, 123);
-            this.btnProcess.Name = "btnProcess";
-            this.btnProcess.Size = new System.Drawing.Size(124, 33);
-            this.btnProcess.TabIndex = 3;
-            this.btnProcess.Text = "Process";
-            this.btnProcess.UseCompatibleTextRendering = true;
-            this.btnProcess.UseVisualStyleBackColor = true;
-            this.btnProcess.Click += new System.EventHandler(this.btnProcess_Click);
+            this.btnValidate.Font = new System.Drawing.Font("MS Reference Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnValidate.Location = new System.Drawing.Point(12, 57);
+            this.btnValidate.Name = "btnValidate";
+            this.btnValidate.Size = new System.Drawing.Size(124, 33);
+            this.btnValidate.TabIndex = 3;
+            this.btnValidate.Text = "Validate";
+            this.btnValidate.UseCompatibleTextRendering = true;
+            this.btnValidate.UseVisualStyleBackColor = true;
+            this.btnValidate.Click += new System.EventHandler(this.btnValidate_Click);
             // 
             // btnSelectAll
             // 
             this.btnSelectAll.Font = new System.Drawing.Font("MS Reference Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnSelectAll.Location = new System.Drawing.Point(12, 55);
+            this.btnSelectAll.Location = new System.Drawing.Point(12, 455);
             this.btnSelectAll.Name = "btnSelectAll";
             this.btnSelectAll.Size = new System.Drawing.Size(124, 28);
             this.btnSelectAll.TabIndex = 4;
@@ -97,7 +98,7 @@
             // btnUnselectAll
             // 
             this.btnUnselectAll.Font = new System.Drawing.Font("MS Reference Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnUnselectAll.Location = new System.Drawing.Point(12, 89);
+            this.btnUnselectAll.Location = new System.Drawing.Point(12, 489);
             this.btnUnselectAll.Name = "btnUnselectAll";
             this.btnUnselectAll.Size = new System.Drawing.Size(124, 28);
             this.btnUnselectAll.TabIndex = 5;
@@ -106,14 +107,27 @@
             this.btnUnselectAll.UseVisualStyleBackColor = true;
             this.btnUnselectAll.Click += new System.EventHandler(this.btnUnselectAll_Click);
             // 
+            // btnProcess
+            // 
+            this.btnProcess.Enabled = false;
+            this.btnProcess.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnProcess.Location = new System.Drawing.Point(12, 96);
+            this.btnProcess.Name = "btnProcess";
+            this.btnProcess.Size = new System.Drawing.Size(124, 33);
+            this.btnProcess.TabIndex = 6;
+            this.btnProcess.Text = "PROCESS";
+            this.btnProcess.UseVisualStyleBackColor = true;
+            this.btnProcess.Click += new System.EventHandler(this.btnProcess_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1289, 565);
+            this.Controls.Add(this.btnProcess);
             this.Controls.Add(this.btnUnselectAll);
             this.Controls.Add(this.btnSelectAll);
-            this.Controls.Add(this.btnProcess);
+            this.Controls.Add(this.btnValidate);
             this.Controls.Add(this.txtGlobPattern);
             this.Controls.Add(this.clbFiles);
             this.Controls.Add(this.btnGlob);
@@ -131,9 +145,10 @@
         private System.Windows.Forms.Button btnGlob;
         private System.Windows.Forms.CheckedListBox clbFiles;
         private System.Windows.Forms.TextBox txtGlobPattern;
-        private System.Windows.Forms.Button btnProcess;
+        private System.Windows.Forms.Button btnValidate;
         private System.Windows.Forms.Button btnSelectAll;
         private System.Windows.Forms.Button btnUnselectAll;
+        private System.Windows.Forms.Button btnProcess;
     }
 }
 

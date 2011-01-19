@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Data.OleDb;
 using System.IO;
+using System.Diagnostics;
 using WinAppMyGlob.Properties;
 using ClassLibraryFileGlobber;
 
@@ -84,19 +85,8 @@ namespace WinAppMyGlob
         }
 
 
-        private void btnProcess_Click(object sender, EventArgs e)
+        private void btnValidate_Click(object sender, EventArgs e)
         {
-            //// Determine if there are any items checked.
-            //if (clbFiles.CheckedItems.Count != 0)
-            //{
-            //    // If so, loop through all checked items and print results.
-            //    string s = "";
-            //    for (int x = 0; x <= clbFiles.CheckedItems.Count - 1; x++)
-            //    {
-            //        s = s + "Checked Item " + (x + 1).ToString() + " = " + clbFiles.CheckedItems[x].ToString() + "\n";
-            //    }
-            //    MessageBox.Show(s);
-            //}
 
             // Iterate over config's data table contents to glob & process
             List<string> filelist = new List<string>();
@@ -107,6 +97,7 @@ namespace WinAppMyGlob
                 string subject = row["Subject"].ToString();
                 string session = row["Session"].ToString();
                 string task = row["Task"].ToString();
+                string overlay = row["Overlay"].ToString();
 
                 // build glob pattern to anatomical image
                 globpat = row["Basepath"].ToString() + @"\" +
@@ -127,6 +118,10 @@ namespace WinAppMyGlob
                     {
                         filelist.Add(fi.FullName);
                         blnlist.Add(true);
+                        //if (File.Exists(fi.DirectoryName + overlay))
+                        //    MessageBox.Show(subject + " " + session + " " + task + " overlay exists.");
+                        //else
+                        //    MessageBox.Show(subject + " " + session + " " + task + " OVERLAY DOES NOT EXIST!");
                     }
                 }
                 else
@@ -138,6 +133,10 @@ namespace WinAppMyGlob
             clbFiles.DataSource = filelist;
             for (int i = 0; i < clbFiles.Items.Count; i++)
                 clbFiles.SetItemChecked(i, blnlist[i]);
+
+            // enable processing
+            btnProcess.Enabled = true;
+
         }
 
         private void clbFiles_SelectedIndexChanged(object sender, EventArgs e)
@@ -155,6 +154,14 @@ namespace WinAppMyGlob
         {
             for (int i = 0; i < clbFiles.Items.Count; i++)
                 clbFiles.SetItemChecked(i, false);
+        }
+
+        private void btnProcess_Click(object sender, EventArgs e)
+        {
+            Process p = new Process();
+            p.StartInfo.FileName = @"C:\Program Files\mricron\MRIcroN.exe";
+            p.StartInfo.Arguments = @"Y:\adat\c1316plas\pre\study_20060608\results\wrist\w20060608_132633WHOLEHEAD1MMs004a001.hdr";
+            p.Start();
         }
 
     }
