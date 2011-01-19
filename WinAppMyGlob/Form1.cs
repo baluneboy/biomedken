@@ -100,8 +100,8 @@ namespace WinAppMyGlob
 
             // Iterate over config's data table contents to glob & process
             List<string> filelist = new List<string>();
+            List<Boolean> blnlist = new List<Boolean>();
             string globpat;
-            string s = "";
             foreach (DataRow row in dtConfig.Rows)
             {
                 string subject = row["Subject"].ToString();
@@ -124,16 +124,20 @@ namespace WinAppMyGlob
                 {
                     // FIXME better method for add single FileInfo item to list!?
                     foreach (var fi in fg.MatchingFiles)
+                    {
                         filelist.Add(fi.FullName);
+                        blnlist.Add(true);
+                    }
                 }
                 else
-                    s = s + "No anat file for " + subject + " " + session + " " + task;
-
+                {
+                    filelist.Add("No anat file for " + subject + " " + session + " " + task);
+                    blnlist.Add(false);
+                }
             }
-            MessageBox.Show(s);
             clbFiles.DataSource = filelist;
             for (int i = 0; i < clbFiles.Items.Count; i++)
-                clbFiles.SetItemChecked(i, true);
+                clbFiles.SetItemChecked(i, blnlist[i]);
         }
 
         private void clbFiles_SelectedIndexChanged(object sender, EventArgs e)
