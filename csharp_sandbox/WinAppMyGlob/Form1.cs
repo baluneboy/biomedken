@@ -179,7 +179,7 @@ namespace WinAppMyGlob
             for (int i = 0; i < anatomylist.Count; i++)
             {
                 string anat = anatomylist[i];
-                string over = @" -c grayscale -o " + overlaylist[i];
+                string over = @" -c grayscale -o " + overlaylist[i] + @" -b 50";
                 //MessageBox.Show(anatomylist[i] + "\n" + overlaylist[i]);
                 Process p = new Process();
                 p.StartInfo.FileName = @"C:\Program Files\mricron\MRIcroN.exe"; // FIXME
