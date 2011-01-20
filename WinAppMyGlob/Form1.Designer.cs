@@ -47,6 +47,7 @@
             this.btnGlob.Text = "Glob";
             this.btnGlob.UseCompatibleTextRendering = true;
             this.btnGlob.UseVisualStyleBackColor = true;
+            this.btnGlob.Visible = false;
             this.btnGlob.Click += new System.EventHandler(this.btnGlob_Click);
             // 
             // clbFiles
@@ -69,6 +70,7 @@
             this.txtGlobPattern.Size = new System.Drawing.Size(1170, 22);
             this.txtGlobPattern.TabIndex = 2;
             this.txtGlobPattern.Text = "c:\\temp\\dupstination\\t*o\\tra*.txt";
+            this.txtGlobPattern.Visible = false;
             this.txtGlobPattern.TextChanged += new System.EventHandler(this.txtGlobPattern_TextChanged);
             // 
             // btnValidate
@@ -81,6 +83,7 @@
             this.btnValidate.Text = "Validate";
             this.btnValidate.UseCompatibleTextRendering = true;
             this.btnValidate.UseVisualStyleBackColor = true;
+            this.btnValidate.Visible = false;
             this.btnValidate.Click += new System.EventHandler(this.btnValidate_Click);
             // 
             // btnSelectAll
@@ -93,6 +96,7 @@
             this.btnSelectAll.Text = "select all";
             this.btnSelectAll.UseCompatibleTextRendering = true;
             this.btnSelectAll.UseVisualStyleBackColor = true;
+            this.btnSelectAll.Visible = false;
             this.btnSelectAll.Click += new System.EventHandler(this.btnSelectAll_Click);
             // 
             // btnUnselectAll
@@ -105,6 +109,7 @@
             this.btnUnselectAll.Text = "unselect all";
             this.btnUnselectAll.UseCompatibleTextRendering = true;
             this.btnUnselectAll.UseVisualStyleBackColor = true;
+            this.btnUnselectAll.Visible = false;
             this.btnUnselectAll.Click += new System.EventHandler(this.btnUnselectAll_Click);
             // 
             // btnProcess
