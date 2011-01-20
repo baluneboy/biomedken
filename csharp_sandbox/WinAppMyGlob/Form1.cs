@@ -52,6 +52,9 @@ namespace WinAppMyGlob
                 dbConnection.Close();
             }
 
+            // press the validate button
+            btnValidate_Click(btnValidate, new System.EventArgs());
+
         }
 
         private void txtGlobPattern_TextChanged(object sender, EventArgs e)
@@ -179,10 +182,14 @@ namespace WinAppMyGlob
                 string over = @" -c grayscale -o " + overlaylist[i];
                 //MessageBox.Show(anatomylist[i] + "\n" + overlaylist[i]);
                 Process p = new Process();
-                p.StartInfo.FileName = @"C:\Program Files\mricron\MRIcroN.exe";
-                //p.StartInfo.Arguments = @"N:\data\adat\c1316plas\pre\study_20060608\results\shoulder\w20060608_132633WHOLEHEAD1MMs004a001.hdr -c grayscale -o N:\data\adat\c1316plas\pre\study_20060608\results\shoulder\roi_adat\masked_roi98_mniwholebrain_fromspm_wroi99_wholecube_both_p-overlay_adathreshold_remap.hdr";
+                p.StartInfo.FileName = @"C:\Program Files\mricron\MRIcroN.exe"; // FIXME
                 p.StartInfo.Arguments = anat + over;
                 p.Start();
+
+                // wait a few seconds, before close this form
+                //System.Threading.Thread.Sleep(1000);
+
+                this.Close();
             }
         }
 
@@ -191,8 +198,6 @@ namespace WinAppMyGlob
 
 /* 
  * TODO
- * - after process button starts mricron(s), close this form gracefully
- * - fully integrate with excel
  * - implement LUT (via Key/Val pairs) for excel, like: subject, session, task, overlay
  * 
  */
