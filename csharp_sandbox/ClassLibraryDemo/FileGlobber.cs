@@ -25,6 +25,8 @@ namespace ClassLibraryFileGlobber
             matchingfiles = GetMatchingFiles(globparts.BasePath,
                                              globparts.DirPattern,
                                              globparts.FilePattern);
+            // FIXME maybe we should not use IEnumerable for MatchingFiles?
+            // FIXME ...which requires these stupid iteration to count elements!
             foreach (var f in matchingfiles)
                 matchcount = matchcount + 1;
 
@@ -57,11 +59,10 @@ namespace ClassLibraryFileGlobber
             string[] fileNames = null;
             List<FileInfo> files = new List<FileInfo>();
 
-            if (Directory.Exists(path)) //CHANGED LOGIC: throw new DirectoryNotFoundException();
+            if (Directory.Exists(path)) //CHANGED LOGIC TO NOT: throw new DirectoryNotFoundException();
             {
                 fileNames = Directory.GetFiles(path, "*.*",
-                    SearchOption.AllDirectories);
-
+                                               SearchOption.AllDirectories);
                 foreach (string name in fileNames)
                 {
                     files.Add(new FileInfo(name));
