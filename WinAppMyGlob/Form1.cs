@@ -41,6 +41,7 @@ namespace WinAppMyGlob
                 + @"Data Source=" + ConfigFile + ";"
                 + @"Extended Properties=""Excel 12.0;HDR=Yes;""");
             dbConnection.Open();
+
             try
             {
                 OleDbDataAdapter dbAdapter = new OleDbDataAdapter(
@@ -54,6 +55,7 @@ namespace WinAppMyGlob
 
             // press the validate button
             btnValidate_Click(btnValidate, new System.EventArgs());
+            tssMessage.Text = @"checking for file validation done";
 
         }
 
@@ -121,12 +123,14 @@ namespace WinAppMyGlob
                           "w2*WHOLEHEAD*.hdr";
 
                 // glob for matching files
+                tssMessage.Text = @"Running FileGlobber on " + globpat;
                 FileGlobber fg = new FileGlobber(globpat);
 
                 // if exactly one anat header file found, then check; otherwise uncheck
                 if (fg.MatchCount == 1)
                 {
                     // FIXME better method for add single FileInfo item to list!?
+                    tssMessage.Text = @"Checking for overlay file wrt " + globpat;
                     foreach (var fi in fg.MatchingFiles)
                     {
                         if (File.Exists(fi.DirectoryName + @"\" + overlay))
