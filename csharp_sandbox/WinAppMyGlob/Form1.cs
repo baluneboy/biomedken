@@ -44,7 +44,7 @@ namespace WinAppMyGlob
             try
             {
                 OleDbDataAdapter dbAdapter = new OleDbDataAdapter(
-                    "SELECT * FROM [config$]", dbConnection);
+                    "SELECT * FROM [run$]", dbConnection);
                 dbAdapter.Fill(dtConfig);
             }
             finally
@@ -104,10 +104,16 @@ namespace WinAppMyGlob
                 string subject = row["Subject"].ToString();
                 string session = row["Session"].ToString();
                 string task = row["Task"].ToString();
-                string overlay = row["Overlay"].ToString();
+
+                // FIXME, did some convenience hard-coding here for rough prototype
+                // with overlay & basepath
+
+                //string overlay = row["Overlay"].ToString();
+                string overlay = @".\masked_roi98_mniwholebrain_fromspm_wroi99_wholecube_both_p-overlay_adathreshold_remap_clustercorrected.hdr";
 
                 // build glob pattern to anatomical image
-                globpat = row["Basepath"].ToString() + @"\" +
+                //globpat = row["Basepath"].ToString() + @"\" +
+                globpat = @"y:\adat" + @"\" +
                           subject + @"\" +
                           session + @"\" +
                           "study_*" + @"\" + "results" + @"\" +
@@ -198,6 +204,7 @@ namespace WinAppMyGlob
 
 /* 
  * TODO
+ * - IMPROVE "basepath" & "overlay" [relative path/pattern] handling
  * - implement LUT (via Key/Val pairs) for excel, like: subject, session, task, overlay
- * 
+ * - make it so that path to MRIcroN is discoverable, not hard-coded
  */
