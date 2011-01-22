@@ -59,7 +59,7 @@ namespace ClassLibraryFileGlobber
             string[] fileNames = null;
             List<FileInfo> files = new List<FileInfo>();
 
-            if (Directory.Exists(path)) //CHANGED LOGIC TO NOT: throw new DirectoryNotFoundException();
+            if (Directory.Exists(path)) //Got rid of: throw new DirectoryNotFoundException();
             {
                 fileNames = Directory.GetFiles(path, "*.*",
                                                SearchOption.AllDirectories);
