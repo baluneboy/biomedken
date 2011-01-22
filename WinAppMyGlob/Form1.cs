@@ -208,8 +208,16 @@ namespace WinAppMyGlob
                     count++;
             }
 
-            SplashScreen.UdpateStatusText(count + " of " + clbFiles.Items.Count + " sets of {anatomy background and overlay files} validated...");
-            Thread.Sleep(2222);
+            if (count==clbFiles.Items.Count)
+            {
+                SplashScreen.UdpateStatusTextWithStatus(count + " of " + clbFiles.Items.Count + " sets of {anatomy background and overlay files} validated...", TypeOfMessage.Success);
+                Thread.Sleep(111);
+        }
+            else
+            {
+                SplashScreen.UdpateStatusTextWithStatus(count + " of " + clbFiles.Items.Count + " sets of {anatomy background and overlay files} validated...", TypeOfMessage.Error);
+            Thread.Sleep(3333);
+        }
 
             // enable processing
             btnProcess.Enabled = true;
