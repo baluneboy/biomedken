@@ -20,10 +20,13 @@ namespace WinAppMyGlob
                             "Nothing to see here yet, do following steps first:",
                             "1. Set glob pattern in text box above, then...",
                             "2. Press the 'Glob' button for matching files." };
+        DataTable dtRun = new DataTable();
         DataTable dtConfig = new DataTable();
 
         private List<string> anatomylist = new List<string>();
         private List<string> overlaylist = new List<string>();
+
+        private Dictionary<string, string> dConfig = new Dictionary<string, string>();
 
         public Form1()
         {
@@ -44,18 +47,22 @@ namespace WinAppMyGlob
 
             try
             {
-                OleDbDataAdapter dbAdapter = new OleDbDataAdapter(
-                    "SELECT * FROM [run$]", dbConnection);
-                dbAdapter.Fill(dtConfig);
+                OleDbDataAdapter dbaRun = new OleDbDataAdapter("SELECT * FROM [run$]", dbConnection);
+                OleDbDataAdapter dbaConfig = new OleDbDataAdapter("SELECT * FROM [config$]", dbConnection);
+                dbaRun.Fill(dtRun);
+                dbaConfig.Fill(dtConfig);
             }
             finally
             {
                 dbConnection.Close();
             }
 
-            // press the validate button
+            // FIXME better way to do this LUT implementation?
+            foreach (DataRow row in dtConfig.Rows)
+                dConfig.Add(row["KEY"].ToString(), row["VALUE"].ToString());
+
+            // FIXME no need to "press the validate button" when we remove intermediate "Process" step
             btnValidate_Click(btnValidate, new System.EventArgs());
-            tssMessage.Text = @"checking for file validation done";
 
         }
 
@@ -101,21 +108,23 @@ namespace WinAppMyGlob
             string globpat;
             string str = "unknown status";
             Boolean bln = false;
-            foreach (DataRow row in dtConfig.Rows)
+            foreach (DataRow row in dtRun.Rows)
             {
                 string subject = row["Subject"].ToString();
                 string session = row["Session"].ToString();
                 string task = row["Task"].ToString();
 
-                // FIXME, did some convenience hard-coding here for rough prototype
-                // with overlay & basepath
-
-                //string overlay = row["Overlay"].ToString();
-                string overlay = @".\masked_roi98_mniwholebrain_fromspm_wroi99_wholecube_both_p-overlay_adathreshold_remap_clustercorrected.hdr";
+                // FIXME refactor next 2 sets of similar code
+                string keyOverlay = row["Overlay"].ToString();
+                string overlay = "";
+                if (dConfig.ContainsKey(keyOverlay))
+                    overlay = dConfig[keyOverlay];
+                string basepath = "";
+                if (dConfig.ContainsKey("basePath"))
+                    basepath = dConfig["basePath"];
 
                 // build glob pattern to anatomical image
-                //globpat = row["Basepath"].ToString() + @"\" +
-                globpat = @"y:\adat" + @"\" +
+                globpat = @basepath + @"\" +
                           subject + @"\" +
                           session + @"\" +
                           "study_*" + @"\" + "results" + @"\" +
@@ -123,20 +132,16 @@ namespace WinAppMyGlob
                           "w2*WHOLEHEAD*.hdr";
 
                 // glob for matching files
-                tssMessage.Text = @"Running FileGlobber on " + globpat;
                 FileGlobber fg = new FileGlobber(globpat);
 
                 // if exactly one anat header file found, then check; otherwise uncheck
                 if (fg.MatchCount == 1)
                 {
                     // FIXME better method for add single FileInfo item to list!?
-                    tssMessage.Text = @"Checking for overlay file wrt " + globpat;
                     foreach (var fi in fg.MatchingFiles)
                     {
                         if (File.Exists(fi.DirectoryName + @"\" + overlay))
                         {
-                            //MessageBox.Show(fi.DirectoryName + @"\" + overlay + " exists.");
-                            //str = fi.FullName;
                             str = subject + " " + session + " " + task + " found both anatomy & overlay files.";
                             bln = true;
                             anatomylist.Add(fi.FullName);
@@ -144,7 +149,6 @@ namespace WinAppMyGlob
                         }
                         else
                         {
-                            //MessageBox.Show(fi.DirectoryName + @"\" + overlay + " does NOT exist!");
                             str = subject + " " + session + " " + task + " found no overlay file.";
                             bln = false;
                         }
@@ -159,6 +163,7 @@ namespace WinAppMyGlob
                 blnlist.Add(bln);
             }
             clbFiles.DataSource = filelist;
+            // FIXME go back to source XLSM file and highlight rows that have FALSE for anat and/or overlay
             for (int i = 0; i < clbFiles.Items.Count; i++)
                 clbFiles.SetItemChecked(i, blnlist[i]);
 
@@ -189,15 +194,12 @@ namespace WinAppMyGlob
             for (int i = 0; i < anatomylist.Count; i++)
             {
                 string anat = anatomylist[i];
+                // FIXME make switches for MRIcroN call configurable in XLSM file
                 string over = @" -c grayscale -o " + overlaylist[i] + @" -b 50";
-                //MessageBox.Show(anatomylist[i] + "\n" + overlaylist[i]);
                 Process p = new Process();
-                p.StartInfo.FileName = @"C:\Program Files\mricron\MRIcroN.exe"; // FIXME
+                p.StartInfo.FileName = @dConfig["MRIcroNexe"];
                 p.StartInfo.Arguments = anat + over;
                 p.Start();
-
-                // wait a few seconds, before close this form
-                //System.Threading.Thread.Sleep(1000);
 
                 this.Close();
             }
@@ -206,9 +208,9 @@ namespace WinAppMyGlob
     }
 }
 
+#region TODO
 /* 
- * TODO
- * - IMPROVE "basepath" & "overlay" [relative path/pattern] handling
- * - implement LUT (via Key/Val pairs) for excel, like: subject, session, task, overlay
- * - make it so that path to MRIcroN is discoverable, not hard-coded
+ * - splash screen init  message(s)
+ * - see FIXME comments throughout
  */
+#endregion
