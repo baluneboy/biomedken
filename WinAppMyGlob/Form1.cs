@@ -79,18 +79,26 @@ namespace WinAppMyGlob
             }
 
             // FIXME better way to do this LUT implementation?
+            int count = 0;
             foreach (DataRow row in dtConfig.Rows)
+            {
                 dConfig.Add(row["KEY"].ToString(), row["VALUE"].ToString());
+                count++;
+            }
 
-            SplashScreen.UdpateStatusText("12 Items Loaded..");
+            SplashScreen.UdpateStatusText("Loaded " + count + " configuration items.");
             Thread.Sleep(2222);
 
             this.Show();
-            SplashScreen.CloseSplashScreen();
-            this.Activate();
 
             // FIXME no need to "press the validate button" when we remove intermediate "Process" step
             btnValidate_Click(btnValidate, new System.EventArgs());
+
+            SplashScreen.UdpateStatusText("Ready to process in MRIcroN, hit 'Process' button...");
+            Thread.Sleep(2222);
+
+            SplashScreen.CloseSplashScreen();
+            this.Activate();
 
         }
 
@@ -192,8 +200,16 @@ namespace WinAppMyGlob
             }
             clbFiles.DataSource = filelist;
             // FIXME go back to source XLSM file and highlight rows that have FALSE for anat and/or overlay
+            int count = 0;
             for (int i = 0; i < clbFiles.Items.Count; i++)
+            {
                 clbFiles.SetItemChecked(i, blnlist[i]);
+                if (blnlist[i])
+                    count++;
+            }
+
+            SplashScreen.UdpateStatusText(count + " of " + clbFiles.Items.Count + " sets of {anatomy background and overlay files} validated...");
+            Thread.Sleep(2222);
 
             // enable processing
             btnProcess.Enabled = true;
