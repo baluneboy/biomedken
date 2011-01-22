@@ -100,6 +100,10 @@
       <Project>{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}</Project>
       <Name>ClassLibraryDemo</Name>
     </ProjectReference>
+    <ProjectReference Include="..\MySplash\MySplash.csproj">
+      <Project>{A9519535-A59C-4A28-9F96-5EC5CE46272B}</Project>
+      <Name>MySplash</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

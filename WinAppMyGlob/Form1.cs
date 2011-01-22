@@ -9,8 +9,10 @@ using System.Windows.Forms;
 using System.Data.OleDb;
 using System.IO;
 using System.Diagnostics;
+using System.Threading;
 using WinAppMyGlob.Properties;
 using ClassLibraryFileGlobber;
+using MySplash;
 
 namespace WinAppMyGlob
 {
@@ -28,13 +30,32 @@ namespace WinAppMyGlob
 
         private Dictionary<string, string> dConfig = new Dictionary<string, string>();
 
+        SplashScreenForm sf = new SplashScreenForm();
+
         public Form1()
         {
+            this.Hide();
+            Thread splashthread = new Thread(new ThreadStart(SplashScreen.ShowSplashScreen));
+            splashthread.IsBackground = true;
+            splashthread.Start();
             InitializeComponent();
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
+
+            SplashScreen.UdpateStatusText("Loading Items!!!");
+            Thread.Sleep(100);
+            SplashScreen.UdpateStatusTextWithStatus("Success Message", TypeOfMessage.Success);
+            //Thread.Sleep(100);
+            //SplashScreen.UdpateStatusTextWithStatus("Warning Message", TypeOfMessage.Warning);
+
+            //Thread.Sleep(100);
+            //SplashScreen.UdpateStatusTextWithStatus("Error Message", TypeOfMessage.Error);
+            //Thread.Sleep(100);
+            //SplashScreen.UdpateStatusText("Testing Default Message Color");
+            //Thread.Sleep(100);
+
             this.clbFiles.DataSource = myFiles;
 
             string ConfigFile = System.IO.Path.Combine(Properties.Settings.Default.ConfigPath,
@@ -60,6 +81,13 @@ namespace WinAppMyGlob
             // FIXME better way to do this LUT implementation?
             foreach (DataRow row in dtConfig.Rows)
                 dConfig.Add(row["KEY"].ToString(), row["VALUE"].ToString());
+
+            SplashScreen.UdpateStatusText("12 Items Loaded..");
+            Thread.Sleep(2222);
+
+            this.Show();
+            SplashScreen.CloseSplashScreen();
+            this.Activate();
 
             // FIXME no need to "press the validate button" when we remove intermediate "Process" step
             btnValidate_Click(btnValidate, new System.EventArgs());
