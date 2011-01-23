@@ -47,14 +47,6 @@ namespace WinAppMyGlob
             SplashScreen.UdpateStatusText("Loading Items!!!");
             Thread.Sleep(100);
             SplashScreen.UdpateStatusTextWithStatus("Success Message", TypeOfMessage.Success);
-            //Thread.Sleep(100);
-            //SplashScreen.UdpateStatusTextWithStatus("Warning Message", TypeOfMessage.Warning);
-
-            //Thread.Sleep(100);
-            //SplashScreen.UdpateStatusTextWithStatus("Error Message", TypeOfMessage.Error);
-            //Thread.Sleep(100);
-            //SplashScreen.UdpateStatusText("Testing Default Message Color");
-            //Thread.Sleep(100);
 
             this.clbFiles.DataSource = myFiles;
 
@@ -87,7 +79,7 @@ namespace WinAppMyGlob
             }
 
             SplashScreen.UdpateStatusText("Loaded " + count + " configuration items.");
-            Thread.Sleep(2222);
+            Thread.Sleep(222);
 
             this.Show();
 
@@ -99,6 +91,8 @@ namespace WinAppMyGlob
 
             SplashScreen.CloseSplashScreen();
             this.Activate();
+
+            btnProcess_Click(btnProcess, new System.EventArgs());
 
         }
 
@@ -215,8 +209,8 @@ namespace WinAppMyGlob
         }
             else
             {
-                SplashScreen.UdpateStatusTextWithStatus(count + " of " + clbFiles.Items.Count + " sets of {anatomy background and overlay files} validated...", TypeOfMessage.Error);
-            Thread.Sleep(3333);
+                SplashScreen.UdpateStatusTextWithStatus(count + " of " + clbFiles.Items.Count + " sets of {anatomy background and overlay files} validated...", TypeOfMessage.Warning);
+            Thread.Sleep(1111);
         }
 
             // enable processing
@@ -262,7 +256,9 @@ namespace WinAppMyGlob
 
 #region TODO
 /* 
- * - splash screen init  message(s)
+ * - get this all to work on goliath
+ * - maybe XLSM can do it all?
+ * - splash screen improve  message(s)
  * - see FIXME comments throughout
  */
 #endregion
