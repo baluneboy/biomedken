@@ -100,7 +100,7 @@ namespace MySplash
                     label1.ForeColor = Color.Red;
                     break;
                 case TypeOfMessage.Warning:
-                    label1.ForeColor = Color.Yellow;
+                    label1.ForeColor = Color.Blue;
                     break;
                 case TypeOfMessage.Success:
                     label1.ForeColor = Color.Green;
