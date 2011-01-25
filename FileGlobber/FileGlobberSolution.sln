@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C# Express 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileGlobberProject", "FileGlobberProject.csproj", "{C01F0C84-9ECF-49C3-8F8B-392A5AF88964}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassLibraryDemo", "..\ClassLibraryDemo\ClassLibraryDemo.csproj", "{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}"
@@ -8,6 +8,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinAppMyGlob", "..\WinAppMyGlob\WinAppMyGlob.csproj", "{54ECBBB8-3C2A-4DFA-AA94-CD6BFE912AE3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MySplash", "..\MySplash\MySplash.csproj", "{A9519535-A59C-4A28-9F96-5EC5CE46272B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelWorkbook_fMRI", "..\ExcelWorkbook_fMRI\ExcelWorkbook_fMRI.csproj", "{F9D568F1-BB5E-4D1D-816E-04ADCCA1CA3B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,6 +45,12 @@ Global
 		{A9519535-A59C-4A28-9F96-5EC5CE46272B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A9519535-A59C-4A28-9F96-5EC5CE46272B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A9519535-A59C-4A28-9F96-5EC5CE46272B}.Release|x86.ActiveCfg = Release|Any CPU
+		{F9D568F1-BB5E-4D1D-816E-04ADCCA1CA3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9D568F1-BB5E-4D1D-816E-04ADCCA1CA3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9D568F1-BB5E-4D1D-816E-04ADCCA1CA3B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F9D568F1-BB5E-4D1D-816E-04ADCCA1CA3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9D568F1-BB5E-4D1D-816E-04ADCCA1CA3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9D568F1-BB5E-4D1D-816E-04ADCCA1CA3B}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
