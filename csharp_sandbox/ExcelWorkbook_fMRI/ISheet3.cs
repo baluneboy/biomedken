@@ -9,3 +9,12 @@ namespace ExcelWorkbook_fMRI
     }
 
 }
+
+#region TODO
+/*
+ * derive FileGlobberFmriAnat class that does not use FileInfo iterator, but SINGLE FileInfo with convenience attributes
+ * the above plays into the following
+ * string method to return basepath of anat file
+ * string method to return filename of anat file
+ */
+#endregion
