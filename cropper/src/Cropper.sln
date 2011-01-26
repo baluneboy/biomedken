@@ -1,5 +1,5 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{446681A4-0226-4C98-BA81-21C5C97AD1B9}"
 	ProjectSection(SolutionItems) = preProject
 		SharedAssemblyInfo.cs = SharedAssemblyInfo.cs
@@ -42,6 +42,39 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cropper.Tests", "Cropper.Tests\Cropper.Tests.csproj", "{6DA40DB7-C091-4FC8-8DC4-E504505155AA}"
 EndProject
 Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 10
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://tfs02.codeplex.com/
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = Cropper.Extensibility\\Cropper.Extensibility.csproj
+		SccProjectName1 = Cropper.Extensibility
+		SccLocalPath1 = Cropper.Extensibility
+		SccProjectUniqueName2 = Cropper.Core\\Cropper.Core.csproj
+		SccProjectName2 = Cropper.Core
+		SccLocalPath2 = Cropper.Core
+		SccProjectUniqueName3 = Cropper.PngFormat\\Cropper.PngFormat.csproj
+		SccProjectName3 = Cropper.PngFormat
+		SccLocalPath3 = Cropper.PngFormat
+		SccProjectUniqueName4 = Cropper.ClipboardFormat\\Cropper.ClipboardFormat.csproj
+		SccProjectName4 = Cropper.ClipboardFormat
+		SccLocalPath4 = Cropper.ClipboardFormat
+		SccProjectUniqueName5 = Cropper.PrinterOutput\\Cropper.PrinterOutput.csproj
+		SccProjectName5 = Cropper.PrinterOutput
+		SccLocalPath5 = Cropper.PrinterOutput
+		SccProjectUniqueName6 = Cropper.BmpFormat\\Cropper.BmpFormat.csproj
+		SccProjectName6 = Cropper.BmpFormat
+		SccLocalPath6 = Cropper.BmpFormat
+		SccProjectUniqueName7 = Cropper.JpgFormat\\Cropper.JpgFormat.csproj
+		SccProjectName7 = Cropper.JpgFormat
+		SccLocalPath7 = Cropper.JpgFormat
+		SccProjectUniqueName8 = Cropper.UI\\Cropper.UI.csproj
+		SccProjectName8 = Cropper.UI
+		SccLocalPath8 = Cropper.UI
+		SccProjectUniqueName9 = CropperSetup\\CropperSetup.vdproj
+		SccProjectName9 = CropperSetup
+		SccLocalPath9 = CropperSetup
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x86 = Debug|x86
@@ -130,38 +163,5 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 10
-		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = https://tfs02.codeplex.com/
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = Cropper.Extensibility\\Cropper.Extensibility.csproj
-		SccProjectName1 = Cropper.Extensibility
-		SccLocalPath1 = Cropper.Extensibility
-		SccProjectUniqueName2 = Cropper.Core\\Cropper.Core.csproj
-		SccProjectName2 = Cropper.Core
-		SccLocalPath2 = Cropper.Core
-		SccProjectUniqueName3 = Cropper.PngFormat\\Cropper.PngFormat.csproj
-		SccProjectName3 = Cropper.PngFormat
-		SccLocalPath3 = Cropper.PngFormat
-		SccProjectUniqueName4 = Cropper.ClipboardFormat\\Cropper.ClipboardFormat.csproj
-		SccProjectName4 = Cropper.ClipboardFormat
-		SccLocalPath4 = Cropper.ClipboardFormat
-		SccProjectUniqueName5 = Cropper.PrinterOutput\\Cropper.PrinterOutput.csproj
-		SccProjectName5 = Cropper.PrinterOutput
-		SccLocalPath5 = Cropper.PrinterOutput
-		SccProjectUniqueName6 = Cropper.BmpFormat\\Cropper.BmpFormat.csproj
-		SccProjectName6 = Cropper.BmpFormat
-		SccLocalPath6 = Cropper.BmpFormat
-		SccProjectUniqueName7 = Cropper.JpgFormat\\Cropper.JpgFormat.csproj
-		SccProjectName7 = Cropper.JpgFormat
-		SccLocalPath7 = Cropper.JpgFormat
-		SccProjectUniqueName8 = Cropper.UI\\Cropper.UI.csproj
-		SccProjectName8 = Cropper.UI
-		SccLocalPath8 = Cropper.UI
-		SccProjectUniqueName9 = CropperSetup\\CropperSetup.vdproj
-		SccProjectName9 = CropperSetup
-		SccLocalPath9 = CropperSetup
 	EndGlobalSection
 EndGlobal
