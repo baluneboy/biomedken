@@ -9,37 +9,33 @@ namespace ClassLibraryFileGlobber
 {
     public class FileGlobber
     {
-        private GlobParts globparts = new GlobParts();
-        private IEnumerable<FileInfo> matchingfiles;
-        private int matchcount;
+        protected GlobParts globparts = new GlobParts();
+        protected List<FileInfo> matchingfiles;
 
         public GlobParts GlobParts { get { return globparts; } }
-        public IEnumerable<FileInfo> MatchingFiles { get { return matchingfiles; } }
-        public int MatchCount { get { return matchcount; } }
+        public List<FileInfo> MatchingFiles { get { return matchingfiles; } }
+        public int MatchCount { get { return matchingfiles.Count; } }
 
-        // constructor(s)
+        // Default constructor does nothing
+        public FileGlobber() {}
+
+        // Instance constructor
         public FileGlobber(string globpattern)
         {
-            matchcount = 0;
             globparts = new GlobParts(globpattern);
             matchingfiles = GetMatchingFiles(globparts.BasePath,
                                              globparts.DirPattern,
                                              globparts.FilePattern);
-            // FIXME maybe we should not use IEnumerable for MatchingFiles?
-            // FIXME ...which requires these stupid iteration to count elements!
-            foreach (var f in matchingfiles)
-                matchcount = matchcount + 1;
-
         }
 
-        private IEnumerable<FileInfo> GetMatchingFiles(
+        protected List<FileInfo> GetMatchingFiles(
             string startfolder,
             string folderpattern,
             string namepattern)
         {
 
             // Take a snapshot of the file system!
-            IEnumerable<FileInfo> fileList = GetFiles(startfolder);
+            List<FileInfo> fileList = GetFiles(startfolder);
 
             // This query produces a list of files that match.
             var queryMatchingFiles =
@@ -48,13 +44,13 @@ namespace ClassLibraryFileGlobber
                       Regex.IsMatch(file.DirectoryName, @"^" + folderpattern + "$")
                 select file;
 
-            return queryMatchingFiles;
+            return queryMatchingFiles.ToList();
 
         }
 
         // This method assumes that the application has discovery 
         // permissions for all folders under the specified path.
-        private IEnumerable<FileInfo> GetFiles(string path)
+        private List<FileInfo> GetFiles(string path)
         {
             string[] fileNames = null;
             List<FileInfo> files = new List<FileInfo>();
@@ -69,6 +65,11 @@ namespace ClassLibraryFileGlobber
                 }
             }
             return files;
+        }
+
+        public void print()
+        {
+            Console.WriteLine("I'm a FileGlobber Class.");
         }
     }
 }

@@ -10,13 +10,20 @@ namespace ConAppMyGlob
     {
         static void Main(string[] args)
         {
-            FileGlobber fg = new FileGlobber(args[0]);
+            FileGlobberFmriAnat fga = new FileGlobberFmriAnat(args[0]);
 
-            foreach (var v in fg.MatchingFiles)
+            if (fga.IsValid)
             {
-                // Write the file name in which a match was found.
-                Console.WriteLine(">> " + v.FullName);
+                Console.WriteLine("FA " + fga.FileAnat);
+                Console.WriteLine("PA " + fga.PathAnat);
             }
+            else
+                Console.WriteLine("not valid bc MatchCount is " + fga.MatchCount);
+
+            //FileGlobberFmriAnat FileGlobberFmriAnat = new FileGlobberFmriAnat();
+            //FileGlobberFmriAnat.print();
+            //((FileGlobber)FileGlobberFmriAnat).print();
+            //Console.ReadLine();
 
         }
     }
