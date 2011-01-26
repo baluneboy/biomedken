@@ -37,7 +37,7 @@ namespace ClassLibraryFileGlobber
             // Take a snapshot of the file system!
             List<FileInfo> fileList = GetFiles(startfolder);
 
-            // This query produces a list of files that match.
+            // This query produces a list of files that match filename & dirname patterns
             var queryMatchingFiles =
                 from file in fileList
                 where Regex.IsMatch(file.Name, namepattern) &&

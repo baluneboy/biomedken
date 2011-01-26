@@ -33,7 +33,6 @@ namespace ClassLibraryFileGlobber
                 this.fileAnat = matchingfiles[0].Name;
                 this.isValid = true;
             }
-
         }
 
         public new void print()

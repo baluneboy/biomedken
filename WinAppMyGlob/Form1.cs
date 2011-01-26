@@ -251,6 +251,11 @@ namespace WinAppMyGlob
             }
         }
 
+        private void ovalShape1_Click(object sender, EventArgs e)
+        {
+
+        }
+
     }
 }
 

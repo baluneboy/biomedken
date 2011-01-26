@@ -37,6 +37,8 @@
             this.btnProcess = new System.Windows.Forms.Button();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.tssMessage = new System.Windows.Forms.ToolStripStatusLabel();
+            this.shapeContainer1 = new Microsoft.VisualBasic.PowerPacks.ShapeContainer();
+            this.ovalShape1 = new Microsoft.VisualBasic.PowerPacks.OvalShape();
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -143,6 +145,27 @@
             this.tssMessage.Size = new System.Drawing.Size(134, 17);
             this.tssMessage.Text = "ToolStripStatusMessage...";
             // 
+            // shapeContainer1
+            // 
+            this.shapeContainer1.Location = new System.Drawing.Point(0, 0);
+            this.shapeContainer1.Margin = new System.Windows.Forms.Padding(0);
+            this.shapeContainer1.Name = "shapeContainer1";
+            this.shapeContainer1.Shapes.AddRange(new Microsoft.VisualBasic.PowerPacks.Shape[] {
+            this.ovalShape1});
+            this.shapeContainer1.Size = new System.Drawing.Size(1289, 565);
+            this.shapeContainer1.TabIndex = 8;
+            this.shapeContainer1.TabStop = false;
+            // 
+            // ovalShape1
+            // 
+            this.ovalShape1.FillGradientColor = System.Drawing.Color.Brown;
+            this.ovalShape1.FillGradientStyle = Microsoft.VisualBasic.PowerPacks.FillGradientStyle.BackwardDiagonal;
+            this.ovalShape1.FillStyle = Microsoft.VisualBasic.PowerPacks.FillStyle.ForwardDiagonal;
+            this.ovalShape1.Location = new System.Drawing.Point(44, 157);
+            this.ovalShape1.Name = "ovalShape1";
+            this.ovalShape1.Size = new System.Drawing.Size(75, 42);
+            this.ovalShape1.Click += new System.EventHandler(this.ovalShape1_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -156,6 +179,7 @@
             this.Controls.Add(this.txtGlobPattern);
             this.Controls.Add(this.clbFiles);
             this.Controls.Add(this.btnGlob);
+            this.Controls.Add(this.shapeContainer1);
             this.Location = new System.Drawing.Point(0, 11);
             this.Name = "Form1";
             this.Text = "Form1";
@@ -178,6 +202,8 @@
         private System.Windows.Forms.Button btnProcess;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel tssMessage;
+        private Microsoft.VisualBasic.PowerPacks.ShapeContainer shapeContainer1;
+        private Microsoft.VisualBasic.PowerPacks.OvalShape ovalShape1;
     }
 }
 
