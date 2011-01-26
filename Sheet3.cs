@@ -30,22 +30,23 @@ namespace ExcelWorkbook_fMRI
 
         private Microsoft.Office.Tools.Excel.NamedRange namedRange1;
 
-        public string CreateVstoPath(string globpattern)
+        public string GlobAnatFile(string globpattern)
         {
             string str = "";
-            FileGlobber fg = new FileGlobber(globpattern);
-            if (fg.MatchCount != 1)
-                str = "(didNotMatchOneFile)" + globpattern;
+            FileGlobberFmriAnat fga = new FileGlobberFmriAnat(globpattern);
+            if (fga.IsValid)
+                str = fga.MatchingFiles[0].FullName;
             else
-            {
-                // FIXME need better method for add single FileInfo item to list!? NOT foreach ON ONE!
-                foreach (var fi in fg.MatchingFiles)
-                {
-                    str = fi.FullName;
-                }
-            }
+                str = "(didNotMatchOneFile)" + globpattern;
             return str;
+        }
 
+        public string RelativeOverlayFile(string pathAnat, string overlayFile)
+        {
+            string str = "";
+            // TODO cat anatPath + relative overlayFile
+            // TODO verify file exists: if yes, return cat string; otherwise, "(relativeOverlayNotExist) + catstring"
+            return str;
         }
 
         public void CreateVstoNamedRange(Excel.Range range, string name)
