@@ -16,7 +16,7 @@ namespace ClassLibraryFileGlobber
         public List<FileInfo> MatchingFiles { get { return matchingfiles; } }
         public int MatchCount { get { return matchingfiles.Count; } }
 
-        // Default constructor does nothing
+        // Default constructor
         public FileGlobber() {}
 
         // Instance constructor
@@ -28,6 +28,7 @@ namespace ClassLibraryFileGlobber
                                              globparts.FilePattern);
         }
 
+        // Class method to get list of files that match both filename & dirname patterns
         protected List<FileInfo> GetMatchingFiles(
             string startfolder,
             string folderpattern,
@@ -37,7 +38,7 @@ namespace ClassLibraryFileGlobber
             // Take a snapshot of the file system!
             List<FileInfo> fileList = GetFiles(startfolder);
 
-            // This query produces a list of files that match filename & dirname patterns
+            // Query that produces list of files matching both filename & dirname patterns
             var queryMatchingFiles =
                 from file in fileList
                 where Regex.IsMatch(file.Name, namepattern) &&
@@ -48,14 +49,14 @@ namespace ClassLibraryFileGlobber
 
         }
 
-        // This method assumes that the application has discovery 
-        // permissions for all folders under the specified path.
+        // Base class method assumes that the application has discovery 
+        // permissions for all folders under the specified path to get files.
         private List<FileInfo> GetFiles(string path)
         {
             string[] fileNames = null;
             List<FileInfo> files = new List<FileInfo>();
 
-            if (Directory.Exists(path)) //Got rid of: throw new DirectoryNotFoundException();
+            if (Directory.Exists(path)) //got rid of: throw new DirectoryNotFoundException();
             {
                 fileNames = Directory.GetFiles(path, "*.*",
                                                SearchOption.AllDirectories);
