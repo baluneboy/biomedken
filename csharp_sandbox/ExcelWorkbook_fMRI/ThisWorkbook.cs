@@ -19,12 +19,12 @@ namespace ExcelWorkbook_fMRI
             // verify "run" sheet
             try
             {
-                ((Worksheet)this.Sheets[1]).Select(missing);
+                Worksheet ws = GetWorksheetByName("run");
             }
             catch (Exception)
             {
-                
-                throw;
+                // do something
+                throw new ArgumentException(); // FIXME with good exception handling
             }
         }
 
@@ -32,22 +32,22 @@ namespace ExcelWorkbook_fMRI
         {
         }
 
-        //private Worksheet GetWorksheetByName(string name)
-        //{
-        //    foreach (Excel.Worksheet ws in this.Worksheets)
-        //    {
-        //        if (ws.Name == name)
-        //        {
-        //            return ws;
-        //        }
-        //    }
-        //    throw new ArgumentException();
-        //}
+        private Worksheet GetWorksheetByName(string name)
+        {
+            foreach (Worksheet ws in this.Worksheets)
+            {
+                if (ws.Name == name)
+                {
+                    return ws;
+                }
+            }
+            throw new ArgumentException();
+        }
 
-        //private void ActivateWorksheetByName(string name)
-        //{
-        //    GetWorksheetByName(name).Activate();
-        //}
+        private void ActivateWorksheetByName(string name)
+        {
+            GetWorksheetByName(name).Activate();
+        }
 
         #region VSTO Designer generated code
 
