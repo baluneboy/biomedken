@@ -1,3 +1,4 @@
+Attribute VB_Name = "KenMacs"
 Sub LoopFilteredRows()
 
     Dim rng As Range
@@ -5,15 +6,16 @@ Sub LoopFilteredRows()
     Dim strFileOver As String
     Dim blnGotAnat As Boolean
     Dim blnGotOver As Boolean
+    Dim RetVal As Variant
 
     With Sheets("run")
 
         If Not .AutoFilterMode Then
-            MsgBox ("abort because no filter on 'run' sheet")
+            MsgBox ("quitting now because no filter on 'run' sheet")
             Exit Sub
         End If
         If Not .FilterMode Then
-            MsgBox ("abort because 'run' sheet has filters but is not filtered at all")
+            MsgBox ("quitting now, 'run' sheet has filters but is not filtered at all")
             Exit Sub
         End If
 
@@ -26,12 +28,12 @@ Sub LoopFilteredRows()
             If blnGotAnat Then
                 blnGotOver = GotOver(strFileAnat, strFileOver)
                 If blnGotOver Then
-                    Debug.Print ("got both: " & strFileAnat)
+                    RetVal = Shell("MRIcroN.exe " & strFileAnat & " -c grayscale -o " & FilePath(strFileAnat) & strFileOver & " -b 50", 1)
                 Else
-                    Debug.Print ("missing over: " & strFileOver)
+                    MsgBox ("missing overlay file: " & strFileOver)
                 End If
             Else
-                Debug.Print ("missing anat: " & strFileAnat)
+                MsgBox ("missing anatomy file: " & strFileAnat)
             End If
 
         Next Row
