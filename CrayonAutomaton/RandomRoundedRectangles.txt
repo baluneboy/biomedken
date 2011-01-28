@@ -1,0 +1,177 @@
+/////////////////////////////////
+            /* FIXME: Draw random rounded rectangles */
+            GraphicsPath myPath = RoundedRectangle.Create(905, 305, 20, 20);
+            e.Graphics.DrawPath(Pens.Black, myPath);
+            myPath = RoundedRectangle.Create(930, 305, 40, 40, 9);
+            e.Graphics.FillPath(Brushes.Blue, myPath);
+            myPath = RoundedRectangle.Create(908, 350, 50, 50, 9);
+            e.Graphics.DrawPath(Pens.Black, myPath);
+            e.Graphics.SetClip(myPath);
+            using (Font f = new Font("Tahoma", 14, FontStyle.Bold))
+            e.Graphics.DrawString("Draw Me!!", f, Brushes.Red, 900, 370);
+            e.Graphics.ResetClip();
+			
+/////////////////////////////////			
+public void Transform(
+    Matrix matrix
+)
+private void TransformExample(PaintEventArgs e)
+{
+
+    // Create a path and add and ellipse.
+    GraphicsPath myPath = new GraphicsPath();
+    myPath.AddEllipse(0, 0, 100, 200);
+
+    // Draw the starting position to screen.
+    e.Graphics.DrawPath(Pens.Black, myPath);
+
+    // Move the ellipse 100 points to the right.
+    Matrix translateMatrix = new Matrix();
+    translateMatrix.Translate(100, 0);
+    myPath.Transform(translateMatrix);
+
+    // Draw the transformed ellipse to the screen.
+    e.Graphics.DrawPath(new Pen(Color.Red, 2), myPath);
+}
+
+/////////////////////////////////
+public void Reverse()
+public void GraphicsPathReverseExample(PaintEventArgs e)
+{
+
+    // Create a path and add a line, ellipse, and arc.
+    GraphicsPath myPath = new GraphicsPath();
+    myPath.AddLine(new Point(0, 0), new Point(100, 100));
+    myPath.AddEllipse(100, 100, 200, 250);
+    myPath.AddArc(300, 250, 100, 100, 0, 90);
+
+    // Draw the first set of points to the screen.
+    DrawPoints2(e, myPath.PathPoints, 20);
+
+    // Call GraphicsPath.Reverse.
+    myPath.Reverse();
+
+    // Draw the reversed set of points to the screen.
+    DrawPoints2(e, myPath.PathPoints, 150);
+}
+//End GraphicsPathReverseExample.
+
+// A helper function GraphicsPathReverseExample is used to draw the
+// points to the screen.
+public void DrawPoints2(PaintEventArgs e, PointF[] pathPoints, int xOffset)
+{
+    int y = 20;
+    Font myFont = new Font("Arial", 8);
+    for(int i=0;i < pathPoints.Length; i++)
+    {
+        e.Graphics.DrawString(pathPoints[i].X.ToString() + ", " +
+            pathPoints[i].Y.ToString(),
+            myFont,
+            Brushes.Black,
+            xOffset,
+            y);
+        y += 20;
+    }
+} 
+// End DrawPoints			
+
+
+/////////////////////////////////
+public void AddPath(
+    GraphicsPath addingPath,
+    bool connect
+)
+private void AddPathExample(PaintEventArgs e)
+{
+
+    // Create the first pathright side up triangle.
+    Point[] myArray =
+             {
+                 new Point(30,30),
+                 new Point(60,60),
+                 new Point(0,60),
+                 new Point(30,30)
+             };
+    GraphicsPath myPath = new GraphicsPath();
+    myPath.AddLines(myArray);
+
+    // Create the second pathinverted triangle.
+    Point[] myArray2 =
+             {
+                 new Point(30,30),
+                 new Point(0,0),
+                 new Point(60,0),
+                 new Point(30,30)
+             };
+    GraphicsPath myPath2 = new GraphicsPath();
+    myPath2.AddLines(myArray2);
+
+    // Add the second path to the first path.
+    myPath.AddPath(myPath2,true);
+
+    // Draw the combined path to the screen.
+    Pen myPen = new Pen(Color.Black, 2);
+    e.Graphics.DrawPath(myPen, myPath);
+}
+
+
+/////////////////////////////////
+public Object Clone()
+private void CloneExample(PaintEventArgs e)
+{
+
+    // Set several markers in a path.
+    GraphicsPath myPath = new GraphicsPath();
+    myPath.AddEllipse(0, 0, 100, 200);
+    myPath.AddLine(new Point(100, 100), new Point(200, 100));
+    Rectangle rect = new Rectangle(200, 0, 100, 200);
+    myPath.AddRectangle(rect);
+    myPath.AddLine(new Point(250, 200), new Point(250, 300));
+
+    // Draw the path to the screen.
+    Pen myPen = new Pen(Color.Black, 2);
+    e.Graphics.DrawPath(myPen, myPath);
+
+    // Clone a copy of myPath.
+    GraphicsPath myPath2 = (GraphicsPath)myPath.Clone();
+
+    // Draw the path to the screen.
+    Pen myPen2 = new Pen(Color.Red, 4);
+    e.Graphics.DrawPath(myPen2, myPath2);
+}
+
+/////////////////////////////////
+private void SetMarkersExample(PaintEventArgs e)
+{
+
+    // Create a path and set two markers.
+    GraphicsPath myPath = new GraphicsPath();
+    myPath.AddLine(new Point(0, 0), new Point(50, 50));
+    myPath.SetMarkers();
+    Rectangle rect = new Rectangle(50, 50, 50, 50);
+    myPath.AddRectangle(rect);
+    myPath.SetMarkers();
+    myPath.AddEllipse(100, 100, 100, 50);
+
+    // Draw the path to screen.
+    e.Graphics.DrawPath(new Pen(Color.Black, 2), myPath);
+}
+
+
+/////////////////////////////////
+// $Id: RandomRoundedRectangles.txt 8 2010-03-13 20:01:49Z ken $
+// $HeadURL: https://127.0.0.1/svn/kenrepos/CrayonAutomaton/trunk/RandomRoundedRectangles.txt $
+            GraphicsPath myPath = new GraphicsPath();
+            myPath.AddLine(10, 20, 300, 400);
+            Point[] myArray =
+                {
+                new Point(20, 100),
+                new Point(40, 75),
+                new Point(60, 125),
+                new Point(80, 100),
+                new Point(100, 50),
+                new Point(120, 150),
+                new Point(140, 100)
+                };
+            myPath.AddBeziers(myArray);
+            return myPath;
