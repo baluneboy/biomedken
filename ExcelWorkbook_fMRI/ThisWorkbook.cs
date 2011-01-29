@@ -14,39 +14,50 @@ namespace ExcelWorkbook_fMRI
 {
     public partial class ThisWorkbook
     {
+        private Microsoft.Office.Interop.Excel._Worksheet wsRun;
+        private bool hasRunSheet;
+
         private void ThisWorkbook_Startup(object sender, System.EventArgs e)
         {
-            // verify "run" sheet
-            try
+            // verify that we have the run sheet
+            hasRunSheet = GetRunSheet();
+            if (!hasRunSheet)
+                MessageBox.Show("YOU NEED A SHEET NAMED \"run\" FOR THIS TO WORK CORRECTLY!\n" +
+                    "PLEASE NAME THE INTENDED SHEET AS \"run\", THEN SAVE/CLOSE/REOPEN FILE.");
+            wsRun.Activate();
+
+            Microsoft.Office.Interop.Excel.Range visibleCells = wsRun.AutoFilter.Range;
+            Microsoft.Office.Interop.Excel.Range visibleRows = visibleCells.get_Offset(1, 0).get_Resize(visibleCells.Rows.Count - 1, 1).SpecialCells(Microsoft.Office.Interop.Excel.XlCellType.xlCellTypeVisible, Type.Missing);
+            foreach (Microsoft.Office.Interop.Excel.Range area in visibleRows.Areas)
             {
-                Worksheet ws = GetWorksheetByName("run");
+                foreach (Microsoft.Office.Interop.Excel.Range row in area.Rows)
+                {
+                    // process each row here
+                    MessageBox.Show(row.Value2 + " " + row.get_Offset(0, 1).Value2);
+                }
             }
-            catch (Exception)
-            {
-                // do something
-                throw new ArgumentException(); // FIXME with good exception handling
-            }
+
         }
 
         private void ThisWorkbook_Shutdown(object sender, System.EventArgs e)
         {
         }
 
-        private Worksheet GetWorksheetByName(string name)
+        // get the run sheet and set bool true
+        public bool GetRunSheet()
         {
-            foreach (Worksheet ws in this.Worksheets)
+            bool bln = false;
+            // HACK there has got to be a better way than looping to get this info!?
+            foreach (Microsoft.Office.Interop.Excel.Worksheet ws in Globals.ThisWorkbook.Sheets)
             {
-                if (ws.Name == name)
+                if (ws.Name.Equals("run",StringComparison.OrdinalIgnoreCase))
                 {
-                    return ws;
+                    wsRun = ws;
+                    bln = true;
+                    break;
                 }
             }
-            throw new ArgumentException();
-        }
-
-        private void ActivateWorksheetByName(string name)
-        {
-            GetWorksheetByName(name).Activate();
+            return bln;
         }
 
         #region VSTO Designer generated code

@@ -21,13 +21,33 @@ namespace ExcelWorkbook_fMRI
     {
         private void Sheet3_Startup(object sender, System.EventArgs e)
         {
-            //MessageBox.Show("hello3");
+            this.Application.SheetBeforeDoubleClick += new
+            Microsoft.Office.Interop.Excel.AppEvents_SheetBeforeDoubleClickEventHandler(
+            Application_SheetBeforeDoubleClick);
         }
 
         private void Sheet3_Shutdown(object sender, System.EventArgs e)
         {
         }
 
+        void Application_SheetBeforeDoubleClick(object Sh,
+            Microsoft.Office.Interop.Excel.Range Target, ref bool Cancel)
+        {
+            Cancel = true;
+            MessageBox.Show("Double click");
+            //Microsoft.Office.Interop.Excel.Range visibleCells = wsRun.AutoFilter.Range;
+            //Microsoft.Office.Interop.Excel.Range visibleRows = visibleCells.get_Offset(1, 0).get_Resize(visibleCells.Rows.Count - 1, 1).SpecialCells(Microsoft.Office.Interop.Excel.XlCellType.xlCellTypeVisible, Type.Missing);
+            //foreach (Microsoft.Office.Interop.Excel.Range area in visibleRows.Areas)
+            //{
+            //    foreach (Microsoft.Office.Interop.Excel.Range row in area.Rows)
+            //    {
+            //        // process each row here
+            //        MessageBox.Show(row.Value2 + " " + row.get_Offset(0, 1).Value2);
+            //    }
+            //}
+        }
+
+        #region OBSOLETE?
         private Microsoft.Office.Tools.Excel.NamedRange namedRange1;
 
         public string GlobAnatFile(string globpattern)
@@ -71,6 +91,7 @@ namespace ExcelWorkbook_fMRI
         {
             return this;
         }
+        #endregion
 
         #region VSTO Designer generated code
 
