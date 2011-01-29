@@ -10,15 +10,15 @@ using Microsoft.VisualStudio.Tools.Applications.Runtime;
 using Excel = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
 
-namespace ExcelWorkbook_fMRI
+namespace MyExcelRibbon
 {
-    public partial class Sheet4
+    public partial class ThisWorkbook
     {
-        private void Sheet4_Startup(object sender, System.EventArgs e)
+        private void ThisWorkbook_Startup(object sender, System.EventArgs e)
         {
         }
 
-        private void Sheet4_Shutdown(object sender, System.EventArgs e)
+        private void ThisWorkbook_Shutdown(object sender, System.EventArgs e)
         {
         }
 
@@ -30,8 +30,8 @@ namespace ExcelWorkbook_fMRI
         /// </summary>
         private void InternalStartup()
         {
-            this.Startup += new System.EventHandler(Sheet4_Startup);
-            this.Shutdown += new System.EventHandler(Sheet4_Shutdown);
+            this.Startup += new System.EventHandler(ThisWorkbook_Startup);
+            this.Shutdown += new System.EventHandler(ThisWorkbook_Shutdown);
         }
 
         #endregion

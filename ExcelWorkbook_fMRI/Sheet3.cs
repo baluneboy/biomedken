@@ -14,11 +14,11 @@ namespace ExcelWorkbook_fMRI
 {
     public partial class Sheet3
     {
-        private void Sheet6_Startup(object sender, System.EventArgs e)
+        private void Sheet3_Startup(object sender, System.EventArgs e)
         {
         }
 
-        private void Sheet6_Shutdown(object sender, System.EventArgs e)
+        private void Sheet3_Shutdown(object sender, System.EventArgs e)
         {
         }
 
@@ -30,8 +30,8 @@ namespace ExcelWorkbook_fMRI
         /// </summary>
         private void InternalStartup()
         {
-            this.Startup += new System.EventHandler(Sheet6_Startup);
-            this.Shutdown += new System.EventHandler(Sheet6_Shutdown);
+            this.Startup += new System.EventHandler(Sheet3_Startup);
+            this.Shutdown += new System.EventHandler(Sheet3_Shutdown);
         }
 
         #endregion
