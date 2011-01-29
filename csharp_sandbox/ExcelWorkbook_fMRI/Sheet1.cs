@@ -19,18 +19,25 @@ namespace ExcelWorkbook_fMRI
 
     public partial class Sheet1 : ExcelWorkbook_fMRI.ISheet1
     {
-        private void Sheet3_Startup(object sender, System.EventArgs e)
+        private void Sheet1_Startup(object sender, System.EventArgs e)
         {
-            this.Application.SheetBeforeDoubleClick += new
-                Microsoft.Office.Interop.Excel.AppEvents_SheetBeforeDoubleClickEventHandler(
-                Application_SheetBeforeDoubleClick);
+            #region Expand for comment on event handler for ANY Sheet
+            //this.Application.SheetBeforeDoubleClick += new
+            //    Microsoft.Office.Interop.Excel.AppEvents_SheetBeforeDoubleClickEventHandler(
+            //    Application_SheetBeforeDoubleClick);
+            #endregion
+
+            this.BeforeDoubleClick += new
+                Microsoft.Office.Interop.Excel.DocEvents_BeforeDoubleClickEventHandler(
+                Sheet_BeforeDoubleClick);
         }
 
-        private void Sheet3_Shutdown(object sender, System.EventArgs e)
+        private void Sheet1_Shutdown(object sender, System.EventArgs e)
         {
         }
 
-        void Application_SheetBeforeDoubleClick(object Sh,
+        // Event handler for THIS sheet
+        void Sheet_BeforeDoubleClick(
             Microsoft.Office.Interop.Excel.Range Target, ref bool Cancel)
         {
             Cancel = true;
@@ -45,8 +52,27 @@ namespace ExcelWorkbook_fMRI
                     MessageBox.Show(row.Value2 + " " + row.get_Offset(0, 1).Value2);
                 }
             }
-
         }
+
+        #region Expand for comment on event handler for ANY Sheet
+        // The following applies to event for ANY sheet
+        //void Application_SheetBeforeDoubleClick(object Sh,
+        //    Microsoft.Office.Interop.Excel.Range Target, ref bool Cancel)
+        //{
+        //    Cancel = true;
+        //    //MessageBox.Show("Double click");
+        //    Microsoft.Office.Interop.Excel.Range visibleCells = this.AutoFilter.Range;
+        //    Microsoft.Office.Interop.Excel.Range visibleRows = visibleCells.get_Offset(1, 0).get_Resize(visibleCells.Rows.Count - 1, 1).SpecialCells(Microsoft.Office.Interop.Excel.XlCellType.xlCellTypeVisible);
+        //    foreach (Microsoft.Office.Interop.Excel.Range area in visibleRows.Areas)
+        //    {
+        //        foreach (Microsoft.Office.Interop.Excel.Range row in area.Rows)
+        //        {
+        //            // process each row here
+        //            MessageBox.Show(row.Value2 + " " + row.get_Offset(0, 1).Value2);
+        //        }
+        //    }
+        //}
+        #endregion
 
         #region OBSOLETE?
         private Microsoft.Office.Tools.Excel.NamedRange namedRange1;
@@ -102,8 +128,8 @@ namespace ExcelWorkbook_fMRI
         /// </summary>
         private void InternalStartup()
         {
-            this.Startup += new System.EventHandler(Sheet3_Startup);
-            this.Shutdown += new System.EventHandler(Sheet3_Shutdown);
+            this.Startup += new System.EventHandler(Sheet1_Startup);
+            this.Shutdown += new System.EventHandler(Sheet1_Shutdown);
         }
 
         #endregion
