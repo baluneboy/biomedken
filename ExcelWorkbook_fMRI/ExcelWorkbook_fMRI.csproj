@@ -108,37 +108,31 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ISheet3.cs" />
+    <Compile Include="ISheet1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Sheet1.cs">
-      <DependentUpon>fmri_customized.xlsm</DependentUpon>
-    </Compile>
-    <Compile Include="Sheet1.Designer.cs">
-      <DependentUpon>Sheet1.Designer.xml</DependentUpon>
-    </Compile>
-    <Compile Include="Sheet3.cs">
-      <DependentUpon>fmri_customized.xlsm</DependentUpon>
-    </Compile>
-    <Compile Include="Sheet3.Designer.cs">
-      <DependentUpon>Sheet3.Designer.xml</DependentUpon>
-    </Compile>
     <Compile Include="Sheet4.cs">
       <DependentUpon>fmri_customized.xlsm</DependentUpon>
     </Compile>
     <Compile Include="Sheet4.Designer.cs">
       <DependentUpon>Sheet4.Designer.xml</DependentUpon>
     </Compile>
-    <Compile Include="Sheet5.cs">
+    <Compile Include="Sheet1.cs">
       <DependentUpon>fmri_customized.xlsm</DependentUpon>
     </Compile>
-    <Compile Include="Sheet5.Designer.cs">
-      <DependentUpon>Sheet5.Designer.xml</DependentUpon>
+    <Compile Include="Sheet1.Designer.cs">
+      <DependentUpon>Sheet1.Designer.xml</DependentUpon>
     </Compile>
-    <Compile Include="Sheet6.cs">
+    <Compile Include="Sheet2.cs">
       <DependentUpon>fmri_customized.xlsm</DependentUpon>
     </Compile>
-    <Compile Include="Sheet6.Designer.cs">
-      <DependentUpon>Sheet6.Designer.xml</DependentUpon>
+    <Compile Include="Sheet2.Designer.cs">
+      <DependentUpon>Sheet2.Designer.xml</DependentUpon>
+    </Compile>
+    <Compile Include="Sheet3.cs">
+      <DependentUpon>fmri_customized.xlsm</DependentUpon>
+    </Compile>
+    <Compile Include="Sheet3.Designer.cs">
+      <DependentUpon>Sheet3.Designer.xml</DependentUpon>
     </Compile>
     <Compile Include="ThisWorkbook.cs">
       <DependentUpon>fmri_customized.xlsm</DependentUpon>
@@ -173,8 +167,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Sheet3.Designer.xml">
-      <DependentUpon>Sheet3.cs</DependentUpon>
+    <None Include="Sheet1.Designer.xml">
+      <DependentUpon>Sheet1.cs</DependentUpon>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -183,18 +177,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Sheet1.Designer.xml">
-      <DependentUpon>Sheet1.cs</DependentUpon>
+    <None Include="Sheet2.Designer.xml">
+      <DependentUpon>Sheet2.cs</DependentUpon>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Sheet5.Designer.xml">
-      <DependentUpon>Sheet5.cs</DependentUpon>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Sheet6.Designer.xml">
-      <DependentUpon>Sheet6.cs</DependentUpon>
+    <None Include="Sheet3.Designer.xml">
+      <DependentUpon>Sheet3.cs</DependentUpon>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -210,11 +199,10 @@
       <FlavorProperties GUID="{BAA0C2D2-18E2-41B9-852F-F413020CAA33}">
         <ProjectProperties HostName="fmri_customized.xlsm" HostPackage="{B284B16A-C42C-4438-BDCD-B72F4AC43CFB}" OfficeVersion="12.0" VstxVersion="4.0" ApplicationType="XLS" Language="CS" TemplatesPath="VSTOTemplates" DebugInfoExeName="C:\Program Files (x86)\Microsoft Office\Office12\Excel.exe" DebugInfoCommandLine="&quot;[$OUTPUT]fmri_customized.xlsm&quot;" />
         <Host Name="Excel Document" Path=".\fmri_customized.xlsm" GeneratedCodeNamespace="ExcelWorkbook_fMRI">
-          <HostItem Name="Sheet1" Code="Sheet1.cs" CanonicalName="Sheet1" DisplayName="NOTES" Blueprint="Sheet1.Designer.xml" GeneratedCode="Sheet1.Designer.cs" />
-          <HostItem Name="Sheet3" Code="Sheet3.cs" CanonicalName="Sheet3" DisplayName="run" Blueprint="Sheet3.Designer.xml" GeneratedCode="Sheet3.Designer.cs" />
-          <HostItem Name="Sheet4" Code="Sheet4.cs" CanonicalName="Sheet4" DisplayName="configOLD" Blueprint="Sheet4.Designer.xml" GeneratedCode="Sheet4.Designer.cs" />
-          <HostItem Name="Sheet5" Code="Sheet5.cs" CanonicalName="Sheet5" DisplayName="configTable" Blueprint="Sheet5.Designer.xml" GeneratedCode="Sheet5.Designer.cs" />
-          <HostItem Name="Sheet6" Code="Sheet6.cs" CanonicalName="Sheet6" DisplayName="DalySubjectList" Blueprint="Sheet6.Designer.xml" GeneratedCode="Sheet6.Designer.cs" />
+          <HostItem Name="Sheet3" Code="Sheet1.cs" CanonicalName="Sheet3" DisplayName="run" Blueprint="Sheet1.Designer.xml" GeneratedCode="Sheet1.Designer.cs" />
+          <HostItem Name="Sheet5" Code="Sheet2.cs" CanonicalName="Sheet5" DisplayName="configTable" Blueprint="Sheet2.Designer.xml" GeneratedCode="Sheet2.Designer.cs" />
+          <HostItem Name="Sheet6" Code="Sheet3.cs" CanonicalName="Sheet6" DisplayName="DalySubjectList" Blueprint="Sheet3.Designer.xml" GeneratedCode="Sheet3.Designer.cs" />
+          <HostItem Name="Sheet1" Code="Sheet4.cs" CanonicalName="Sheet1" DisplayName="NOTES" Blueprint="Sheet4.Designer.xml" GeneratedCode="Sheet4.Designer.cs" />
           <HostItem Name="ThisWorkbook" Code="ThisWorkbook.cs" CanonicalName="ThisWorkbook" Blueprint="ThisWorkbook.Designer.xml" GeneratedCode="ThisWorkbook.Designer.cs" />
         </Host>
       </FlavorProperties>

@@ -13,9 +13,9 @@ namespace ExcelWorkbook_fMRI {
     
     
     /// 
-    [Microsoft.VisualStudio.Tools.Applications.Runtime.StartupObjectAttribute(5)]
+    [Microsoft.VisualStudio.Tools.Applications.Runtime.StartupObjectAttribute(2)]
     [global::System.Security.Permissions.PermissionSetAttribute(global::System.Security.Permissions.SecurityAction.Demand, Name="FullTrust")]
-    public sealed partial class Sheet5 : Microsoft.Office.Tools.Excel.WorksheetBase {
+    public sealed partial class Sheet2 : Microsoft.Office.Tools.Excel.WorksheetBase {
         
         internal Microsoft.Office.Tools.Excel.ListObject configTable;
         
@@ -25,7 +25,7 @@ namespace ExcelWorkbook_fMRI {
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        public Sheet5(global::Microsoft.Office.Tools.Excel.Factory factory, global::System.IServiceProvider serviceProvider) : 
+        public Sheet2(global::Microsoft.Office.Tools.Excel.Factory factory, global::System.IServiceProvider serviceProvider) : 
                 base(factory, serviceProvider, "Sheet5", "Sheet5") {
         }
         
@@ -35,7 +35,7 @@ namespace ExcelWorkbook_fMRI {
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
         protected override void Initialize() {
             base.Initialize();
-            Globals.Sheet5 = this;
+            Globals.Sheet2 = this;
             global::System.Windows.Forms.Application.EnableVisualStyles();
             this.InitializeCachedData();
             this.InitializeControls();
@@ -162,15 +162,15 @@ namespace ExcelWorkbook_fMRI {
     
     internal sealed partial class Globals {
         
-        private static Sheet5 _Sheet5;
+        private static Sheet2 _Sheet2;
         
-        internal static Sheet5 Sheet5 {
+        internal static Sheet2 Sheet2 {
             get {
-                return _Sheet5;
+                return _Sheet2;
             }
             set {
-                if ((_Sheet5 == null)) {
-                    _Sheet5 = value;
+                if ((_Sheet2 == null)) {
+                    _Sheet2 = value;
                 }
                 else {
                     throw new System.NotSupportedException();

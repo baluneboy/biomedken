@@ -13,7 +13,7 @@ namespace ExcelWorkbook_fMRI {
     
     
     /// 
-    [Microsoft.VisualStudio.Tools.Applications.Runtime.StartupObjectAttribute(1)]
+    [Microsoft.VisualStudio.Tools.Applications.Runtime.StartupObjectAttribute(3)]
     [global::System.Security.Permissions.PermissionSetAttribute(global::System.Security.Permissions.SecurityAction.Demand, Name="FullTrust")]
     public sealed partial class Sheet3 : Microsoft.Office.Tools.Excel.WorksheetBase {
         
@@ -24,7 +24,7 @@ namespace ExcelWorkbook_fMRI {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
         public Sheet3(global::Microsoft.Office.Tools.Excel.Factory factory, global::System.IServiceProvider serviceProvider) : 
-                base(factory, serviceProvider, "Sheet3", "Sheet3") {
+                base(factory, serviceProvider, "Sheet6", "Sheet6") {
         }
         
         /// 
@@ -136,9 +136,6 @@ namespace ExcelWorkbook_fMRI {
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Tools.Office.ProgrammingModel.dll", "10.0.0.0")]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
         private void InitializeComponents() {
-            // 
-            // Sheet3
-            // 
         }
         
         /// 
