@@ -6,11 +6,14 @@ using System.Text;
 using System.Windows.Forms;
 using System.Xml.Linq;
 using System.IO;
+using System.Diagnostics;
+using System.Threading;
 using Microsoft.Office.Tools.Excel;
 using Microsoft.VisualStudio.Tools.Applications.Runtime;
 using Excel = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
 using ClassLibraryFileGlobber;
+//using MySplash;
 
 namespace ExcelWorkbook_fMRI
 {
@@ -19,6 +22,7 @@ namespace ExcelWorkbook_fMRI
 
     public partial class Sheet1 : ExcelWorkbook_fMRI.ISheet1
     {
+
         private void Sheet1_Startup(object sender, System.EventArgs e)
         {
             #region Expand for comment on event handler for ANY Sheet
@@ -40,16 +44,38 @@ namespace ExcelWorkbook_fMRI
         void Sheet_BeforeDoubleClick(
             Microsoft.Office.Interop.Excel.Range Target, ref bool Cancel)
         {
+            //SplashScreenForm sf = new SplashScreenForm();
             Cancel = true;
             //MessageBox.Show("Double click");
             Microsoft.Office.Interop.Excel.Range visibleCells = this.AutoFilter.Range;
             Microsoft.Office.Interop.Excel.Range visibleRows = visibleCells.get_Offset(1, 0).get_Resize(visibleCells.Rows.Count - 1, 1).SpecialCells(Microsoft.Office.Interop.Excel.XlCellType.xlCellTypeVisible);
             foreach (Microsoft.Office.Interop.Excel.Range area in visibleRows.Areas)
             {
+                // process each "visibly-filtered" row
                 foreach (Microsoft.Office.Interop.Excel.Range row in area.Rows)
                 {
-                    // process each row here
-                    MessageBox.Show(row.Value2 + " " + row.get_Offset(0, 1).Value2);
+
+                    //MessageBox.Show(row.Value2 + " " + row.get_Offset(0, 1).Value2);
+                    
+                    // FIXME make switches for MRIcroN call configurable in XLSM file
+                    string subj = row.Value2;
+                    string sess = row.get_Offset(0, 1).Value2;
+                    string task = row.get_Offset(0, 2).Value2;
+
+                    // TODO get basePath via "configTable[basePath]"
+                    string globPatAnat = @"y:\adat\" + subj + @"\" + sess + @"\study_*\results\" + task + @"\w2*WHOLEHEAD*.hdr";
+                    FileGlobberFmriAnat fga = new FileGlobberFmriAnat(globPatAnat);
+                    string anat = fga.FileAnat;
+
+                    // TODO get overlay via "Overlays" sheet db query mechanism
+                    string over = @" -c grayscale -o " + row.get_Offset(0, 5).Value2 + @" -b 50";
+
+                    // TODO get MRIcroNexe via "configTable[MRIcroNexe]"
+                    Process p = new Process();
+                    p.StartInfo.FileName = @"C:\Program Files\mricron\MRIcroN.exe";
+                    p.StartInfo.Arguments = anat + over;
+                    p.Start();
+
                 }
             }
         }
