@@ -134,7 +134,6 @@
     <Compile Include="Sheet3.Designer.cs">
       <DependentUpon>Sheet3.Designer.xml</DependentUpon>
     </Compile>
-    <Compile Include="SplashModal.cs" />
     <Compile Include="ThisWorkbook.cs">
       <DependentUpon>fmri_customized.xlsm</DependentUpon>
     </Compile>
