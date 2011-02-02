@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -16,10 +17,22 @@ namespace ExcelWorkbook_fMRI
     {
         private void Sheet2_Startup(object sender, System.EventArgs e)
         {
+            this.Change += new Excel.DocEvents_ChangeEventHandler(Sheet2_Change);
         }
 
         private void Sheet2_Shutdown(object sender, System.EventArgs e)
         {
+        }
+
+        void Sheet2_Change(Excel.Range Target)
+        {
+            if (Target.Row.Equals(2))
+                if (Target.Column.Equals(1)) // basePath
+                    if (!Directory.Exists(Target.Value2))
+                        MessageBox.Show("Hey basePath in row " + Target.Row + " " + ", column " + Target.Column + " changed.");
+                if (Target.Column.Equals(2)) // MRIcroNexe
+                    if (!File.Exists(Target.Value2))
+                        MessageBox.Show("Hey MRIcroNexe in row " + Target.Row + " " + ", column " + Target.Column + " changed.");
         }
 
         #region VSTO Designer generated code
