@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.OleDb;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -11,21 +12,20 @@ using Microsoft.Office.Tools.Excel;
 using Microsoft.VisualStudio.Tools.Applications.Runtime;
 using Excel = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
-//using MySplash;
 
 namespace ExcelWorkbook_fMRI
 {
-    public delegate void InvokeClose();
 
     public partial class ThisWorkbook
     {
-        private Form m_splashScreen = new Form();
+
+        public string basePath;
+        public string MRIcroNexe;
 
         private void ThisWorkbook_Startup(object sender, System.EventArgs e)
         {
             ActivateRunSheet();
-            VerifyBasePathExists();
-            VerifyMRIcroNexeExists();
+            VerifyConfigPathFile();
         }
 
         private void ThisWorkbook_Shutdown(object sender, System.EventArgs e)
@@ -33,7 +33,7 @@ namespace ExcelWorkbook_fMRI
         }
 
         // verify basePath exists
-        public void VerifyBasePathExists()
+        public void VerifyConfigPathFile()
         {
             DataTable dtConfig = new DataTable();
 
@@ -54,15 +54,13 @@ namespace ExcelWorkbook_fMRI
             }
 
             // FIXME there probably is better way to get this info (NamedRange?)
-            MessageBox.Show(dtConfig.Rows[0]["basePath"].ToString());
-            MessageBox.Show(dtConfig.Rows[0]["MRIcroNexe"].ToString());
-
-        }
-
-        // verify MRIcroNexe exists
-        public void VerifyMRIcroNexeExists()
-        {
-
+            basePath = dtConfig.Rows[0]["basePath"].ToString();
+            MRIcroNexe = dtConfig.Rows[0]["MRIcroNexe"].ToString();
+            if (!Directory.Exists(basePath))
+                MessageBox.Show(String.Format("Something's wrong, '{0}' folder is missing.", basePath, "Problem 'configTable' Sheet"));
+            if (!File.Exists(MRIcroNexe))
+                MessageBox.Show(String.Format("Something's wrong, '{0}' file is missing.", MRIcroNexe, "Problem 'configTable' Sheet"));
+            
         }
 
         // get the run sheet and set bool true
