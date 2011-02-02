@@ -8,7 +8,8 @@ using System.Text;
 using System.Windows.Forms;
 // KH says the next 2 were added to accomodate COM/Excel
 using Excel = Microsoft.Office.Interop.Excel;
-using System.Reflection; 
+using System.Reflection;
+using Microsoft.Office.Interop.Excel; 
 
 namespace ExcelAutomationClient
 {
@@ -18,7 +19,7 @@ namespace ExcelAutomationClient
         {
             InitializeComponent();
         }
-        // KH says the next method was the only real code that was added beyond built-in Windows/Form App stuff
+        // This method was the only real code that was added beyond built-in Windows/Form App stuff
         private void buttonCreateDummyData_Click(object sender, System.EventArgs e)
         {
             Excel.Application oXL;
@@ -203,11 +204,37 @@ namespace ExcelAutomationClient
             //        string[] strArray = ConvertToStringArray(myvalues);
             //    }
             //}
+
+            Excel.Application oXL;
+            
+            try
+            {
+                //Start Excel and get Application object.
+                oXL = new Excel.Application();
+                oXL.Visible = true;
+                
+                Excel.Workbook theWorkbook = oXL.Application.Workbooks.Open(
+                   @"C:\Documents and Settings\dalyuser.FESCENTER\My Documents\Visual Studio 2008\Projects\biomedken\csharp_sandbox\ExcelWorkbook_fMRI\bin\Debug\fmri_customized.xlsm", 0, true, 5,
+                    "", "", true, Excel.XlPlatform.xlWindows, "\t", false, false,0, true);
+
+                MessageBox.Show("here it is");
+
+            }
+            catch (Exception theException)
+            {
+                String errorMessage;
+                errorMessage = "Error: ";
+                errorMessage = String.Concat(errorMessage, theException.Message);
+                errorMessage = String.Concat(errorMessage, " Line: ");
+                errorMessage = String.Concat(errorMessage, theException.Source);
+
+                MessageBox.Show(errorMessage, "Error");
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            MessageBox.Show("H E L L O");
+            //MessageBox.Show("H E L L O");
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.OleDb;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -22,70 +23,46 @@ namespace ExcelWorkbook_fMRI
 
         private void ThisWorkbook_Startup(object sender, System.EventArgs e)
         {
-
-            //Thread splashthread = new Thread(new ThreadStart(SplashScreen.ShowSplashScreen));
-            //splashthread.IsBackground = true;
-            //splashthread.Start();
-            
-            //SplashScreen.UdpateStatusText("Remember that double-click of any cell in run sheet launches processing.");
-            //Thread.Sleep(444);
-            //SplashScreen.UdpateStatusTextWithStatus("Success Message", TypeOfMessage.Success);
-            //// MessageBox.Show("Remember that double-click of any cell in run sheet launches processing.");
-            //SplashScreen.UdpateStatusText("Ready to process in MRIcroN, hit 'Process' button...");
-            //Thread.Sleep(444);
-            //SplashScreen.CloseSplashScreen();
-
-            // NativeWindow actually does a subclass (which is unnecessary)
-            // Creating your own IWin32Window implementation might be preferable
-            // as it would be safer.
-            IntPtr hwndExcel = new IntPtr(Application.Hwnd);
-            NativeWindow parent = new NativeWindow();
-            parent.AssignHandle(hwndExcel);
-
-            try
-            {
-
-                Thread t = new Thread(SplashScreenProc);
-                t.Start(parent);
-                Thread.Sleep(1111);
-
-                // Consider: might want to use an event for synchronization to ensure
-                // that the splash screen is displayed before you start your operation.
-
-                // Do some long operation.
-                for (int i = 1; i < 1000; i++)
-                {
-                    //Excel.Range r = (Excel.Range)this.Cells[i, 1];
-                    //r.Value2 = i;
-                    Thread.Sleep(1);
-                }
-                ActivateRunSheet();
-
-                // Must use invoke here because we are calling cross-thread.
-                InvokeClose invokeClose = new InvokeClose(m_splashScreen.Close);
-                m_splashScreen.Invoke(invokeClose);
-
-            }
-
-            finally
-            {
-                // Must always undo the subclass or you can crash!
-                parent.ReleaseHandle();
-            }
-
-        }
-
-        // Display the splash screen
-        private void SplashScreenProc(object param)
-        {
-            // UNDONE: position the splash screen.
-            IWin32Window parent = (IWin32Window)param;
-            m_splashScreen.Text = "Please wait...";
-            m_splashScreen.ShowDialog(parent);
+            ActivateRunSheet();
+            VerifyBasePathExists();
+            VerifyMRIcroNexeExists();
         }
 
         private void ThisWorkbook_Shutdown(object sender, System.EventArgs e)
         {
+        }
+
+        // verify basePath exists
+        public void VerifyBasePathExists()
+        {
+            DataTable dtConfig = new DataTable();
+
+            OleDbConnection dbConnection = new OleDbConnection(
+                @"Provider=Microsoft.ACE.OLEDB.12.0;"
+                + @"Data Source=" + this.FullName + ";"
+                + @"Extended Properties=""Excel 12.0;HDR=Yes;""");
+            dbConnection.Open();
+
+            try
+            {
+                OleDbDataAdapter dbaConfig = new OleDbDataAdapter("SELECT * FROM [configTable$]", dbConnection);
+                dbaConfig.Fill(dtConfig);
+            }
+            finally
+            {
+                dbConnection.Close();
+            }
+
+            // FIXME there probably is better way to get this info (NamedRange?)
+            MessageBox.Show(dtConfig.Rows[0]["basePath"].ToString());
+            MessageBox.Show(dtConfig.Rows[0]["MRIcroNexe"].ToString());
+
+        }
+
+        // verify MRIcroNexe exists
+        public void VerifyMRIcroNexeExists()
+        {
+
         }
 
         // get the run sheet and set bool true
@@ -96,7 +73,7 @@ namespace ExcelWorkbook_fMRI
             // HACK there has got to be a better way than looping to get this info!?
             foreach (Microsoft.Office.Interop.Excel.Worksheet ws in Globals.ThisWorkbook.Sheets)
             {
-                if (ws.Name.Equals("run",StringComparison.OrdinalIgnoreCase))
+                if (ws.Name.Equals("run", StringComparison.OrdinalIgnoreCase))
                 {
                     wsRun = ws;
                     hasRun = true;
