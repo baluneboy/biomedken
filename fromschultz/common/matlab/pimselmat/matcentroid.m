@@ -24,6 +24,20 @@ mDims = size(m);
 y = 1:mDims(1);
 x = 1:mDims(2);
 
+
+% Get the mass
+weightCentroid = nansum(m(:));
+
+% Temporarily change zeros to nan
+iZero = find(m==0);
+m(iZero) = nan;
+
+% Normalize 
+m = m - nanmin(m(:));
+
+% Repopulate zeros
+m(iZero) = 0;
+
 if nargin == 1
     strOrient = 'xyz';
 elseif ~strcmpi(strOrient,'ras') && ~strcmpi(strOrient,'xyz')
@@ -39,17 +53,7 @@ switch numel(mDims)
     case 3
         z = 1:mDims(3);
         [x,y,z] = meshgrid(x,y,z);
-        iZero = find(m==0);
-        m(iZero) = nan;
 
-        % Normalize (shady)
-            scaler = min(m(:));
-            if scaler < 0
-                m = m + abs(scaler);
-            else
-                m = m-abs(scaler);
-            end
-        
         iCentroid = [nansum(m(:).*x(:)) nansum(m(:).*y(:)) nansum(m(:).*z(:))]/nansum(m(:));
 
         % For 3D do conversion flip x, y dims
@@ -63,6 +67,3 @@ switch numel(mDims)
         end
         iCentroid = [xOffset-iCentroid(2) iCentroid(1) iCentroid(3)];
 end
-
-% Get the mass
-weightCentroid = nansum(m(:));

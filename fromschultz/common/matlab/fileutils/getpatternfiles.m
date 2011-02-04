@@ -5,7 +5,7 @@ function casFiles = getpatternfiles(strPattern,strDir,strType)
 % EXAMPLE
 % strPattern = '^a20.*bold.*\w+_(?<num>\d{2,3})\.img$';
 % strDir = pwd;
-% strType = 'char'; % or 'cas'
+% strType = 'cas'; % or 'char'
 % casFiles = getpatternfiles(strPattern,strDir,strType);
 
 % Get dir
