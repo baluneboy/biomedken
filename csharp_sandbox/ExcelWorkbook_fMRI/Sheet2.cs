@@ -29,10 +29,16 @@ namespace ExcelWorkbook_fMRI
             if (Target.Row.Equals(2))
                 if (Target.Column.Equals(1)) // basePath
                     if (!Directory.Exists(Target.Value2))
-                        MessageBox.Show("basePath in " + this.Name + " row " + Target.Row + " " + ", column " + Target.Column + " changed to path I could not find.","PROBLEM");
+                    {
+                        MessageBox.Show("basePath in " + this.Name + " row " + Target.Row + " " + ", column " + Target.Column + " changed to path I could not find.", "PROBLEM");
+                        Application.Undo();
+                    }
                 if (Target.Column.Equals(2)) // MRIcroNexe
                     if (!File.Exists(Target.Value2))
+                    {
                         MessageBox.Show("MRIcroNexe in " + this.Name + " row " + Target.Row + " " + ", column " + Target.Column + " changed to path/file I could not find.", "PROBLEM");
+                        Application.Undo();
+                    }
         }
 
         #region VSTO Designer generated code
