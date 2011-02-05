@@ -12,6 +12,7 @@ using Microsoft.Office.Tools.Excel;
 using Microsoft.VisualStudio.Tools.Applications.Runtime;
 using Excel = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
+using MyExcelUtilities;
 
 namespace ExcelWorkbook_fMRI
 {
@@ -35,32 +36,9 @@ namespace ExcelWorkbook_fMRI
         // verify basePath exists
         public void VerifyConfigPathFile()
         {
-            DataTable dtConfig = new DataTable();
-
-            OleDbConnection dbConnection = new OleDbConnection(
-                @"Provider=Microsoft.ACE.OLEDB.12.0;"
-                + @"Data Source=" + this.FullName + ";"
-                + @"Extended Properties=""Excel 12.0;HDR=Yes;""");
-            dbConnection.Open();
-
-            try
-            {
-                OleDbDataAdapter dbaConfig = new OleDbDataAdapter("SELECT * FROM [configTable$]", dbConnection);
-                dbaConfig.Fill(dtConfig);
-            }
-            finally
-            {
-                dbConnection.Close();
-            }
-
-            // FIXME there probably is better way to get this info (NamedRange?)
-            basePath = dtConfig.Rows[0]["basePath"].ToString();
-            MRIcroNexe = dtConfig.Rows[0]["MRIcroNexe"].ToString();
-            if (!Directory.Exists(basePath))
-                MessageBox.Show(String.Format("Something's wrong, '{0}' folder is missing.", basePath, "Problem 'configTable' Sheet"));
-            if (!File.Exists(MRIcroNexe))
-                MessageBox.Show(String.Format("Something's wrong, '{0}' file is missing.", MRIcroNexe, "Problem 'configTable' Sheet"));
-            
+            // Fill a DataTableGrabber's DataTable using named range "LookupTable" in this workbook
+            DataTableGrabber dtg = new DataTableGrabber(this.FullName, "LookupTable");
+            dtg.Show();
         }
 
         // get the run sheet and set bool true
