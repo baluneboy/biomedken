@@ -121,12 +121,6 @@
     <Compile Include="Sheet2.Designer.cs">
       <DependentUpon>Sheet2.Designer.xml</DependentUpon>
     </Compile>
-    <Compile Include="Sheet3.cs">
-      <DependentUpon>testDataSource.xlsx</DependentUpon>
-    </Compile>
-    <Compile Include="Sheet3.Designer.cs">
-      <DependentUpon>Sheet3.Designer.xml</DependentUpon>
-    </Compile>
     <Compile Include="ThisWorkbook.cs">
       <DependentUpon>testDataSource.xlsx</DependentUpon>
     </Compile>
@@ -142,6 +136,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="Sheet1.resx">
+      <DependentUpon>Sheet1.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="ExcelWorkbookTestDataSource_TemporaryKey.pfx" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -170,20 +167,20 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Sheet3.Designer.xml">
-      <DependentUpon>Sheet3.cs</DependentUpon>
-    </None>
+    <ProjectReference Include="..\MyExcelUtilities\MyExcelUtilities.csproj">
+      <Project>{B15306DF-703E-4983-85A0-78F1ED0ECB8C}</Project>
+      <Name>MyExcelUtilities</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v10.0\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets" />
   <ProjectExtensions>
     <VisualStudio>
       <FlavorProperties GUID="{BAA0C2D2-18E2-41B9-852F-F413020CAA33}">
-        <ProjectProperties HostName="testDataSource.xlsx" HostPackage="{B284B16A-C42C-4438-BDCD-B72F4AC43CFB}" OfficeVersion="12.0" VstxVersion="4.0" ApplicationType="XLS" Language="CS" TemplatesPath="VSTOTemplates" DebugInfoExeName="C:\Program Files\Microsoft Office\Office12\Excel.exe" DebugInfoCommandLine="&quot;[$OUTPUT]testDataSource.xlsx&quot;" />
+        <ProjectProperties HostName="testDataSource.xlsx" HostPackage="{B284B16A-C42C-4438-BDCD-B72F4AC43CFB}" OfficeVersion="12.0" VstxVersion="4.0" ApplicationType="XLS" Language="CS" TemplatesPath="VSTOTemplates" DebugInfoExeName="C:\Program Files (x86)\Microsoft Office\Office12\Excel.exe" DebugInfoCommandLine="&quot;[$OUTPUT]testDataSource.xlsx&quot;" />
         <Host Name="Excel Document" Path=".\testDataSource.xlsx" GeneratedCodeNamespace="ExcelWorkbookTestDataSource">
           <HostItem Name="Sheet1" Code="Sheet1.cs" CanonicalName="Sheet1" DisplayName="Sheet1" Blueprint="Sheet1.Designer.xml" GeneratedCode="Sheet1.Designer.cs" />
           <HostItem Name="Sheet2" Code="Sheet2.cs" CanonicalName="Sheet2" DisplayName="Sheet2" Blueprint="Sheet2.Designer.xml" GeneratedCode="Sheet2.Designer.cs" />
-          <HostItem Name="Sheet3" Code="Sheet3.cs" CanonicalName="Sheet3" DisplayName="Sheet3" Blueprint="Sheet3.Designer.xml" GeneratedCode="Sheet3.Designer.cs" />
           <HostItem Name="ThisWorkbook" Code="ThisWorkbook.cs" CanonicalName="ThisWorkbook" Blueprint="ThisWorkbook.Designer.xml" GeneratedCode="ThisWorkbook.Designer.cs" />
         </Host>
       </FlavorProperties>
