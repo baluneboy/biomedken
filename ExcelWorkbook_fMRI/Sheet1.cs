@@ -55,20 +55,20 @@ namespace ExcelWorkbook_fMRI
                 foreach (Microsoft.Office.Interop.Excel.Range row in area.Rows)
                 {
 
-                    // FIXME make switches for MRIcroN call configurable in XLSM file
+                    // TODO make switches for MRIcroN call configurable in XLSM file
                     string subj = row.Value2;
                     string sess = row.get_Offset(0, 1).Value2;
                     string task = row.get_Offset(0, 2).Value2;
 
-                    // TODO get basePath via "configTable[basePath]"
+                    // TODO get basePath from named range
                     string globPatAnat = @"y:\adat\" + subj + @"\" + sess + @"\study_*\results\" + task + @"\w2*WHOLEHEAD*.hdr";
                     FileGlobberFmriAnat fga = new FileGlobberFmriAnat(globPatAnat);
                     string anat = fga.FileAnat;
 
-                    // TODO get overlay via "Overlays" sheet db query mechanism
+                    // TODO get overlay,color from Tuple of"grabber"
                     string over = @" -c grayscale -o " + row.get_Offset(0, 5).Value2 + @" -b 50";
 
-                    // TODO get MRIcroNexe via "configTable[MRIcroNexe]"
+                    // TODO get MRIcroNexe from named range
                     Process p = new Process();
                     p.StartInfo.FileName = @"C:\Program Files\mricron\MRIcroN.exe";
                     p.StartInfo.Arguments = anat + over;
