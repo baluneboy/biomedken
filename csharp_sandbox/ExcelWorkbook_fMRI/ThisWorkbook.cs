@@ -33,15 +33,19 @@ namespace ExcelWorkbook_fMRI
         {
         }
 
-        // verify basePath exists
+        // Establish basePath & MRIcroNexe
         public void VerifyConfigPathFile()
         {
-            // Fill a DataTableGrabber's DataTable using named range "LookupTable" in this workbook
-            DataTableGrabber dtg = new DataTableGrabber(this.FullName, "LookupTable");
-            dtg.Show();
+            // get DataTable via DataTableGrabber using named range "LookupTable"
+            DataTableGrabber dtg = new DataTableGrabber(this.FullName, "LookupTable");  //dtg.Show();
+
+            // use dictionary method to get basePath & exe
+            Dictionary<string,Tuple<string,string>> d = dtg.ToDictionaryKT();
+            basePath = d["basePath"].Item1;
+            MRIcroNexe = d["MRIcroNexe"].Item2;
         }
 
-        // get the run sheet and set bool true
+        // get the run sheet and, if so, set bool true
         public void ActivateRunSheet()
         {
             Microsoft.Office.Interop.Excel._Worksheet wsRun = new Microsoft.Office.Interop.Excel.Worksheet();

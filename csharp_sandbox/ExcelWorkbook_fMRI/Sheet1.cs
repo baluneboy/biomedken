@@ -55,8 +55,6 @@ namespace ExcelWorkbook_fMRI
                 foreach (Microsoft.Office.Interop.Excel.Range row in area.Rows)
                 {
 
-                    //MessageBox.Show(row.Value2 + " " + row.get_Offset(0, 1).Value2);
-                    
                     // FIXME make switches for MRIcroN call configurable in XLSM file
                     string subj = row.Value2;
                     string sess = row.get_Offset(0, 1).Value2;

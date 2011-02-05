@@ -74,6 +74,10 @@ namespace MyExcelUtilities
                 OleDbDataAdapter dbaConfig = new OleDbDataAdapter("SELECT * FROM " + nr, dbConnection);
                 dbaConfig.Fill(dt);
             }
+            catch
+            {
+                MessageBox.Show(string.Format("problem with named range '{0}' in wb '{1}'",nr,wb));
+            }
             finally
             {
                 dbConnection.Close();
