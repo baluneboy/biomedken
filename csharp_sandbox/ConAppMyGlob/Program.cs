@@ -1,8 +1,9 @@
-﻿#define DEMO
-//#define MYTEST
+﻿//#define DEMO
+#define MYTEST
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using ClassLibraryFileGlobber;
@@ -15,10 +16,13 @@ namespace ConAppMyGlob
         {
 
 #if (!DEMO && MYTEST)
+            
             Console.WriteLine("MYTEST is defined");
-            FileGlobberFmriAnat FileGlobberFmriAnat = new FileGlobberFmriAnat(args[0]);
-            FileGlobberFmriAnat.print();
-            ((FileGlobber)FileGlobberFmriAnat).print();
+            
+            FileGlobber fg = new FileGlobber(@"Y:\adat\*\pre\study_*\results\*\*_pre_*_perhemiactvox.csv");
+            foreach (FileInfo fi in fg.MatchingFiles)
+                Console.WriteLine(fi.Name);
+
             Console.ReadLine();
 
 #elif (DEMO && !MYTEST)
