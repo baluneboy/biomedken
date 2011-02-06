@@ -16,30 +16,50 @@ namespace ExcelWorkbook_fMRI
     public partial class Sheet2
     {
         Microsoft.Office.Tools.Excel.NamedRange basePathRange;
-        Microsoft.Office.Tools.Excel.NamedRange mricronExeRange;
+        Microsoft.Office.Tools.Excel.NamedRange MRIcroNexeRange;
 
         private void Sheet2_Startup(object sender, System.EventArgs e)
         {
+            // This next line handled change events for entire sheet
             //this.Change += new Excel.DocEvents_ChangeEventHandler(Sheet2_Change);
+
+            // Use this method to handle changes to (and create) named ranges for basePath & MRIcroNexe file
             NotifyChanges();
+        }
+
+        private void Sheet2_Shutdown(object sender, System.EventArgs e)
+        {
+        }
+
+        private Microsoft.Office.Tools.Excel.NamedRange EstablishNamedRangeControl(string label, string address)
+        {
+            // TODO hunt around for label in first column rather than assuming it's at address given
+            // TODO do something more graceful than clobbering when label not found
+
+            // Verify label to the left; clobber it if needed
+            string leftLabel = this.Range[address].get_Offset(0, -1).Value2;
+            if (!leftLabel.Equals(label))
+            {
+                MessageBox.Show("was forced to clobber label for " + label);
+                this.Range[address].get_Offset(0, -1).Value2 = label;
+            }
+
+            // Return named range
+            return this.Controls.AddNamedRange(this.Range[address], label + "Range");
         }
 
         private void NotifyChanges()
         {
-            // TODO verify this is the range by checking if Offset(0,-1) is "basePath"
-            basePathRange = this.Controls.AddNamedRange(
-                this.Range["B1"], "basePathRange");
-            basePathRange.Change += new Microsoft.Office.Interop.Excel.
-                DocEvents_ChangeEventHandler(basePathRange_Change);
+            // basePath
+            basePathRange = EstablishNamedRangeControl("basePath", "B1");
+            basePathRange.Change += new Excel.DocEvents_ChangeEventHandler(basePathRange_Change);
 
-            // TODO verify this is the range by checking if Offset(0,-1) is "MRIcroNexe"
-            mricronExeRange = this.Controls.AddNamedRange(
-                this.Range["B2"], "mricronExeRange");
-            mricronExeRange.Change += new Microsoft.Office.Interop.Excel.
-                DocEvents_ChangeEventHandler(mricronExeRange_Change);
+            // MRIcroNexe
+            MRIcroNexeRange = EstablishNamedRangeControl("MRIcroNexe", "B2");
+            MRIcroNexeRange.Change += new Excel.DocEvents_ChangeEventHandler(MRIcroNexeRange_Change);
         }
 
-        void mricronExeRange_Change(Excel.Range Target)
+        void MRIcroNexeRange_Change(Excel.Range Target)
         {
             string cellAddress = Target.get_Address(missing, missing,
                 Microsoft.Office.Interop.Excel.XlReferenceStyle.xlA1,
@@ -57,10 +77,6 @@ namespace ExcelWorkbook_fMRI
             if (!Directory.Exists(Target.Value2))
                 MessageBox.Show("basePath in cell " + cellAddress + " changed to non-existing path!");
             // TODO offer directory seletion dialog (defaults to pwd)
-        }
-
-        private void Sheet2_Shutdown(object sender, System.EventArgs e)
-        {
         }
 
         public void MaybeComplain(bool blnComplain, string msgComplaint)
