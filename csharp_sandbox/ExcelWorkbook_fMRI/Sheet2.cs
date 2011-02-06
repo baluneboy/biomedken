@@ -25,6 +25,7 @@ namespace ExcelWorkbook_fMRI
 
             // Use this method to handle changes to (and create) named ranges for basePath & MRIcroNexe file
             NotifyChanges();
+
         }
 
         private void Sheet2_Shutdown(object sender, System.EventArgs e)
