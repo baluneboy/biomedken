@@ -27,13 +27,35 @@ namespace ExcelWorkbook_fMRI
         {
             ActivateRunSheet();
             VerifyConfigPathFile();
+            //TurnA1blue();
         }
 
         private void ThisWorkbook_Shutdown(object sender, System.EventArgs e)
         {
         }
 
-        // Establish basePath & MRIcroNexe
+        private void TurnA1blue()
+        {
+            Microsoft.Office.Tools.Excel.Worksheet mySheet = (Microsoft.Office.Tools.Excel.Worksheet)Sheets.get_Item("Sheet1");
+            MessageBox.Show(mySheet.Range["A1"].Interior.ColorIndex);
+            //mySheet.Range["A1"].Interior.ColorIndex = 3;
+
+            //fci = ActiveCell.Range.Font.ColorIndex
+            //ici = ActiveCell.Range.Interior.ColorIndex
+            //pat = ActiveCell.Range.Interior.Pattern
+            //nf = ActiveCell.Range.NumberFormat
+            //then change the value
+
+            //ActiveCell.Value2 = "new value"
+            //and afterwards reassign the format info again
+
+            //ActiveCell.Range.Font.ColorIndex = fci
+            //ActiveCell.Range.Interior.ColorIndex = ici
+            //ActiveCell.Range.Interior.Pattern = pat
+            //ActiveCell.Range.NumberFormat = nf
+        }
+
+        // establish basePath & MRIcroNexe
         public void VerifyConfigPathFile()
         {
             // get DataTable via DataTableGrabber using named range "LookupTable"
