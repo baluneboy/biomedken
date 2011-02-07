@@ -22,37 +22,35 @@ namespace ExcelWorkbook_fMRI
 
         public string basePath;
         public string MRIcroNexe;
+        public Excel._Worksheet wsRun = new Excel.Worksheet();
 
         private void ThisWorkbook_Startup(object sender, System.EventArgs e)
         {
             ActivateRunSheet();
             VerifyConfigPathFile();
-            //TurnA1blue();
+            InitializeIndicators();
         }
 
         private void ThisWorkbook_Shutdown(object sender, System.EventArgs e)
         {
         }
 
-        private void TurnA1blue()
+        private void InitializeIndicators()
         {
-            Microsoft.Office.Tools.Excel.Worksheet mySheet = (Microsoft.Office.Tools.Excel.Worksheet)Sheets.get_Item("Sheet1");
-            MessageBox.Show(mySheet.Range["A1"].Interior.ColorIndex);
+
+            // Add table headers going cell by cell.
+            wsRun.Cells[1, 1] = "basePath XX";
+            wsRun.Cells[1, 2] = "MRIcroNexe XX";
+            wsRun.Cells[1, 3] = "NOT READY";
+
+            // Format A1:C1 as bold, red [with vertical alignment = center just to show it can be done, I guess]
+            wsRun.get_Range("A1","C1").Font.Bold = true;
+            wsRun.get_Range("A1", "C1").Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Red);
+            wsRun.get_Range("C1").VerticalAlignment = Excel.XlVAlign.xlVAlignCenter;
+
+            //MessageBox.Show(mySheet.Range["A1"].Interior.ColorIndex);
             //mySheet.Range["A1"].Interior.ColorIndex = 3;
 
-            //fci = ActiveCell.Range.Font.ColorIndex
-            //ici = ActiveCell.Range.Interior.ColorIndex
-            //pat = ActiveCell.Range.Interior.Pattern
-            //nf = ActiveCell.Range.NumberFormat
-            //then change the value
-
-            //ActiveCell.Value2 = "new value"
-            //and afterwards reassign the format info again
-
-            //ActiveCell.Range.Font.ColorIndex = fci
-            //ActiveCell.Range.Interior.ColorIndex = ici
-            //ActiveCell.Range.Interior.Pattern = pat
-            //ActiveCell.Range.NumberFormat = nf
         }
 
         // establish basePath & MRIcroNexe
@@ -70,10 +68,10 @@ namespace ExcelWorkbook_fMRI
         // get the run sheet and, if so, set bool true
         public void ActivateRunSheet()
         {
-            Microsoft.Office.Interop.Excel._Worksheet wsRun = new Microsoft.Office.Interop.Excel.Worksheet();
+            
             bool hasRun = false;
             // HACK there has got to be a better way than looping to get this info!?
-            foreach (Microsoft.Office.Interop.Excel.Worksheet ws in Globals.ThisWorkbook.Sheets)
+            foreach (Excel.Worksheet ws in Globals.ThisWorkbook.Sheets)
             {
                 if (ws.Name.Equals("run", StringComparison.OrdinalIgnoreCase))
                 {

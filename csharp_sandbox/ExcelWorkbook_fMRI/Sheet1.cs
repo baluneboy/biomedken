@@ -32,8 +32,15 @@ namespace ExcelWorkbook_fMRI
             #endregion
 
             this.BeforeDoubleClick += new
-                Microsoft.Office.Interop.Excel.DocEvents_BeforeDoubleClickEventHandler(
-                Sheet_BeforeDoubleClick);
+                Excel.DocEvents_BeforeDoubleClickEventHandler(Sheet_BeforeDoubleClick);
+
+            //Excel.Sheets sheets = (Excel.Sheets)Globals.ThisWorkbook.Worksheets;
+            //Worksheet sh = sheets["run"];
+            //sh.Activate();
+            //MessageBox.Show("activated " + sh.Name);
+
+            //SomehowCanWeInvoke.InitializeIndicators();
+
         }
 
         private void Sheet1_Shutdown(object sender, System.EventArgs e)
@@ -41,18 +48,17 @@ namespace ExcelWorkbook_fMRI
         }
 
         // Event handler for THIS sheet
-        void Sheet_BeforeDoubleClick(
-            Microsoft.Office.Interop.Excel.Range Target, ref bool Cancel)
+        void Sheet_BeforeDoubleClick(Excel.Range Target, ref bool Cancel)
         {
             //SplashScreenForm sf = new SplashScreenForm();
-            Cancel = true;
+            Cancel = true; // this affects how double-click behavior goes AFTER this handler
             //MessageBox.Show("Double click");
-            Microsoft.Office.Interop.Excel.Range visibleCells = this.AutoFilter.Range;
-            Microsoft.Office.Interop.Excel.Range visibleRows = visibleCells.get_Offset(1, 0).get_Resize(visibleCells.Rows.Count - 1, 1).SpecialCells(Microsoft.Office.Interop.Excel.XlCellType.xlCellTypeVisible);
-            foreach (Microsoft.Office.Interop.Excel.Range area in visibleRows.Areas)
+            Excel.Range visibleCells = this.AutoFilter.Range;
+            Excel.Range visibleRows = visibleCells.get_Offset(1, 0).get_Resize(visibleCells.Rows.Count - 1, 1).SpecialCells(Microsoft.Office.Interop.Excel.XlCellType.xlCellTypeVisible);
+            foreach (Excel.Range area in visibleRows.Areas)
             {
                 // process each "visibly-filtered" row
-                foreach (Microsoft.Office.Interop.Excel.Range row in area.Rows)
+                foreach (Excel.Range row in area.Rows)
                 {
 
                     // TODO make switches for MRIcroN call configurable in XLSM file
