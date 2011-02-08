@@ -1,15 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.IO;
-using System.Linq;
-using System.Text;
+﻿using System.IO;
 using System.Windows.Forms;
-using System.Xml.Linq;
-using Microsoft.Office.Tools.Excel;
-using Microsoft.VisualStudio.Tools.Applications.Runtime;
 using Excel = Microsoft.Office.Interop.Excel;
-using Office = Microsoft.Office.Core;
 
 namespace ExcelWorkbook_fMRI
 {
@@ -25,6 +16,9 @@ namespace ExcelWorkbook_fMRI
 
             // Use this method to handle changes to (and create) named ranges for basePath & MRIcroNexe file
             NotifyChanges();
+
+            // Use Globals to get access to ThisWorkbook (or SheetN)
+            Globals.ThisWorkbook.InitializeIndicators(System.Drawing.Color.Blue);
 
         }
 
@@ -66,8 +60,11 @@ namespace ExcelWorkbook_fMRI
                 Microsoft.Office.Interop.Excel.XlReferenceStyle.xlA1,
                 missing, missing);
             if (!File.Exists(Target.Value2))
+            {
                 MessageBox.Show("MRIcroNexe in cell " + cellAddress + " changed to non-existing file!");
-            // TODO offer file dialog
+
+                // TODO offer file dialog
+            }
         }
 
         void basePathRange_Change(Excel.Range Target)
