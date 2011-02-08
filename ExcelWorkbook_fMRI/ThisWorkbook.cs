@@ -45,14 +45,18 @@ namespace ExcelWorkbook_fMRI
                     MessageBox.Show("gracefully handle unexpected " + str);
                     break;
             }
-            wsRun.Cells[r,c].Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Red);
+            wsRun.Cells[r, c].Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Red);
             wsRun.Cells[r, c].Font.Bold = true;
         }
 
         public void InitializeIndicators(System.Drawing.Color c)
         {
+            FormattedRange frBasePath = new FormattedRange(wsRun.Cells[1, 1]);
+            FormattedRange frMRIcroNexe = new FormattedRange(wsRun.Cells[1, 2]);
+            FormattedRange frReady = new FormattedRange(wsRun.Cells[1, 3]);
 
             // Add indicators in A1, B1 and C1
+            frBasePath.
             wsRun.Cells[1, 1] = "basePath";
             wsRun.Cells[1, 2] = "MRIcroNexe";
             wsRun.Cells[1, 3] = "READY";
@@ -60,7 +64,7 @@ namespace ExcelWorkbook_fMRI
             // Format as "not found" (at least not yet)
             FormatAsNotFound("basePath");
             FormatAsNotFound("MRIcroNexe");
-            FormatAsNotFound("READY");
+            fr.Good();
 
             // Format A1:C1 as bold [with vertical alignment = center just to show it can be done, I guess]
             wsRun.get_Range("C1").VerticalAlignment = Excel.XlVAlign.xlVAlignCenter;
@@ -77,7 +81,7 @@ namespace ExcelWorkbook_fMRI
             DataTableGrabber dtg = new DataTableGrabber(this.FullName, "LookupTable");  //dtg.Show();
 
             // use dictionary method to get basePath & exe
-            Dictionary<string,Tuple<string,string>> d = dtg.ToDictionaryKT();
+            Dictionary<string, Tuple<string, string>> d = dtg.ToDictionaryKT();
             basePath = d["basePath"].Item1;
             MRIcroNexe = d["MRIcroNexe"].Item2;
         }
@@ -85,7 +89,7 @@ namespace ExcelWorkbook_fMRI
         // get the run sheet and, if so, set bool true
         public void ActivateRunSheet()
         {
-            
+
             bool hasRun = false;
             // HACK there has got to be a better way than looping to get this info!?
             foreach (Excel.Worksheet ws in Globals.ThisWorkbook.Sheets)

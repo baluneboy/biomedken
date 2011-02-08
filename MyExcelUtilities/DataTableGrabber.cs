@@ -29,7 +29,7 @@ namespace MyExcelUtilities
             dt = FillDataTableFromExcelFileNamedRange(workbookname, namedrange);
         }
 
-        // Class method to display special dictionary
+        // method to display special dictionary
         public void Show()
         {
             // Use var keyword to enumerate on "special KeyTuple" dictionary
@@ -42,7 +42,7 @@ namespace MyExcelUtilities
             }
         }
 
-        // Class method to convert to dictionary like (key,tuple<string,string>)
+        // method to convert to dictionary like (key,tuple<string,string>)
         public Dictionary<string, Tuple<string, string>> ToDictionaryKT()
         {
             // Create a well-formed dictionary
@@ -55,7 +55,7 @@ namespace MyExcelUtilities
             return d;
         }
 
-        // Class method to get namedrange from excel workbook
+        // method to get namedrange from excel workbook
         public static DataTable FillDataTableFromExcelFileNamedRange(string wb, string nr)
         {
             // Initialize data table
