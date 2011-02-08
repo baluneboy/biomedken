@@ -56,6 +56,7 @@ namespace TableEditor
 		private DataTable			data;
 		private MySqlDataAdapter	da;
 		private System.Windows.Forms.DataGrid dataGrid;
+        private Button button1;
 		private MySqlCommandBuilder	cb;
 
 		public Form1()
@@ -105,6 +106,7 @@ namespace TableEditor
             this.updateBtn = new System.Windows.Forms.Button();
             this.databaseList = new System.Windows.Forms.ComboBox();
             this.label5 = new System.Windows.Forms.Label();
+            this.button1 = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGrid)).BeginInit();
             this.SuspendLayout();
             // 
@@ -189,13 +191,13 @@ namespace TableEditor
             this.dataGrid.HeaderForeColor = System.Drawing.SystemColors.ControlText;
             this.dataGrid.Location = new System.Drawing.Point(13, 199);
             this.dataGrid.Name = "dataGrid";
-            this.dataGrid.Size = new System.Drawing.Size(534, 247);
+            this.dataGrid.Size = new System.Drawing.Size(1208, 449);
             this.dataGrid.TabIndex = 8;
             // 
             // updateBtn
             // 
             this.updateBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.updateBtn.Location = new System.Drawing.Point(427, 152);
+            this.updateBtn.Location = new System.Drawing.Point(1101, 152);
             this.updateBtn.Name = "updateBtn";
             this.updateBtn.Size = new System.Drawing.Size(120, 34);
             this.updateBtn.TabIndex = 9;
@@ -219,10 +221,21 @@ namespace TableEditor
             this.label5.TabIndex = 10;
             this.label5.Text = "Databases";
             // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(824, 65);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(228, 79);
+            this.button1.TabIndex = 12;
+            this.button1.Text = "button1";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
             // Form1
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(8, 19);
-            this.ClientSize = new System.Drawing.Size(560, 453);
+            this.ClientSize = new System.Drawing.Size(1234, 655);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.databaseList);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.updateBtn);
@@ -343,5 +356,36 @@ namespace TableEditor
 			da.Update( changes );
 			data.AcceptChanges();
 		}
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            if (conn != null)
+				conn.Close();
+	
+			string connStr = String.Format("server={0};user id={1}; password={2}; database=ken; pooling=false",
+				server.Text, userid.Text, password.Text );
+
+            try
+            {
+                conn = new MySqlConnection(connStr);
+                conn.Open();
+
+                int LastOne = 11;
+                for (int i = 1; i < LastOne; i++)
+                {
+                    string str = string.Format("insert into mylog (`job`,`label`,`current_iteration`,`total_iterations`) values ('myJob','myLabel',{0},{1});", i, LastOne);
+                    MySqlCommand cmd = new MySqlCommand(str, conn);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            catch (MySqlException ex)
+            {
+                MessageBox.Show("Error connecting to the server: " + ex.Message);
+            }
+            finally
+            {
+                conn.Close();
+            }
+        }
 	}
 }
