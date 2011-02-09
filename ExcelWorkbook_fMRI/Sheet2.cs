@@ -18,7 +18,7 @@ namespace ExcelWorkbook_fMRI
             NotifyChanges();
 
             // Use Globals to get access to ThisWorkbook (or SheetN)
-            Globals.ThisWorkbook.InitializeIndicators(System.Drawing.Color.Blue);
+            //Globals.ThisWorkbook.InitializeIndicators();
 
         }
 

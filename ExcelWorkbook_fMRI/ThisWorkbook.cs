@@ -18,60 +18,24 @@ namespace ExcelWorkbook_fMRI
         {
             ActivateRunSheet();
             VerifyConfigPathFile();
-            InitializeIndicators(System.Drawing.Color.Red);
+            //InitializeIndicators();
         }
 
         private void ThisWorkbook_Shutdown(object sender, System.EventArgs e)
         {
         }
 
-        public void FormatAsNotFound(string str)
+        public void InitializeIndicators()
         {
-            int r = 1;
-            int c = 9;
-            switch (str)
-            {
-                case "basePath":
-                    c = 1;
-                    break;
-                case "MRIcroNexe":
-                    c = 2;
-                    break;
-                case "READY":
-                    c = 3;
-                    break;
-                default:
-                    // TODO gracefully handle unexpected case
-                    MessageBox.Show("gracefully handle unexpected " + str);
-                    break;
-            }
-            wsRun.Cells[r, c].Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Red);
-            wsRun.Cells[r, c].Font.Bold = true;
-        }
-
-        public void InitializeIndicators(System.Drawing.Color c)
-        {
-            FormattedRange frBasePath = new FormattedRange(wsRun.Cells[1,1]);
-            Excel.Range erMRIcroNexe = wsRun.Cells[1, 2];
+            RangeFormatter rfBasePath = new RangeFormatter(wsRun.Cells[1, 1]);
+            RangeFormatter rfMRIcroNexe = new RangeFormatter(wsRun.Cells[1, 2]);
+            RangeFormatter rfReady = new RangeFormatter(wsRun.Cells[1, 3]);
 
             // Add indicators in A1, B1 and C1
-            MessageBox.Show("BEFORE Good: " + frBasePath.Column.ToString());
-            frBasePath.Good();
-            MessageBox.Show("AFTER Good: " + frBasePath.Column.ToString());
-
-            erMRIcroNexe.Value2 = "MRIcroNexe";
-            wsRun.Cells[1, 3] = "READY";
-
-            // Format as "not found" (at least not yet)
-            //FormatAsNotFound("basePath");
-            //FormatAsNotFound("MRIcroNexe");
-
-            // Format A1:C1 as bold [with vertical alignment = center just to show it can be done, I guess]
-            wsRun.get_Range("C1").VerticalAlignment = Excel.XlVAlign.xlVAlignCenter;
-
-            //MessageBox.Show(mySheet.Range["A1"].Interior.ColorIndex);
-            //mySheet.Range["A1"].Interior.ColorIndex = 3;
-
+            rfBasePath.Bad();
+            rfMRIcroNexe.Bad();
+            rfReady.Bad();
+            rfReady.Ready();
         }
 
         // establish basePath & MRIcroNexe
