@@ -52,20 +52,19 @@ namespace ExcelWorkbook_fMRI
         public void InitializeIndicators(System.Drawing.Color c)
         {
             FormattedRange frBasePath = new FormattedRange(wsRun.Cells[1,1]);
-            FormattedRange frMRIcroNexe = new FormattedRange();
-            FormattedRange frReady = new FormattedRange();
+            Excel.Range erMRIcroNexe = wsRun.Cells[1, 2];
 
             // Add indicators in A1, B1 and C1
-            frBasePath.Cells[1, 1] = "basePath";
-            frBasePath.Bad();
-            
-            wsRun.Cells[1, 2] = "MRIcroNexe";
+            MessageBox.Show("BEFORE Good: " + frBasePath.Column.ToString());
+            frBasePath.Good();
+            MessageBox.Show("AFTER Good: " + frBasePath.Column.ToString());
+
+            erMRIcroNexe.Value2 = "MRIcroNexe";
             wsRun.Cells[1, 3] = "READY";
 
             // Format as "not found" (at least not yet)
-            FormatAsNotFound("basePath");
-            FormatAsNotFound("MRIcroNexe");
-            fr.Good();
+            //FormatAsNotFound("basePath");
+            //FormatAsNotFound("MRIcroNexe");
 
             // Format A1:C1 as bold [with vertical alignment = center just to show it can be done, I guess]
             wsRun.get_Range("C1").VerticalAlignment = Excel.XlVAlign.xlVAlignCenter;
