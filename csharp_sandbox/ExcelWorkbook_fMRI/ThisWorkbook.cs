@@ -51,13 +51,14 @@ namespace ExcelWorkbook_fMRI
 
         public void InitializeIndicators(System.Drawing.Color c)
         {
-            FormattedRange frBasePath = new FormattedRange(wsRun.Cells[1, 1]);
-            FormattedRange frMRIcroNexe = new FormattedRange(wsRun.Cells[1, 2]);
-            FormattedRange frReady = new FormattedRange(wsRun.Cells[1, 3]);
+            FormattedRange frBasePath = new FormattedRange(wsRun.Cells[1,1]);
+            FormattedRange frMRIcroNexe = new FormattedRange();
+            FormattedRange frReady = new FormattedRange();
 
             // Add indicators in A1, B1 and C1
-            frBasePath.
-            wsRun.Cells[1, 1] = "basePath";
+            frBasePath.Cells[1, 1] = "basePath";
+            frBasePath.Bad();
+            
             wsRun.Cells[1, 2] = "MRIcroNexe";
             wsRun.Cells[1, 3] = "READY";
 
