@@ -1,5 +1,5 @@
-﻿//#define DEMO
-#define MYTEST
+﻿#define DEMO
+//#define MYTEST
 
 using System;
 using System.Collections.Generic;

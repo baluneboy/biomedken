@@ -105,12 +105,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ClassLibraryDemo\ClassLibraryDemo.csproj">
-      <Project>{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}</Project>
-      <Name>ClassLibraryDemo</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
       <Visible>False</Visible>
       <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
@@ -126,6 +120,12 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FileGlobberClassLibrary\FileGlobberClassLibrary.csproj">
+      <Project>{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}</Project>
+      <Name>FileGlobberClassLibrary</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

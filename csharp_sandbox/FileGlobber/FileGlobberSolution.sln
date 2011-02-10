@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileGlobberProject", "FileGlobberProject.csproj", "{C01F0C84-9ECF-49C3-8F8B-392A5AF88964}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassLibraryDemo", "..\ClassLibraryDemo\ClassLibraryDemo.csproj", "{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinAppMyGlob", "..\WinAppMyGlob\WinAppMyGlob.csproj", "{54ECBBB8-3C2A-4DFA-AA94-CD6BFE912AE3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MySplash", "..\MySplash\MySplash.csproj", "{A9519535-A59C-4A28-9F96-5EC5CE46272B}"
@@ -20,6 +18,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelAutomationClient", "..\ExcelAutomationClient\ExcelAutomationClient.csproj", "{34BC788E-6A6E-44CA-AB00-7BB7ED7925D4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableEditor", "..\MySQL_Example\TableEditor.csproj", "{EE6AE06F-6BAC-4265-89B3-9CB5099D2D70}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileGlobberClassLibrary", "..\FileGlobberClassLibrary\FileGlobberClassLibrary.csproj", "{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,16 +41,6 @@ Global
 		{C01F0C84-9ECF-49C3-8F8B-392A5AF88964}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{C01F0C84-9ECF-49C3-8F8B-392A5AF88964}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{C01F0C84-9ECF-49C3-8F8B-392A5AF88964}.Release|x86.ActiveCfg = Release|Any CPU
-		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Release|x86.ActiveCfg = Release|Any CPU
 		{54ECBBB8-3C2A-4DFA-AA94-CD6BFE912AE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{54ECBBB8-3C2A-4DFA-AA94-CD6BFE912AE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{54ECBBB8-3C2A-4DFA-AA94-CD6BFE912AE3}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
@@ -133,6 +123,16 @@ Global
 		{EE6AE06F-6BAC-4265-89B3-9CB5099D2D70}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{EE6AE06F-6BAC-4265-89B3-9CB5099D2D70}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{EE6AE06F-6BAC-4265-89B3-9CB5099D2D70}.Release|x86.ActiveCfg = Release|Any CPU
+		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
