@@ -187,9 +187,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ClassLibraryDemo\ClassLibraryDemo.csproj">
+    <ProjectReference Include="..\FileGlobberClassLibrary\FileGlobberClassLibrary.csproj">
       <Project>{C0D42747-A8A0-4ACC-9059-DCCA4E308DF1}</Project>
-      <Name>ClassLibraryDemo</Name>
+      <Name>FileGlobberClassLibrary</Name>
     </ProjectReference>
     <ProjectReference Include="..\MyExcelUtilities\MyExcelUtilities.csproj">
       <Project>{B15306DF-703E-4983-85A0-78F1ED0ECB8C}</Project>
@@ -204,7 +204,7 @@
   <ProjectExtensions>
     <VisualStudio>
       <FlavorProperties GUID="{BAA0C2D2-18E2-41B9-852F-F413020CAA33}">
-        <ProjectProperties HostName="fmri_customized.xlsm" HostPackage="{B284B16A-C42C-4438-BDCD-B72F4AC43CFB}" OfficeVersion="12.0" VstxVersion="4.0" ApplicationType="XLS" Language="CS" TemplatesPath="VSTOTemplates" DebugInfoExeName="C:\Program Files (x86)\Microsoft Office\Office12\Excel.exe" DebugInfoCommandLine="&quot;[$OUTPUT]fmri_customized.xlsm&quot;" />
+        <ProjectProperties HostName="fmri_customized.xlsm" HostPackage="{B284B16A-C42C-4438-BDCD-B72F4AC43CFB}" OfficeVersion="12.0" VstxVersion="4.0" ApplicationType="XLS" Language="CS" TemplatesPath="VSTOTemplates" DebugInfoExeName="C:\Program Files\Microsoft Office\Office12\Excel.exe" DebugInfoCommandLine="&quot;[$OUTPUT]fmri_customized.xlsm&quot;" />
         <Host Name="Excel Document" Path=".\fmri_customized.xlsm" GeneratedCodeNamespace="ExcelWorkbook_fMRI">
           <HostItem Name="Sheet3" Code="Sheet1.cs" CanonicalName="Sheet3" DisplayName="run" Blueprint="Sheet1.Designer.xml" GeneratedCode="Sheet1.Designer.cs" />
           <HostItem Name="Sheet5" Code="Sheet2.cs" CanonicalName="Sheet5" DisplayName="configTable" Blueprint="Sheet2.Designer.xml" GeneratedCode="Sheet2.Designer.cs" />
