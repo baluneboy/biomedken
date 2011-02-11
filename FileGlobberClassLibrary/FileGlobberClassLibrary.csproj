@@ -71,6 +71,7 @@
     <Compile Include="ClassInheritance.cs" />
     <Compile Include="FileGlobberFmriAnat.cs" />
     <Compile Include="FileGlobber.cs" />
+    <Compile Include="FileSystemInfoExtender.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GlobParts.cs" />
   </ItemGroup>
