@@ -19,22 +19,9 @@ namespace ConAppMyGlob
 #if (!DEMO && MYTEST)
 
             Console.WriteLine("MYTEST is defined");
-
-            //FileGlobber fg = new FileGlobber(@"Y:\adat\*\pre\study_*\results\*\*_pre_*_perhemiactvox.csv");
-            //foreach (FileInfo fi in fg.MatchingFiles)
-            //    Console.WriteLine(fi.Name);
-
-            //  Loop through all the files in dir
-            foreach (string entry in Directory.GetFiles(@"C:\temp\trash"))
-            {
-                FileInfo fi = new FileInfo(entry);
-
-                //  Show this entry's type, name, and creation date.
-                Console.WriteLine("{0} entry {1} was created on {2:D}", fi.GetMyType(), fi.FullName, fi.CreationTime);
-            }
-            FileInfo fi2 = new FileInfo(@"c:\temp");
-            Console.WriteLine("{0} entry {1} was created on {2:D}", fi2.GetMyType(), fi2.FullName, fi2.CreationTime);
-
+            FileGlobber fg = new FileGlobber(@"Y:\adat\*\pre\study_*\results\*\*_pre_*_perhemiactvox.csv");
+            foreach (FileInfo fi in fg.MatchingFiles)
+                Console.WriteLine(fi.Name);
             Console.ReadLine();
 
 #elif (DEMO && !MYTEST)

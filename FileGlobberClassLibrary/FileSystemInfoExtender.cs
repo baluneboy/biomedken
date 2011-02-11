@@ -11,17 +11,17 @@ namespace ClassLibraryFileGlobber
     {
 
         // Extension method for FileSystemInfo to get type (file or directory)
-        public static string GetMyType(this FileSystemInfo fsi)
+        public static bool IsDir(this FileSystemInfo fsi)
         {
             //  Assume that this entry is a file.
-            string str = "File";
+            bool b = false;
 
             // Determine if entry is really a directory
             if ((fsi.Attributes & FileAttributes.Directory) == FileAttributes.Directory)
             {
-                str = "Directory";
+                b = true;
             }
-            return str;
+            return b;
         }
 
         #region UNTESTED 3RD PARTY CODE
