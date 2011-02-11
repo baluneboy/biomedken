@@ -1,5 +1,6 @@
-﻿#define DEMO
+﻿//#define DEMO
 //#define MYTEST
+//#define MYDEMO
 
 using System;
 using System.Collections.Generic;
@@ -16,12 +17,23 @@ namespace ConAppMyGlob
         {
 
 #if (!DEMO && MYTEST)
-            
+
             Console.WriteLine("MYTEST is defined");
-            
-            FileGlobber fg = new FileGlobber(@"Y:\adat\*\pre\study_*\results\*\*_pre_*_perhemiactvox.csv");
-            foreach (FileInfo fi in fg.MatchingFiles)
-                Console.WriteLine(fi.Name);
+
+            //FileGlobber fg = new FileGlobber(@"Y:\adat\*\pre\study_*\results\*\*_pre_*_perhemiactvox.csv");
+            //foreach (FileInfo fi in fg.MatchingFiles)
+            //    Console.WriteLine(fi.Name);
+
+            //  Loop through all the files in dir
+            foreach (string entry in Directory.GetFiles(@"C:\temp\trash"))
+            {
+                FileInfo fi = new FileInfo(entry);
+
+                //  Show this entry's type, name, and creation date.
+                Console.WriteLine("{0} entry {1} was created on {2:D}", fi.GetMyType(), fi.FullName, fi.CreationTime);
+            }
+            FileInfo fi2 = new FileInfo(@"c:\temp");
+            Console.WriteLine("{0} entry {1} was created on {2:D}", fi2.GetMyType(), fi2.FullName, fi2.CreationTime);
 
             Console.ReadLine();
 
@@ -50,8 +62,36 @@ namespace ConAppMyGlob
 
 #elif (DEMO && MYTEST)
             Console.WriteLine("DEMO and MYTEST are defined");
+#elif (MYDEMO)
+    string tempPath = @"c:\temp\trash\todelete";
+    System.IO.DirectoryInfo targ = new System.IO.DirectoryInfo(tempPath);
+    bool success = false;
+    foreach (System.IO.FileSystemInfo fsi in targ.IterateFiles(false))
+    {
+    Console.Write(fsi.FullName);
+    Console.Write(" Attributes:" + fsi.Attributes.ToString("f"));
+    if (!fsi.Attributes.ContainsAnyOf(
+            System.IO.FileAttributes.System | 
+            System.IO.FileAttributes.Temporary))
+    {
+        success = true;
+        try
+        {
+        fsi.Delete();
+        }
+        catch (Exception ex)
+        {
+        success = false;
+        Console.Write(ex.ToString());
+        }
+        Console.Write(success ? " Deleted" : " Could not Delete!");
+    }
+    Console.WriteLine("");
+    }
+    Console.ReadLine();
+
 #else
-            Console.WriteLine("DEMO and MYTEST are not defined");
+            Console.WriteLine("nothing to do");
 #endif
 
         }
