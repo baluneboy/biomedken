@@ -1,5 +1,5 @@
-﻿//#define DEMO
-//#define MYTEST
+﻿#define DEMO
+#define MYTEST
 //#define MYDEMO
 
 using System;
@@ -13,6 +13,7 @@ namespace ConAppMyGlob
 {
     class Program
     {
+        [STAThreadAttribute]
         static void Main(string[] args)
         {
 
@@ -49,6 +50,10 @@ namespace ConAppMyGlob
 
 #elif (DEMO && MYTEST)
             Console.WriteLine("DEMO and MYTEST are defined");
+            BasePath bp = new BasePath(@"c:\tempork","do something crazy here");
+            Console.WriteLine("got this for path: " + bp.FixPath);
+            Console.ReadLine();
+
 #elif (MYDEMO)
     string tempPath = @"c:\temp\trash\todelete";
     System.IO.DirectoryInfo targ = new System.IO.DirectoryInfo(tempPath);

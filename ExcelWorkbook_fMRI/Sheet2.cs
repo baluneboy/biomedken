@@ -18,7 +18,7 @@ namespace ExcelWorkbook_fMRI
             NotifyChanges();
 
             // Use Globals to get access to ThisWorkbook (or SheetN)
-            //Globals.ThisWorkbook.InitializeIndicators();
+            //Globals.ThisWorkbook.UpdateIndicators();
 
         }
 
@@ -46,11 +46,11 @@ namespace ExcelWorkbook_fMRI
         private void NotifyChanges()
         {
             // basePath
-            basePathRange = EstablishNamedRangeControl("basePath", "B1");
+            basePathRange = EstablishNamedRangeControl("basePath", "B2");
             basePathRange.Change += new Excel.DocEvents_ChangeEventHandler(basePathRange_Change);
 
             // MRIcroNexe
-            MRIcroNexeRange = EstablishNamedRangeControl("MRIcroNexe", "B2");
+            MRIcroNexeRange = EstablishNamedRangeControl("MRIcroNexe", "B3");
             MRIcroNexeRange.Change += new Excel.DocEvents_ChangeEventHandler(MRIcroNexeRange_Change);
         }
 

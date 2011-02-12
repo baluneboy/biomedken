@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
 using MyExcelUtilities;
+using ClassLibraryFileGlobber;
 
 namespace ExcelWorkbook_fMRI
 {
@@ -10,47 +12,39 @@ namespace ExcelWorkbook_fMRI
     public partial class ThisWorkbook
     {
 
-        public string basePath;
-        public string MRIcroNexe;
         public Excel._Worksheet wsRun = new Excel.Worksheet();
 
         private void ThisWorkbook_Startup(object sender, System.EventArgs e)
         {
+            if (Debugger.IsAttached)
+            {
+                MessageBox.Show("HOME USAGE");
+                Excel.Range HOMEBP = Globals.Sheet2.Cells[2, 2];
+                HOMEBP.Value = @"F:\Data\";
+            }
             ActivateRunSheet();
-            VerifyConfigPathFile();
-            //InitializeIndicators();
+            //VerifyConfigPathFile();
+            //UpdateIndicators();
         }
 
         private void ThisWorkbook_Shutdown(object sender, System.EventArgs e)
         {
         }
 
-        public void InitializeIndicators()
+        public void UpdateIndicators()
         {
-            RangeFormatter rfBasePath = new RangeFormatter(wsRun.Cells[1, 1]);
-            RangeFormatter rfMRIcroNexe = new RangeFormatter(wsRun.Cells[1, 2]);
-            RangeFormatter rfReady = new RangeFormatter(wsRun.Cells[1, 3]);
+            RangeFormatter rfReady = new RangeFormatter(wsRun.Cells[1, 1]);
+            RangeFormatter rfBasePath = new RangeFormatter(wsRun.Cells[1, 2]);
+            RangeFormatter rfMRIcroNexe = new RangeFormatter(wsRun.Cells[1, 3]);
 
-            // Add indicators in A1, B1 and C1
+            // modify indicators along top row of run sheet
             rfBasePath.Bad();
             rfMRIcroNexe.Bad();
-            rfReady.Bad();
-            rfReady.Ready();
+            rfReady.Dim();
+            //rfReady.Ready();
         }
-
-        // establish basePath & MRIcroNexe
-        public void VerifyConfigPathFile()
-        {
-            // get DataTable via DataTableGrabber using named range "LookupTable"
-            DataTableGrabber dtg = new DataTableGrabber(this.FullName, "LookupTable");  //dtg.Show();
-
-            // use dictionary method to get basePath & exe
-            Dictionary<string, Tuple<string, string>> d = dtg.ToDictionaryKT();
-            basePath = d["basePath"].Item1;
-            MRIcroNexe = d["MRIcroNexe"].Item2;
-        }
-
-        // get the run sheet and, if so, set bool true
+                
+        // activate run sheet (hopefully)
         public void ActivateRunSheet()
         {
 

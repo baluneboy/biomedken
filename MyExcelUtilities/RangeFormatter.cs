@@ -35,6 +35,12 @@ namespace MyExcelUtilities
             rng.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Green);
         }
 
+        // method to format as "dim"
+        public void Dim()
+        {
+            rng.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Gray);
+        }
+
         // method to format as "bad"
         public void Bad()
         {
