@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace ClassLibraryFileGlobber
 {
@@ -27,8 +25,7 @@ namespace ClassLibraryFileGlobber
         #region UNTESTED 3RD PARTY CODE
         // Iterate all files in a path, with 
         // an option to recurse through subdirectories
-        public static IEnumerable<FileSystemInfo> IterateFiles(
-            this FileSystemInfo targ, bool recurse)
+        public static IEnumerable<FileSystemInfo> IterateFiles(this FileSystemInfo targ, bool recurse)
         {
             if (targ == null)
                 throw new ArgumentNullException("targ");
@@ -55,8 +52,7 @@ namespace ClassLibraryFileGlobber
 
         // Iterate all directories in a path, with
         // an option to recurse through subdirectories
-        public static IEnumerable<FileSystemInfo> IterateDirectories(
-            this DirectoryInfo diTarg, bool recurse)
+        public static IEnumerable<FileSystemInfo> IterateDirectories(this DirectoryInfo diTarg, bool recurse)
         {
             if (diTarg == null)
                 throw new ArgumentNullException("diTarg");
@@ -80,22 +76,19 @@ namespace ClassLibraryFileGlobber
     public static class FileAttributesExtender
     {
         // Return lhs flags plus rhs flags
-        public static FileAttributes Union(
-            this FileAttributes lhs, FileAttributes rhs)
+        public static FileAttributes Union(this FileAttributes lhs, FileAttributes rhs)
         {
             return lhs | rhs;
         }
 
         // Return flags common to lhs and rhs
-        public static FileAttributes Intersection(
-             this FileAttributes lhs, FileAttributes rhs)
+        public static FileAttributes Intersection(this FileAttributes lhs, FileAttributes rhs)
         {
             return lhs & rhs;
         }
 
         // Return lhs flags minus rhs flags
-        public static FileAttributes Difference(
-             this FileAttributes lhs, FileAttributes rhs)
+        public static FileAttributes Difference(this FileAttributes lhs, FileAttributes rhs)
         {
             FileAttributes common = lhs & rhs;
             int res = (int)lhs - (int)common;
@@ -103,16 +96,14 @@ namespace ClassLibraryFileGlobber
         }
 
         // Return true if lhs contains all the flags within rhs
-        public static bool Contains(
-             this FileAttributes lhs, FileAttributes rhs)
+        public static bool Contains(this FileAttributes lhs, FileAttributes rhs)
         {
             FileAttributes common = lhs & rhs;
             return (common == rhs);
         }
 
         // Return true if lhs contains one of the flags within rhs
-        public static bool ContainsAnyOf(
-            this FileAttributes lhs, FileAttributes rhs)
+        public static bool ContainsAnyOf(this FileAttributes lhs, FileAttributes rhs)
         {
             FileAttributes common = lhs & rhs;
             return ((int)common > 0);
@@ -121,13 +112,12 @@ namespace ClassLibraryFileGlobber
         // NON-extension methods here
         public static FileAttributes FromString(string source)
         {
-            FileAttributes res = (FileAttributes)Enum.Parse(
-                 typeof(FileAttributes), source, true);
+            FileAttributes res = (FileAttributes)Enum.Parse(typeof(FileAttributes), source, true);
             return res;
         }
 
     }
 
     #endregion FileAttributesExtender
-#endregion
+#endregion UNTESTED 3RD PARTY CODE
 }

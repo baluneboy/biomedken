@@ -13,7 +13,7 @@ using Microsoft.VisualStudio.Tools.Applications.Runtime;
 using Excel = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
 using ClassLibraryFileGlobber;
-//using MySplash;
+using MyExcelUtilities;
 
 namespace ExcelWorkbook_fMRI
 {
@@ -22,6 +22,9 @@ namespace ExcelWorkbook_fMRI
 
     public partial class Sheet1 : ExcelWorkbook_fMRI.ISheet1
     {
+
+        public string BasePathStr;
+        public string MRIcroNexeStr;
 
         private void Sheet1_Startup(object sender, System.EventArgs e)
         {
@@ -33,14 +36,6 @@ namespace ExcelWorkbook_fMRI
 
             this.BeforeDoubleClick += new
                 Excel.DocEvents_BeforeDoubleClickEventHandler(Sheet_BeforeDoubleClick);
-
-            //Excel.Sheets sheets = (Excel.Sheets)Globals.ThisWorkbook.Worksheets;
-            //Worksheet sh = sheets["run"];
-            //sh.Activate();
-            //MessageBox.Show("activated " + sh.Name);
-
-            //SomehowCanWeInvoke.InitializeIndicators();
-
         }
 
         private void Sheet1_Shutdown(object sender, System.EventArgs e)
@@ -50,9 +45,13 @@ namespace ExcelWorkbook_fMRI
         // Event handler for THIS sheet
         void Sheet_BeforeDoubleClick(Excel.Range Target, ref bool Cancel)
         {
-            //SplashScreenForm sf = new SplashScreenForm();
-            Cancel = true; // this affects how double-click behavior goes AFTER this handler
-            //MessageBox.Show("Double click");
+            Cancel = true; // affects how double-click behavior continuation goes AFTER this handler
+
+            // early return when "A1" is not double-click's target
+            if (!Target.Address.Equals("$A$1"))
+                return;
+
+            // loop over filter's visible range
             Excel.Range visibleCells = this.AutoFilter.Range;
             Excel.Range visibleRows = visibleCells.get_Offset(1, 0).get_Resize(visibleCells.Rows.Count - 1, 1).SpecialCells(Microsoft.Office.Interop.Excel.XlCellType.xlCellTypeVisible);
             foreach (Excel.Range area in visibleRows.Areas)
@@ -84,6 +83,33 @@ namespace ExcelWorkbook_fMRI
             }
         }
 
+        public void VerifyConfigPathFile()
+        {
+
+            // get DataTable via DataTableGrabber using named range "LookupTable"
+            DataTableGrabber dtg = new DataTableGrabber(Globals.ThisWorkbook.FullName, "LookupTable");
+            dtg.DebugShow();
+            //dtg.AdapterUpdate(1,"s");
+
+            // use dictionary method to get strings for basepath dir & exe file
+            Dictionary<string, Tuple<string, string>> d = dtg.ToDictionaryKT();
+            BasePathStr = d["basePath"].Item1;
+            MRIcroNexeStr = d["MRIcroNexe"].Item1;
+            Debug.WriteLine(@"DataTableGrabber gives us MRIcroNexeStr to be >" + MRIcroNexeStr + "<");
+
+            // BasePath directory
+            BasePath bp = new BasePath(BasePathStr, "Select directory for ADAT basepath.");
+            BasePathStr = bp.FixPath;
+            Debug.WriteLine("BasePathStr is " + BasePathStr);
+            // now stuff the bloody basepath string into its cell
+
+            // MRIcroNexe file
+            ExeFile ef = new ExeFile(MRIcroNexeStr, "Select exe file for MRIcroN.");
+            MRIcroNexeStr = ef.FileName;
+            Debug.WriteLine("MRIcroNexeStr is " + MRIcroNexeStr);
+
+        }
+
         #region Expand for comment on event handler for ANY Sheet
         // The following applies to event for ANY sheet
         //void Application_SheetBeforeDoubleClick(object Sh,
@@ -104,7 +130,8 @@ namespace ExcelWorkbook_fMRI
         //}
         #endregion
 
-        #region OBSOLETE?
+        #region NOT OBSOLETE (yet...)
+
         private Microsoft.Office.Tools.Excel.NamedRange namedRange1;
 
         public string GlobAnatFile(string globpattern)
