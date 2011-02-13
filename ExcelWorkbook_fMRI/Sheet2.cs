@@ -6,8 +6,8 @@ namespace ExcelWorkbook_fMRI
 {
     public partial class Sheet2
     {
-        Microsoft.Office.Tools.Excel.NamedRange basePathRange;
-        Microsoft.Office.Tools.Excel.NamedRange MRIcroNexeRange;
+        public Microsoft.Office.Tools.Excel.NamedRange BasePathRange;
+        public Microsoft.Office.Tools.Excel.NamedRange MRIcroNexeRange;
 
         private void Sheet2_Startup(object sender, System.EventArgs e)
         {
@@ -26,7 +26,7 @@ namespace ExcelWorkbook_fMRI
         {
         }
 
-        private Microsoft.Office.Tools.Excel.NamedRange EstablishNamedRangeControl(string label, string address)
+        public Microsoft.Office.Tools.Excel.NamedRange EstablishNamedRangeControl(string label, string address)
         {
             // TODO hunt around for label in first column rather than assuming it's at address given
             // TODO do something more graceful than clobbering when label not found
@@ -46,11 +46,11 @@ namespace ExcelWorkbook_fMRI
         private void NotifyChanges()
         {
             // basePath
-            basePathRange = EstablishNamedRangeControl("basePath", "B2");
-            basePathRange.Change += new Excel.DocEvents_ChangeEventHandler(basePathRange_Change);
+            BasePathRange = EstablishNamedRangeControl("basePath", "B2"); // TODO unhardcode address
+            BasePathRange.Change += new Excel.DocEvents_ChangeEventHandler(basePathRange_Change);
 
             // MRIcroNexe
-            MRIcroNexeRange = EstablishNamedRangeControl("MRIcroNexe", "B3");
+            MRIcroNexeRange = EstablishNamedRangeControl("MRIcroNexe", "B3"); // TODO unhardcode address
             MRIcroNexeRange.Change += new Excel.DocEvents_ChangeEventHandler(MRIcroNexeRange_Change);
         }
 
