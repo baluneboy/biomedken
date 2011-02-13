@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Forms;
-using Excel = Microsoft.Office.Interop.Excel;
 using MyExcelUtilities;
-using ClassLibraryFileGlobber;
+using Excel = Microsoft.Office.Interop.Excel;
 
 namespace ExcelWorkbook_fMRI
 {
@@ -20,28 +18,13 @@ namespace ExcelWorkbook_fMRI
             {
                 MessageBox.Show("HOME USAGE");
                 Excel.Range HOMEBP = Globals.Sheet2.Cells[2, 2];
-                HOMEBP.Value = @"F:\Data\";
+                HOMEBP.Value = @"F:\Data";
             }
             ActivateRunSheet();
-            //VerifyConfigPathFile();
-            //UpdateIndicators();
         }
 
         private void ThisWorkbook_Shutdown(object sender, System.EventArgs e)
         {
-        }
-
-        public void UpdateIndicators()
-        {
-            RangeFormatter rfReady = new RangeFormatter(wsRun.Cells[1, 1]);
-            RangeFormatter rfBasePath = new RangeFormatter(wsRun.Cells[1, 2]);
-            RangeFormatter rfMRIcroNexe = new RangeFormatter(wsRun.Cells[1, 3]);
-
-            // modify indicators along top row of run sheet
-            rfBasePath.Bad();
-            rfMRIcroNexe.Bad();
-            rfReady.Dim();
-            //rfReady.Ready();
         }
                 
         // activate run sheet (hopefully)

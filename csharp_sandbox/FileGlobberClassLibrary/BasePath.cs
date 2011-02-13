@@ -13,7 +13,7 @@ namespace ClassLibraryFileGlobber
 
         public BasePath(string s, string prompt = "Select directory for basepath.")
         {
-            fixPath = s.TrimEnd('\\') + @"\";
+            fixPath = s.TrimEnd('\\');
 
             if (!Directory.Exists(fixPath))
             {
@@ -31,7 +31,7 @@ namespace ClassLibraryFileGlobber
                 // Show dialog
                 DialogResult result = fbd.ShowDialog();
                 if (result == DialogResult.OK)
-                    fixPath = fbd.SelectedPath.TrimEnd('\\') + @"\";
+                    fixPath = fbd.SelectedPath.TrimEnd('\\');
                 else
                 {
                     MessageBox.Show("you hit cancel...oh well, let's see what happens...");

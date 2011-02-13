@@ -1,19 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Windows.Forms;
-using System.Xml.Linq;
-using System.IO;
 using System.Diagnostics;
-using System.Threading;
-using Microsoft.Office.Tools.Excel;
-using Microsoft.VisualStudio.Tools.Applications.Runtime;
-using Excel = Microsoft.Office.Interop.Excel;
-using Office = Microsoft.Office.Core;
+using System.Windows.Forms;
 using ClassLibraryFileGlobber;
 using MyExcelUtilities;
+using Excel = Microsoft.Office.Interop.Excel;
+using System.Reflection;
 
 namespace ExcelWorkbook_fMRI
 {
@@ -25,6 +17,9 @@ namespace ExcelWorkbook_fMRI
 
         public string BasePathStr;
         public string MRIcroNexeStr;
+        public Microsoft.Office.Tools.Excel.NamedRange ReadyIndicatorRange;
+        public Microsoft.Office.Tools.Excel.NamedRange BasePathIndicatorRange;
+        public Microsoft.Office.Tools.Excel.NamedRange MRIcroNexeIndicatorRange;
 
         private void Sheet1_Startup(object sender, System.EventArgs e)
         {
@@ -36,20 +31,49 @@ namespace ExcelWorkbook_fMRI
 
             this.BeforeDoubleClick += new
                 Excel.DocEvents_BeforeDoubleClickEventHandler(Sheet_BeforeDoubleClick);
+
+            // 3 indicators
+            ReadyIndicatorRange = Controls.AddNamedRange(this.Range["A1"], "Ready" + "Range");  // TODO unhardcode address
+            BasePathIndicatorRange = Controls.AddNamedRange(this.Range["B1"], "BasePathIndicator" + "Range");  // TODO unhardcode address
+            MRIcroNexeIndicatorRange = Controls.AddNamedRange(this.Range["C1"], "MRIcroNexeIndicator" + "Range");  // TODO unhardcode address
+
+            // Init indicators
+            UpdateIndicator(ReadyIndicatorRange, "Dim");
+            UpdateIndicator(BasePathIndicatorRange, "Dim");
+            UpdateIndicator(MRIcroNexeIndicatorRange, "Dim");
         }
 
         private void Sheet1_Shutdown(object sender, System.EventArgs e)
         {
         }
 
+        // TODO not so poorly done work with indicators
+        public void UpdateIndicator(Microsoft.Office.Tools.Excel.NamedRange nr, string m)
+        {
+            RangeFormatter rfReady = new RangeFormatter(nr.RefersToRange);
+            InvokeVoidMethod(rfReady, m);
+        }
+
+        // use reflection to invoke method via string
+        // see http://www.codeproject.com/KB/cs/CallMethodNameInString.aspx
+        public static void InvokeVoidMethod(object objB, string methodName)
+        {
+            object obj = objB.GetType().InvokeMember(methodName,
+                BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public,
+                null, objB, null);
+        }  
+
         // Event handler for THIS sheet
         void Sheet_BeforeDoubleClick(Excel.Range Target, ref bool Cancel)
         {
             Cancel = true; // affects how double-click behavior continuation goes AFTER this handler
 
-            // early return when "A1" is not double-click's target
+            // we only want to take action when user double-clicks "A1" of run sheet
             if (!Target.Address.Equals("$A$1"))
                 return;
+
+            // verify basepath and exe file
+            VerifyConfigPathFile();
 
             // loop over filter's visible range
             Excel.Range visibleCells = this.AutoFilter.Range;
@@ -89,24 +113,27 @@ namespace ExcelWorkbook_fMRI
             // get DataTable via DataTableGrabber using named range "LookupTable"
             DataTableGrabber dtg = new DataTableGrabber(Globals.ThisWorkbook.FullName, "LookupTable");
             dtg.DebugShow();
-            //dtg.AdapterUpdate(1,"s");
 
             // use dictionary method to get strings for basepath dir & exe file
             Dictionary<string, Tuple<string, string>> d = dtg.ToDictionaryKT();
             BasePathStr = d["basePath"].Item1;
             MRIcroNexeStr = d["MRIcroNexe"].Item1;
-            Debug.WriteLine(@"DataTableGrabber gives us MRIcroNexeStr to be >" + MRIcroNexeStr + "<");
 
             // BasePath directory
             BasePath bp = new BasePath(BasePathStr, "Select directory for ADAT basepath.");
             BasePathStr = bp.FixPath;
             Debug.WriteLine("BasePathStr is " + BasePathStr);
-            // now stuff the bloody basepath string into its cell
+            Globals.Sheet2.BasePathRange.Value2 = BasePathStr;
+            UpdateIndicator(BasePathIndicatorRange, "Good");
 
             // MRIcroNexe file
             ExeFile ef = new ExeFile(MRIcroNexeStr, "Select exe file for MRIcroN.");
             MRIcroNexeStr = ef.FileName;
             Debug.WriteLine("MRIcroNexeStr is " + MRIcroNexeStr);
+            Globals.Sheet2.MRIcroNexeRange.Value2 = MRIcroNexeStr;
+            UpdateIndicator(MRIcroNexeIndicatorRange, "Good");
+
+            UpdateIndicator(ReadyIndicatorRange, "Good");
 
         }
 
