@@ -1,6 +1,8 @@
 ﻿using System.IO;
 using System.Windows.Forms;
+using System.Diagnostics;
 using Excel = Microsoft.Office.Interop.Excel;
+using MyExcelUtilities;
 
 namespace ExcelWorkbook_fMRI
 {
@@ -17,9 +19,9 @@ namespace ExcelWorkbook_fMRI
             // Use this method to handle changes to (and create) named ranges for basePath & MRIcroNexe file
             NotifyChanges();
 
-            // Use Globals to get access to ThisWorkbook (or SheetN)
-            //Globals.ThisWorkbook.UpdateIndicators();
-
+            TaggedRange tr = new TaggedRange(this.Range["A9"],"bottle");
+            string s = tr.Value.Text;
+            Debug.WriteLine("TAGGED RANGE: " + s + tr.Tag);
         }
 
         private void Sheet2_Shutdown(object sender, System.EventArgs e)

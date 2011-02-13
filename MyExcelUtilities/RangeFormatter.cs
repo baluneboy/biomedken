@@ -9,6 +9,36 @@ using Excel = Microsoft.Office.Interop.Excel;
 
 namespace MyExcelUtilities
 {
+    public interface ITaggedItem<out T>
+    {
+        T Value { get; }
+        string Tag { get; }
+    }
+
+    public class TaggedItem<T> : ITaggedItem<T>
+    {
+        public T Value { get; private set; }
+        public string Tag { get; private set; }
+        public TaggedItem(T Value, string tag)
+        {
+            this.Value = Value;
+            this.Tag = tag;
+        }
+    }
+
+    public class TaggedRange : ITaggedItem<Excel.Range>
+    {
+        public Excel.Range Value { get; private set; }
+        public string Tag { get; private set; }
+
+        public TaggedRange(Excel.Range r, string t)
+            : base()
+        {
+            this.Value = r;
+            this.Tag = t;
+        }
+    }
+
     public class RangeFormatter
     {
         protected Excel.Range rng;
