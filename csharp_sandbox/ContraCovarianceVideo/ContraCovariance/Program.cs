@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Excel = Microsoft.Office.Interop.Excel;
 
 /*
  * The code from Eric Lippert's video on CoVariance and Contravariance.
@@ -51,6 +52,11 @@ namespace ContraCovariance
             this.Value = Value;
             this.Tag = tag;
         }
+
+        public TaggedItem()
+        {
+            // TODO: Complete member initialization
+        }
     }
 
     /// <summary>
@@ -82,11 +88,11 @@ namespace ContraCovariance
             Chess c = new Chess(color:"brown");
             c.Show();
 
+            //var nr = new TaggedItem<Microsoft.Office.Tools.Excel.NamedRange>();
             var chess = new TaggedItem<Chess>(new Chess(), "Civil War");
             M3(chess);
 
             // TaggedItem<Game> game = chess; // author commented this out, not me
-
             MyAction<Person, string> setName = (p, s) => { p.Name = s; };
             MyAction<Employee, string> setName2 = setName;
 
