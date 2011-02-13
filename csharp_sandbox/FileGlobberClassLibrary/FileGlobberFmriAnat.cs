@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using ClassLibraryFileGlobber;
 
 namespace ClassLibraryFileGlobber
@@ -17,6 +18,7 @@ namespace ClassLibraryFileGlobber
         public bool IsValid { get { return isValid; } }
         public string PathAnat { get { return pathAnat; } }
         public string FileAnat { get { return fileAnat; } }
+        public string FullName { get { return @pathAnat + @"\" + @fileAnat; } }
 
         // Default constructor for this derived class
         public FileGlobberFmriAnat(string globpattern)
@@ -36,10 +38,11 @@ namespace ClassLibraryFileGlobber
             }
         }
 
-        public new void print()
+        public new void DebugShow()
         {
-            base.print();
-            Console.WriteLine("I'm a FileGlobberFmriAnat Class.");
+            base.DebugShow();
+            Debug.WriteLine("IsValid: " + this.IsValid);
+            Debug.WriteLine("FullName: " + this.FullName);
         }
     }
 

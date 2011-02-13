@@ -19,7 +19,8 @@ namespace ExcelWorkbook_fMRI
             // Use this method to handle changes to (and create) named ranges for basePath & MRIcroNexe file
             NotifyChanges();
 
-            TaggedRange tr = new TaggedRange(this.Range["A9"],"bottle");
+            // TODO make use of similar interface for formatting indicators, similar to following:
+            TaggedRange tr = new TaggedRange(this.Range["A9"], "bottle");
             string s = tr.Value.Text;
             Debug.WriteLine("TAGGED RANGE: " + s + tr.Tag);
         }
@@ -79,22 +80,8 @@ namespace ExcelWorkbook_fMRI
             // TODO offer directory seletion dialog (defaults to pwd)
         }
 
-        public void MaybeComplain(bool blnComplain, string msgComplaint)
-        {
-            if (blnComplain)
-                MessageBox.Show(msgComplaint);
-        }
-
         void Sheet2_Change(Excel.Range Target)
         {
-            //// TODO verify that column to left of these Targets are labels for the dir/file of interest
-            //if (Target.Column.Equals(2))
-            //{
-            //    if (Target.Row.Equals(1)) // basePath
-            //        MaybeComplain(!Directory.Exists(Target.Value2), "basePath just entered does not exist");
-            //    if (Target.Row.Equals(2)) // MRIcroNexe
-            //        MaybeComplain(!File.Exists(Target.Value2), "MRIcroNexe file just entered does not exist");
-            //}
         }
 
         #region VSTO Designer generated code
