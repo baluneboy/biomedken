@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -67,9 +68,13 @@ namespace ClassLibraryFileGlobber
             return files;
         }
 
-        public void print()
+        public void DebugShow()
         {
-            Console.WriteLine("I'm a FileGlobber Class.");
+            Debug.WriteLine("GlobParts.DirPattern: " + this.GlobParts.DirPattern);
+            Debug.WriteLine("GlobParts.FilePattern: " + this.GlobParts.FilePattern);
+            Debug.WriteLine("MatchCount: " + this.MatchCount);
+            if (this.MatchCount>0)
+                Debug.WriteLine("MatchingFiles[0]: " + this.MatchingFiles[0].FullName);
         }
     }
 }

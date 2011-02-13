@@ -14,7 +14,9 @@ namespace ExcelWorkbook_fMRI
 
     public partial class Sheet1 : ExcelWorkbook_fMRI.ISheet1
     {
+        private DataTableGrabber _dtg;
 
+        public DataTableGrabber DataTableGrabber { get { return _dtg; } }
         public string BasePathStr;
         public string MRIcroNexeStr;
         public Microsoft.Office.Tools.Excel.NamedRange ReadyIndicatorRange;
@@ -64,7 +66,7 @@ namespace ExcelWorkbook_fMRI
                 null, objB, null);
         }  
 
-        // Event handler for THIS sheet
+        // this is the one we use...an event handler for THIS sheet's double-click
         void Sheet_BeforeDoubleClick(Excel.Range Target, ref bool Cancel)
         {
             Cancel = true; // affects how double-click behavior continuation goes AFTER this handler
@@ -76,33 +78,44 @@ namespace ExcelWorkbook_fMRI
             // verify basepath and exe file
             VerifyConfigPathFile();
 
+            this.DataTableGrabber.DebugShow();
+            Debug.WriteLine("#########################################");
+
             // loop over filter's visible range
             Excel.Range visibleCells = this.AutoFilter.Range;
             Excel.Range visibleRows = visibleCells.get_Offset(1, 0).get_Resize(visibleCells.Rows.Count - 1, 1).SpecialCells(Microsoft.Office.Interop.Excel.XlCellType.xlCellTypeVisible);
+            
             foreach (Excel.Range area in visibleRows.Areas)
             {
                 // process each "visibly-filtered" row
                 foreach (Excel.Range row in area.Rows)
                 {
-
                     // TODO make switches for MRIcroN call configurable in XLSM file
                     string subj = row.Value2;
                     string sess = row.get_Offset(0, 1).Value2;
                     string task = row.get_Offset(0, 2).Value2;
 
-                    // TODO get basePath from named range
-                    string globPatAnat = @"y:\adat\" + subj + @"\" + sess + @"\study_*\results\" + task + @"\w2*WHOLEHEAD*.hdr";
+                    // TODO get background image [the part after task] from offset [or Tuple]
+                    string globPatAnat = @BasePathStr + @"\" + subj + @"\" + sess + @"\study_*\results\" + task + @"\w2*WHOLEHEAD*.hdr";
                     FileGlobberFmriAnat fga = new FileGlobberFmriAnat(globPatAnat);
-                    string anat = fga.FileAnat;
+                    string anat = fga.FullName;
+                    //fga.DebugShow();
 
-                    // TODO get overlay,color from Tuple of"grabber"
+                    // TODO verify other "goodness" of anat we found [how?]
+                    if (!fga.IsValid)
+                    {
+                        MessageBox.Show("no valid file like: " + globPatAnat);
+                        continue;
+                    }
+
+                    // TODO get overlay,color from Tuple of "grabber"
                     string over = @" -c grayscale -o " + row.get_Offset(0, 5).Value2 + @" -b 50";
 
-                    // TODO get MRIcroNexe from named range
-                    Process p = new Process();
-                    p.StartInfo.FileName = @"C:\Program Files\mricron\MRIcroN.exe";
-                    p.StartInfo.Arguments = anat + over;
-                    p.Start();
+                    // TODO sanity check anat & over and do something graceful when those are unsuitable
+                    Debug.WriteLine(" OVER is: " + @over);
+                    
+                    ProcessStartInfo startInfo = new ProcessStartInfo(@MRIcroNexeStr, anat);
+                    Process.Start(startInfo);
 
                 }
             }
@@ -110,13 +123,12 @@ namespace ExcelWorkbook_fMRI
 
         public void VerifyConfigPathFile()
         {
-
             // get DataTable via DataTableGrabber using named range "LookupTable"
             DataTableGrabber dtg = new DataTableGrabber(Globals.ThisWorkbook.FullName, "LookupTable");
-            dtg.DebugShow();
+            _dtg = dtg;
 
             // use dictionary method to get strings for basepath dir & exe file
-            Dictionary<string, Tuple<string, string>> d = dtg.ToDictionaryKT();
+            Dictionary<string, Tuple<string, string>> d = _dtg.ToDictionaryKT();
             BasePathStr = d["basePath"].Item1;
             MRIcroNexeStr = d["MRIcroNexe"].Item1;
 
