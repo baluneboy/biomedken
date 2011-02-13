@@ -56,6 +56,7 @@ namespace ExcelWorkbook_fMRI
 
         // use reflection to invoke method via string
         // see http://www.codeproject.com/KB/cs/CallMethodNameInString.aspx
+        // including user comments near bottom of that page
         public static void InvokeVoidMethod(object objB, string methodName)
         {
             object obj = objB.GetType().InvokeMember(methodName,
