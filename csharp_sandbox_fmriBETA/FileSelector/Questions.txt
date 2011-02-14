@@ -1,6 +1,0 @@
-﻿How best to glob: (1) regexp filter FileSelector output, (2) use Shell call with stream filtering?
--- for (1), try this: if glob pattern to match is this (no quotes): "c:\temp\sub*\file*.txt"
-                                         then use this (no quotes): "c:\\temp\\sub[^\\]*\\file[^\\]*\.txt"
-   the logic for this would be:
-	[1] replace all backslash with double-backslash, followed by...
-	[2] replace all asterisks with "[^\\]*"
