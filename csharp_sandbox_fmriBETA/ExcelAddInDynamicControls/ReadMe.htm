@@ -1,0 +1,116 @@
+﻿<html><head><META HTTP-EQUIV="Content-Type" CONTENT="text/html; CHARSET=utf-8" /><META NAME="save" CONTENT="history" /><title xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">Excel Add-In Dynamic Controls Sample</title><META NAME="Description" CONTENT="&#xD;&#xA;								&#xD;&#xA;									&#xD;&#xA;											&#xD;&#xA;													This sample runs only in Microsoft Office Excel 2007.&#xD;&#xA;												&#xD;&#xA;										&#xD;&#xA;								&#xD;&#xA;								&#xD;&#xA;								&#xD;&#xA;							"></META><META NAME="MS.LOCALE" CONTENT="en-us" /><style>
+body
+{font-family:Verdana;font-size:medium;}
+div#mainSection, div#header
+{font-size:70%;width: 100%;}
+div#mainBody
+{font-size:90%;}
+div#mainSection div table
+{font-size: 100%;text-align: left;}
+span#nsrTitle
+{color:#003399;font-size:90%;font-weight:600;}
+div#header
+{background-color:#D4DFFF;}
+.heading
+{font-size:120%;color:#003399;}
+.subHeading
+{font-size:100%;margin-bottom:4;}
+li
+{margin-top:-2;margin-bottom:3;}
+p
+{margin-top:10;margin-bottom:5;}
+div.tableSection p
+{margin-top:1;margin-bottom:4;}	
+div#mainSection table th
+{background-color:#EFEFF7;color:#000066;text-align:left;}
+div#mainSection table td
+{background-color:#F7F7FF;}
+div#mainSection table
+{margin-top:5px;margin-bottom: px;}
+.style1{color: Green;}
+			</style></head><body><div id="header"><table width="100%" id="topTable"></table></div><div id="mainSection"><div id="mainBody"><p><span class="style1">&#39; Copyright © Microsoft Corporation. All Rights Reserved.
+    </span>
+    <br class="style1" />
+    <span class="style1">&#39; This code released under the terms of the </span>
+    <br class="style1" />
+    <span class="style1">&#39; Microsoft Public License (MS-PL,
+    <a href="http://opensource.org/licenses/ms-pl.html">
+    http://opensource.org/licenses/ms-pl.html</a>.)</span></p>
+<br /><font color="DarkGray">[This readme is a partial copy of the sample's topic in the SDK documentation.]</font><br /><font color="DarkGray" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt"></font><p xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt"></p><p xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt"><font color="DarkGray">Updated: 
+                    
+    November 2010
+  
+                </font></p><div class="introduction"><div class="alert"><table width="100%" cellspacing="0" cellpadding="0" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt"><tr><th align="left"><b>Note:</b></th></tr><tr><td><p>
+								
+									
+											
+													This sample runs only in Microsoft Office Excel 2007 
+                                                    or higher.
+												
+										
+								
+								
+								
+							</p></td></tr></table></div><p xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">
+                    When you do not know at design time how many controls will be required in a document at run time, you can add controls dynamically in response to events.
+                </p><p xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">
+                    This sample demonstrates how to add and remove Windows Forms controls and host controls at run time.
+                </p><div class="alert"><table width="100%" cellspacing="0" cellpadding="0" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt"><tr><th align="left"><b>Security Note:</b></th></tr><tr><td><p>
+								
+									
+											
+													This sample code is intended to illustrate a concept, and it shows only the code that is relevant to that concept. It may not meet the security requirements for a specific environment, and it should not be used exactly as shown. We recommend that you add security and error-handling code to make your projects more secure and robust. Microsoft provides this sample code "AS IS" with no warranties.
+												
+										
+								
+								
+								
+							</p></td></tr></table></div><p xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">
+                    For information about how to install the sample project on your computer, see <span sdata="link">How to: Install and Use Sample Files Found in Help</span>.
+                </p></div><h3 class="procedureSubHeading" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">To run this sample</h3><div class="subSection"><ol xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt"><li><p>
+                    Press F5.
+                </p></li><li><p>
+                    Click a worksheet cell.
+                </p><p>
+                    To add a ListObject control, select one or more cells.
+                </p></li><li><p>
+                    Select a check box in the task pane.
+                </p><p>
+                    A control is added at the selected cell.
+                </p></li><li><p>
+                    Clear the check box that you selected.
+                </p><p>
+                    The control is removed from the document.
+                </p></li></ol><p xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">
+                    Controls created by add-ins are not saved automatically in the workbook. This sample saves the control information to a custom XML part.
+                </p></div><h3 class="procedureSubHeading" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">To save the controls</h3><div class="subSection"><ol xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt"><li><p>
+                    Press F5.
+                </p></li><li><p>
+                    Click a worksheet cell.
+                </p><p>
+                    To add a ListObject control, select one or more cells.
+                </p></li><li><p>
+                    Select a check box in the task pane.
+                </p><p>
+                    A control is added at the selected cell.
+                </p></li><li><p>
+                    Click the <span class="ui">Save</span> button.
+                </p><p>
+                    The <span class="ui">Delete controls</span> dialog box appears.
+                </p></li><li><p>
+                    Click <span class="ui">No</span>.
+                </p></li><li><p>
+                    In the <span class="ui">Save As</span> dialog box, type a file name for this worksheet, and click <span class="ui">Save</span>.
+                </p></li><li><p>
+                    Exit Excel.
+                </p></li><li><p>
+                    Open the file that you just saved.
+                </p><p>
+                    The controls are still present in your workbook.
+                </p></li></ol></div><h1 class="heading" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt"><span onclick="ExpandCollapse(demonstratesToggle)" style="cursor:default;" onkeypress="ExpandCollapse_CheckKey(demonstratesToggle, event)" tabindex="0">Demonstrates</span></h1><div id="demonstratesSection" class="section"><ul xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt"><li><p>
+                    Dynamically placing Windows Forms controls and host controls on an Excel worksheet.
+                </p></li><li><p>
+                    Dynamically removing Windows Forms controls and host controls from an Excel worksheet.
+                </p></li><li><p>
+                    Storing host control information in an XML part that is saved as part of the document.
+                </p></li></ul></div><h1 class="heading" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt"><span onclick="ExpandCollapse(seeAlsoToggle)" style="cursor:default;" onkeypress="ExpandCollapse_CheckKey(seeAlsoToggle, event)" tabindex="0">See Also</span></h1><div id="seeAlsoSection" class="section"><h4 class="subHeading" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">Tasks</h4><div class="seeAlsoStyle"><span sdata="link" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">Word Add-In Dynamic Controls Sample</span></div><h4 class="subHeading" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">Concepts</h4><div class="seeAlsoStyle"><span sdata="link" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">Host Items and Host Controls Overview</span></div><div class="seeAlsoStyle"><span sdata="link" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">Actions Pane Overview</span></div><h4 class="subHeading" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">Other Resources</h4><div class="seeAlsoStyle"><span sdata="link" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">Document-Level Samples</span></div><div class="seeAlsoStyle"><span sdata="link" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">Application-Level Samples</span></div><div class="seeAlsoStyle"><span sdata="link" xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt">Controls on Office Documents</span></div></div><div id="changeHistorySection" class="section"><div class="caption"></div><div class="tableSection"></div><p xmlns:mshelp="http://msdn.microsoft.com/mshelp" xmlns:msxsl="urn:schemas-microsoft-com:xslt"></p></div></div></div></body></html>

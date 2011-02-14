@@ -1,0 +1,27 @@
+RXPAT  is ^C:\\temp\\dupstination\\t[^\\]*o\\$
+strDir is  C:\temp\dupstination\
+---------------------------------
+RXPAT  is ^C:\\temp\\dupstination\\t[^\\]*o\\$
+strDir is  C:\temp\dupstination\new\
+---------------------------------
+RXPAT  is ^C:\\temp\\dupstination\\t[^\\]*o\\$
+strDir is  C:\temp\dupstination\one.uno\
+---------------------------------
+RXPAT  is ^C:\\temp\\dupstination\\t[^\\]*o\\$
+strDir is  C:\temp\dupstination\Sergio Mendes & Brasil '66\
+---------------------------------
+RXPAT  is ^C:\\temp\\dupstination\\t[^\\]*o\\$
+strDir is  C:\temp\dupstination\Sergio Mendes & Brasil '66\Look Around\
+---------------------------------
+RXPAT  is ^C:\\temp\\dupstination\\t[^\\]*o\\$
+strDir is  C:\temp\dupstination\three\
+---------------------------------
+RXPAT  is ^C:\\temp\\dupstination\\t[^\\]*o\\$
+strDir is  C:\temp\dupstination\two\
+---------------------------------
+RXPAT  is ^C:\\temp\\dupstination\\t[^\\]*o\\$
+strDir is  C:\temp\dupstination\two\twotoo\
+---------------------------------
+RXPAT  is ^C:\\temp\\dupstination\\t[^\\]*o\\$
+strDir is  C:\temp\dupstination\txo\
+---------------------------------
