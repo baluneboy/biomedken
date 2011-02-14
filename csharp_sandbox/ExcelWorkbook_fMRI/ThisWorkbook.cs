@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define HOME
+
+using System;
 using System.Diagnostics;
 using System.Windows.Forms;
 using MyExcelUtilities;
@@ -16,9 +18,11 @@ namespace ExcelWorkbook_fMRI
         {
             if (Debugger.IsAttached)
             {
+#if HOME
                 Globals.Sheet1.Cells[1, 5].Value = "HOME USAGE";
                 Excel.Range HOMEBP = Globals.Sheet2.Cells[2, 2];
                 HOMEBP.Value = @"E:\fMRI\adat";
+#endif 
             }
             ActivateRunSheet();
         }

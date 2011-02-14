@@ -34,19 +34,33 @@ namespace ExcelWorkbook_fMRI
             this.BeforeDoubleClick += new
                 Excel.DocEvents_BeforeDoubleClickEventHandler(Sheet_BeforeDoubleClick);
 
+            // handle change event for entire Sheet1 (run)
+            this.Change += new Excel.DocEvents_ChangeEventHandler(Sheet1_Change);
+
             // 3 indicators
             ReadyIndicatorRange = Controls.AddNamedRange(this.Range["A1"], "Ready" + "Range");  // TODO unhardcode address
             BasePathIndicatorRange = Controls.AddNamedRange(this.Range["B1"], "BasePathIndicator" + "Range");  // TODO unhardcode address
             MRIcroNexeIndicatorRange = Controls.AddNamedRange(this.Range["C1"], "MRIcroNexeIndicator" + "Range");  // TODO unhardcode address
 
             // Init indicators
-            UpdateIndicator(ReadyIndicatorRange, "Dim");
-            UpdateIndicator(BasePathIndicatorRange, "Dim");
-            UpdateIndicator(MRIcroNexeIndicatorRange, "Dim");
+            DimIndicators();
         }
 
         private void Sheet1_Shutdown(object sender, System.EventArgs e)
         {
+        }
+
+        void Sheet1_Change(Excel.Range Target)
+        {
+            DimIndicators();
+        }
+
+        // TODO reset (dim) the "READY" & other 2 indicators
+        public void DimIndicators()
+        {
+            UpdateIndicator(ReadyIndicatorRange, "Dim");
+            UpdateIndicator(BasePathIndicatorRange, "Dim");
+            UpdateIndicator(MRIcroNexeIndicatorRange, "Dim");
         }
 
         // TODO not so poorly done work with indicators
@@ -64,7 +78,9 @@ namespace ExcelWorkbook_fMRI
             object obj = objB.GetType().InvokeMember(methodName,
                 BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public,
                 null, objB, null);
-        }  
+        }
+
+        // TODO get sheet change event handler to reset (dim) the "READY" & other 2 indicators
 
         // this is the one we use...an event handler for THIS sheet's double-click
         void Sheet_BeforeDoubleClick(Excel.Range Target, ref bool Cancel)
@@ -109,16 +125,20 @@ namespace ExcelWorkbook_fMRI
                     }
 
                     // TODO get overlay,color from Tuple of "grabber"
-                    string over = @" -c grayscale -o " + row.get_Offset(0, 5).Value2 + @" -b 50";
+                    //string over = @" -c grayscale -o " + row.get_Offset(0, 5).Value2 + @" -b 50";
+                    string over = @" -c grayscale -o " + @fga.PathAnat +
+                    @".\masked_roi98_mniwholebrain_fromspm_wroi99_wholecube_both_p-overlay_adathreshold_remap_clustercorrected.hdr" +
+                    @" -b 50";
 
                     // TODO sanity check anat & over and do something graceful when those are unsuitable
                     Debug.WriteLine(" OVER is: " + @over);
                     
-                    ProcessStartInfo startInfo = new ProcessStartInfo(@MRIcroNexeStr, anat);
+                    ProcessStartInfo startInfo = new ProcessStartInfo(@MRIcroNexeStr, anat+over);
                     Process.Start(startInfo);
 
                 }
             }
+            DimIndicators();
         }
 
         public void VerifyConfigPathFile()
