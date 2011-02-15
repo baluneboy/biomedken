@@ -20,9 +20,9 @@ namespace ExcelWorkbook_fMRI
             NotifyChanges();
 
             // TODO make use of similar interface for formatting indicators, similar to following:
-            TaggedRange tr = new TaggedRange(this.Range["A9"], "bottle");
-            string s = tr.Value.Text;
-            Debug.WriteLine("TAGGED RANGE: " + s + tr.Tag);
+            //TaggedRange tr = new TaggedRange(this.Range["A9"], "bottle");
+            //string s = tr.Value.Text;
+            //Debug.WriteLine("TAGGED RANGE: " + s + tr.Tag);
         }
 
         private void Sheet2_Shutdown(object sender, System.EventArgs e)
