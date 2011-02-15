@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Windows.Forms;
 using ClassLibraryFileGlobber;
 using MyExcelUtilities;
 using Excel = Microsoft.Office.Interop.Excel;
-using System.Reflection;
 
 namespace ExcelWorkbook_fMRI
 {
@@ -15,6 +16,7 @@ namespace ExcelWorkbook_fMRI
     public partial class Sheet1 : ExcelWorkbook_fMRI.ISheet1
     {
         private DataTableGrabber _dtg;
+        Dictionary<string, Tuple<string, string>> _d;
 
         public DataTableGrabber DataTableGrabber { get { return _dtg; } }
         public string BasePathStr;
@@ -100,12 +102,21 @@ namespace ExcelWorkbook_fMRI
             // loop over filter's visible range
             Excel.Range visibleCells = this.AutoFilter.Range;
             Excel.Range visibleRows = visibleCells.get_Offset(1, 0).get_Resize(visibleCells.Rows.Count - 1, 1).SpecialCells(Microsoft.Office.Interop.Excel.XlCellType.xlCellTypeVisible);
-            
+
+            string logstr = "";
+
             foreach (Excel.Range area in visibleRows.Areas)
             {
                 // process each "visibly-filtered" row
                 foreach (Excel.Range row in area.Rows)
                 {
+                    // init some strings
+                    string relativeFile;
+                    string overlayFile;
+                    string over;
+                    string abbrev;
+                    string color;
+
                     // TODO make switches for MRIcroN call configurable in XLSM file
                     string subj = row.Value2;
                     string sess = row.get_Offset(0, 1).Value2;
@@ -120,37 +131,50 @@ namespace ExcelWorkbook_fMRI
                     // TODO verify other "goodness" of anat we found [how?]
                     if (!fga.IsValid)
                     {
-                        MessageBox.Show("no valid file like: " + globPatAnat);
+                        logstr += "\nNo valid file like: " + globPatAnat;
                         continue;
                     }
 
-                    // TODO get overlay,color from Tuple of "grabber"
-                    //string over = @" -c grayscale -o " + row.get_Offset(0, 5).Value2 + @" -b 50";
-                    string over = @" -c grayscale -o " + @fga.PathAnat +
-                    @".\masked_roi98_mniwholebrain_fromspm_wroi99_wholecube_both_p-overlay_adathreshold_remap_clustercorrected.hdr" +
-                    @" -b 50";
+                    abbrev = row.get_Offset(0, 3).Value2;
+                    try
+                    {
+                        // TODO improve this ugly mess of strings here
+                        relativeFile = this._d[abbrev].Item1;
+                        color = this._d[abbrev].Item2;
+                        overlayFile = @fga.PathAnat + relativeFile;
+                        over = @" -c grayscale -o " + overlayFile + @" -b 50 -c " + color;
+                    }
+                    catch
+                    {
+                        logstr += "\ncould not handle '" + abbrev + "' as overlay for: " + globPatAnat;
+                        continue;
+                    }
 
-                    // TODO sanity check anat & over and do something graceful when those are unsuitable
-                    Debug.WriteLine(" OVER is: " + @over);
-                    
+                    // TODO verify relativeFile exists; otherwise do something graceful
+                    if (!File.Exists(@fga.PathAnat + relativeFile))
+                    {
+                        logstr += "no overlay file: " + overlayFile;
+                        continue;
+                    }
+
                     ProcessStartInfo startInfo = new ProcessStartInfo(@MRIcroNexeStr, anat+over);
                     Process.Start(startInfo);
 
                 }
             }
             DimIndicators();
+            MessageBox.Show(logstr);
         }
 
         public void VerifyConfigPathFile()
         {
             // get DataTable via DataTableGrabber using named range "LookupTable"
-            DataTableGrabber dtg = new DataTableGrabber(Globals.ThisWorkbook.FullName, "LookupTable");
-            _dtg = dtg;
+            _dtg = new DataTableGrabber(Globals.ThisWorkbook.FullName, "LookupTable");
 
             // use dictionary method to get strings for basepath dir & exe file
-            Dictionary<string, Tuple<string, string>> d = _dtg.ToDictionaryKT();
-            BasePathStr = d["basePath"].Item1;
-            MRIcroNexeStr = d["MRIcroNexe"].Item1;
+            _d = _dtg.ToDictionaryKT();
+            BasePathStr = _d["basePath"].Item1;
+            MRIcroNexeStr = _d["MRIcroNexe"].Item1;
 
             // BasePath directory
             BasePath bp = new BasePath(BasePathStr, "Select directory for ADAT basepath.");
