@@ -24,6 +24,7 @@ namespace ExcelWorkbook_fMRI
         public Microsoft.Office.Tools.Excel.NamedRange ReadyIndicatorRange;
         public Microsoft.Office.Tools.Excel.NamedRange BasePathIndicatorRange;
         public Microsoft.Office.Tools.Excel.NamedRange MRIcroNexeIndicatorRange;
+        public Microsoft.Office.Tools.Excel.NamedRange StatusColumnIndicatorRange;
 
         private void Sheet1_Startup(object sender, System.EventArgs e)
         {
@@ -43,6 +44,7 @@ namespace ExcelWorkbook_fMRI
             ReadyIndicatorRange = Controls.AddNamedRange(this.Range["A1"], "Ready" + "Range");  // TODO unhardcode address
             BasePathIndicatorRange = Controls.AddNamedRange(this.Range["B1"], "BasePathIndicator" + "Range");  // TODO unhardcode address
             MRIcroNexeIndicatorRange = Controls.AddNamedRange(this.Range["C1"], "MRIcroNexeIndicator" + "Range");  // TODO unhardcode address
+            StatusColumnIndicatorRange = Controls.AddNamedRange(this.Range["E:E"], "StatusColumnIndicator" + "Range");  // TODO unhardcode address
 
             // Init indicators
             DimIndicators();
@@ -63,6 +65,12 @@ namespace ExcelWorkbook_fMRI
             UpdateIndicator(ReadyIndicatorRange, "Dim");
             UpdateIndicator(BasePathIndicatorRange, "Dim");
             UpdateIndicator(MRIcroNexeIndicatorRange, "Dim");
+        }
+
+        // TODO reset (dim) the "READY" & other 2 indicators
+        public void DimStatusColumn()
+        {
+            UpdateIndicator(StatusColumnIndicatorRange, "Dim");
         }
 
         // TODO not so poorly done work with indicators
@@ -87,7 +95,10 @@ namespace ExcelWorkbook_fMRI
         // this is the one we use...an event handler for THIS sheet's double-click
         void Sheet_BeforeDoubleClick(Excel.Range Target, ref bool Cancel)
         {
-            Cancel = true; // affects how double-click behavior continuation goes AFTER this handler
+            // TODO too slow or otherwise flaky logic
+            //DimStatusColumn();
+
+            Cancel = false; // affects how double-click behavior continuation goes AFTER this handler
 
             // we only want to take action when user double-clicks "A1" of run sheet
             if (!Target.Address.Equals("$A$1"))
@@ -131,7 +142,9 @@ namespace ExcelWorkbook_fMRI
                     // TODO verify other "goodness" of anat we found [how?]
                     if (!fga.IsValid)
                     {
-                        logstr += "\nNo valid file like: " + globPatAnat;
+                        logstr = "bad anatomy";
+                        row.get_Offset(0, 4).Value2 = logstr;
+                        row.get_Offset(0, 4).Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Red);
                         continue;
                     }
 
@@ -146,24 +159,32 @@ namespace ExcelWorkbook_fMRI
                     }
                     catch
                     {
-                        logstr += "\ncould not handle '" + abbrev + "' as overlay for: " + globPatAnat;
+                        logstr = "bad overlay";
+                        row.get_Offset(0, 4).Value2 = logstr;
+                        row.get_Offset(0, 4).Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Blue);
                         continue;
                     }
 
                     // TODO verify relativeFile exists; otherwise do something graceful
                     if (!File.Exists(@fga.PathAnat + relativeFile))
                     {
-                        logstr += "no overlay file: " + overlayFile;
+                        logstr = "bad overlay";
+                        row.get_Offset(0, 4).Value2 = logstr;
+                        row.get_Offset(0, 4).Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Blue);
                         continue;
                     }
 
                     ProcessStartInfo startInfo = new ProcessStartInfo(@MRIcroNexeStr, anat+over);
                     Process.Start(startInfo);
 
+                    logstr = "ok";
+                    row.get_Offset(0, 4).Value2 = logstr;
+                    row.get_Offset(0, 4).Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Green);
+
                 }
             }
             DimIndicators();
-            MessageBox.Show(logstr);
+            
         }
 
         public void VerifyConfigPathFile()
