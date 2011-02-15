@@ -98,12 +98,14 @@ namespace ExcelWorkbook_fMRI
             // TODO too slow or otherwise flaky logic
             //DimStatusColumn();
 
-            // TODO after disposing of "this run", activate a cell so that Excel is not hung editing the "Ready" cell
-            Cancel = false; // affects how double-click behavior continuation goes AFTER this handler
+            Cancel = true; // this flag affects how double-click behavior continuation goes AFTER this handler
 
             // we only want to take action when user double-clicks "A1" of run sheet
             if (!Target.Address.Equals("$A$1"))
+            {
+                Cancel = false;
                 return;
+            }
 
             // verify basepath and exe file
             VerifyConfigPathFile();
