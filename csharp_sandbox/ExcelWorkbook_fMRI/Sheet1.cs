@@ -58,7 +58,7 @@ namespace ExcelWorkbook_fMRI
 
         private void UpdateStatusText(string s)
         {
-            StatusTextRange.Value2 = DateTime.Now.ToString("U") + ": " + s;
+            StatusTextRange.Value2 = DateTime.Now.ToString("F") + ": " + s;
         }
 
         private void Sheet1_Shutdown(object sender, System.EventArgs e)
