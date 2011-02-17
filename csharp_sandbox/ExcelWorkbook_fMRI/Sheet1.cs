@@ -24,6 +24,7 @@ namespace ExcelWorkbook_fMRI
         public Microsoft.Office.Tools.Excel.NamedRange ReadyIndicatorRange;
         public Microsoft.Office.Tools.Excel.NamedRange BasePathIndicatorRange;
         public Microsoft.Office.Tools.Excel.NamedRange MRIcroNexeIndicatorRange;
+        public Microsoft.Office.Tools.Excel.NamedRange StatusTextRange;
         public Microsoft.Office.Tools.Excel.NamedRange StatusColumnIndicatorRange;
 
         private void Sheet1_Startup(object sender, System.EventArgs e)
@@ -44,10 +45,20 @@ namespace ExcelWorkbook_fMRI
             ReadyIndicatorRange = Controls.AddNamedRange(this.Range["A1"], "Ready" + "Range");  // TODO unhardcode address
             BasePathIndicatorRange = Controls.AddNamedRange(this.Range["B1"], "BasePathIndicator" + "Range");  // TODO unhardcode address
             MRIcroNexeIndicatorRange = Controls.AddNamedRange(this.Range["C1"], "MRIcroNexeIndicator" + "Range");  // TODO unhardcode address
+            StatusTextRange = Controls.AddNamedRange(this.Range["F1"], "StatusText" + "Range");  // TODO unhardcode address
             StatusColumnIndicatorRange = Controls.AddNamedRange(this.Range["E:E"], "StatusColumnIndicator" + "Range");  // TODO unhardcode address
 
-            // Init indicators
+            // Init indicators & status
             DimIndicators();
+            DimStatusColumn();
+
+            // Status text update
+            UpdateStatusText("Start");
+        }
+
+        private void UpdateStatusText(string s)
+        {
+            StatusTextRange.Value2 = DateTime.Now.ToString("U") + ": " + s;
         }
 
         private void Sheet1_Shutdown(object sender, System.EventArgs e)
@@ -108,6 +119,7 @@ namespace ExcelWorkbook_fMRI
             }
 
             // verify basepath and exe file
+            UpdateStatusText("Verifying config");
             VerifyConfigPathFile();
 
             this.DataTableGrabber.DebugShow();
@@ -117,19 +129,22 @@ namespace ExcelWorkbook_fMRI
             Excel.Range visibleCells = this.AutoFilter.Range;
             Excel.Range visibleRows = visibleCells.get_Offset(1, 0).get_Resize(visibleCells.Rows.Count - 1, 1).SpecialCells(Microsoft.Office.Interop.Excel.XlCellType.xlCellTypeVisible);
 
+            int count = 0;
+            int countGood = 0;
             string logstr = "";
-
+            UpdateStatusText("Stepping through each row in visible/filter range");
             foreach (Excel.Range area in visibleRows.Areas)
             {
                 // process each "visibly-filtered" row
                 foreach (Excel.Range row in area.Rows)
                 {
-                    // init some strings
+                    // init some things
                     string relativeFile;
                     string overlayFile;
                     string over;
                     string abbrev;
                     string color;
+                    count++;
 
                     // TODO make switches for MRIcroN call configurable in XLSM file
                     string subj = row.Value2;
@@ -177,16 +192,19 @@ namespace ExcelWorkbook_fMRI
                         continue;
                     }
 
+                    UpdateStatusText("Launching MRIcroNexe for " + subj + ", " + sess + ", " + task);
                     ProcessStartInfo startInfo = new ProcessStartInfo(@MRIcroNexeStr, anat+over);
                     Process.Start(startInfo);
 
                     logstr = "ok";
+                    countGood++;
                     row.get_Offset(0, 4).Value2 = logstr;
                     row.get_Offset(0, 4).Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Green);
 
                 }
             }
             DimIndicators();
+            UpdateStatusText(String.Format("Launched MRIcroNexe for {0} 'ok' rows of {1} attempted.",countGood,count));
             
         }
 
