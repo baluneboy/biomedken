@@ -16,10 +16,7 @@ namespace ExcelWorkbook_fMRI
     {
         private void Sheet5_Startup(object sender, System.EventArgs e)
         {
-            
-
             Excel.Range rng = this.Cells[1,2];
-
         }
 
         private void Sheet5_Shutdown(object sender, System.EventArgs e)
