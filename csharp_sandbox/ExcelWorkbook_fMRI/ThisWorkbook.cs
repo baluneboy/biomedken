@@ -1,6 +1,4 @@
-﻿//#define HOME
-
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Windows.Forms;
 using MyExcelUtilities;
@@ -11,19 +9,19 @@ namespace ExcelWorkbook_fMRI
 
     public partial class ThisWorkbook
     {
-
+        public string machineName = "";
         public Excel._Worksheet wsRun = new Excel.Worksheet();
 
         private void ThisWorkbook_Startup(object sender, System.EventArgs e)
         {
-            AddTextRow("ThisWorkbook Startup");
-            if (Debugger.IsAttached)
+            AddTextRow("ThisWorkbook Sheet Startup");
+            
+            string machineName = System.Environment.MachineName;
+            AddTextRow("MachineName is " + machineName);
+            if (machineName.Equals("KENFX"))
             {
-#if HOME
-                Globals.Sheet1.Cells[1, 5].Value = "HOME USAGE";
-                Excel.Range HOMEBP = Globals.Sheet2.Cells[2, 2];
-                HOMEBP.Value = @"E:\fMRI\adat";
-#endif
+                Globals.Sheet2.Range["B2"].Value2 = @"E:\data\fMRI\adat";
+                AddTextRow("basepath specially configured for " + machineName);
             }
             ActivateRunSheet();
         }
@@ -34,10 +32,13 @@ namespace ExcelWorkbook_fMRI
 
         public void AddTextRow(string s)
         {
-            Excel.Range range = (Excel.Range)Globals.Sheet2.Range["A11"].EntireRow;
-            range.Insert(Excel.XlInsertShiftDirection.xlShiftDown);
-            s += " " + DateTime.Now.ToString("F");
-            Globals.Sheet2.Range["B11"].Value2 = s;
+            if (Debugger.IsAttached)
+            {
+                Excel.Range range = (Excel.Range)Globals.Sheet3.Range["C36"].EntireRow;
+                range.Insert(Excel.XlInsertShiftDirection.xlShiftDown);
+                Globals.Sheet3.Range["B36"].Value2 = DateTime.Now.ToString("F");
+                Globals.Sheet3.Range["C36"].Value2 = s;
+            }
         }
 
         // activate run sheet (hopefully)
@@ -78,3 +79,9 @@ namespace ExcelWorkbook_fMRI
 
     }
 }
+
+// TODO LIST IS HERE...
+// TODO have "run" sheet's row1 (Ready, basePath, MRIcroNexe) IndicatorRanges be *very* responsive
+// TODO have macros do something (maybe override overlay and overly indicate that is so)
+// TODO special actions when KENFX is machineName
+// TODO mechanism to add rows to "configTable"

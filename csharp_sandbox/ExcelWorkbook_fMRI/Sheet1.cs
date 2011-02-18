@@ -37,18 +37,15 @@ namespace ExcelWorkbook_fMRI
 
             Globals.ThisWorkbook.AddTextRow("Sheet1 Startup");
 
+            // Handle double-click event for Sheet1 (run) -- actually, just cell "A1"
             this.BeforeDoubleClick += new
                 Excel.DocEvents_BeforeDoubleClickEventHandler(Sheet_BeforeDoubleClick);
 
-            // handle change event for entire Sheet1 (run)
+            // Handle change event for entire Sheet1 (run)
             this.Change += new Excel.DocEvents_ChangeEventHandler(Sheet1_Change);
 
-            // 3 indicators
-            ReadyIndicatorRange = Controls.AddNamedRange(this.Range["A1"], "Ready" + "Range");  // TODO unhardcode address
-            BasePathIndicatorRange = Controls.AddNamedRange(this.Range["B1"], "BasePathIndicator" + "Range");  // TODO unhardcode address
-            MRIcroNexeIndicatorRange = Controls.AddNamedRange(this.Range["C1"], "MRIcroNexeIndicator" + "Range");  // TODO unhardcode address
-            StatusTextRange = Controls.AddNamedRange(this.Range["F1"], "StatusText" + "Range");  // TODO unhardcode address
-            StatusColumnIndicatorRange = Controls.AddNamedRange(this.Range["E:E"], "StatusColumnIndicator" + "Range");  // TODO unhardcode address
+            // Add Ready, basePath, MRIcroNexe & status text ranges
+            AddIndicatorAndTextRanges();
 
             // Init indicators & status
             DimIndicators();
@@ -56,6 +53,18 @@ namespace ExcelWorkbook_fMRI
 
             // Status text update
             UpdateStatusText("Start");
+        }
+
+        private void AddIndicatorAndTextRanges()
+        {
+            // add some 4 indicators
+            ReadyIndicatorRange = Controls.AddNamedRange(this.Range["A1"], "Ready" + "Range");  // TODO unhardcode address
+            BasePathIndicatorRange = Controls.AddNamedRange(this.Range["B1"], "BasePathIndicator" + "Range");  // TODO unhardcode address
+            MRIcroNexeIndicatorRange = Controls.AddNamedRange(this.Range["C1"], "MRIcroNexeIndicator" + "Range");  // TODO unhardcode address
+            StatusColumnIndicatorRange = Controls.AddNamedRange(this.Range["E:E"], "StatusColumnIndicator" + "Range");
+
+            // add status text in cell "F1" of "run" sheet
+            StatusTextRange = Controls.AddNamedRange(this.Range["F1"], "StatusText" + "Range");
         }
 
         private void UpdateStatusText(string s)
@@ -72,7 +81,6 @@ namespace ExcelWorkbook_fMRI
             DimIndicators();
         }
 
-        // TODO reset (dim) the "READY" & other 2 indicators
         public void DimIndicators()
         {
             UpdateIndicator(ReadyIndicatorRange, "Dim");
@@ -80,7 +88,6 @@ namespace ExcelWorkbook_fMRI
             UpdateIndicator(MRIcroNexeIndicatorRange, "Dim");
         }
 
-        // TODO reset (dim) the "READY" & other 2 indicators
         public void DimStatusColumn()
         {
             UpdateIndicator(StatusColumnIndicatorRange, "Dim");
@@ -89,11 +96,12 @@ namespace ExcelWorkbook_fMRI
         // TODO not so poorly done work with indicators
         public void UpdateIndicator(Microsoft.Office.Tools.Excel.NamedRange nr, string m)
         {
+            // Use reflection to invoke "label-like" methods [why not used tagged range?]
             RangeFormatter rfReady = new RangeFormatter(nr.RefersToRange);
             InvokeVoidMethod(rfReady, m);
         }
 
-        // use reflection to invoke method via string
+        // This next method uses reflection to invoke method via string
         // see http://www.codeproject.com/KB/cs/CallMethodNameInString.aspx
         // including user comments near bottom of that page
         public static void InvokeVoidMethod(object objB, string methodName)
@@ -103,14 +111,9 @@ namespace ExcelWorkbook_fMRI
                 null, objB, null);
         }
 
-        // TODO get sheet change event handler to reset (dim) the "READY" & other 2 indicators
-
-        // this is the one we use...an event handler for THIS sheet's double-click
+        // Event handler for THIS sheet's double-click
         void Sheet_BeforeDoubleClick(Excel.Range Target, ref bool Cancel)
         {
-            // TODO too slow or otherwise flaky logic
-            //DimStatusColumn();
-
             Cancel = true; // this flag affects how double-click behavior continuation goes AFTER this handler
 
             // we only want to take action when user double-clicks "A1" of run sheet
@@ -234,6 +237,7 @@ namespace ExcelWorkbook_fMRI
             Globals.Sheet2.MRIcroNexeRange.Value2 = MRIcroNexeStr;
             UpdateIndicator(MRIcroNexeIndicatorRange, "Good");
 
+            // Ready indicator
             UpdateIndicator(ReadyIndicatorRange, "Good");
 
         }
