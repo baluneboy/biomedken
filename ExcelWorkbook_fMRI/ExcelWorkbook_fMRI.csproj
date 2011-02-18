@@ -149,7 +149,6 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <None Include="ClassDiagram2.cd" />
     <None Include="ExcelWorkbook_fMRI_TemporaryKey.pfx" />
     <None Include="fmri_customized.xlsm" />
     <None Include="Properties\Settings.settings">
@@ -199,9 +198,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme_reflection4functionHandles.txt" />
-    <None Include="Sheet5.Designer.xml">
-      <DependentUpon>Sheet5.cs</DependentUpon>
-    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v10.0\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets" />
