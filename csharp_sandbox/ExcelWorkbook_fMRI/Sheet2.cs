@@ -100,3 +100,6 @@ namespace ExcelWorkbook_fMRI
 
     }
 }
+
+            //Excel.Range range = (Excel.Range)Globals.Sheet5.Range["A1"].EntireRow;
+            //range.Insert(Excel.XlInsertShiftDirection.xlShiftDown);
