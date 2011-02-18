@@ -16,13 +16,14 @@ namespace ExcelWorkbook_fMRI
 
         private void ThisWorkbook_Startup(object sender, System.EventArgs e)
         {
+            AddTextRow("ThisWorkbook Startup");
             if (Debugger.IsAttached)
             {
 #if HOME
                 Globals.Sheet1.Cells[1, 5].Value = "HOME USAGE";
                 Excel.Range HOMEBP = Globals.Sheet2.Cells[2, 2];
                 HOMEBP.Value = @"E:\fMRI\adat";
-#endif 
+#endif
             }
             ActivateRunSheet();
         }
@@ -30,7 +31,15 @@ namespace ExcelWorkbook_fMRI
         private void ThisWorkbook_Shutdown(object sender, System.EventArgs e)
         {
         }
-                
+
+        public void AddTextRow(string s)
+        {
+            Excel.Range range = (Excel.Range)Globals.Sheet2.Range["A11"].EntireRow;
+            range.Insert(Excel.XlInsertShiftDirection.xlShiftDown);
+            s += " " + DateTime.Now.ToString("F");
+            Globals.Sheet2.Range["B11"].Value2 = s;
+        }
+
         // activate run sheet (hopefully)
         public void ActivateRunSheet()
         {

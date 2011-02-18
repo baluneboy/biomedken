@@ -13,6 +13,8 @@ namespace ExcelWorkbook_fMRI
 
         private void Sheet2_Startup(object sender, System.EventArgs e)
         {
+            Globals.ThisWorkbook.AddTextRow("Sheet2 Startup");
+
             // This next line handled change events for entire sheet
             //this.Change += new Excel.DocEvents_ChangeEventHandler(Sheet2_Change);
 
@@ -100,6 +102,3 @@ namespace ExcelWorkbook_fMRI
 
     }
 }
-
-            //Excel.Range range = (Excel.Range)Globals.Sheet5.Range["A1"].EntireRow;
-            //range.Insert(Excel.XlInsertShiftDirection.xlShiftDown);

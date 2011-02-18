@@ -35,6 +35,8 @@ namespace ExcelWorkbook_fMRI
             //    Application_SheetBeforeDoubleClick);
             #endregion
 
+            Globals.ThisWorkbook.AddTextRow("Sheet1 Startup");
+
             this.BeforeDoubleClick += new
                 Excel.DocEvents_BeforeDoubleClickEventHandler(Sheet_BeforeDoubleClick);
 
