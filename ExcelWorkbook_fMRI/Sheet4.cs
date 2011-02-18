@@ -16,6 +16,7 @@ namespace ExcelWorkbook_fMRI
     {
         private void Sheet4_Startup(object sender, System.EventArgs e)
         {
+            Globals.ThisWorkbook.AddTextRow(this.Name + " Sheet Startup");
         }
 
         private void Sheet4_Shutdown(object sender, System.EventArgs e)
