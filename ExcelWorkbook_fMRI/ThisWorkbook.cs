@@ -14,31 +14,20 @@ namespace ExcelWorkbook_fMRI
 
         private void ThisWorkbook_Startup(object sender, System.EventArgs e)
         {
-            AddTextRow("ThisWorkbook Sheet Startup");
+            Globals.Sheet7.AddLogEntry("ThisWorkbook Sheet Startup");
             
             string machineName = System.Environment.MachineName;
-            AddTextRow("MachineName is " + machineName);
+            Globals.Sheet7.AddLogEntry("MachineName is " + machineName);
             if (machineName.Equals("KENFX"))
             {
                 Globals.Sheet2.Range["B2"].Value2 = @"E:\data\fMRI\adat";
-                AddTextRow("basepath specially configured for " + machineName);
+                Globals.Sheet7.AddLogEntry("basepath specially configured for " + machineName);
             }
             ActivateRunSheet();
         }
 
         private void ThisWorkbook_Shutdown(object sender, System.EventArgs e)
         {
-        }
-
-        public void AddTextRow(string s)
-        {
-            if (Debugger.IsAttached)
-            {
-                Excel.Range range = (Excel.Range)Globals.Sheet3.Range["C36"].EntireRow;
-                range.Insert(Excel.XlInsertShiftDirection.xlShiftDown);
-                Globals.Sheet3.Range["B36"].Value2 = DateTime.Now.ToString("F");
-                Globals.Sheet3.Range["C36"].Value2 = s;
-            }
         }
 
         // activate run sheet (hopefully)

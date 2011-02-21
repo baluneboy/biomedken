@@ -134,6 +134,12 @@
     <Compile Include="Sheet3.Designer.cs">
       <DependentUpon>Sheet3.Designer.xml</DependentUpon>
     </Compile>
+    <Compile Include="Sheet7.cs">
+      <DependentUpon>fmri_customized.xlsm</DependentUpon>
+    </Compile>
+    <Compile Include="Sheet7.Designer.cs">
+      <DependentUpon>Sheet7.Designer.xml</DependentUpon>
+    </Compile>
     <Compile Include="ThisWorkbook.cs">
       <DependentUpon>fmri_customized.xlsm</DependentUpon>
     </Compile>
@@ -198,6 +204,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme_reflection4functionHandles.txt" />
+    <None Include="Sheet7.Designer.xml">
+      <DependentUpon>Sheet7.cs</DependentUpon>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v10.0\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets" />
@@ -210,6 +219,7 @@
           <HostItem Name="Sheet5" Code="Sheet2.cs" CanonicalName="Sheet5" DisplayName="configTable" Blueprint="Sheet2.Designer.xml" GeneratedCode="Sheet2.Designer.cs" />
           <HostItem Name="Sheet6" Code="Sheet3.cs" CanonicalName="Sheet6" DisplayName="DalySubjectList" Blueprint="Sheet3.Designer.xml" GeneratedCode="Sheet3.Designer.cs" />
           <HostItem Name="Sheet1" Code="Sheet4.cs" CanonicalName="Sheet1" DisplayName="NOTES" Blueprint="Sheet4.Designer.xml" GeneratedCode="Sheet4.Designer.cs" />
+          <HostItem Name="Sheet7" Code="Sheet7.cs" CanonicalName="Sheet7" DisplayName="LOG" Blueprint="Sheet7.Designer.xml" GeneratedCode="Sheet7.Designer.cs" />
           <HostItem Name="ThisWorkbook" Code="ThisWorkbook.cs" CanonicalName="ThisWorkbook" Blueprint="ThisWorkbook.Designer.xml" GeneratedCode="ThisWorkbook.Designer.cs" />
         </Host>
       </FlavorProperties>

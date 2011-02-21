@@ -35,7 +35,7 @@ namespace ExcelWorkbook_fMRI
             //    Application_SheetBeforeDoubleClick);
             #endregion
 
-            Globals.ThisWorkbook.AddTextRow("Sheet1 Startup");
+            Globals.Sheet7.AddLogEntry("Sheet1 Startup");
 
             // Handle double-click event for Sheet1 (run) -- actually, just cell "A1"
             this.BeforeDoubleClick += new
@@ -70,6 +70,7 @@ namespace ExcelWorkbook_fMRI
         private void UpdateStatusText(string s)
         {
             StatusTextRange.Value2 = DateTime.Now.ToString("F") + ": " + s;
+            Globals.Sheet7.AddLogEntry(s);
         }
 
         private void Sheet1_Shutdown(object sender, System.EventArgs e)
@@ -127,8 +128,8 @@ namespace ExcelWorkbook_fMRI
             UpdateStatusText("Verifying config");
             VerifyConfigPathFile();
 
-            this.DataTableGrabber.DebugShow();
-            Debug.WriteLine("#########################################");
+            //this.DataTableGrabber.DebugShow();
+            //Debug.WriteLine("#########################################");
 
             // loop over filter's visible range
             Excel.Range visibleCells = this.AutoFilter.Range;
@@ -168,6 +169,7 @@ namespace ExcelWorkbook_fMRI
                         logstr = "bad anatomy";
                         row.get_Offset(0, 4).Value2 = logstr;
                         row.get_Offset(0, 4).Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Red);
+                        Globals.Sheet7.AddLogEntry(logstr + " for: " + subj + " " + sess + " " + task);
                         continue;
                     }
 
@@ -185,6 +187,7 @@ namespace ExcelWorkbook_fMRI
                         logstr = "bad overlay";
                         row.get_Offset(0, 4).Value2 = logstr;
                         row.get_Offset(0, 4).Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Blue);
+                        Globals.Sheet7.AddLogEntry(logstr + " for: " + subj + " " + sess + " " + task);
                         continue;
                     }
 
@@ -194,6 +197,7 @@ namespace ExcelWorkbook_fMRI
                         logstr = "bad overlay";
                         row.get_Offset(0, 4).Value2 = logstr;
                         row.get_Offset(0, 4).Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Blue);
+                        Globals.Sheet7.AddLogEntry(logstr + " for: " + subj + " " + sess + " " + task);
                         continue;
                     }
 
