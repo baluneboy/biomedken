@@ -13,7 +13,7 @@ namespace ExcelWorkbook_fMRI
 
         private void Sheet2_Startup(object sender, System.EventArgs e)
         {
-            Globals.ThisWorkbook.AddTextRow("Sheet2 Startup");
+            Globals.Sheet7.AddLogEntry("Sheet2 Startup");
 
             // This next line handled change events for entire sheet
             //this.Change += new Excel.DocEvents_ChangeEventHandler(Sheet2_Change);
