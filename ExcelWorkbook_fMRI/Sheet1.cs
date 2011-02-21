@@ -213,29 +213,42 @@ namespace ExcelWorkbook_fMRI
             
         }
 
+        // BasePath directory
+        public void GetBasePath(string b)
+        {
+            BasePath bp = new BasePath(b, "Select directory for ADAT basepath.");
+            BasePathStr = bp.FixPath;
+            Debug.WriteLine("BasePathStr is " + BasePathStr);
+            Globals.Sheet2.BasePathRange.Value2 = BasePathStr;
+            UpdateIndicator(BasePathIndicatorRange, "Good");
+        }
+
+        // MRIcroNexe file
+        public void GetMRIcroNexeFile(string m)
+        {
+            ExeFile ef = new ExeFile(m, "Select exe file for MRIcroN.");
+            MRIcroNexeStr = ef.FileName;
+            Debug.WriteLine("MRIcroNexeStr is " + MRIcroNexeStr);
+            Globals.Sheet2.MRIcroNexeRange.Value2 = MRIcroNexeStr;
+            UpdateIndicator(MRIcroNexeIndicatorRange, "Good");
+        }
+
+        // Verify basepath and MRIcroNexe
         public void VerifyConfigPathFile()
         {
-            // get DataTable via DataTableGrabber using named range "LookupTable"
+            // Get DataTable via DataTableGrabber using named range "LookupTable"
             _dtg = new DataTableGrabber(Globals.ThisWorkbook.FullName, "LookupTable");
 
-            // use dictionary method to get strings for basepath dir & exe file
+            // Use dictionary method to get strings for basepath dir & exe file
             _d = _dtg.ToDictionaryKT();
             BasePathStr = _d["basePath"].Item1;
             MRIcroNexeStr = _d["MRIcroNexe"].Item1;
 
             // BasePath directory
-            BasePath bp = new BasePath(BasePathStr, "Select directory for ADAT basepath.");
-            BasePathStr = bp.FixPath;
-            Debug.WriteLine("BasePathStr is " + BasePathStr);
-            Globals.Sheet2.BasePathRange.Value2 = BasePathStr;
-            UpdateIndicator(BasePathIndicatorRange, "Good");
+            GetBasePath(BasePathStr);
 
             // MRIcroNexe file
-            ExeFile ef = new ExeFile(MRIcroNexeStr, "Select exe file for MRIcroN.");
-            MRIcroNexeStr = ef.FileName;
-            Debug.WriteLine("MRIcroNexeStr is " + MRIcroNexeStr);
-            Globals.Sheet2.MRIcroNexeRange.Value2 = MRIcroNexeStr;
-            UpdateIndicator(MRIcroNexeIndicatorRange, "Good");
+            GetMRIcroNexeFile(MRIcroNexeStr);
 
             // Ready indicator
             UpdateIndicator(ReadyIndicatorRange, "Good");

@@ -61,25 +61,26 @@ namespace ExcelWorkbook_fMRI
 
         void MRIcroNexeRange_Change(Excel.Range Target)
         {
-            string cellAddress = Target.get_Address(missing, missing,
-                Microsoft.Office.Interop.Excel.XlReferenceStyle.xlA1,
-                missing, missing);
+            string cellAddress = Target.get_Address(ReferenceStyle: Excel.XlReferenceStyle.xlA1);
             if (!File.Exists(Target.Value2))
             {
                 MessageBox.Show("MRIcroNexe in cell " + cellAddress + " changed to non-existing file!");
-
-                // TODO offer file dialog
+                Globals.Sheet1.UpdateIndicator(Globals.Sheet1.MRIcroNexeIndicatorRange, "Bad");
             }
+            else
+                Globals.Sheet1.UpdateIndicator(Globals.Sheet1.MRIcroNexeIndicatorRange, "Good");
         }
 
         void basePathRange_Change(Excel.Range Target)
         {
-            string cellAddress = Target.get_Address(missing, missing,
-                Microsoft.Office.Interop.Excel.XlReferenceStyle.xlA1,
-                missing, missing);
+            string cellAddress = Target.get_Address(ReferenceStyle: Excel.XlReferenceStyle.xlA1);
             if (!Directory.Exists(Target.Value2))
+            {
                 MessageBox.Show("basePath in cell " + cellAddress + " changed to non-existing path!");
-            // TODO offer directory seletion dialog (defaults to pwd)
+                Globals.Sheet1.UpdateIndicator(Globals.Sheet1.BasePathIndicatorRange, "Bad");
+            }
+            else
+                Globals.Sheet1.UpdateIndicator(Globals.Sheet1.BasePathIndicatorRange, "Good");
         }
 
         void Sheet2_Change(Excel.Range Target)
