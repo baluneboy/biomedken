@@ -11,10 +11,3 @@ namespace ExcelWorkbook_fMRI
     }
 
 }
-
-#region TODO
-/*
- * TODO see task list items in Sheet3.cs
- * Debug.Print " >> " & FilePath(strFileAnat) & Row.Cells(1, 6)
- */
-#endregion
