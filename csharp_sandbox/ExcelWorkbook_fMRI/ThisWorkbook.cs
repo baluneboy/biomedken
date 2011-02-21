@@ -81,7 +81,6 @@ namespace ExcelWorkbook_fMRI
 }
 
 // TODO LIST IS HERE...
-// TODO have "run" sheet's row1 (Ready, basePath, MRIcroNexe) IndicatorRanges be *very* responsive
 // TODO have macros do something (maybe override overlay and overly indicate that is so)
-// TODO special actions when KENFX is machineName
+// TODO have "run" sheet's row1 (Ready, basePath, MRIcroNexe) IndicatorRanges behave better
 // TODO mechanism to add rows to "configTable"
