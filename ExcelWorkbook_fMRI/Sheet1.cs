@@ -279,7 +279,7 @@ namespace ExcelWorkbook_fMRI
         //}
         #endregion
 
-        #region NOT OBSOLETE (yet...)
+        #region Macros :)
 
         private Microsoft.Office.Tools.Excel.NamedRange namedRange1;
 
@@ -324,6 +324,7 @@ namespace ExcelWorkbook_fMRI
         {
             return this;
         }
+
         #endregion
 
         #region VSTO Designer generated code
