@@ -9,35 +9,29 @@
 //------------------------------------------------------------------------------
 
 #pragma warning disable 414
-namespace ExcelWorkbook_fMRI
-{
-
-
+namespace ExcelWorkbook_fMRI {
+    
+    
     /// 
-    [Microsoft.VisualStudio.Tools.Applications.Runtime.StartupObjectAttribute(4)]
-    [global::System.Security.Permissions.PermissionSetAttribute(global::System.Security.Permissions.SecurityAction.Demand, Name = "FullTrust")]
-    public sealed partial class Sheet7 : Microsoft.Office.Tools.Excel.WorksheetBase
-    {
-
-        internal Microsoft.Office.Tools.Excel.NamedRange Sheet1_Print_Area;
-
+    [Microsoft.VisualStudio.Tools.Applications.Runtime.StartupObjectAttribute(5)]
+    [global::System.Security.Permissions.PermissionSetAttribute(global::System.Security.Permissions.SecurityAction.Demand, Name="FullTrust")]
+    public sealed partial class Sheet7 : Microsoft.Office.Tools.Excel.WorksheetBase {
+        
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Tools.Office.ProgrammingModel.dll", "10.0.0.0")]
         private global::System.Object missing = global::System.Type.Missing;
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        public Sheet7(global::Microsoft.Office.Tools.Excel.Factory factory, global::System.IServiceProvider serviceProvider) :
-            base(factory, serviceProvider, "Sheet1", "Sheet1")
-        {
+        public Sheet7(global::Microsoft.Office.Tools.Excel.Factory factory, global::System.IServiceProvider serviceProvider) : 
+                base(factory, serviceProvider, "Sheet7", "Sheet7") {
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Tools.Office.ProgrammingModel.dll", "10.0.0.0")]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        protected override void Initialize()
-        {
+        protected override void Initialize() {
             base.Initialize();
             Globals.Sheet7 = this;
             global::System.Windows.Forms.Application.EnableVisualStyles();
@@ -46,159 +40,125 @@ namespace ExcelWorkbook_fMRI
             this.InitializeComponents();
             this.InitializeData();
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Tools.Office.ProgrammingModel.dll", "10.0.0.0")]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        protected override void FinishInitialization()
-        {
+        protected override void FinishInitialization() {
             this.InternalStartup();
             this.OnStartup();
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Tools.Office.ProgrammingModel.dll", "10.0.0.0")]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        protected override void InitializeDataBindings()
-        {
+        protected override void InitializeDataBindings() {
             this.BeginInitialization();
             this.BindToData();
             this.EndInitialization();
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Tools.Office.ProgrammingModel.dll", "10.0.0.0")]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        private void InitializeCachedData()
-        {
-            if ((this.DataHost == null))
-            {
+        private void InitializeCachedData() {
+            if ((this.DataHost == null)) {
                 return;
             }
-            if (this.DataHost.IsCacheInitialized)
-            {
+            if (this.DataHost.IsCacheInitialized) {
                 this.DataHost.FillCachedData(this);
             }
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Tools.Office.ProgrammingModel.dll", "10.0.0.0")]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        private void InitializeData()
-        {
+        private void InitializeData() {
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Tools.Office.ProgrammingModel.dll", "10.0.0.0")]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        private void BindToData()
-        {
+        private void BindToData() {
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        private void StartCaching(string MemberName)
-        {
+        private void StartCaching(string MemberName) {
             this.DataHost.StartCaching(this, MemberName);
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        private void StopCaching(string MemberName)
-        {
+        private void StopCaching(string MemberName) {
             this.DataHost.StopCaching(this, MemberName);
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        private bool IsCached(string MemberName)
-        {
+        private bool IsCached(string MemberName) {
             return this.DataHost.IsCached(this, MemberName);
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Tools.Office.ProgrammingModel.dll", "10.0.0.0")]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        private void BeginInitialization()
-        {
+        private void BeginInitialization() {
             this.BeginInit();
-            this.Sheet1_Print_Area.BeginInit();
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Tools.Office.ProgrammingModel.dll", "10.0.0.0")]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        private void EndInitialization()
-        {
-            this.Sheet1_Print_Area.EndInit();
+        private void EndInitialization() {
             this.EndInit();
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Tools.Office.ProgrammingModel.dll", "10.0.0.0")]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        private void InitializeControls()
-        {
-            this.Sheet1_Print_Area = Globals.Factory.CreateNamedRange(null, null, "Sheet1!Print_Area", "Sheet1_Print_Area", this);
+        private void InitializeControls() {
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Tools.Office.ProgrammingModel.dll", "10.0.0.0")]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        private void InitializeComponents()
-        {
+        private void InitializeComponents() {
         }
-
+        
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        private bool NeedsFill(string MemberName)
-        {
+        private bool NeedsFill(string MemberName) {
             return this.DataHost.NeedsFill(this, MemberName);
         }
-
-        /// 
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Tools.Office.ProgrammingModel.dll", "10.0.0.0")]
-        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        protected override void OnShutdown()
-        {
-            this.Sheet1_Print_Area.Dispose();
-            base.OnShutdown();
-        }
     }
-
-    internal sealed partial class Globals
-    {
-
+    
+    internal sealed partial class Globals {
+        
         private static Sheet7 _Sheet7;
-
-        internal static Sheet7 Sheet7
-        {
-            get
-            {
+        
+        internal static Sheet7 Sheet7 {
+            get {
                 return _Sheet7;
             }
-            set
-            {
-                if ((_Sheet7 == null))
-                {
+            set {
+                if ((_Sheet7 == null)) {
                     _Sheet7 = value;
                 }
-                else
-                {
+                else {
                     throw new System.NotSupportedException();
                 }
             }
