@@ -25,6 +25,7 @@ namespace ExcelWorkbook_fMRI
 
         public void AddLogEntry(string s)
         {
+			// TODO the next 2 things is what...
             // TODO if first word of s is "bad", then Font.Color is red
             // TODO if first word of s is "Launched", then EntireRow is highlighted
             Excel.Range range = (Excel.Range)Globals.Sheet7.Range["A2"].EntireRow;
