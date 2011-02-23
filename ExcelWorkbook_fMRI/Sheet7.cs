@@ -12,7 +12,10 @@ using Office = Microsoft.Office.Core;
 
 namespace ExcelWorkbook_fMRI
 {
-    public partial class Sheet7
+    [System.Runtime.InteropServices.ComVisible(true)]
+    [System.Runtime.InteropServices.ClassInterface(
+        System.Runtime.InteropServices.ClassInterfaceType.None)]
+    public partial class Sheet7 : ExcelWorkbook_fMRI.ISheet7
     {
         private void Sheet7_Startup(object sender, System.EventArgs e)
         {
@@ -32,6 +35,11 @@ namespace ExcelWorkbook_fMRI
             range.Insert(Excel.XlInsertShiftDirection.xlShiftDown);
             Globals.Sheet7.Range["A2"].Value2 = DateTime.Now.ToString("F");
             Globals.Sheet7.Range["B2"].Value2 = s;
+        }
+
+        protected override object GetAutomationObject()
+        {
+            return this;
         }
 
         #region VSTO Designer generated code
