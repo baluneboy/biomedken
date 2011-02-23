@@ -28,13 +28,21 @@ namespace ExcelWorkbook_fMRI
 
         public void AddLogEntry(string s)
         {
-			// TODO the next 2 things is what...
+            // TODO the next 2 things is what...
             // TODO if first word of s is "bad", then Font.Color is red
             // TODO if first word of s is "Launched", then EntireRow is highlighted
             Excel.Range range = (Excel.Range)Globals.Sheet7.Range["A2"].EntireRow;
             range.Insert(Excel.XlInsertShiftDirection.xlShiftDown);
             Globals.Sheet7.Range["A2"].Value2 = DateTime.Now.ToString("F");
             Globals.Sheet7.Range["B2"].Value2 = s;
+        }
+
+        public void SpecialLoopFilteredRange(string action = "UseOverlayColumn")
+        {
+            Excel.Range rng = Globals.Sheet1.Range["A1"];
+            AddLogEntry("entered SpecialLoopFilteredRange");
+            rng.Activate();
+            Globals.Sheet1.LoopFilteredRange(action);
         }
 
         protected override object GetAutomationObject()

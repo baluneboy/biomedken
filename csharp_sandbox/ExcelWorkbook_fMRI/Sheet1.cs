@@ -67,7 +67,7 @@ namespace ExcelWorkbook_fMRI
             StatusTextRange = Controls.AddNamedRange(this.Range["F1"], "StatusText" + "Range");
         }
 
-        private void UpdateStatusText(string s)
+        public void UpdateStatusText(string s)
         {
             StatusTextRange.Value2 = DateTime.Now.ToString("F") + ": " + s;
             Globals.Sheet7.AddLogEntry(s);
@@ -124,12 +124,18 @@ namespace ExcelWorkbook_fMRI
                 return;
             }
 
+            // loop over visible filtered range (UseOverlayColumn is default action there)
+            LoopFilteredRange();
+            
+        }
+
+        public void LoopFilteredRange(string action = "UseOverlayColumn")
+        {
+            Globals.Sheet7.AddLogEntry("enter loop via Sheet7 hooray");
+
             // verify basepath and exe file
             UpdateStatusText("Verifying config");
             VerifyConfigPathFile();
-
-            //this.DataTableGrabber.DebugShow();
-            //Debug.WriteLine("#########################################");
 
             // loop over filter's visible range
             Excel.Range visibleCells = this.AutoFilter.Range;
@@ -202,7 +208,7 @@ namespace ExcelWorkbook_fMRI
                     }
 
                     UpdateStatusText("Launching MRIcroNexe for " + subj + ", " + sess + ", " + task);
-                    ProcessStartInfo startInfo = new ProcessStartInfo(@MRIcroNexeStr, anat+over);
+                    ProcessStartInfo startInfo = new ProcessStartInfo(@MRIcroNexeStr, anat + over);
                     Process.Start(startInfo);
 
                     logstr = "ok";
@@ -213,8 +219,8 @@ namespace ExcelWorkbook_fMRI
                 }
             }
             DimIndicators();
-            UpdateStatusText(String.Format("Launched MRIcroNexe for {0} 'ok' rows of {1} attempted.",countGood,count));
-            
+            UpdateStatusText(String.Format("Launched MRIcroNexe for {0} 'ok' rows of {1} attempted.", countGood, count));
+
         }
 
         // BasePath directory
