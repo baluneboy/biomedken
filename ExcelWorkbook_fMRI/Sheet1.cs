@@ -124,15 +124,14 @@ namespace ExcelWorkbook_fMRI
                 return;
             }
 
-            // loop over visible filtered range (UseOverlayColumn is default action there)
-            LoopFilteredRange();
+            // loop over visible filtered range (GetFromMacro is default abbrev there)
+            LoopFilteredRange("ThisColorComesFromRunSheetColumn",action:"NOTfromMacro");
             
         }
 
-        public void LoopFilteredRange(string action = "UseOverlayColumn")
+        // a logic problem ignores the "from macro" route
+        public void LoopFilteredRange(string color, string action = "GetFromMacro")
         {
-            Globals.Sheet7.AddLogEntry("enter loop via Sheet7 hooray");
-
             // verify basepath and exe file
             UpdateStatusText("Verifying config");
             VerifyConfigPathFile();
@@ -151,11 +150,11 @@ namespace ExcelWorkbook_fMRI
                 foreach (Excel.Range row in area.Rows)
                 {
                     // init some things
+                    string abbrev;
                     string relativeFile;
                     string overlayFile;
                     string over;
-                    string abbrev;
-                    string color;
+                    //string color;
                     count++;
 
                     // TODO make switches for MRIcroN call configurable in XLSM file
@@ -179,12 +178,18 @@ namespace ExcelWorkbook_fMRI
                         continue;
                     }
 
-                    abbrev = row.get_Offset(0, 3).Value2;
                     try
                     {
                         // TODO improve this ugly mess of strings here
+                        if (action.Equals("GetFromMacro"))
+                            abbrev = action;
+                        else
+                        {
+                            abbrev = row.get_Offset(0, 3).Value2;
+                            color = this._d[abbrev].Item2;
+                        }
+                        Globals.Sheet7.AddLogEntry("abbrev is " + abbrev + " and color is " + color);
                         relativeFile = this._d[abbrev].Item1;
-                        color = this._d[abbrev].Item2;
                         overlayFile = @fga.PathAnat + relativeFile;
                         over = @" -c grayscale -o " + overlayFile + @" -b 50 -c " + color;
                     }
