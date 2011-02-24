@@ -37,12 +37,9 @@ namespace ExcelWorkbook_fMRI
             Globals.Sheet7.Range["B2"].Value2 = s;
         }
 
-        public void SpecialLoopFilteredRange(string color, string abbrev = "ThisShouldGetFilledByMacro")
+        public void SpecialLoopFilteredRange(string action, string abbrev, string color)
         {
-            //Excel.Range rng = Globals.Sheet1.Range["A1"];
-            //AddLogEntry("entered SpecialLoopFilteredRange");
-            //rng.Activate();
-            Globals.Sheet1.LoopFilteredRange(color,abbrev);
+            Globals.Sheet1.LoopFilteredRange(action,abbrev,color);
         }
 
         protected override object GetAutomationObject()
