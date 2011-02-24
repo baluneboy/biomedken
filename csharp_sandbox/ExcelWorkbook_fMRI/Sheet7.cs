@@ -37,12 +37,12 @@ namespace ExcelWorkbook_fMRI
             Globals.Sheet7.Range["B2"].Value2 = s;
         }
 
-        public void SpecialLoopFilteredRange(string action = "UseOverlayColumn")
+        public void SpecialLoopFilteredRange(string color, string abbrev = "ThisShouldGetFilledByMacro")
         {
-            Excel.Range rng = Globals.Sheet1.Range["A1"];
-            AddLogEntry("entered SpecialLoopFilteredRange");
-            rng.Activate();
-            Globals.Sheet1.LoopFilteredRange(action);
+            //Excel.Range rng = Globals.Sheet1.Range["A1"];
+            //AddLogEntry("entered SpecialLoopFilteredRange");
+            //rng.Activate();
+            Globals.Sheet1.LoopFilteredRange(color,abbrev);
         }
 
         protected override object GetAutomationObject()
