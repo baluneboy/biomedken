@@ -5,6 +5,6 @@ namespace ExcelWorkbook_fMRI
     public interface ISheet7
     {
         void AddLogEntry(string s);
-        void SpecialLoopFilteredRange(string color, string action);
+        void SpecialLoopFilteredRange(string action, string abbrev, string color);
     }
 }

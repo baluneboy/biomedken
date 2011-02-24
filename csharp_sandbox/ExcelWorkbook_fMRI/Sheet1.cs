@@ -125,12 +125,12 @@ namespace ExcelWorkbook_fMRI
             }
 
             // loop over visible filtered range (GetFromMacro is default abbrev there)
-            LoopFilteredRange("ThisColorComesFromRunSheetColumn",action:"NOTfromMacro");
+            LoopFilteredRange(action:"NotMacro",abbrev:"NotMacro",color:"FromRunSheetColumn");
             
         }
 
         // a logic problem ignores the "from macro" route
-        public void LoopFilteredRange(string color, string action = "GetFromMacro")
+        public void LoopFilteredRange(string action = "NotMacro", string abbrev = "pADATremap",string color = "red")
         {
             // verify basepath and exe file
             UpdateStatusText("Verifying config");
@@ -150,7 +150,7 @@ namespace ExcelWorkbook_fMRI
                 foreach (Excel.Range row in area.Rows)
                 {
                     // init some things
-                    string abbrev;
+                    //string abbrev;
                     string relativeFile;
                     string overlayFile;
                     string over;
@@ -181,13 +181,12 @@ namespace ExcelWorkbook_fMRI
                     try
                     {
                         // TODO improve this ugly mess of strings here
-                        if (action.Equals("GetFromMacro"))
-                            abbrev = action;
-                        else
+                        if (action.Equals("NotMacro"))
                         {
                             abbrev = row.get_Offset(0, 3).Value2;
                             color = this._d[abbrev].Item2;
                         }
+
                         Globals.Sheet7.AddLogEntry("abbrev is " + abbrev + " and color is " + color);
                         relativeFile = this._d[abbrev].Item1;
                         overlayFile = @fga.PathAnat + relativeFile;
