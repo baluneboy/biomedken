@@ -172,7 +172,7 @@ namespace ExcelWorkbook_fMRI
                     if (!fga.IsValid)
                     {
                         logstr = "bad anatomy";
-                        row.get_Offset(0, 4).Value2 = logstr;
+                        row.get_Offset(0, 4).Value2 = abbrev + ":" + logstr;
                         row.get_Offset(0, 4).Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Red);
                         Globals.Sheet7.AddLogEntry(logstr + " for: " + subj + " " + sess + " " + task);
                         continue;
@@ -195,7 +195,7 @@ namespace ExcelWorkbook_fMRI
                     catch
                     {
                         logstr = "bad overlay";
-                        row.get_Offset(0, 4).Value2 = logstr;
+                        row.get_Offset(0, 4).Value2 = abbrev + ":" + logstr;
                         row.get_Offset(0, 4).Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Blue);
                         Globals.Sheet7.AddLogEntry(logstr + " for: " + subj + " " + sess + " " + task);
                         continue;
@@ -205,7 +205,7 @@ namespace ExcelWorkbook_fMRI
                     if (!File.Exists(@fga.PathAnat + relativeFile))
                     {
                         logstr = "bad overlay";
-                        row.get_Offset(0, 4).Value2 = logstr;
+                        row.get_Offset(0, 4).Value2 = abbrev + ":" + logstr;
                         row.get_Offset(0, 4).Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Blue);
                         Globals.Sheet7.AddLogEntry(logstr + " for: " + subj + " " + sess + " " + task);
                         continue;
@@ -217,7 +217,7 @@ namespace ExcelWorkbook_fMRI
 
                     logstr = "ok";
                     countGood++;
-                    row.get_Offset(0, 4).Value2 = logstr;
+                    row.get_Offset(0, 4).Value2 = abbrev + ":" + logstr;
                     row.get_Offset(0, 4).Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Green);
 
                 }
@@ -353,7 +353,3 @@ namespace ExcelWorkbook_fMRI
 
     }
 }
-
-
-//string GlobAnatFile(string name);
-//string RelativeOverlayFile(string pathAnat, string overlayFile);
