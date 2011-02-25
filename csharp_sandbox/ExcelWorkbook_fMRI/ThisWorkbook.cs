@@ -70,6 +70,7 @@ namespace ExcelWorkbook_fMRI
 }
 
 // TODO LIST IS HERE...
-// TODO have macros do something (maybe override overlay and overly indicate that is so)
 // TODO have "run" sheet's row1 (Ready, basePath, MRIcroNexe) IndicatorRanges behave better
+// TODO get rid of B1 & C1 on "run" sheet [those don't really act like indicators, just use Ready]
+// TODO instead of LOG sheet, use MySQL table with mechanism to query last run, run before that, etc.
 // TODO mechanism to add rows to "configTable"
