@@ -127,6 +127,9 @@ data_num=numel(data);
 
 switch casetype
     
+    case 'first'
+        
+        data(1)=upper(data(1));
     %----------------------------------------------------------------------
 
     case 'upper'
