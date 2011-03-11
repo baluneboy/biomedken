@@ -1,8 +1,13 @@
-function [indRisingEdges,accel,absSmoothAngularRate] = risingedgedetector(angle,fs)
+function [indRisingEdges,accel,absSmoothAngularRate] = risingedgedetector(angle,fs,strMethod)
 % EXAMPLE
 % load c:\temp\trash_angle % gets "angle"
 % fs = 100; % sa/sec sample rate
 % [indRisingEdges,accel,absSmoothAngularRate] = risingedgedetector(angle,fs);
+
+%% Deal with inputs
+if nargin==2
+    strMethod = 'prewitt';
+end
 
 %% Get angular rate
 angularRate = gradient(angle)*fs;
@@ -19,7 +24,7 @@ smoothAngularRate = filtfilt(b,a,angularRate);
 absSmoothAngularRate = abs(smoothAngularRate);
 
 %% Find all "edges" in absSmoothAngularRate (despite variable's name...)
-blnRisingEdges = edge(absSmoothAngularRate,'prewitt'); % best edge detector? 
+blnRisingEdges = edge(absSmoothAngularRate,strMethod); % best edge detector? 
 
 %% Keep only positive slopes (to make good on variable's name)
 accel = gradient(absSmoothAngularRate)*fs;

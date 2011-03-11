@@ -6,6 +6,7 @@ function cas = simpleglob(strPathPattern)
 % strPathPattern = 'c:\temp\*\*ash*.txt';
 % cas = simpleglob(strPathPattern)
 
+% strPathPattern = forwardslash(strPathPattern); % for usage on stroke-eeg
 if exist('c:\_workcopy\scripts\trunk','dir')
     strCmd = ['c:\_workcopy\scripts\trunk\python\fileglobber_project\simpleglob.py "' strPathPattern '"'];
 else
