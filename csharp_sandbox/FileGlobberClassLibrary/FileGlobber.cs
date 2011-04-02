@@ -41,7 +41,7 @@ namespace ClassLibraryFileGlobber
             // Query that produces list of files matching both filename & dirname patterns
             var queryMatchingFiles =
                 from file in fileList
-                where Regex.IsMatch(file.Name, namepattern) &&
+                where Regex.IsMatch(file.Name, @"^" + namepattern + "$") &&
                       Regex.IsMatch(file.DirectoryName, @"^" + folderpattern + "$")
                 select file;
 

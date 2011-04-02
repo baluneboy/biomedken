@@ -50,8 +50,47 @@ namespace ConAppMyGlob
 
 #elif (DEMO && MYTEST)
             Console.WriteLine("DEMO and MYTEST are defined");
-            BasePath bp = new BasePath(@"c:\tempork","do something crazy here");
-            Console.WriteLine("got this for path: " + bp.FixPath);
+            //BasePath bp = new BasePath(@"c:\tempork","do something crazy here");
+            //Console.WriteLine("got this for path: " + bp.FixPath);
+
+            string globpatAnat = @"Y:\adat\c1316plas\pre\study_*\results\shoulder\w2*.img";
+            FileGlobberFmriSwua fgs = new FileGlobberFmriSwua(globpatAnat);
+            Console.WriteLine(fgs.PathAnat);
+            Console.WriteLine(fgs.AnatFile + " " + fgs.IsValidAnat);
+            Console.WriteLine(fgs.MatchCount);
+            Console.WriteLine(fgs.FullNameSwua);
+
+            //////////////////////////////////////////
+
+            //string globpatternAnat = @"Y:\adat\s1351plas\post\study_*\results\shoulder\w2*.img";
+            //FileGlobberFmriAnat fga = new FileGlobberFmriAnat(globpatternAnat);
+            ////Console.WriteLine("PathAnat " + fga.PathAnat);
+            //string anatFile = "";
+            //if (fga.IsValid)
+            //    anatFile = fga.MatchingFiles[0].FullName;
+            //FileInfo fiTask = new FileInfo(anatFile);
+            //string task = fiTask.Directory.Name;
+            //System.IO.DirectoryInfo diResults = System.IO.Directory.GetParent(fga.PathAnat);
+            ////Console.WriteLine(diResults.Name);
+            //string resultsDir = diResults.FullName;
+            //System.IO.DirectoryInfo diStudy = System.IO.Directory.GetParent(resultsDir);
+            //string studyDir = diStudy.FullName;
+
+            ////string globpatSwua = @studyDir + @"\series_*_" + task + @"_*\swua2*_003.img";
+
+            //Console.WriteLine("The anat file is " + anatFile);
+            //Console.WriteLine("The task is " + task);
+            //Console.WriteLine("The study dir is " + studyDir);
+
+            //string globpatSwua = @"Y:\adat\s1351plas\post\study_*\results\shoulder\w2*.img";
+            //FileGlobberFmriSwua fgs = new FileGlobberFmriSwua(globpatSwua);
+            //string swuaFile = "";
+            //if (fgs.IsValid)
+            //    swuaFile = fgs.MatchingFiles[0].FullName;
+            //else
+            //    swuaFile = "(didNotMatchOneFile)" + globpatSwua;
+            //Console.WriteLine(swuaFile);
+
             Console.ReadLine();
 
 #elif (MYDEMO)

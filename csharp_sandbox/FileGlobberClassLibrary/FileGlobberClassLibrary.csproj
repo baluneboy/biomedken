@@ -72,6 +72,7 @@
   <ItemGroup>
     <Compile Include="BasePath.cs" />
     <Compile Include="ClassInheritance.cs" />
+    <Compile Include="FileGlobberFmriSwua.cs" />
     <Compile Include="FileGlobberFmriAnat.cs" />
     <Compile Include="FileGlobber.cs" />
     <Compile Include="FileSystemInfoExtender.cs" />

@@ -164,12 +164,13 @@ namespace ExcelWorkbook_fMRI
 
                     // TODO get background image [the part after task] from offset [or Tuple]
                     string globPatAnat = @BasePathStr + @"\" + subj + @"\" + sess + @"\study_*\results\" + task + @"\w2*WHOLEHEAD*.hdr";
-                    FileGlobberFmriAnat fga = new FileGlobberFmriAnat(globPatAnat);
-                    string anat = fga.FullName;
-                    //fga.DebugShow();
+                    FileGlobberFmriSwua fgs = new FileGlobberFmriSwua(globPatAnat);
+                    string anat = fgs.FullName;
+                    string swua = fgs.FullNameSwua;
+                    //fgs.DebugShow();
 
                     // TODO verify other "goodness" of anat we found [how?]
-                    if (!fga.IsValid)
+                    if (!fgs.IsValidAnat)
                     {
                         logstr = "bad anatomy";
                         row.get_Offset(0, 4).Value2 = abbrev + ":" + logstr;
@@ -180,7 +181,7 @@ namespace ExcelWorkbook_fMRI
 
                     try
                     {
-                        // TODO improve this ugly mess of strings here
+                        // TODO improve this mess of strings here
                         if (action.Equals("NotMacro"))
                         {
                             abbrev = row.get_Offset(0, 3).Value2;
@@ -189,7 +190,7 @@ namespace ExcelWorkbook_fMRI
 
                         Globals.Sheet7.AddLogEntry("abbrev is " + abbrev + " and color is " + color);
                         relativeFile = this._d[abbrev].Item1;
-                        overlayFile = @fga.PathAnat + relativeFile;
+                        overlayFile = @fgs.PathAnat + relativeFile;
                         over = @" -c grayscale -o " + overlayFile + @" -b 50 -c " + color;
                     }
                     catch
@@ -202,7 +203,7 @@ namespace ExcelWorkbook_fMRI
                     }
 
                     // TODO verify relativeFile exists; otherwise do something graceful
-                    if (!File.Exists(@fga.PathAnat + relativeFile))
+                    if (!File.Exists(@fgs.PathAnat + relativeFile))
                     {
                         logstr = "bad overlay";
                         row.get_Offset(0, 4).Value2 = abbrev + ":" + logstr;
@@ -214,6 +215,10 @@ namespace ExcelWorkbook_fMRI
                     UpdateStatusText("Launching MRIcroNexe for " + subj + ", " + sess + ", " + task);
                     ProcessStartInfo startInfo = new ProcessStartInfo(@MRIcroNexeStr, anat + over);
                     Process.Start(startInfo);
+
+                    UpdateStatusText("Launching MRIcroNexe (swua) for " + subj + ", " + sess + ", " + task);
+                    ProcessStartInfo startInfoSwua = new ProcessStartInfo(@MRIcroNexeStr, swua + " -c grayscale");
+                    Process.Start(startInfoSwua);
 
                     logstr = "ok";
                     countGood++;
