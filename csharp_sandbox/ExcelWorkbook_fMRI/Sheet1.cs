@@ -125,12 +125,12 @@ namespace ExcelWorkbook_fMRI
             }
 
             // loop over visible filtered range (GetFromMacro is default abbrev there)
-            LoopFilteredRange(action:"NotMacro",abbrev:"NotMacro",color:"FromRunSheetColumn");
-            
+            LoopFilteredRange(action: "NotMacro", abbrev: "NotMacro", color: "FromRunSheetColumn");
+
         }
 
         // a logic problem ignores the "from macro" route
-        public void LoopFilteredRange(string action = "NotMacro", string abbrev = "pADATremap",string color = "red")
+        public void LoopFilteredRange(string action = "NotMacro", string abbrev = "pADATremap", string color = "red")
         {
             // verify basepath and exe file
             UpdateStatusText("Verifying config");
@@ -161,6 +161,9 @@ namespace ExcelWorkbook_fMRI
                     string subj = row.Value2;
                     string sess = row.get_Offset(0, 1).Value2;
                     string task = row.get_Offset(0, 2).Value2;
+
+                    // HACK TODO added ad hoc switch for swua call (improve this)
+                    //string doswua = row.get_Offset(0, 4).Value2;
 
                     // TODO get background image [the part after task] from offset [or Tuple]
                     string globPatAnat = @BasePathStr + @"\" + subj + @"\" + sess + @"\study_*\results\" + task + @"\w2*WHOLEHEAD*.hdr";

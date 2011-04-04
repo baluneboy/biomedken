@@ -7,7 +7,7 @@ using System.Security;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("ExcelWorkbook_fMRI")]
-[assembly: AssemblyDescription("fMRI Viewer Tool (wrapper for MRIcroN) BETA")]
+[assembly: AssemblyDescription("fMRI Viewer Tool (wrapper for MRIcroN)")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("BioMedKen")]
 [assembly: AssemblyProduct("ExcelWorkbook_fMRI")]
@@ -34,4 +34,4 @@ using System.Security;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.1.0.0")]
