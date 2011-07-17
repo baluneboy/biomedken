@@ -53,12 +53,21 @@ namespace ConAppMyGlob
             //BasePath bp = new BasePath(@"c:\tempork","do something crazy here");
             //Console.WriteLine("got this for path: " + bp.FixPath);
 
-            string globpatAnat = @"Y:\adat\c1316plas\pre\study_*\results\shoulder\w2*.img";
-            FileGlobberFmriSwua fgs = new FileGlobberFmriSwua(globpatAnat);
-            Console.WriteLine(fgs.PathAnat);
-            Console.WriteLine(fgs.AnatFile + " " + fgs.IsValidAnat);
-            Console.WriteLine(fgs.MatchCount);
-            Console.WriteLine(fgs.FullNameSwua);
+
+            string globpat = @"C:\temp\dupstination\abc\o*e\dos\trash\d{1}.txt";
+            FileGlobber fg = new FileGlobber(globpat);
+            Console.WriteLine(fg.MatchCount);
+            Console.WriteLine(fg.MatchingFiles);
+            fg.DebugShow();
+            Console.WriteLine(fg.GlobParts.RegexDirPattern);
+            Console.WriteLine(fg.GlobParts.RegexFilePattern);
+
+            //string globpatAnat = @"Y:\adat\c1316plas\pre\study_*\results\shoulder\w2*.img";
+            //FileGlobberFmriSwua fgs = new FileGlobberFmriSwua(globpatAnat);
+            //Console.WriteLine(fgs.PathAnat);
+            //Console.WriteLine(fgs.AnatFile + " " + fgs.IsValidAnat);
+            //Console.WriteLine(fgs.MatchCount);
+            //Console.WriteLine(fgs.FullNameSwua);
 
             //////////////////////////////////////////
 
