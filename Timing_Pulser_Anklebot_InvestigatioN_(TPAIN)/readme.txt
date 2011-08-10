@@ -1,0 +1,3 @@
+JZ asked for pulse width of 1 second with period of 2.8 seconds.
+...HOWEVER,...
+JC seems to have implemented (on CED box via sequencer output) a pulse width of 50ms with period of 2.8 seconds.
