@@ -1,0 +1,15 @@
+{
+  "keyboard_shortcut": "", 
+  "name": "try", 
+  "value": [
+    "try {", 
+    "\t!@#_currentPos!@#_anchor   ", 
+    "} catch(e) {", 
+    "\talert(e);", 
+    "}"
+  ], 
+  "set_selection": "true", 
+  "version": "1.0.7", 
+  "type": "snippet", 
+  "indent_relative": "true"
+}

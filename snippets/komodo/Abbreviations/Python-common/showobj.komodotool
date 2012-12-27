@@ -1,0 +1,12 @@
+{
+  "keyboard_shortcut": "", 
+  "set_selection": "true", 
+  "name": "showobj", 
+  "type": "snippet", 
+  "value": [
+    "for property, value in vars(yourObject).iteritems():", 
+    "    print property, \": \", value", 
+    "!@#_currentPos!@#_anchor"
+  ], 
+  "indent_relative": "false"
+}
