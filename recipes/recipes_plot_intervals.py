@@ -1,43 +1,71 @@
 #!/usr/bin/env python
 
 import matplotlib.pyplot as plt
-from matplotlib.dates import DateFormatter, HourLocator, MinuteLocator
+from matplotlib.dates import DateFormatter, HourLocator
 import numpy as np
-from StringIO import StringIO
 import datetime
 
+def plotIntervalSet(fig, ax, yval, start, stop, color='k', lw=6):
+    """ plot interval data """
+    
+    # Generate y values from scalar yval
+    y = np.empty(len(start))
+    y.fill(yval)   
+    
+    # Set current axes
+    fig.sca(ax)
+    
+    # Plot horizontal lines
+    hLines = plt.hlines(y, start, stop, color, lw=lw)
 
-### The example data ###
-a = StringIO("""
-a 2012-12-31/12:15:22 2012-12-31/22:15:30 OK
-b 2012-12-31/23:45:33 2013-01-01/11:05:40 OK
-c 2013-01-01/11:25:40 2013-01-01/19:44:55 OK
-""")
+def getDemoData():
+    """ example data """
+    from StringIO import StringIO
 
-# Converts str into a datetime object.
-conv = lambda s:datetime.datetime.strptime(s,'%Y-%m-%d/%H:%M:%S')
+    # a file-like object to read from via numpy
+    a = StringIO("""
+    a 2012-12-31/02:15:22 2012-12-31/22:15:30 OK
+    b 2012-12-31/23:45:33 2013-01-01/11:05:40 OK
+    c 2013-01-01/11:25:40 2013-01-01/19:44:55 OK
+    """)
+    
+    # Converts str into a datetime object.
+    conv = lambda s:datetime.datetime.strptime(s,'%Y-%m-%d/%H:%M:%S')
+    
+    # Use numpy to read the data in. 
+    data = np.genfromtxt(a, converters={1: conv, 2: conv}, names=['caption','start','stop','state'], dtype=None)
+    cap, start, stop = data['caption'], data['start'], data['stop']
+    
+    # Let's ignore caption and state for this example
+    yval = 2
+    return yval, start, stop
 
-# Use numpy to read the data in. 
-data = np.genfromtxt(a, converters={1: conv, 2: conv}, names=['caption','start','stop','state'], dtype=None)
-cap, start, stop = data['caption'], data['start'], data['stop']
+def showDemo():
+    # Build y values from the number of start values
+    yval, start, stop = getDemoData()
 
-# Build y values from the number of unique captions.
-y = np.empty(len(start))
-y.fill(2)
+    # Init figure and axes
+    fig = plt.figure( figsize=(16,9), dpi=80 )
+    ax = fig.add_axes([0.075, 0.1, 0.75,  0.85]) 
+    
+    hLines2 = plotIntervalSet(fig, ax, 2, start, stop, color='b', lw=2)
+    hLines3 = plotIntervalSet(fig, ax, 3, start, stop)
+    
+    dateFmt='%H:%M\n%Y-%m-%d'
+    hourInterval=4
+    
+    ax.xaxis_date()
+    dateFormat = DateFormatter(dateFmt)
+    ax.xaxis.set_major_formatter(dateFormat)
+    ax.xaxis.set_major_locator(HourLocator(interval=hourInterval))
+    
+    # To adjust the xlimits a timedelta is needed.
+    delta = (stop.max()-start.min())/20
+    
+    plt.ylim(0,5)
+    ax.set_xlim([start.min()-delta, stop.max()+delta])
+    xLabel = ax.set_xlabel('GMT')
+    plt.show()    
 
-hLines = plt.hlines(y, start, stop, color='b', lw=4)
-ax = plt.gca()
-ax.xaxis_date()
-myFmt = DateFormatter('%H:%M')
-ax.xaxis.set_major_formatter(myFmt)
-ax.xaxis.set_major_locator(HourLocator(interval=2))
-
-# To adjust the xlimits a timedelta is needed.
-delta = (stop.max()-start.min())/10
-
-plt.ylim(0,5)
-plt.xlim(start.min()-delta, stop.max()+delta)
-plt.xlabel('Time')
-plt.show()
-
-np.genfromtxt()
+if __name__ == '__main__':
+    showDemo()
