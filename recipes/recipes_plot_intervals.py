@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 
 import matplotlib.pyplot as plt
-from matplotlib.dates import DateFormatter, HourLocator
+from matplotlib.dates import DateFormatter, HourLocator, MinuteLocator
 import numpy as np
 import datetime
+import sys
+
+if sys.version_info > (2, 7):
+    USETICKPARAMS = True
+else:
+    USETICKPARAMS = False
 
 def plotIntervalSet(fig, ax, yval, start, stop, color='k', lw=6):
     """ plot interval data """
@@ -51,22 +57,33 @@ def showDemo():
     hLines2 = plotIntervalSet(fig, ax, 2, start, stop, color='b', lw=2)
     hLines3 = plotIntervalSet(fig, ax, 3, start, stop)
     
-    dateFmt='%H:%M\n%Y-%m-%d'
-    hourInterval=4
-    
+    # Set major x ticks every 4 hours
     ax.xaxis_date()
-    dateFormat = DateFormatter(dateFmt)
-    ax.xaxis.set_major_formatter(dateFormat)
-    ax.xaxis.set_major_locator(HourLocator(interval=hourInterval))
+    ax.xaxis.set_major_locator( HourLocator( byhour=[ 0,  8, 16 ] ) )
+    ax.xaxis.set_minor_locator( HourLocator( byhour=[ 4, 12, 20 ] ) )   
+    ax.xaxis.set_major_formatter( DateFormatter('%H:%M\n%d-%b-%Y') )
+    ax.xaxis.set_minor_formatter( DateFormatter('%H:%M') )    
     
     # To adjust the xlimits a timedelta is needed.
     delta = (stop.max()-start.min())/20
-    
-    plt.ylim(0,5)
+    ax.set_ylim([0, 5])
     ax.set_xlim([start.min()-delta, stop.max()+delta])
-    xLabel = ax.set_xlabel('GMT')
+    xLabel = ax.set_xlabel('GMT (HH:MM)')
+    
+    if USETICKPARAMS:
+        # Make tick_params more suitable to your liking...
+        plt.tick_params(axis='both', which='both', width=2, direction='out')
+        # tick_params for x-axis
+        plt.tick_params(axis='x', which='major', labelsize=12, length=8)
+        plt.tick_params(axis='x', which='minor', labelsize=12)
+        plt.tick_params(axis='x', which='minor', length=6, colors='gray')
+        # tick_params for y-axis
+        plt.tick_params(axis='y', which='both', labelsize=12)
+        plt.tick_params(right=True, labelright=True)
+    else:
+        print 'version prohibits use of tick_params'
+    
     plt.show()    
-
 
 def demo2():
     import random
@@ -92,23 +109,23 @@ def demo2():
     ax.set_xlabel('GMT (hh:mm)')
     
     # Set major x ticks every 15 minutes
-    ax.xaxis.set_major_locator( matplotlib.dates.MinuteLocator(byminute=[0, 30, 60]) )
-    ax.xaxis.set_minor_locator( matplotlib.dates.MinuteLocator(byminute=[15, 45]) )
-    ax.xaxis.set_major_formatter( matplotlib.dates.DateFormatter('%H:%M\n%d-%b-%Y') )
-    ax.xaxis.set_minor_formatter( matplotlib.dates.DateFormatter('%H:%M') )
+    ax.xaxis.set_major_locator( MinuteLocator(byminute=[0, 30, 60]) )
+    ax.xaxis.set_minor_locator( MinuteLocator(byminute=[15, 45]) )
+    ax.xaxis.set_major_formatter( DateFormatter('%H:%M\n%d-%b-%Y') )
+    ax.xaxis.set_minor_formatter( DateFormatter('%H:%M') )
     
-    # Make tick_params more suitable to your liking...
-    plt.tick_params(axis='both', which='both', width=2, direction='out')
-    # tick_params for x-axis
-    plt.tick_params(axis='x', which='major', labelsize=12, length=8)
-    plt.tick_params(axis='x', which='minor', labelsize=12)
-    plt.tick_params(axis='x', which='minor', length=6, colors='gray')
-    # tick_params for y-axis
-    plt.tick_params(axis='y', which='both', labelsize=12)
-    plt.tick_params(right=True, labelright=True)
+    ## Make tick_params more suitable to your liking...
+    #plt.tick_params(axis='both', which='both', width=2, direction='out')
+    ## tick_params for x-axis
+    #plt.tick_params(axis='x', which='major', labelsize=12, length=8)
+    #plt.tick_params(axis='x', which='minor', labelsize=12)
+    #plt.tick_params(axis='x', which='minor', length=6, colors='gray')
+    ## tick_params for y-axis
+    #plt.tick_params(axis='y', which='both', labelsize=12)
+    #plt.tick_params(right=True, labelright=True)
     
     plt.show()
 
 if __name__ == '__main__':
-    #showDemo()
-    demo2()
+    showDemo()
+    #demo2()
