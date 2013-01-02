@@ -51,8 +51,8 @@ def showDemo():
     yval, start, stop = getDemoData()
 
     # Init figure and axes
-    fig = plt.figure( figsize=(16,9), dpi=80 )
-    ax = fig.add_axes([0.075, 0.1, 0.75,  0.85]) 
+    fig = plt.figure( figsize=(20,12), dpi=80 )
+    ax = fig.add_axes([0.075, 0.1, 0.85,  0.85]) 
     
     hLines2 = plotIntervalSet(fig, ax, 2, start, stop, color='b', lw=2)
     hLines3 = plotIntervalSet(fig, ax, 3, start, stop)
@@ -81,9 +81,14 @@ def showDemo():
         plt.tick_params(axis='y', which='both', labelsize=12)
         plt.tick_params(right=True, labelright=True)
     else:
-        print 'version prohibits use of tick_params'
+        print 'matplotlib version prohibits use of tick_params'
     
-    plt.show()    
+    ax.xaxis.grid(True,'minor')
+    ax.xaxis.grid(True,'major',linewidth=2)
+    
+    plt.savefig('/tmp/trash.pdf')
+    plt.show()
+    
 
 def demo2():
     import random
@@ -108,24 +113,25 @@ def demo2():
     ax.plot_date(some_dates, y_values, 'b.-')
     ax.set_xlabel('GMT (hh:mm)')
     
-    # Set major x ticks every 15 minutes
+    # Set major x ticks every so often
     ax.xaxis.set_major_locator( MinuteLocator(byminute=[0, 30, 60]) )
     ax.xaxis.set_minor_locator( MinuteLocator(byminute=[15, 45]) )
     ax.xaxis.set_major_formatter( DateFormatter('%H:%M\n%d-%b-%Y') )
     ax.xaxis.set_minor_formatter( DateFormatter('%H:%M') )
     
-    ## Make tick_params more suitable to your liking...
-    #plt.tick_params(axis='both', which='both', width=2, direction='out')
-    ## tick_params for x-axis
-    #plt.tick_params(axis='x', which='major', labelsize=12, length=8)
-    #plt.tick_params(axis='x', which='minor', labelsize=12)
-    #plt.tick_params(axis='x', which='minor', length=6, colors='gray')
-    ## tick_params for y-axis
-    #plt.tick_params(axis='y', which='both', labelsize=12)
-    #plt.tick_params(right=True, labelright=True)
+    if USETICKPARAMS:
+        # Make tick_params more suitable to your liking...
+        plt.tick_params(axis='both', which='both', width=2, direction='out')
+        # tick_params for x-axis
+        plt.tick_params(axis='x', which='major', labelsize=12, length=8)
+        plt.tick_params(axis='x', which='minor', labelsize=12)
+        plt.tick_params(axis='x', which='minor', length=6, colors='gray')
+        # tick_params for y-axis
+        plt.tick_params(axis='y', which='both', labelsize=12)
+        plt.tick_params(right=True, labelright=True)
     
     plt.show()
 
 if __name__ == '__main__':
     showDemo()
-    #demo2()
+    demo2()
