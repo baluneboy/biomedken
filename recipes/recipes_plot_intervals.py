@@ -42,7 +42,7 @@ def getDemoData():
     data = np.genfromtxt(a, converters={1: conv, 2: conv}, names=['caption','start','stop','state'], dtype=None)
     cap, start, stop = data['caption'], data['start'], data['stop']
     
-    # Let's ignore caption and state for this example
+    # Let's ignore "caption" and "state" for this example
     yval = 2
     return yval, start, stop
 
