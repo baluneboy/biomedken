@@ -2,6 +2,22 @@
 
 import random
 
+# A generator to get datetimes (every 5 minutes start on 31-Dec-2012)
+def nextFiveMinutes():
+    import datetime
+    dtm = datetime.datetime(2012, 12, 31, 22, 0, 0) - datetime.timedelta(minutes=5)
+    while 1:
+        dtm += datetime.timedelta(minutes=5)
+        yield (dtm)
+
+def generateDummyData():
+    # Generate dummy data
+    nd = nextFiveMinutes()
+    num = 5
+    some_dates = [nd.next() for i in range(0,num)] #get 20 dates
+    y_values = [random.randint(1,100) for i in range(0,num)] # get dummy y data
+    return some_dates, y_values
+
 def randomwalk_generator():
     last, rand = 1, random.random() # initialize candidate elements
     while rand > 0.1:               # threshhold terminator
@@ -28,6 +44,10 @@ def fibonacci():
     while True:
         yield a
         a, b = b, a + b
+
+some_dates, y_values = generateDummyData()
+for d,y in zip(some_dates, y_values):
+    print 'date = %s, y-value = %d' % (d, y)
 
 #for num in randomwalk_generator():
 #    print(num)
