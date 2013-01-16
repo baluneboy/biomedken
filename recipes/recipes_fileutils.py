@@ -2,6 +2,10 @@
 
 import os
 import re
+import time
+
+def fileAgeDays(pathname):
+    return ( time.time() - os.path.getmtime(pathname) ) / 86400.0
 
 def filter_filenames(dirpath, predicate):
     """Usage:
@@ -9,9 +13,9 @@ def filter_filenames(dirpath, predicate):
            >>> for filename in filter_filenames('/misc/jaxa', re.compile(r'/misc/jaxa/' + filePattern).match):
            ....    # do something
     """
-    for dir_, dirnames, filenames in os.walk(dirpath):
+    for root, dirnames, filenames in os.walk(dirpath):
         for filename in filenames:
-            abspath = os.path.join(dir_, filename)
+            abspath = os.path.join(root, filename)
             if predicate(abspath):
                 yield abspath
 
