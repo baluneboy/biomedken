@@ -19,14 +19,14 @@ def filter_filenames(dirpath, predicate):
             if predicate(abspath):
                 yield abspath
 
-def demo_show_matches(dirpath, filenamePattern):
+def demo_show_matches(dirpath, pattern):
     """walk dirpath and show regex matches of filenamePattern"""
-    fullFilePattern = os.path.join(dirpath, filePattern)
-    print 'filter_filenames matching pattern "%s"\n================================' % fullFilePattern
-    for f in filter_filenames(dirpath, re.compile(fullFilePattern).match):
+    fullfile_pattern = os.path.join(dirpath, pattern)
+    print 'filter_filenames matching pattern "%s"\n================================' % fullfile_pattern
+    for f in filter_filenames(dirpath, re.compile(fullfile_pattern).match):
         print "%s" % f    
 
 if __name__ == "__main__":
-    dirpath = '/Users/ken/Desktop/music23/zmusic'
-    filePattern = '(.*)-(.*)'
-    demo_show_matches(dirpath, filePattern)
+    dirpath = '/tmp/tgz'
+    pattern = '/tmp/tgz/usr/diskless/ee122-f0[12]/root/var/log/messages$'
+    demo_show_matches(dirpath, pattern)
