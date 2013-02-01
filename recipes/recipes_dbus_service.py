@@ -1,60 +1,57 @@
 #!/usr/bin/env python
 
 usage = """Usage:
-python recipes_dbus_service.py &
-python recipes_dbus_async_client.py"""
+python example-service.py &
+python example-client.py
+python example-async-client.py
+python example-client.py --exit-service"""
 
-import datetime
 import gobject
 import dbus
 import dbus.service
 import dbus.mainloop.glib
 
 class DemoException(dbus.DBusException):
-    _dbus_error_name = 'gov.pims.DemoException'
+    _dbus_error_name = 'com.example.DemoException'
 
-class SamsStatus(dbus.service.Object):
+class SomeObject(dbus.service.Object):
 
-    @dbus.service.method("gov.pims.SamsService",
+    @dbus.service.method("com.example.SampleInterface",
                          in_signature='s', out_signature='as')
     def HelloWorld(self, hello_message):
         print (str(hello_message))
-        return ["Hello", " from recipes_dbus_service.py", "with unique name",
+        return ["Hello", " from example-service.py", "with unique name",
                 session_bus.get_unique_name()]
 
-    @dbus.service.method("gov.pims.SamsService",
+    @dbus.service.method("com.example.SampleInterface",
                          in_signature='', out_signature='')
     def RaiseException(self):
         raise DemoException('The RaiseException method does what you might expect.')
 
-    @dbus.service.method("gov.pims.SamsService",
-                         in_signature='b', out_signature='s')
-    def show_status(self, verbose):
-        s = ''
-        if verbose:
-            s += 'verbose output\n'
-        s += "Show status at %s from recipes_dbus_service.py with unique name %s." % ( datetime.datetime.now(), session_bus.get_unique_name() )
-        return s
+    @dbus.service.method("com.example.SampleInterface",
+                         in_signature='', out_signature='(ss)')
+    def GetTuple(self):
+        return ("Hello Tuple", " from example-service.py")
 
-    @dbus.service.method("gov.pims.SamsService",
+    @dbus.service.method("com.example.SampleInterface",
                          in_signature='', out_signature='a{ss}')
     def GetDict(self):
-        return {"first": "Hello Dict", "second": " from recipes_dbus_service.py"}
+        return {"first": "Hello Dict", "second": " from example-service.py"}
 
-    @dbus.service.method("gov.pims.SamsService",
+    @dbus.service.method("com.example.SampleInterface",
                          in_signature='', out_signature='')
     def Exit(self):
         mainloop.quit()
 
 if __name__ == '__main__':
-    
-    # create session bus object for SAMS status
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+
     session_bus = dbus.SessionBus()
-    name = dbus.service.BusName("gov.pims.SamsService", session_bus)
-    object = SamsStatus(session_bus, '/SamsStatus')
+    name = dbus.service.BusName("com.example.SampleService", session_bus)
+    object = SomeObject(session_bus, '/SomeObject')
 
     mainloop = gobject.MainLoop()
-    print "Running SAMS status example service."
+    print "Running example service."
     print usage
     mainloop.run()
+
