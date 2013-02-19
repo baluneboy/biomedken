@@ -11,6 +11,9 @@ import dbus
 import dbus.service
 import dbus.mainloop.glib
 
+from collections import deque
+d = deque(['okay', 'alert', 'unknown'], 3)
+
 class DemoException(dbus.DBusException):
     _dbus_error_name = 'com.example.DemoException'
 
@@ -20,7 +23,9 @@ class SomeObject(dbus.service.Object):
                          in_signature='s', out_signature='as')
     def HelloWorld(self, hello_message):
         print (str(hello_message))
-        return ["Hello", " from example-service.py", "with unique name",
+        sams_status = d.popleft()
+        d.append(sams_status)
+        return [sams_status, " from example-service.py", "with unique name",
                 session_bus.get_unique_name()]
 
     @dbus.service.method("com.example.SampleInterface",
