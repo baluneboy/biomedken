@@ -10,7 +10,9 @@ def fileAgeDays(pathname):
 def filter_filenames(dirpath, predicate):
     """Usage:
            >>> filePattern = '\d{14}.\d{14}/\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}.\d{3}.\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}.\d{3}.*'
-           >>> for filename in filter_filenames('/misc/jaxa', re.compile(r'/misc/jaxa/' + filePattern).match):
+           >>> dirpath = '/misc/jaxa'
+           >>> predicate = re.compile(r'/misc/jaxa/' + filePattern).match
+           >>> for filename in filter_filenames(dirpath, predicate):
            ....    # do something
     """
     for root, dirnames, filenames in os.walk(dirpath):
@@ -27,6 +29,6 @@ def demo_show_matches(dirpath, pattern):
         print "%s" % f    
 
 if __name__ == "__main__":
-    dirpath = '/tmp/tgz'
-    pattern = '/tmp/tgz/usr/diskless/ee122-f0[12]/root/var/log/messages$'
+    dirpath = '/home/pims/temp/sams/samslogs014'
+    pattern = '.*\.gz$'
     demo_show_matches(dirpath, pattern)
