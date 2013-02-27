@@ -19,15 +19,17 @@ FILES_TO_FOLD = [
 ]
 
 class FoldCommand(sublime_plugin.TextCommand):
+
     def run(self, edit):
         for pattern in PATTERNS_TO_FOLD:
             #regions = sorted(self.view.find_all(self.pattern), key=lambda x: x.begin(), reverse=True)
+            #regions = self.view.find_all(pattern)
+            #if regions:                
+            #    for region in regions:
+            #        content = self.view.substr(region) + '\n' # in effect, we want to not fold the last...
+            #        self.view.replace(edit, region, content)  # ...newline char, so cheat by adding one!
             regions = self.view.find_all(pattern)
             if regions:
-                for region in regions:
-                    content = self.view.substr(region) + '\n' # in effect, we want to not fold the last...
-                    self.view.replace(edit, region, content)  # ...newline char, so cheat by adding one!
-                regions = self.view.find_all(pattern)
                 self.view.fold(regions)
 
 class InsertNoteCommand(sublime_plugin.TextCommand):
