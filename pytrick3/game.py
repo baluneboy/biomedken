@@ -221,6 +221,7 @@ class Trick(object):
         # set the spider card to lower left of table
         self.posx = (config.w-(config.n-1)*config.card_w)/2
         self.set_spidercard()
+        self.set_ladybugcard()
 
         # change y range to get 9 columns here (instead of 12)
         for y in range(1, config.n): # the ten used to be config.n
@@ -263,7 +264,16 @@ class Trick(object):
         self.spidercard.set_as_mine()        
         self.mycards.add(self.spidercard)
         self.sprites.add(self.spidercard)
-        self.table.add(self.spidercard)        
+        self.table.add(self.spidercard)
+        
+    def set_ladybugcard(self):
+        """ set the ladybug card to lower left of table, right next to the spidercard! """
+        n,s = 13,'h'
+        self.ladybugcard = LadybugCard(n, s, config.path + '{0:02}{1}.gif'.format(n, s))
+        self.ladybugcard.set_position(1.5*self.posx, 2*self.posx+2.5*config.card_h)
+        self.mycards.add(self.ladybugcard)
+        self.sprites.add(self.ladybugcard)
+        self.table.add(self.ladybugcard)    
 
     def get_27_cards_3_lines(self):
         pos = []
@@ -409,7 +419,18 @@ class Trick(object):
                 if btn == 1:  # left click
                     card.flip()
                 elif btn == 3: # right click
-                    card.overlay_demo()
+                    #card.overlay_demo()
+                    if card.rect == self.spidercard.rect:
+                        pass
+                        break
+                    self.mycards.remove(self.spidercard)
+                    self.sprites.remove(self.spidercard)
+                    self.table.cards.remove(self.spidercard) 
+                    self.set_spidercard(card=card)
+                    self.spidercard.image = self.spidercard.front
+                    self.draw()
+                    pygame.time.delay(400)
+                    self.spidercard.image = self.spidercard.back
                 else:
                     pass
                 break
@@ -600,12 +621,12 @@ class Card(pygame.sprite.DirtySprite):
         self.front = self.pil_to_pygame_img(inverted_image)
     
     def pygame_to_pil_img(self, pg_surface):
-        imgstr = pygame.image.tostring(pg_surface, 'RGBA')
-        return Image.fromstring('RGBA', pg_surface.get_size(), imgstr)
+        imgstr = pygame.image.tostring(pg_surface, 'RGB')
+        return Image.fromstring('RGB', pg_surface.get_size(), imgstr)
     
     def pil_to_pygame_img(self, pil_img):
         imgstr = pil_img.tostring()
-        return pygame.image.fromstring(imgstr, pil_img.size, 'RGBA')
+        return pygame.image.fromstring(imgstr, pil_img.size, 'RGB')
 
     def grayscale_front(self):
         surf = self.front
@@ -644,7 +665,8 @@ class SpiderCard(Card):
     
     def __init__(self, number, suit, filename):
         super(SpiderCard, self).__init__(number, suit, filename)
-        self.overlay_demo()
+        self.invert_colors()
+        #self.overlay_demo()
         self.back = pygame.image.load(config.path + 'spiderback.gif').convert_alpha()
         self.image = self.back
 
@@ -658,7 +680,14 @@ class SpiderCard(Card):
         
     def get_fav_letter(self):
         return self.fav_letter
+
+class LadybugCard(Card):
     
+    def __init__(self, number, suit, filename):
+        super(LadybugCard, self).__init__(number, suit, filename)
+        self.back = pygame.image.load(config.path + 'ladybugback.gif').convert_alpha()
+        self.image = self.back
+
 if __name__ == '__main__':
 
     if '-h' in sys.argv:
