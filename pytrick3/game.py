@@ -20,9 +20,9 @@ import numpy as np
 
 def get_list(L, zero_pad=False):
     if zero_pad:
-        fmtstr = '{:>03}'
+        fmtstr = '{0:>03}'
     else:
-        fmtstr = '{:>3}'
+        fmtstr = '{0:>3}'
     return ' '.join(map(fmtstr.format, L))
 
 class Mouse(pygame.sprite.DirtySprite):
