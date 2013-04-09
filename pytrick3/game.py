@@ -486,7 +486,7 @@ class Table(object):
         self.cards = pygame.sprite.LayeredDirty()
 
     def get_the_cards_list(self):
-        return self.sprites()[1:] # skip first "spidercard"
+        return self.sprites()[2:] # skip first "spidercard"
 
     def add(self, card):
         self.cards.add(card)
@@ -675,7 +675,7 @@ class SpiderCard(Card):
         self.fav_letter = fav_letter
         im = self.pygame_to_pil_img( self.front )
         draw = ImageDraw.Draw(im)
-        draw.text((22, 2), '%s <<<' % fav_letter, font=ImageFont.load_default(), fill=128)    
+        draw.text((22, 2), '%s <<<' % fav_letter, font=ImageFont.load_default(), fill=255)    
         self.front = self.pil_to_pygame_img( im )
         
     def get_fav_letter(self):
