@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 # TODO
-# - layout (top.mid,bot) 3 rows with 9 cols for this trick
+# - do the trick with dealing hands and plenty of three line feedback
 
 import sys
 import random
@@ -203,6 +203,52 @@ class Trick(object):
         self.xray_mode = True
         self.message = Message()
 
+    def pick_fav_letter(self):
+
+        self.xray_mode = False
+        self.loser = False
+        self.played = 0
+        self.bad = 0
+
+        self.mycard = None
+
+        self.deck = AlphaDeck(classic=False, debug=True)
+        self.table = Table(self.deck)
+
+        self.sprites = pygame.sprite.LayeredDirty()
+        self.mycards = pygame.sprite.LayeredDirty()
+
+        self.cols = {}
+        self.posx = (config.w-(config.n-1)*config.card_w)/2
+
+        # change y range to get 9 columns here (instead of original 12)
+        for y in range(1, config.n):
+            self.cols[y] = []
+
+        self.nrows = 3 # instead of original 4
+        for x in range(1, self.nrows+1):
+            for y in range(1, config.n):
+                card = self.deck.pickup_one_card()
+                card.set_position(config.xoffset+self.posx+(y-1)*config.card_w, config.yoffset+self.posx+config.card_h*(x-1))
+                card.flip()
+                self.cols[y].append(card.rect)
+                self.table.add(card)
+                self.sprites.add(card)
+        card.flip() # FIXME part of the 27 instead of 26 mismatch fiasco
+
+        self.text.visible = True
+        self.text.msg = 'Click on Your Favorite Letter'
+        self.text.update()
+
+        self.sprites.add(self.text, layer=self.sprites.get_top_layer()+1)
+        self.sprites.add(self.mouse, layer=self.sprites.get_top_layer()+1)
+        
+        self.quit = 0
+        clock = pygame.time.Clock()
+        while not self.quit:
+            clock.tick(400) # changed 60 to 700
+            self.loop_fav_letter()
+
     def init(self):
 
         self.loser = False
@@ -224,7 +270,7 @@ class Trick(object):
         self.set_ladybugcard()
 
         # change y range to get 9 columns here (instead of 12)
-        for y in range(1, config.n): # the ten used to be config.n
+        for y in range(1, config.n):
             self.cols[y] = []
 
         self.nrows = 3 # instead of original 4
@@ -259,7 +305,7 @@ class Trick(object):
             n = 1
             s = 'c'
         self.spidercard = SpiderCard(n, s, config.path + '{0:02}{1}.gif'.format(n, s))
-        self.spidercard.set_fav_letter('K')
+        #self.spidercard.set_fav_letter('K')
         self.spidercard.set_position(self.posx, 2*self.posx+2.5*config.card_h)
         self.spidercard.set_as_mine()        
         self.mycards.add(self.spidercard)
@@ -270,6 +316,7 @@ class Trick(object):
         """ set the ladybug card to lower left of table, right next to the spidercard! """
         n,s = 13,'h'
         self.ladybugcard = LadybugCard(n, s, config.path + '{0:02}{1}.gif'.format(n, s))
+        self.ladybugcard.set_fav_letter(self.fav_letter)
         self.ladybugcard.set_position(1.5*self.posx, 2*self.posx+2.5*config.card_h)
         self.mycards.add(self.ladybugcard)
         self.sprites.add(self.ladybugcard)
@@ -344,7 +391,7 @@ class Trick(object):
                         if pygame.Rect(card.rect).collidepoint(x,y):
                             print card.number, card.suit
                 if event.key == K_f:
-                    print self.spidercard.get_fav_letter()
+                    print self.ladybugcard.get_fav_letter()
                 if event.key == K_g:
                     self.message.set_message('loser')
                     self.sprites.add(self.message)
@@ -369,6 +416,29 @@ class Trick(object):
                         c.flip()
                         self.draw()
                         pygame.time.delay(10)
+
+        self.on_mouse_motion()
+        self.text.update()
+        self.draw()
+
+    def loop_fav_letter(self):
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == MOUSEMOTION:
+                pass
+            elif event.type == MOUSEBUTTONUP:
+                pass
+            elif event.type == MOUSEBUTTONDOWN:
+                self.on_mouse_button_down_fav_letter()
+            elif event.type == KEYUP:
+                pass
+            elif event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
 
         self.on_mouse_motion()
         self.text.update()
@@ -412,6 +482,18 @@ class Trick(object):
                 else:
                     self.text.msg = 'X-ray mode: nothing to see here'
 
+    def on_mouse_button_down_fav_letter(self):
+        x, y = self.mouse.get_pos()
+        for card in self.table.sprites():
+            if pygame.Rect(card.rect).collidepoint(x,y):
+                self.fav_letter = card.fav_letter
+                self.mtb = card.mtb
+                self.order = card.order
+                self.xray_mode = True
+                self.quit = 1
+                break
+        self.draw()
+
     def on_mouse_button_down(self,btn):
         x, y = self.mouse.get_pos()
         for card in self.table.sprites():
@@ -420,6 +502,9 @@ class Trick(object):
                     card.flip()
                 elif btn == 3: # right click
                     #card.overlay_demo()
+                    if card.rect == self.ladybugcard.rect:
+                        self.texthands.set_debug_text( '%s\n%s\n%s' % (card.fav_letter, card.mtb, get_list(card.order) ) )
+                        break
                     if card.rect == self.spidercard.rect:
                         pass
                         break
@@ -526,6 +611,23 @@ class Deck(object):
         self.cards.remove(card)
         return card
 
+class AlphaDeck(Deck):
+    
+    ALPHALIST = [chr(i) for i in range(65, 65+26)]
+    
+    def __init__(self, classic=True, debug=False):
+        self.debug = debug
+        self.card_w = config.card_w
+        self.card_h = config.card_h
+        self.cards = []
+        filename = config.path + '{0:02}{1}.gif'
+
+        for s in self.ALPHALIST:
+            card = LadybugCard(13, 'h', filename.format(13, 'h'))
+            card.set_fav_letter(s)
+            self.cards.append(card)
+        self.cards.append(card) # FIXME this is for compatibility with 3x9 = 27 arrangement
+
 class Message(pygame.sprite.DirtySprite):
     def __init__(self):
         super(Message, self).__init__()
@@ -621,12 +723,12 @@ class Card(pygame.sprite.DirtySprite):
         self.front = self.pil_to_pygame_img(inverted_image)
     
     def pygame_to_pil_img(self, pg_surface):
-        imgstr = pygame.image.tostring(pg_surface, 'RGB')
-        return Image.fromstring('RGB', pg_surface.get_size(), imgstr)
+        imgstr = pygame.image.tostring(pg_surface, 'RGBA')
+        return Image.fromstring('RGBA', pg_surface.get_size(), imgstr)
     
     def pil_to_pygame_img(self, pil_img):
         imgstr = pil_img.tostring()
-        return pygame.image.fromstring(imgstr, pil_img.size, 'RGB')
+        return pygame.image.fromstring(imgstr, pil_img.size, 'RGBA')
 
     def grayscale_front(self):
         surf = self.front
@@ -665,41 +767,45 @@ class SpiderCard(Card):
     
     def __init__(self, number, suit, filename):
         super(SpiderCard, self).__init__(number, suit, filename)
-        self.invert_colors()
+        #self.invert_colors()
         #self.overlay_demo()
         self.back = pygame.image.load(config.path + 'spiderback.gif').convert_alpha()
         self.image = self.back
-
-    def set_fav_letter(self, fav_letter='K'):
-        self.dirty = 2
-        self.fav_letter = fav_letter
-        im = self.pygame_to_pil_img( self.front )
-        draw = ImageDraw.Draw(im)
-        draw.text((22, 2), '%s <<<' % fav_letter, font=ImageFont.load_default(), fill=255)    
-        self.front = self.pil_to_pygame_img( im )
-        
-    def get_fav_letter(self):
-        return self.fav_letter
 
 class LadybugCard(Card):
     
     def __init__(self, number, suit, filename):
         super(LadybugCard, self).__init__(number, suit, filename)
         self.back = pygame.image.load(config.path + 'ladybugback.gif').convert_alpha()
+        self.front = pygame.image.load(config.path + 'blank.gif').convert_alpha()
         self.image = self.back
+        
+    def set_fav_letter(self, fav_letter='#'):
+        self.fav_letter = fav_letter
+        self.mtb = config.ALPHAMAP[fav_letter][0]
+        self.order = config.ALPHAMAP[fav_letter][1]
+        fontBig  =  ImageFont.truetype ( 'gui/font.ttf', 72 )
+        self.dirty = 2
+        im = self.pygame_to_pil_img( self.front )
+        draw = ImageDraw.Draw(im)
+        draw.text((17, 25), '%s' % fav_letter, font=fontBig, fill='blue')    
+        self.front = self.pil_to_pygame_img( im )
+        
+    def get_fav_letter(self):
+        return self.fav_letter
 
 if __name__ == '__main__':
 
     if '-h' in sys.argv:
-        print 'PySolita, version 0.9'
+        print 'Hello!'
         print 'Usage: game.py <video_mode>, where <video_mode> is:'
-        print '     -a   for 800x600'
+        print '     -a   for 800x600 << DO NOT USE THIS (it will error)'
         print '     -b   for 1024x768 (default)'
-        print '     -c   for 1344x768'
         sys.exit(0)
 
-    config.init((1024, 768))
-    if '-b' in sys.argv:
+    if '-a' in sys.argv:
+        raise Exception('no longer supporting 800x600')
+    else:
         config.init((1024, 768))
         config.suits = ['c', 'd', 'h']
         config.n = 10
@@ -708,5 +814,6 @@ if __name__ == '__main__':
         config.yoffset =  44
 
     trick = Trick()
+    trick.pick_fav_letter()
     trick.init()
     trick.run()
