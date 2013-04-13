@@ -322,7 +322,7 @@ class Trick(object):
         self.sprites.add(self.ladybugcard)
         self.table.add(self.ladybugcard)    
 
-    def get_27_cards_3_lines(self):
+    def get_cards_in_3_lines(self):
         pos = []
         for i, c in zip(range(27), self.the_27_cards):
             pos.append( ( str(c.number) + c.suit, i, c.rect.x, c.rect.y ) )
@@ -330,6 +330,10 @@ class Trick(object):
         line1 = get_list([ t[0] for t in order_by_pos[0:9] ])
         line2 = get_list([ t[0] for t in order_by_pos[9:18] ])
         line3 = get_list([ t[0] for t in order_by_pos[18:27] ])
+        return line1, line2, line3
+
+    def get_27_cards_3_lines(self):
+        line1, line2, line3 = self.get_cards_in_3_lines()
         return '\n'.join([line1,line2,line3])
 
     def run(self, screen=None):
@@ -407,7 +411,8 @@ class Trick(object):
                     self.shuffle(num_shuffles=5, delay_msec=1)
                     self.show_27_cards_by_pos()
                 if event.key == K_t:
-                    self.the_27_cards = self.table.get_the_cards_list()
+                    #self.the_27_cards = self.table.get_the_cards_list()
+                    self.do_the_trick()
                 if event.key == K_a:
                     for c in self.the_27_cards:
                         c.flip()
@@ -533,13 +538,26 @@ class Trick(object):
         print 'click on card you want'
 
     def do_the_trick(self):
-        fav_letter = 'K'
-        mtb = config.ALPHAMAP[fav_letter][0]
-        order = config.ALPHAMAP[fav_letter][1]
-        print fav_letter, mtb, order
-        my_card = self.get_card_and_letter()
-        #print '\nFor debug, your card is "%s" and fav_letter is "%s". >> %s <<\n' % (my_card, fav_letter, mtb)
-        #for r in range(3):
+        # FIXME lock down user controls here and set things in concrete (like Jimmy Hoffa)
+        cardstr = str(self.spidercard.number) + self.spidercard.suit
+        s = 'For debug\nyour card is "%s" & favorite letter is "%s"\nmtb is %s and order is %s' % (cardstr, self.fav_letter, self.mtb, get_list(self.order))
+        self.texthands.set_debug_text(s)
+        self.draw()
+        pygame.time.delay(2000)
+        for r in range(3):
+            
+            self.shuffle()
+            
+            s = '\nROUND %d\n' % r
+            self.texthands.set_debug_text(s)
+            self.draw()
+            pygame.time.delay(500)
+            
+            s = self.get_27_cards_3_lines()
+            self.texthands.set_debug_text(s)
+            self.draw()
+            pygame.time.delay(1000)
+
         #    self.show_piles(r)
         #    self.tricky_restack(r,order)
         #    self.hands = [self.used[i::self.n_players] for i in range(0, self.n_players)]
@@ -571,7 +589,7 @@ class Table(object):
         self.cards = pygame.sprite.LayeredDirty()
 
     def get_the_cards_list(self):
-        return self.sprites()[2:] # skip first "spidercard"
+        return self.sprites()[2:] # skip 1st "spidercard" & 2nd "ladybugcard"
 
     def add(self, card):
         self.cards.add(card)
