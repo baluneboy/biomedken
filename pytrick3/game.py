@@ -537,6 +537,25 @@ class Trick(object):
     def get_card_and_letter(self):
         print 'click on card you want'
 
+    def show_the_piles_for_round(self, r):
+        s = '\nROUND %d\n' % (r+1)
+        self.texthands.set_debug_text(s)
+        self.draw()
+        pygame.time.delay(500)
+        
+        s = self.get_27_cards_3_lines()
+        self.texthands.set_debug_text(s)
+        self.draw()
+        pygame.time.delay(1000)
+
+    def tricky_restack_piles(self, r):
+        """this is where the magic happens, restack based on round and ternary encoding of favorite letter"""
+        victim_points_to = int(raw_input('Which stack is it in [0, 1, 2]: '))
+        new_order = [x for x in [0,1,2] if x!=victim_points_to]
+        new_order.insert(self.order[r], victim_points_to)
+        #self.hands[0], self.hands[1], self.hands[2] = self.hands[new_order[0]], self.hands[new_order[1]], self.hands[new_order[2]]
+        #self.used = self.hands[0] + self.hands[1] + self.hands[2]
+
     def do_the_trick(self):
         # FIXME lock down user controls here and set things in concrete (like Jimmy Hoffa)
         cardstr = str(self.spidercard.number) + self.spidercard.suit
@@ -545,22 +564,11 @@ class Trick(object):
         self.draw()
         pygame.time.delay(2000)
         for r in range(3):
-            
-            self.shuffle()
-            
-            s = '\nROUND %d\n' % r
-            self.texthands.set_debug_text(s)
-            self.draw()
-            pygame.time.delay(500)
-            
-            s = self.get_27_cards_3_lines()
-            self.texthands.set_debug_text(s)
-            self.draw()
-            pygame.time.delay(1000)
-
-        #    self.show_piles(r)
-        #    self.tricky_restack(r,order)
+            self.show_the_piles_for_round(r)
+            self.shuffle() # FIXME this is just to shake things up a bit and has gotta go
+            self.tricky_restack_piles(r)
         #    self.hands = [self.used[i::self.n_players] for i in range(0, self.n_players)]
+        
         #ind_your_card = ( order[0]*(3**2) + order[1]*(3**1) + order[2]*(3**0) )
         #print 'your card is:', self.used[ind_your_card]
 
