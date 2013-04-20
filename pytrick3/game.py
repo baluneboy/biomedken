@@ -409,7 +409,7 @@ class Trick(object):
                     self.texthands.set_debug_text('one\ntwo\nthree')
                 if event.key == K_s:
                     self.shuffle(num_shuffles=5, delay_msec=1)
-                    self.show_27_cards_by_pos()
+                    #self.show_27_cards_by_pos()
                 if event.key == K_t:
                     #self.the_27_cards = self.table.get_the_cards_list()
                     self.do_the_trick()
@@ -463,6 +463,7 @@ class Trick(object):
                 c.rect.x, c.rect.y = xy[0], xy[1]
             pygame.time.delay(delay_msec)
             self.draw()
+        self.show_27_cards_by_pos()
 
     def get_cards_string(self, ind):
         L = []
@@ -550,12 +551,23 @@ class Trick(object):
 
     def tricky_restack_piles(self, r):
         """this is where the magic happens, restack based on round and ternary encoding of favorite letter"""
-        victim_points_to = int(raw_input('Which stack is it in [0, 1, 2]: '))
+        victim_points_to = self.stack_card_in()
         new_order = [x for x in [0,1,2] if x!=victim_points_to]
         new_order.insert(self.order[r], victim_points_to)
         #self.hands[0], self.hands[1], self.hands[2] = self.hands[new_order[0]], self.hands[new_order[1]], self.hands[new_order[2]]
         #self.used = self.hands[0] + self.hands[1] + self.hands[2]
 
+    def stack_card_in(self):
+        """ this takes place of victim points to stack """
+        the_card = str(self.spidercard.number) + self.spidercard.suit
+        tup = self.get_27_cards_3_lines().split('\n')
+        print tup,
+        for i in range(len(tup)):
+            if the_card in tup[i]:
+                print i
+                return i
+        return None
+    
     def do_the_trick(self):
         # FIXME lock down user controls here and set things in concrete (like Jimmy Hoffa)
         cardstr = str(self.spidercard.number) + self.spidercard.suit
@@ -565,7 +577,6 @@ class Trick(object):
         pygame.time.delay(2000)
         for r in range(3):
             self.show_the_piles_for_round(r)
-            self.shuffle() # FIXME this is just to shake things up a bit and has gotta go
             self.tricky_restack_piles(r)
         #    self.hands = [self.used[i::self.n_players] for i in range(0, self.n_players)]
         
