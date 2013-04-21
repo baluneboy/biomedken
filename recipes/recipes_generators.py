@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import random
+from collections import deque
 
 # A generator to get datetimes (every 5 minutes start on 31-Dec-2012)
 def nextFiveMinutes():
@@ -45,25 +46,36 @@ def fibonacci():
         yield a
         a, b = b, a + b
 
+class SimpleCircularBuffer(object):
+    
+    def __init__(self, data=[0,1,2]):
+        data.reverse()
+        self._data = deque(data, maxlen=len(data))
+
+    def rot_get(self, num_rot=1):
+        """rotate num_rot times and return current element"""
+        self._data.rotate(num_rot)
+        return self._data[-1]
+    
+    def get(self):
+        return self.rot_get(num_rot=0)
+
 some_dates, y_values = generateDummyData()
 for d,y in zip(some_dates, y_values):
     print 'date = %s, y-value = %d' % (d, y)
 
-#for num in randomwalk_generator():
-#    print(num)
+f = fibonacciFirstNish(5)
+for x in f:
+    print x,
+print
 
-#f = fibonacciFirstN(5)
-#for x in f:
-#    print x,
-#print
-#
-#f = fibonacci()
-#
-#counter = 0
-#for x in f:
-#    print x,
-#    counter += 1
-#    if (counter > 10): break 
-#print
+f = fibonacci()
+
+counter = 0
+for x in f:
+    print x,
+    counter += 1
+    if (counter > 10): break 
+print
 
 

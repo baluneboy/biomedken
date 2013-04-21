@@ -1,16 +1,46 @@
+#!/usr/bin/env python
+
 from itertools import *
 
 def ilen(it):
-    """ return length of iterable """
+    """return the length of an iterable.
+    
+    >>> ilen(range(7))
+    7
+    """   
     return sum(1 for _ in it)
     
 def runlength_enc(xs):
-    """ run-length encoder """
-    return ((ilen(gp),x) for x,gp in groupby(xs))
+    """return a run-length encoded version of the stream, xs.
     
+    The resulting stream consists of (count, x) pairs.
+    
+    >>> ys = runlength_enc('AAABBCCC')
+    >>> next(ys)
+    (3, 'A')
+    >>> list(ys)
+    [(2, 'B'), (3, 'C')]
+    """
+    return ((ilen(gp),x) for x,gp in groupby(xs))
+        
 def runlength_dec(xs):
-    """ run-length decoder """
+    """expand a run-length encoded stream.
+    
+    Each element of xs is a pair, (count, x).
+    
+    >>> ys = runlength_dec(((3, 'A'), (2, 'B')))
+    >>> next(ys)
+    'A'
+    >>> ''.join(ys)
+    'AABB'
+    """
     return chain.from_iterable(repeat(x,n) for n,x in xs)
+
+#count = 3
+#vals = [0, 1, 2]
+#ys = runlength_dec( ( (count, vals[0]), (count, vals[1]), (count, vals[2]) ) )
+#print [ next(ys) for i in range(len(vals)*count)]; raise SystemExit
+
 
 def runlength_consumer(a,mask):
     """ apply run-length with consumer feature """

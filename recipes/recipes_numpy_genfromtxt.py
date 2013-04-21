@@ -3,6 +3,7 @@
 import numpy as np
 import datetime
 from StringIO import StringIO
+from dateutil import parser, relativedelta
 
 def getDemoData():
     """ example data """
@@ -38,6 +39,30 @@ def showDemo():
     caption, start, stop, state = getDemoData()
     for cap,t1,t2,cond in zip(caption,start,stop,state):
         print cap, t1.strftime(fmt), t2.strftime(fmt), cond
+
+#import csv
+#from recipes_itertools import grouper
+#
+#PWR_ON_CODE = 1129
+#PWR_OFF_CODE = 1128
+#BAD_REC = ['01-Jan-1970/00:00:00', '-999', '-9999']
+#def scan_power_duration(on_off_recs):
+#    row1 = on_off_recs[0]
+#    row2 = on_off_recs[1]
+#    t1 = parser.parse(row1[0])
+#    t2 = parser.parse(row2[0])
+#    code1 = int(row1[2])
+#    code2 = int(row2[2])
+#    if row1 is BAD_REC or row2 is BAD_REC or (code1 != PWR_ON_CODE) or (code2 != PWR_OFF_CODE) or (t2 < t1):
+#        prefix = 'on/off records BAD '
+#        hours = 0.00
+#    else:
+#        prefix = 'on/off records OKAY'
+#        hours = relativedelta.relativedelta(t2, t1).hours
+#    print '%s, POWER ON at %s, OFF at %s, %5.2f, hours' % (prefix, t1, t2, hours)
+#
+#for g in grouper(2, csv.reader(open("results.csv", "rb")), BAD_REC):
+#    scan_power_duration(g)
 
 def testdoc():
     import doctest
