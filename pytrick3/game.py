@@ -7,14 +7,17 @@ import sys
 import random
 import pygame
 import config
-
 from pygame.locals import *
 from copy import copy
 from operator import itemgetter
-
-import Image, ImageOps, ImageDraw, ImageFont, ImageEnhance
 from collections import deque
 import numpy as np
+
+# Try to import PIL in either of the two ways it can end up installed.
+try:
+    from PIL import Image, ImageOps, ImageDraw, ImageFont, ImageEnhance
+except ImportError:
+    import Image, ImageOps, ImageDraw, ImageFont, ImageEnhance
 
 #from nonguitrick import non_gui_trick
 
