@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
-import Image, ImageChops
-import ImageFilter
+# Try to import PIL in either of the two ways it can end up installed.
+try:
+    from PIL import Image, ImageChops, ImageFilter
+except ImportError:
+    import Image, ImageChops, ImageFilter
 
 def trim(im):
     bg = Image.new(im.mode, im.size, im.getpixel((0,0)))
@@ -180,5 +183,5 @@ def drop_shadow_twice(image):
 if __name__ == '__main__':
     #crop_border_color()
     #print_stats('/tmp/bord4.jpg')
-    #flavor_stack('/tmp/leaf.jpg')
-    drop_shadow_twice('/tmp/bord4.jpg')
+    flavor_stack('/tmp/bord4.jpg')
+    #drop_shadow_twice('/tmp/bord4.jpg')
