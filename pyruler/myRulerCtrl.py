@@ -18,6 +18,10 @@ try:
 except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.rulerctrl as RC
 
+
+images_folder = r'C:/Program Files/wxPython28DocsAndDemos/demo'
+if images_folder not in sys.path:
+    sys.path.insert(0, images_folder)
 import images
 
 if wx.Platform == '__WXMSW__':
@@ -170,7 +174,7 @@ class RulerCtrlDemo(wx.Frame):
         try:
             fid = open("RulerCtrl.py", "rt")
         except:
-            fid = open("agw/RulerCtrl.py", "rt")
+            fid = open("C:/Program Files/wxPython28DocsAndDemos/demo/agw/RulerCtrl.py", "rt")
 
         text = fid.read()
         fid.close()
