@@ -64,6 +64,9 @@ class MyFrame(wx.Frame):
     #----------------------------------------------------------------------
     def __init__(self):
         wx.Frame.__init__(self, None, wx.ID_ANY, "Mouse Catcher")
+        self.SetTransparent(180)
+        self.Maximize()
+        self.Layout()
  
         # Add a panel so it looks the correct on all platforms
         panel = wx.Panel(self, wx.ID_ANY)
