@@ -1,8 +1,11 @@
 {
-	"auto_upgrade_last_run": null,
 	"installed_packages":
 	[
-		"HighlightWords",
-		"Package Control"
+		"Base64 Fold",
+		"howdoi",
+		"Package Control",
+		"PythonOpenModule",
+		"Shrink Whitespaces",
+		"SortLinesByColumn"
 	]
 }

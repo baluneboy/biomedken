@@ -5,7 +5,6 @@ import urllib2
 import threading
 import re
 
-
 class PrefixrCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         # We check for braces since we can do a better job of preserving
