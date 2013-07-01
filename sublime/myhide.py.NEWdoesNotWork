@@ -39,10 +39,24 @@ class AllCommand(sublime_plugin.TextCommand):
             regions.append(currRegion)
             firstRegion = None
         view.fold(regions)
+        view.settings().set("all", self.foldstr)
 
     def run(self, edit):
+        if self.view.settings().has("all"):
+            self.done(self.view.settings().get("all"))
+            return
         window = self.view.window()
         for reg in self.view.sel():
             defstr = self.view.substr(reg)
             break
         window.show_input_panel("Show Only Lines Containing",defstr,self.done,None,None)
+
+
+class AllToggleCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view = self.view
+        if view.settings().has("all"):
+            if len(view.folded_regions()):
+                view.run_command("unfold_all")
+            else:
+                view.run_command("all")
