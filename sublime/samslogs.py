@@ -17,32 +17,29 @@ FILES_TO_FOLD = [
 '.*/var/log/sams-ii/messages',
 '.*/var/log/sams-ii/watchdoglog',
 ]
+ 
+def set_syntax(view, syntax, path=None):
+  if path is None:
+    path = syntax
+  view.settings().set('syntax', 'Packages/'+ path + '/' + syntax + '.tmLanguage')
+  print "Switched syntax to: " + syntax
 
 class FoldCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         for pattern in PATTERNS_TO_FOLD:
             #regions = sorted(self.view.find_all(self.pattern), key=lambda x: x.begin(), reverse=True)
-            #regions = self.view.find_all(pattern)
-            #if regions:                
-            #    for region in regions:
-            #        content = self.view.substr(region) + '\n' # in effect, we want to not fold the last...
-            #        self.view.replace(edit, region, content)  # ...newline char, so cheat by adding one!
             regions = self.view.find_all(pattern)
             if regions:
                 self.view.fold(regions)
-
-class InsertNoteCommand(sublime_plugin.TextCommand):
-    def run(self, edit, msg='No note inserted.\n'):
-        self.view.insert(edit, 0, msg)
 
 class SamsLogsFold(sublime_plugin.EventListener):
     def on_load(self, view):
         file_name = view.file_name()
         if file_name:
-            #msg = ['KH NOTE: [']
             for file_pattern in FILES_TO_FOLD:
                 match = re.search(file_pattern, file_name, re.IGNORECASE)
                 if match:
-                    view.run_command('fold')
+                    set_syntax(view, "SamsLogs", "SamsLogs")
+                    #view.run_command('fold')
                     break

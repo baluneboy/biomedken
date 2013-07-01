@@ -1,5 +1,8 @@
 {
-	"font_size": 14.0,
+	"color_scheme": "Packages/Color Scheme - Default/Monokai Bright.tmTheme",
+	"dictionary": "Packages/Language - English/en_US.dic",
+	"font_size": 9,
+	"http_proxy": "localhost:31280",
 	"ignored_packages":
 	[
 		"Vintage"
