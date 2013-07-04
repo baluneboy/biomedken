@@ -13,3 +13,11 @@ once_upon_a_time = datetime(2010, 7, 1, 12, 0, 0)
 delta = timedelta(days=13, hours=8,  minutes=20)
 gen =(once_upon_a_time +x*delta for x in xrange(4))
 print '\n'.join(map('{:%Y-%m-%d %H:%M:%S}'.format, gen))
+
+job_IDs = ['13453', '123', '563456'];
+memory_used = [30, 150.54, 20.6];
+memory_units = ['MB', 'GB', 'MB'];
+width = max(map(len, job_IDs)) # width of "job id" field 
+for jid, mem, unit in zip(job_IDs, memory_used, memory_units):
+    print("Job {jid:{width}}: {part[0]:>3}{part[1]:1}{part[2]:<3} {unit:3}".\
+          format(jid=jid, width=width, part=str(mem).partition('.'), unit=unit))
