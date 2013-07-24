@@ -6,7 +6,8 @@ class FIFOManager(BaseManager): pass
 FIFOManager.register('get_fifo', callable=lambda:fifo)
 m = FIFOManager(address=('', 50000), authkey='abracadabra')
 s = m.get_server()
-s.serve_forever()
+#s.serve_forever()
+s.start()
 
 # One client can access the server as follows:
 from multiprocessing.managers import BaseManager

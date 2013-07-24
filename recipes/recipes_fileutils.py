@@ -5,6 +5,18 @@ import re
 import time
 import datetime
 
+def getSubdirs(parentDir):
+    return [ name for name in os.listdir(parentDir) if os.path.isdir(os.path.join(parentDir, name)) ]
+
+def filterSubdirs(parentDir, regexPatString):
+    subDirs = getSubdirs(parentDir)
+    regex = re.compile(regexPatString)
+    return [m.group(0) for m in [regex.match(subDir) for subDir in subDirs] if m]
+
+def printFilteredSubdirs(parentDir, regexPatString):
+    for sd in filterSubdirs(parentDir, regexPatString):
+        print os.path.join(parentDir, sd)
+
 def fileAgeDays(pathname):
     return ( time.time() - os.path.getmtime(pathname) ) / 86400.0
 
@@ -98,6 +110,12 @@ if __name__ == "__main__":
 
     ##################################################################################################################
     # Do walk/search files (recursively under dirpath) that fname matches pattern & file does NOT contain query string
-    dirpath = '/misc/yoda/pub/pad/year2013/month06'
-    pattern = '.*\.121f04.header$'
-    demo_grep_matches(dirpath, pattern, 'SampleRate>500.0')
+    #dirpath = '/misc/yoda/pub/pad/year2013/month06'
+    #pattern = '.*\.121f04.header$'
+    #demo_grep_matches(dirpath, pattern, 'SampleRate>500.0')
+    
+    #######################################################################
+    # Simply walk/show files (recursively under dirpath) that match pattern
+    regexPatString = 'sams2_accel_121f0\d{1}$|mams_accel_hirap$|mma_accel_.*|samses_accel_.*'
+    parentDir = '/misc/yoda/pub/pad/year2013/month05/day27'
+    printFilteredSubdirs(parentDir, regexPatString)
