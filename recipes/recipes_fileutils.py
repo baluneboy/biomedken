@@ -4,6 +4,9 @@ import os
 import re
 import time
 import datetime
+from dateutil import parser
+import re
+from pyvttbl import DataFrame
 
 def getSubdirs(parentDir):
     return [ name for name in os.listdir(parentDir) if os.path.isdir(os.path.join(parentDir, name)) ]
@@ -92,6 +95,32 @@ def demo_show_file_deltas(dirpath, pattern):
         file_info.append( (f, dtmFileModified, dtmDataEnds, delta) )
     return file_info
 
+def underscore_to_dtm(s):
+    return datetime.datetime.strptime(s,'%Y_%m_%d_%H_%M_%S.%f')
+
+def parse_roadmap_filename(f):
+    """ (\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})_(.*)_(.*)_roadmaps(.*)\.pdf """
+    pattern = '(\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})_(.*)_(.*)_roadmaps(.*)\.pdf$'
+    srch = re.compile(pattern).search
+    m = srch(f)
+    if m:
+        dtm = underscore_to_dtm(m.group(1))
+        sensor = m.group(2)
+        abbrev = m.group(3)
+        return dtm, sensor, abbrev, os.path.basename(f)
+    else:
+        return 'UNKNOWN', 'UNKNOWN', 'UNKNOWN', "%s" % os.path.basename(f)
+    
+def pivot_table_insert_day_roadmaps(df, d=datetime.date.today()-datetime.timedelta(days=2), batchpath='/misc/yoda/www/plots/batch', pattern='.*roadmaps.*\.pdf$'):
+    """walk dirpath and show regex matches of filenamePattern"""
+    dirpath = os.path.join( batchpath, d.strftime('year%Y/month%m/day%d') )
+    fullfile_pattern = os.path.join(dirpath, pattern)
+    for f in filter_filenames(dirpath, re.compile(fullfile_pattern).match):
+        dtm, sensor, abbrev, bname = parse_roadmap_filename(f)
+        dat = dtm.date()
+        hr = dtm.hour
+        df.insert({'date':dat, 'hour':hr, 'sensor':sensor, 'abbrev':abbrev, 'bname':bname, 'fname':f})
+
 if __name__ == "__main__":
     
     #######################################################################
@@ -114,8 +143,22 @@ if __name__ == "__main__":
     #pattern = '.*\.121f04.header$'
     #demo_grep_matches(dirpath, pattern, 'SampleRate>500.0')
     
-    #######################################################################
-    # Simply walk/show files (recursively under dirpath) that match pattern
-    regexPatString = 'sams2_accel_121f0\d{1}$|mams_accel_hirap$|mma_accel_.*|samses_accel_.*'
-    parentDir = '/misc/yoda/pub/pad/year2013/month05/day27'
-    printFilteredSubdirs(parentDir, regexPatString)
+    ##################################################################################
+    # Simply walk/show filtered subdirs (recursively under dirpath) that match pattern
+    #regexPatString = 'sams2_accel_121f0\d{1}$|mams_accel_hirap$|mma_accel_.*|samses_accel_.*'
+    #parentDir = '/misc/yoda/pub/pad/year2013/month05/day27'
+    #printFilteredSubdirs(parentDir, regexPatString)
+    
+    #################################################################
+    # Walk/parse files (recursively under dirpath) that match pattern
+    #dirpath = '/misc/yoda/www/plots/batch/year2013/month07/day22'
+    #pattern = '.*roadmaps.*\.pdf$'
+    df = DataFrame()
+    day = datetime.date(2013,7,1)
+    dStop = datetime.date(2013,8,5)
+    pattern = '.*_121f0\d{1}one_.*roadmaps.*\.pdf$' # '.*roadmaps.*\.pdf$'
+    while day <= dStop:
+        pivot_table_insert_day_roadmaps(df, d=day, pattern=pattern)
+        day += datetime.timedelta(days=1)
+    pt = df.pivot('abbrev', ['date'],['sensor'], aggregate='count')
+    print pt
