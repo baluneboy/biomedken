@@ -121,12 +121,73 @@ def pivot_table_insert_day_roadmaps(df, d=datetime.date.today()-datetime.timedel
         hr = dtm.hour
         df.insert({'date':dat, 'hour':hr, 'sensor':sensor, 'abbrev':abbrev, 'bname':bname, 'fname':f})
 
+def get_oldest_file(files, _invert=False):
+    """ Find and return the oldest file of input file names.
+    Only one wins tie. Values based on time distance from present.
+    Use of `_invert` inverts logic to make this a youngest routine,
+    to be used more clearly via `get_youngest_file`.
+    """
+    gt = operator.lt if _invert else operator.gt
+    # Check for empty list.
+    if not files:
+        return None
+    # Raw epoch distance.
+    now = time.time()
+    # Select first as arbitrary sentinel file, storing name and age.
+    oldest = files[0], now - os.path.getctime(files[0])
+    # Iterate over all remaining files.
+    for f in files[1:]:
+        age = now - os.path.getctime(f)
+        if gt(age, oldest[1]):
+            # Set new oldest.
+            oldest = f, age
+    # Return just the name of oldest file.
+    return oldest[0]
+
+def get_youngest_file(files):
+    return get_oldest_file(files, _invert=True)
+
+def file_age_diff_minutes(pth):
+    """ Example of file age oldest/youngest. """
+    os.chdir(pth)
+    files = os.listdir(pth)
+    oldest = min(files, key=os.path.getctime)
+    newest = max(files, key=os.path.getctime)
+    return (os.path.getctime(newest)-os.path.getctime(oldest))/60.0
+
+def get_6hz_subdirs(top):
+    sd = []
+    for root, subdirs, files in os.walk(top, True):
+        for subdir in subdirs:
+            if subdir.endswith('006'):
+                sd.append( os.path.join(root,subdir) )
+    return sd
+
+def demo_what(day, dStop):
+    df = DataFrame()
+    day = datetime.date(2013,7,1)
+    dStop = datetime.date(2013,8,5)
+    pattern = '.*_121f0\d{1}one_.*roadmaps.*\.pdf$' # '.*roadmaps.*\.pdf$'
+    while day <= dStop:
+        pivot_table_insert_day_roadmaps(df, d=day, pattern=pattern)
+        day += datetime.timedelta(days=1)
+    pt = df.pivot('abbrev', ['date'],['sensor'], aggregate='count')
+    print pt
+    
+# EXAMPLE
+#pth = '/misc/yoda/pub/pad/year2013/month06' #/sams2_accel_121f08006'
+#subdirs = get_6hz_subdirs(pth)
+#for sd in subdirs:
+#    dur = file_age_diff_minutes(sd)
+#    print '%6.1f minutes for %s in %s' % (dur, os.path.basename(sd), sd)
+#raise SystemExit
+
 if __name__ == "__main__":
     
     #######################################################################
     # Simply walk/show files (recursively under dirpath) that match pattern
-    #dirpath = '/home/pims/temp/sams/samslogs014'
-    #pattern = '.*\.gz$'
+    #dirpath = '/misc/yoda/pub/pad/year2013'
+    #pattern = '.*sams2_accel_121f0.006$'
     #demo_show_matches(dirpath, pattern)
     
     #######################################################################
