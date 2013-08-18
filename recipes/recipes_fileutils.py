@@ -95,6 +95,22 @@ def demo_show_file_deltas(dirpath, pattern):
         file_info.append( (f, dtmFileModified, dtmDataEnds, delta) )
     return file_info
 
+def file_age_diff_minutes(pth):
+    """ Example of file age oldest/youngest. """
+    os.chdir(pth)
+    files = os.listdir(pth)
+    oldest = min(files, key=os.path.getctime)
+    newest = max(files, key=os.path.getctime)
+    return (os.path.getctime(newest)-os.path.getctime(oldest))/60.0
+
+def get_6hz_subdirs(top):
+    sd = []
+    for root, subdirs, files in os.walk(top, True):
+        for subdir in subdirs:
+            if subdir.endswith('006'):
+                sd.append( os.path.join(root,subdir) )
+    return sd
+
 def underscore_to_dtm(s):
     return datetime.datetime.strptime(s,'%Y_%m_%d_%H_%M_%S.%f')
 
@@ -121,56 +137,11 @@ def pivot_table_insert_day_roadmaps(df, d=datetime.date.today()-datetime.timedel
         hr = dtm.hour
         df.insert({'date':dat, 'hour':hr, 'sensor':sensor, 'abbrev':abbrev, 'bname':bname, 'fname':f})
 
-def get_oldest_file(files, _invert=False):
-    """ Find and return the oldest file of input file names.
-    Only one wins tie. Values based on time distance from present.
-    Use of `_invert` inverts logic to make this a youngest routine,
-    to be used more clearly via `get_youngest_file`.
-    """
-    gt = operator.lt if _invert else operator.gt
-    # Check for empty list.
-    if not files:
-        return None
-    # Raw epoch distance.
-    now = time.time()
-    # Select first as arbitrary sentinel file, storing name and age.
-    oldest = files[0], now - os.path.getctime(files[0])
-    # Iterate over all remaining files.
-    for f in files[1:]:
-        age = now - os.path.getctime(f)
-        if gt(age, oldest[1]):
-            # Set new oldest.
-            oldest = f, age
-    # Return just the name of oldest file.
-    return oldest[0]
-
-def get_youngest_file(files):
-    return get_oldest_file(files, _invert=True)
-
-def file_age_diff_minutes(pth):
-    """ Example of file age oldest/youngest. """
-    os.chdir(pth)
-    files = os.listdir(pth)
-    oldest = min(files, key=os.path.getctime)
-    newest = max(files, key=os.path.getctime)
-    return (os.path.getctime(newest)-os.path.getctime(oldest))/60.0
-
-def get_6hz_subdirs(top):
-    sd = []
-    for root, subdirs, files in os.walk(top, True):
-        for subdir in subdirs:
-            if subdir.endswith('006'):
-                sd.append( os.path.join(root,subdir) )
-    return sd
-
-def demo_what(day, dStop):
+def demo_build_pivot_roadmap_pdfs(d, dStop, pattern):
     df = DataFrame()
-    day = datetime.date(2013,7,1)
-    dStop = datetime.date(2013,8,5)
-    pattern = '.*_121f0\d{1}one_.*roadmaps.*\.pdf$' # '.*roadmaps.*\.pdf$'
-    while day <= dStop:
-        pivot_table_insert_day_roadmaps(df, d=day, pattern=pattern)
-        day += datetime.timedelta(days=1)
+    while d <= dStop:
+        pivot_table_insert_day_roadmaps(df, d=d, pattern=pattern)
+        d += datetime.timedelta(days=1)
     pt = df.pivot('abbrev', ['date'],['sensor'], aggregate='count')
     print pt
     
@@ -210,16 +181,9 @@ if __name__ == "__main__":
     #parentDir = '/misc/yoda/pub/pad/year2013/month05/day27'
     #printFilteredSubdirs(parentDir, regexPatString)
     
-    #################################################################
-    # Walk/parse files (recursively under dirpath) that match pattern
-    #dirpath = '/misc/yoda/www/plots/batch/year2013/month07/day22'
-    #pattern = '.*roadmaps.*\.pdf$'
-    df = DataFrame()
-    day = datetime.date(2013,7,1)
+    ########################################################
+    # Build pivot table from start, stop, and pattern inputs
+    d = datetime.date(2013,7,1)
     dStop = datetime.date(2013,8,5)
     pattern = '.*_121f0\d{1}one_.*roadmaps.*\.pdf$' # '.*roadmaps.*\.pdf$'
-    while day <= dStop:
-        pivot_table_insert_day_roadmaps(df, d=day, pattern=pattern)
-        day += datetime.timedelta(days=1)
-    pt = df.pivot('abbrev', ['date'],['sensor'], aggregate='count')
-    print pt
+    demo_build_pivot_roadmap_pdfs(d, dStop, pattern)
