@@ -10,10 +10,12 @@ PATTERNS_TO_FOLD = [
 '(\w+\s+\d{1,2} \d{2}:\d{2}:\d{2} icu-f01 /netbsd: APM ioctl get power status: unknown error code \(0x530a\)\n)+',
 # Feb 25 09:59:59 icu-f01 newsyslog[29283]: logfile turned over
 '(\w+\s+\d{1,2} \d{2}:\d{2}:\d{2} icu-f01 newsyslog\[\d+\]: logfile turned over\n)+',
+# Aug 16 20:19:26 icu-f01 last message repeated 2 times
+'(\w+\s+\d{1,2} \d{2}:\d{2}:\d{2} icu-f01 last message repeated \d+ times\n)+',
 ]
 
 FILES_TO_FOLD = [
-'.*/var/log/messages',
+'.*/var/log/messages.*',
 '.*/var/log/sams-ii/messages',
 '.*/var/log/sams-ii/watchdoglog',
 ]

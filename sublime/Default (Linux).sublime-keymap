@@ -1,7 +1,12 @@
 [  
     {  
+<<<<<<< .mine
+        "keys": ["ctrl+alt+x"], "command": "prefixr",
+        "keys": ["ctrl+0"], "command": "reset_font_size"
+=======
         "keys": ["ctrl+alt+x"], "command": "prefixr",
         "keys": ["ctrl+0"], "command": "reset_font_size",
 		"keys": ["ctrl+alt+k"], "command": "all"
+>>>>>>> .r350
     }  
 ]  
