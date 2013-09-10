@@ -32,5 +32,5 @@ def demo2(fname):
     print pt
    
 if __name__ == '__main__':
-    #demo1( sys.argv[1] )
-    demo2( sys.argv[1] )
+    demo1( sys.argv[1] )
+    #demo2( sys.argv[1] )

@@ -8,10 +8,26 @@ from dateutil import parser
 import re
 from pyvttbl import DataFrame
 
+def getSubdirsAtDepth(top, depth):
+    """ return list of subdirs that are at depth below top (like linux find) """
+    subdirs = []
+    if depth < 1:
+        return subdirs
+    for root,dirs,files in os.walk(top, topdown=True):
+        # next line was tweaked to act like linux find (-mindepth/-maxdepth) value
+        deepness = root.count(os.path.sep) - top.count(os.path.sep)
+        if deepness == (depth - 1):
+            # currently "deepness" directories in, so all subdirs have depth "deepness+1"
+            subdirs += [os.path.join(root, d) for d in dirs]
+            dirs[:] = [] # do not recurse any deeper
+    return subdirs
+
 def getSubdirs(parentDir):
+    """ return list of subdirs under parentDir """
     return [ name for name in os.listdir(parentDir) if os.path.isdir(os.path.join(parentDir, name)) ]
 
 def filterSubdirs(parentDir, regexPatString):
+    """ return list of subdirs under parentDir that match regexPatString """
     subDirs = getSubdirs(parentDir)
     regex = re.compile(regexPatString)
     return [m.group(0) for m in [regex.match(subDir) for subDir in subDirs] if m]
@@ -137,21 +153,20 @@ def pivot_table_insert_day_roadmaps(df, d=datetime.date.today()-datetime.timedel
         hr = dtm.hour
         df.insert({'date':dat, 'hour':hr, 'sensor':sensor, 'abbrev':abbrev, 'bname':bname, 'fname':f})
 
-def demo_build_pivot_roadmap_pdfs(d, dStop, pattern):
+def demo_pivot_roadmap_pdfs():
+    d = datetime.date(2013,8,1)
+    dStop = datetime.date(2013,8,19)
+    pattern = '.*_121f0\d{1}one_.*roadmaps.*\.pdf$' # '.*roadmaps.*\.pdf$'
+    print 'FROM %s TO %s USING PATTERN "%s"' % (str(d), str(dStop), pattern)
+    build_pivot_roadmap_pdfs(d, dStop, pattern)
+    
+def build_pivot_roadmap_pdfs(d, dStop, pattern):
     df = DataFrame()
     while d <= dStop:
         pivot_table_insert_day_roadmaps(df, d=d, pattern=pattern)
         d += datetime.timedelta(days=1)
     pt = df.pivot('abbrev', ['date'],['sensor'], aggregate='count')
     print pt
-    
-# EXAMPLE
-#pth = '/misc/yoda/pub/pad/year2013/month06' #/sams2_accel_121f08006'
-#subdirs = get_6hz_subdirs(pth)
-#for sd in subdirs:
-#    dur = file_age_diff_minutes(sd)
-#    print '%6.1f minutes for %s in %s' % (dur, os.path.basename(sd), sd)
-#raise SystemExit
 
 if __name__ == "__main__":
     
@@ -183,7 +198,5 @@ if __name__ == "__main__":
     
     ########################################################
     # Build pivot table from start, stop, and pattern inputs
-    d = datetime.date(2013,7,1)
-    dStop = datetime.date(2013,8,5)
-    pattern = '.*_121f0\d{1}one_.*roadmaps.*\.pdf$' # '.*roadmaps.*\.pdf$'
-    demo_build_pivot_roadmap_pdfs(d, dStop, pattern)
+    # to show population of roadmap PDFs
+    demo_pivot_roadmap_pdfs()
