@@ -4,15 +4,19 @@ import sys
 from pyvttbl import DataFrame
 from dateutil import parser, relativedelta
 import numpy as np
+import datetime
 
 def convert_relativedelta_to_seconds(rdelta):
     return rdelta.days*86400.0 + rdelta.hours*3600.0 + rdelta.minutes*60.0 + rdelta.seconds + rdelta.microseconds/1.0e6
 
-def demo1(fname):
+def my_parser(s):
+    return datetime.datetime.strptime(s, '%Y_%m_%d_%H_%M_%S.%f')
+
+def demo1(fname, parseFun=parser.parse):
     df = DataFrame()
     df.read_tbl(fname)
-    df['gmtStart'] = [ parser.parse(i) for i in df['start'] ]
-    df['gmtStop'] = [ parser.parse(i) for i in df['stop'] ]
+    df['gmtStart'] = [ parseFun(i) for i in df['start'] ]
+    df['gmtStop'] = [ parseFun(i) for i in df['stop'] ]
     
     deltas = []
     for a,b in zip( df['gmtStart'], df['gmtStop'] ):
@@ -32,5 +36,5 @@ def demo2(fname):
     print pt
    
 if __name__ == '__main__':
-    demo1( sys.argv[1] )
+    demo1( sys.argv[1], parseFun=my_parser ) # USUALLY USE parser.parse for ARG #2
     #demo2( sys.argv[1] )
