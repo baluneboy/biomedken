@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import re
+import os
 import sys
 from pyvttbl import DataFrame
 from dateutil import parser, relativedelta
@@ -11,6 +13,9 @@ def convert_relativedelta_to_seconds(rdelta):
 
 def my_parser(s):
     return datetime.datetime.strptime(s, '%Y_%m_%d_%H_%M_%S.%f')
+
+def name_parser(s):
+    return my_parser( re.split('\+|-',  s.split(os.path.sep)[-1])[0] )
 
 def demo1(fname, parseFun=parser.parse):
     df = DataFrame()
@@ -34,7 +39,15 @@ def demo2(fname):
     df['approx'] = [ np.around(i,decimals=0) for i in df['pct'] ]
     pt = df.pivot('approx', ['gmt'], ['sensor'])
     print pt
+
+def demo_bytes_names(fname, parseFun=name_parser, sampleRate=500.0):
+    df = DataFrame()
+    df.read_tbl(fname)
+    df['gmtStart'] = [ parseFun(i) for i in df['name'] ]
+    df['spanSec'] = [ ( (i/16.0)-1 ) / sampleRate for i in df['bytes'] ]
+    return df
    
 if __name__ == '__main__':
-    demo1( sys.argv[1], parseFun=my_parser ) # USUALLY USE parser.parse for ARG #2
+    df = demo_bytes_names( sys.argv[1], parseFun=name_parser)
+    #demo1( sys.argv[1], parseFun=my_parser ) # USUALLY USE parser.parse for ARG #2
     #demo2( sys.argv[1] )

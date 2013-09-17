@@ -40,6 +40,15 @@ def showDemo():
     for cap,t1,t2,cond in zip(caption,start,stop,state):
         print cap, t1.strftime(fmt), t2.strftime(fmt), cond
 
+def simpleFail():
+    """
+    
+    >>> simpleFail()
+    Actually, this is expected to fail.
+    
+    """
+    print 'hello'
+
 #import csv
 #from recipes_itertools import grouper
 #
