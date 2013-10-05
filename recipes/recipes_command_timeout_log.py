@@ -6,6 +6,10 @@ import subprocess
 import threading
 
 class StdoutLog(object):
+    
+    def error(self, s):
+        print s
+        
     def info(self, s):
         print s
     
