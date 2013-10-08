@@ -110,10 +110,10 @@ class OssBtmfRoadmapPdf(HandbookFile):
     def __init__(self, name, pattern='.*(\d{1})(qualify|quantify)_(.*)_(ossbtmf)_roadmap\+*(.*)\.pdf$', show_warnings=False):
         self.pattern = pattern
         super(RecognizedFile, self).__init__(name, show_warnings=show_warnings) # NOTE: we want super of recognized file init here
-        #self._recognized = None
-        #self._type = None
-        #self._why = None
-        #if not self.is_recognized(): raise UnrecognizedPimsFile('"%s"' % self.name)
+        self._recognized = None
+        self._type = None
+        self._why = None
+        if not self.is_recognized(): raise UnrecognizedPimsFile('"%s"' % self.name)
 
     def __str__(self):
         return str( self.asDict() )
