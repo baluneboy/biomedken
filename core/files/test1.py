@@ -1,32 +1,25 @@
 #!/usr/bin/python
 
 from pims.core.files.base import StupidRecognizedFile
-from pims.core.files.handbook import HandbookFile, OssBtmfRoadmapPdf
+from pims.core.files.handbook import OssBtmfRoadmapPdf, SpgxRoadmapPdf, HandbookFile
+from pims.core.files.utils import guess_file
 
 if __name__ == '__main__':
 
-    print '~'*44
+    files = [
+    '/tmp/1qualify_yes.pdf',
+    '/tmp/trash_stupid.txt',
+    '/tmp/2quantify_2013_10_01_08_ossbtmf_roadmap.pdf',
+    '/tmp/1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500p9_my_note.pdf',
+    ]
 
-    a = OssBtmfRoadmapPdf('/tmp/2quantify_2013_10_01_08_ossbtmf_roadmap.pdf')
-    print a
-    print '~'*44
-    
-    #raise SystemExit
+    filetypes = [ OssBtmfRoadmapPdf, SpgxRoadmapPdf, HandbookFile ]
 
-    hbf = HandbookFile('/tmp/1qualify_yes.pdf', '.*(\d{1})(qualify|quantify|ancillary)_.*\.pdf$')
-    print hbf
-    print hbf.asDict()
-    print hbf.page
-    print hbf.subtitle
-    print len(hbf)
-    
-    #raise SystemExit
-
-    pf = StupidRecognizedFile('/tmp/trash_stupid.txt')
-    print pf
-    print pf.asDict()
-    print pf.type()
-    print len(pf)
-    print '~'*44
-    
-    #raise SystemExit
+    for f in files:
+        hbf = guess_file(f, filetypes=filetypes, show_warnings=False)
+        if hbf.recognized:
+            print '~'*len(hbf.name)
+            print hbf.__class__.__name__
+            print hbf.name
+            print hbf.scale
+            print hbf.asDict()
