@@ -2,38 +2,34 @@
 Utilities for handling handbook files.
 """
 import re
-from pims.core.files.base import RecognizedFile
+from pims.core.files.base import RecognizedFile, UnrecognizedPimsFile
 
-def guess_file(name):
-    """
-    Attempt to guess file based on name.
-    """
-    filetypes = [ HandbookFile, RoadmapPdfFile ]
-    for i in filetypes:
-        try:
-            p = i(name, showWarnings=False)
-            return p
-        except UnrecognizedFile:
-            pass
-    if showWarnings:
-        print 'Unrecognized file "%s"' % name
-    return UnrecognizedFile(name)
+# TODO aggregate all the regexp patterns into neat, easy to update way
+# TODO some properties can be queried from [yoda?] db with time and sensor designation, right?
 
 class HandbookFile(RecognizedFile):
     """
     A mixin for use alongside pims.core.files.base.RecognizedFile, which provides
     additional features for dealing with handbook files.
     """
-    def __init__(self, name, pattern='.*(\d{1})(qualify|quantify|ancillary)_.*\.pdf$', show_warnings=False):
+    def __init__(self, name, pattern='.*(?P<page>\d{1})(?P<subtitle>qualify|quantify|ancillary)_.*\.pdf$', show_warnings=False):
+        super(HandbookFile, self).__init__(name, pattern, show_warnings=show_warnings)
         self.pattern = pattern
-        super(HandbookFile, self).__init__(name, show_warnings=show_warnings)
-
-    def __str__(self):
+        self.recognized = None
+        self._type = None
+        self._why = None
+        if not self.is_recognized(): raise UnrecognizedPimsFile('"%s"' % self.name)
+        self.page = self._get_page()
+        self.subtitle = self._get_subtitle()
+        self.offset = self._get_offset()
+        self.scale = self._get_scale()
+        
+    def showdict(self):
         s = []
         s.append( '%s object for recognized PIMS file "%s" because %s' % (self.__class__.__name__, self.name, self.why() ))
         for key in self.__dict__:
             s.append("{key}='{value}'".format(key=key, value=self.__dict__[key]))
-        return '\n'.join(s)        
+        print '\n'.join(s)        
 
     def __repr__(self):
         return self.__str__()
@@ -48,33 +44,32 @@ class HandbookFile(RecognizedFile):
             self._type = 'a_somewhat_recognized_handbook_file'
         return self._type
 
+    def _get_match(self): return re.search(self.pattern, self.name)
+    _match = property(_get_match)
+
     def is_recognized(self):
-        if not self._get_match():
-            self._recognized = False
+        if not self._match:
+            self.recognized = False
         else:
-            self._recognized = True
+            self.recognized = True
             self._type = self.type()
-        return self._recognized
+        return self.recognized
+   
+    def _get_offset(self): return '0cm 0cm'
 
-    def _get_match(self):
-        self._match = re.search(self.pattern, self.name)
-        return self._match
-    
-    def _get_offset(self):
-        return '-4.25cm 1cm'
-    offset = property(_get_offset)
+    def _get_scale(self): return '1.00'
 
-    def _get_scale(self):
-        return '0.88'
-    scale = property(_get_scale)
+    def _get_page(self): return self._match.group('page')
 
-    def _get_page(self):
-        return self._match.group(1)
-    page = property(_get_page) # similar for self.pdfjamOffset = '-4.25cm 1cm'?
+    def _get_subtitle(self): return self._match.group('subtitle')
 
-    def _get_subtitle(self):
-        return self._match.group(2)
-    subtitle = property(_get_subtitle) # self.pdfjamScale = '0.88'?
+    def asDict(self):
+        myDict = super(HandbookFile, self).asDict()
+        myDict['page'] = self.page
+        myDict['subtitle'] = self.subtitle
+        myDict['offset'] = self.offset
+        myDict['scale'] = self.scale
+        return myDict
 
     def patternNotes(self):
         return """
@@ -105,35 +100,28 @@ class HandbookFile(RecognizedFile):
 
 class OssBtmfRoadmapPdf(HandbookFile):
     """
-    OSSBTMF Roadmap PDF handbook file like "/tmp/2quantify_2013_10_01_08_ossbtmf_roadmap.pdf"
+    OSSBTMF Roadmap PDF handbook file like one of these examples:
+    /tmp/1qualify_2013_10_01_08_ossbtmf_roadmap.pdf
+    /tmp/2quantify_2013_10_01_08_ossbtmf_roadmap+some_notes.pdf
+    /tmp/3quantify_2013_10_01_08_ossbtmf_roadmap-what.pdf    
     """
-    def __init__(self, name, pattern='.*(\d{1})(qualify|quantify)_(.*)_(ossbtmf)_roadmap\+*(.*)\.pdf$', show_warnings=False):
-        self.pattern = pattern
-        super(RecognizedFile, self).__init__(name, show_warnings=show_warnings) # NOTE: we want super of recognized file init here
-        self._recognized = None
-        self._type = None
-        self._why = None
-        if not self.is_recognized(): raise UnrecognizedPimsFile('"%s"' % self.name)
+    def __init__(self, name, pattern='.*(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>ossbtmf)_roadmap(?P<notes>.*)\.pdf$', show_warnings=False):
+        super(OssBtmfRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings) # NOTE: we want super of recognized file init here
 
     def __str__(self):
         return str( self.asDict() )
 
-    def _get_offset(self):
-        return '-3.75cm 0.99cm'
+    def _get_offset(self): return '-4.25cm 1cm'
 
-    def _get_scale(self):
-        return '0.92'
+    def _get_scale(self): return '0.88'
 
-    def _get_timestr(self):
-        return self._match.group(3)
+    def _get_timestr(self): return self._match.group('timestr')
     timestr = property(_get_timestr)
 
-    def _get_sensor(self):
-        return self._match.group(4)
+    def _get_sensor(self): return self._match.group('sensor')
     sensor = property(_get_sensor)
 
-    def _get_notes(self):
-        return self._match.group(5)
+    def _get_notes(self): return self._match.group('notes')
     notes = property(_get_notes)
 
     def type(self):
@@ -144,7 +132,7 @@ class OssBtmfRoadmapPdf(HandbookFile):
     def asDict(self):
         myDict = super(OssBtmfRoadmapPdf, self).asDict()
         myDict['system'] = 'MAMS'
-        #myDict['sensor'] = self.sensor
+        myDict['sensor'] = self.sensor
         myDict['sampleRate'] = 0.0625
         myDict['cutoff'] = 0.01
         myDict['plotType'] = 'gvt3'
@@ -152,3 +140,10 @@ class OssBtmfRoadmapPdf(HandbookFile):
         myDict['timestr'] = self.timestr
         myDict['notes'] = self.notes
         return myDict
+
+class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
+    """
+    Spectrogram Roadmap PDF handbook file like "/tmp/1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500.pdf"
+    """
+    def __init__(self, name, pattern='.*(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_spg(?P<axis>.)_roadmaps(?P<sampleRate>[0-9]*[p\.]?[0-9]+)(?P<notes>.*)\.pdf$', show_warnings=False):
+        super(OssBtmfRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings) # NOTE: we want super of recognized file init here

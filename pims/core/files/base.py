@@ -54,9 +54,10 @@ class RecognizedFile(File):
     """
     A generic representation of a recognized PIMS file.
     """
-    def __init__(self, name, show_warnings=False):
+    def __init__(self, name, pattern, show_warnings=False):
+        self.pattern = pattern
         super(RecognizedFile, self).__init__(name, show_warnings=show_warnings)
-        self._recognized = None
+        self.recognized = None
         self._type = None
         self._why = None
         if not self.is_recognized(): raise UnrecognizedPimsFile('"%s"' % self.name)
@@ -77,6 +78,14 @@ class StupidRecognizedFile(RecognizedFile):
     """
     A PIMS file that is recognized because the filename contains 'stupid'.
     """
+
+    def __init__(self, name, pattern='.*stupid.*', show_warnings=False):
+        self.pattern = pattern
+        super(StupidRecognizedFile, self).__init__(name, self.pattern, show_warnings=show_warnings) # NOTE: we want super of recognized file init here
+        self.recognized = None
+        self._type = None
+        self._why = None
+        if not self.is_recognized(): raise UnrecognizedPimsFile('"%s"' % self.name)
     
     def why(self):
         if not self._why:
@@ -90,8 +99,8 @@ class StupidRecognizedFile(RecognizedFile):
     
     def is_recognized(self):
         if "stupid" in self.name:
-            self._recognized = True
+            self.recognized = True
             self._type = self.type()
         else:
-            self._recognized = False
-        return self._recognized
+            self.recognized = False
+        return self.recognized
