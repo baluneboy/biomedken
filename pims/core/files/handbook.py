@@ -142,3 +142,33 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     """
     def __init__(self, name, pattern='.*(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_spg(?P<axis>.)_roadmaps(?P<sampleRate>[0-9]*[p\.]?[0-9]+)(?P<notes>.*)\.pdf$', show_warnings=False):
         super(OssBtmfRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings) # NOTE: we want super of recognized file init here
+
+    def _get_axis(self): return self._match.group('axis')
+    axis = property(_get_axis)
+
+    def _get_timestr(self): return self._match.group('timestr')
+    timestr = property(_get_timestr)
+
+    def _get_sensor(self): return self._match.group('sensor')
+    sensor = property(_get_sensor)
+
+    def _get_notes(self): return self._match.group('notes')
+    notes = property(_get_notes)
+
+    def type(self):
+        if not self._type:
+            self._type = 'hb_specgram_roadmap_pdf'
+        return self._type
+
+    def asDict(self):
+        myDict = super(OssBtmfRoadmapPdf, self).asDict()
+        myDict['system'] = 'LUT4SYS'
+        myDict['sensor'] = self.sensor
+        myDict['sampleRate'] = 1234
+        myDict['cutoff'] = 56
+        myDict['plotType'] = 'spg'
+        myDict['location'] = 'LUT4LOC'
+        myDict['axis'] = self.axis
+        myDict['timestr'] = self.timestr
+        myDict['notes'] = self.notes
+        return myDict

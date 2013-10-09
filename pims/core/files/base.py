@@ -78,14 +78,8 @@ class StupidRecognizedFile(RecognizedFile):
     """
     A PIMS file that is recognized because the filename contains 'stupid'.
     """
-
     def __init__(self, name, pattern='.*stupid.*', show_warnings=False):
-        self.pattern = pattern
-        super(StupidRecognizedFile, self).__init__(name, self.pattern, show_warnings=show_warnings) # NOTE: we want super of recognized file init here
-        self.recognized = None
-        self._type = None
-        self._why = None
-        if not self.is_recognized(): raise UnrecognizedPimsFile('"%s"' % self.name)
+        super(StupidRecognizedFile, self).__init__(name, pattern, show_warnings=show_warnings)
     
     def why(self):
         if not self._why:
