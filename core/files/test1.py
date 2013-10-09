@@ -6,6 +6,10 @@ from pims.core.files.utils import guess_file
 
 if __name__ == '__main__':
 
+    hbf = OssBtmfRoadmapPdf('/tmp/2quantify_2013_10_01_08_ossbtmf_roadmap.pdf')
+    print hbf
+    raise SystemExit
+
     files = [
     '/tmp/1qualify_yes.pdf',
     '/tmp/trash_stupid.txt',

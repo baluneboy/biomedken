@@ -14,11 +14,6 @@ class HandbookFile(RecognizedFile):
     """
     def __init__(self, name, pattern='.*(?P<page>\d{1})(?P<subtitle>qualify|quantify|ancillary)_.*\.pdf$', show_warnings=False):
         super(HandbookFile, self).__init__(name, pattern, show_warnings=show_warnings)
-        self.pattern = pattern
-        self.recognized = None
-        self._type = None
-        self._why = None
-        if not self.is_recognized(): raise UnrecognizedPimsFile('"%s"' % self.name)
         self.page = self._get_page()
         self.subtitle = self._get_subtitle()
         self.offset = self._get_offset()

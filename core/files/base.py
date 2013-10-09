@@ -55,8 +55,8 @@ class RecognizedFile(File):
     A generic representation of a recognized PIMS file.
     """
     def __init__(self, name, pattern, show_warnings=False):
-        self.pattern = pattern
         super(RecognizedFile, self).__init__(name, show_warnings=show_warnings)
+        self.pattern = pattern
         self.recognized = None
         self._type = None
         self._why = None
