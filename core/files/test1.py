@@ -38,6 +38,7 @@ if __name__ == '__main__':
         hbf = guess_file(f, filetypes=filetypes, show_warnings=False)
         if hbf.recognized:
             print '~'*len(hbf.name)
-            print hbf.name
-            print hbf.__class__.__name__
-            print hbf.asDict()
+            print hbf.name, "isa",
+            print hbf
+            #print hbf.__class__.__name__
+            #print hbf.asDict()
