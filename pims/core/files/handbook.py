@@ -14,20 +14,23 @@ class HandbookFile(RecognizedFile):
     """
     def __init__(self, name, pattern='.*(?P<page>\d{1})(?P<subtitle>qualify|quantify|ancillary)_.*\.pdf$', show_warnings=False):
         super(HandbookFile, self).__init__(name, pattern, show_warnings=show_warnings)
-        self.page = self._get_page()
-        self.subtitle = self._get_subtitle()
-        self.offset = self._get_offset()
-        self.scale = self._get_scale()
+
+    def __str__(self):
+        s = []
+        s.append( '%s' % self.__class__.__name__)
+        for prop in ['page', 'subtitle', 'scale', 'offset']:
+            s.append("{prop}:{value}".format( prop=prop, value=getattr(self,prop) ))
+        return '\n'.join(s)      
+
+    def __repr__(self):
+        return self.__str__()
         
     def showdict(self):
         s = []
         s.append( '%s object for recognized PIMS file "%s" because %s' % (self.__class__.__name__, self.name, self.why() ))
         for key in self.__dict__:
             s.append("{key}='{value}'".format(key=key, value=self.__dict__[key]))
-        print '\n'.join(s)        
-
-    def __repr__(self):
-        return self.__str__()
+        print '\n'.join(s)             
 
     def why(self):
         if not self._why:
@@ -51,12 +54,16 @@ class HandbookFile(RecognizedFile):
         return self.recognized
    
     def _get_offset(self): return '0cm 0cm'
+    offset = property(_get_offset)
 
     def _get_scale(self): return '1.00'
+    scale = property(_get_scale)
 
     def _get_page(self): return self._match.group('page')
+    page = property(_get_page)
 
     def _get_subtitle(self): return self._match.group('subtitle')
+    subtitle = property(_get_subtitle)
 
     def asDict(self):
         myDict = super(HandbookFile, self).asDict()
@@ -101,14 +108,21 @@ class OssBtmfRoadmapPdf(HandbookFile):
     /tmp/3quantify_2013_10_01_08_ossbtmf_roadmap-what.pdf    
     """
     def __init__(self, name, pattern='.*(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>ossbtmf)_roadmap(?P<notes>.*)\.pdf$', show_warnings=False):
-        super(OssBtmfRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings) # NOTE: we want super of recognized file init here
+        super(OssBtmfRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings) # pattern is specialized for this class
 
     def __str__(self):
-        return str( self.asDict() )
+        div = '.' * (len(self.name)+5) + '\n'
+        s = super(OssBtmfRoadmapPdf, self).__str__() + '\n' + div
+        D = [ (x, self.asDict()[x]) for x in self.asDict()] # convert to tuple
+        alpha = sorted(D, key = lambda x: x[0]) # alpha sort on keys
+        s = s + '\n'.join(elem[0]+':'+str(elem[1]) for elem in alpha)        
+        return s
 
     def _get_offset(self): return '-4.25cm 1cm'
+    offset = property(_get_offset)
 
     def _get_scale(self): return '0.88'
+    scale = property(_get_scale)
 
     def _get_timestr(self): return self._match.group('timestr')
     timestr = property(_get_timestr)
@@ -125,6 +139,7 @@ class OssBtmfRoadmapPdf(HandbookFile):
         return self._type
 
     def asDict(self):
+        # establish page, subtitle, offset, and scale
         myDict = super(OssBtmfRoadmapPdf, self).asDict()
         myDict['system'] = 'MAMS'
         myDict['sensor'] = self.sensor
@@ -145,15 +160,9 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
 
     def _get_axis(self): return self._match.group('axis')
     axis = property(_get_axis)
-
-    def _get_timestr(self): return self._match.group('timestr')
-    timestr = property(_get_timestr)
-
-    def _get_sensor(self): return self._match.group('sensor')
+    
+    def _get_sensor(self): return self._match.group('sensor') + '<< PARSE FURTHER?'
     sensor = property(_get_sensor)
-
-    def _get_notes(self): return self._match.group('notes')
-    notes = property(_get_notes)
 
     def type(self):
         if not self._type:
@@ -161,11 +170,11 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
         return self._type
 
     def asDict(self):
+        # establish page, subtitle, offset, and scale
         myDict = super(OssBtmfRoadmapPdf, self).asDict()
         myDict['system'] = 'LUT4SYS'
         myDict['sensor'] = self.sensor
-        myDict['sampleRate'] = 1234
-        myDict['cutoff'] = 56
+        myDict['sampleRate'] = 0
         myDict['plotType'] = 'spg'
         myDict['location'] = 'LUT4LOC'
         myDict['axis'] = self.axis
