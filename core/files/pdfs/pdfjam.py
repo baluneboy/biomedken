@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pims.utils.fractions import Fraction
+from pims.utils.commands import timeLogRun
 
 class PdfjamProperty(object):
     """
@@ -32,6 +32,7 @@ class PdfjamProperty(object):
         PdfjamProperty(1.36)
         >>> PdfjamProperty( 9 )
         PdfjamProperty(9.00)
+        >>> from fractions import Fraction
         >>> PdfjamProperty( Fraction(1,2) )
         PdfjamProperty(0.50)
         >>> PdfjamProperty( '-4.2' ).value
@@ -83,6 +84,7 @@ class PdfjamScale(PdfjamProperty):
     Traceback (most recent call last):
     ...
     TypeError: input value must cast to float: 0 < value <=1
+    >>> from fractions import Fraction
     >>> PdfjamScale( Fraction(1,2) )
     PdfjamScale(0.50)
 
@@ -148,12 +150,30 @@ class PdfjamOffsetScale(object):
 class PdfjamCommand(object):
     """This class implements pdfjam commands.
 
-    It takes 5 arguments as follows: xoffset, yoffset, scale, infile,
+    It takes 5 arguments as follows: infile, xoffset, yoffset, scale,
     and orient to hopefully give a command like this:
     pdfjam --offset '-2.75cm 0.75cm' --scale 0.88 infile.pdf --landscape --outfile infile_offset_-2p75_0p75_scale_0p88.pdf
 
-    """    
-    pass
+    """
+    def __init__(self, infile, xoffset=-3, yoffset=1, scale=0.88, orient='--landscape'):
+        """
+        A pdfjam command with appropriate arguments.
+        """
+        self.infile = infile
+        self.xoffset = xoffset
+        self.yoffset = yoffset
+        self.scale = scale
+        self.orient = orient
+        self.offsetscalestr = PdfjamOffsetScale( xoffset=xoffset, yoffset=yoffset, scale=scale ).string
+        self.cmdstr = "pdfjam %s %s --landscape --outfile /tmp/trashout.pdf" % (self.offsetscalestr, self.infile)
+        
+    def run(self, timeoutSec=10):
+        retCode, elapsedSec = timeLogRun('echo start pdfjam; date; %s; echo done' % self.cmdstr, timeoutSec, log=None)
+
+#pc = PdfjamCommand('/tmp/1qualify_2013_10_01_00_ossbtmf_roadmap.pdf', scale=0.2)
+#print pc.cmdstr
+#pc.run()
+#raise SystemExit
 
 if __name__ == "__main__":
     import doctest

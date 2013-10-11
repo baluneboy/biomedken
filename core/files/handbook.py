@@ -66,33 +66,6 @@ class HandbookPdf(RecognizedFile):
         myDict['scale'] = self.scale
         return myDict
 
-    def patternNotes(self):
-        return """
-        #===========================================================================
-        #
-        #yyyy_mm_dd_HH_MM_ss.sss_SENSOR_PLOTTYPE_roadmapsRATE.pdf
-        #(DTOBJ, SYSTEM=SMAMS, SENSOR, PLOTTYPE={pcss|spgX}, fs=RATE, fc='unknown', LOCATION='fromdb')
-        #------------------------------------------------------------
-        #2013_10_01_00_00_00.000_121f02_pcss_roadmaps500.pdf
-        #2013_10_01_08_00_00.000_121f05ten_spgx_roadmaps500.pdf
-        #2013_10_01_08_00_00.000_121f03one_spgs_roadmaps142.pdf
-        #2013_10_01_08_00_00.000_hirap_spgs_roadmaps1000.pdf
-        #
-        #===========================================================================
-        #
-        #yyyy_mm_dd_HH_ossbtmf_roadmap.pdf
-        #(DTOBJ, SYSTEM=MAMS, SENSOR=OSSBTMF, PLOTTYPE=gvt3, fs=0.0625, fc=0.01, LOCATION=LAB1O2, ER1, Lockers 3,4)
-        #------------------------------------------------------------
-        #2013_10_01_08_ossbtmf_roadmap.pdf
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        classPatterns = (
-            ( OssBtmfRoadmapPdf,    '.*(\d{1})(qualify|quantify).*_ossbtmf_roadmap(\+.*){0,1}\.pdf$' ),                 # .*_ossbtmf_roadmap\.pdf
-            ( SpgxRoadmapPdf,       '.*(\d{1})(qualify|quantify)_(.*)_(.*)_(spg.)_roadmaps(.*)(\+.*){0,1}\.pdf$' ),     # .*_ossbtmf_roadmap\.pdf
-            ( PcssRoadmapPdf,       '.*(\d{1})(qualify|quantify).*_pcss_roadmaps(.*)(\+.*){0,1}\.pdf$' ),               #   .*_pcss_roadmaps.*\.pdf
-            ( AncillaryPdf,         '.*(\d{1})(ancillary).*\.pdf$' ),                                                   #   .*_pcss_roadmaps.*\.pdf
-            )
-        """
-
 class OssBtmfRoadmapPdf(HandbookPdf):
     """
     OSSBTMF Roadmap PDF handbook file like one of these examples:
