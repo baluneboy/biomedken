@@ -150,12 +150,19 @@ class PdfjamOffsetScale(object):
 class PdfjamCommand(object):
     """This class implements pdfjam commands.
 
-    It takes 5 arguments as follows: infile, xoffset, yoffset, scale,
-    and orient to hopefully give a command like this:
+    INPUTS:
+    infile - required string to input PDF file
+    xoffset - optional float for X-offset in cm; defaults to -3
+    yoffset - optional float for Y-offset in cm; defaults to 1
+    scale - optional float for 0 < scale <= 1; defaults to 0.88
+    orient - optional string, either empty or '--landscape'
+    
+    OUTPUT:
+    The PDF output file with name similar to input, but with suffix added from:
     pdfjam --offset '-2.75cm 0.75cm' --scale 0.88 infile.pdf --landscape --outfile infile_offset_-2p75_0p75_scale_0p88.pdf
 
     """
-    def __init__(self, infile, xoffset=-3, yoffset=1, scale=0.88, orient='--landscape'):
+    def __init__(self, infile, xoffset=-3, yoffset=1, scale=0.88, orient='landscape'):
         """
         A pdfjam command with appropriate arguments.
         """
@@ -163,9 +170,9 @@ class PdfjamCommand(object):
         self.xoffset = xoffset
         self.yoffset = yoffset
         self.scale = scale
-        self.orient = orient
+        self.orient = orient or ''
         self.offsetscalestr = PdfjamOffsetScale( xoffset=xoffset, yoffset=yoffset, scale=scale ).string
-        self.cmdstr = "pdfjam %s %s --landscape --outfile /tmp/trashout.pdf" % (self.offsetscalestr, self.infile)
+        self.cmdstr = "pdfjam %s %s %s --outfile /tmp/trashout.pdf" % (self.offsetscalestr, self.infile)
         
     def run(self, timeoutSec=10):
         retCode, elapsedSec = timeLogRun('echo start pdfjam; date; %s; echo done' % self.cmdstr, timeoutSec, log=None)
