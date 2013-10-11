@@ -166,21 +166,45 @@ class PdfjamCommand(object):
         """
         A pdfjam command with appropriate arguments.
         """
-        self.infile = infile
-        self.xoffset = xoffset
-        self.yoffset = yoffset
-        self.scale = scale
-        self.orient = orient or ''
-        self.offsetscalestr = PdfjamOffsetScale( xoffset=xoffset, yoffset=yoffset, scale=scale ).string
-        self.cmdstr = "pdfjam %s %s %s --outfile /tmp/trashout.pdf" % (self.offsetscalestr, self.infile)
+        self._infile = infile
+        self._xoffset = xoffset
+        self._yoffset = yoffset
+        self._scale = scale
+        self._orient = '--' + (orient or '')
+        self._offsetscalestr = PdfjamOffsetScale( xoffset=xoffset, yoffset=yoffset, scale=scale ).string
+        self._command = "pdfjam %s %s %s --outfile /tmp/trashout.pdf" % (self.offsetscalestr, self.infile, self.orient)
         
-    def run(self, timeoutSec=10):
-        retCode, elapsedSec = timeLogRun('echo start pdfjam; date; %s; echo done' % self.cmdstr, timeoutSec, log=None)
+    def __str__(self):
+        return self.command
+    
+    @property
+    def infile(a): return a._infile
 
-#pc = PdfjamCommand('/tmp/1qualify_2013_10_01_00_ossbtmf_roadmap.pdf', scale=0.2)
-#print pc.cmdstr
-#pc.run()
-#raise SystemExit
+    @property
+    def xoffset(a): return a._xoffset
+    
+    @property
+    def yoffset(a): return a._yoffset
+
+    @property
+    def scale(a): return a._scale   
+
+    @property
+    def orient(a): return a._orient
+    
+    @property
+    def offsetscalestr(a): return a._offsetscalestr
+
+    @property
+    def command(a): return a._command
+    
+    def run(self, timeoutSec=10):
+        retCode, elapsedSec = timeLogRun('echo start pdfjam; date; %s; echo done' % self.command, timeoutSec, log=None)
+
+pc = PdfjamCommand('/tmp/1qualify_2013_10_01_00_ossbtmf_roadmap.pdf', scale=0.6)
+print pc.command
+pc.run()
+raise SystemExit
 
 if __name__ == "__main__":
     import doctest
