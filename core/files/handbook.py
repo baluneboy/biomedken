@@ -4,84 +4,9 @@ Utilities for handling handbook files.
 import re
 from pims.core.files.base import RecognizedFile, UnrecognizedPimsFile
 from pims.core.strings.utils import underscore_as_datetime
-from pims.utils.fractions import Fraction
 
 # TODO aggregate all the regexp patterns into neat, easy to update way
 # TODO some properties can be queried from [yoda?] db with time and sensor designation, right?
-
-class PdfjamProperty(object):
-    """
-    This class implements property values for pdfjam commands.
-
-    Argument is converted to float.
-
-    PdfjamProperty can also be constructed from:
-
-      - numeric strings similar to those accepted by the
-        float constructor (for example, '-2.3')
-
-      - float, Fraction, and Decimal instances
-
-      - integers
-      
-    """
-
-    # We're immutable, so use __new__ not __init__
-    def __new__(cls, value=0, yoffset=0, scale=1):
-        """Constructs a PdfjamProperty.
-
-        Takes a string like '3/2' or '1.5', Fraction instance, an
-        integer, or a float.
-
-        Examples
-        --------
-
-        >>> Fraction(10, -8)
-        Fraction(-5, 4)
-        >>> Fraction(Fraction(1, 7), 5)
-        Fraction(1, 35)
-        >>> Fraction(Fraction(1, 7), Fraction(2, 3))
-        Fraction(3, 14)
-        >>> Fraction('314')
-        Fraction(314, 1)
-        >>> Fraction('-35/4')
-        Fraction(-35, 4)
-        >>> Fraction('3.1415') # conversion from numeric string
-        Fraction(6283, 2000)
-        >>> Fraction('-47e-2') # string may include a decimal exponent
-        Fraction(-47, 100)
-        >>> Fraction(1.47)  # direct construction from float (exact conversion)
-        Fraction(6620291452234629, 4503599627370496)
-        >>> Fraction(2.25)
-        Fraction(9, 4)
-        >>> Fraction(Decimal('1.47'))
-        Fraction(147, 100)
-
-        """
-        self = super(PdfjamProperty, cls).__new__(cls)
-
-        if isinstance(value, float):
-            self._value = value
-            return self
-        elif isinstance(value, int):
-            self._value = float(value)
-            return self
-        elif isinstance(value, Fraction):
-            self._value = float(value)
-            return self
-        elif isinstance(value, basestring):
-            self._value = float(value)
-            return self
-        else:
-            raise TypeError("value should be a float, int, string "
-                            "or a Fraction instance")
-        
-        self._value = value
-        return self
-    
-    @property
-    def value(a):
-        return a._value
 
 class HandbookPdf(RecognizedFile):
     """
