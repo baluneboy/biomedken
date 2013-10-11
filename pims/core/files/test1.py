@@ -4,15 +4,6 @@ from pims.core.files.base import StupidRecognizedFile
 from pims.core.files.handbook import OssBtmfRoadmapPdf, SpgxRoadmapPdf, HandbookPdf
 from pims.core.files.utils import guess_file
 
-from pims.utils.fractions import Fraction
-from pims.core.files.handbook import PdfjamProperty
-print PdfjamProperty( Fraction(1,2) ).value
-print PdfjamProperty( 1.234 ).value
-print PdfjamProperty( '5.6789' ).value
-print PdfjamProperty( '8' ).value
-print PdfjamProperty( 9 ).value
-#raise SystemExit
-
 if __name__ == '__main__':
 
     files = [
