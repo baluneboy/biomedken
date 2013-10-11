@@ -3,24 +3,100 @@ Utilities for handling handbook files.
 """
 import re
 from pims.core.files.base import RecognizedFile, UnrecognizedPimsFile
+from pims.core.strings.utils import underscore_as_datetime
+from pims.utils.fractions import Fraction
 
 # TODO aggregate all the regexp patterns into neat, easy to update way
 # TODO some properties can be queried from [yoda?] db with time and sensor designation, right?
 
-class HandbookFile(RecognizedFile):
+class PdfjamProperty(object):
+    """
+    This class implements property values for pdfjam commands.
+
+    Argument is converted to float.
+
+    PdfjamProperty can also be constructed from:
+
+      - numeric strings similar to those accepted by the
+        float constructor (for example, '-2.3')
+
+      - float, Fraction, and Decimal instances
+
+      - integers
+      
+    """
+
+    # We're immutable, so use __new__ not __init__
+    def __new__(cls, value=0, yoffset=0, scale=1):
+        """Constructs a PdfjamProperty.
+
+        Takes a string like '3/2' or '1.5', Fraction instance, an
+        integer, or a float.
+
+        Examples
+        --------
+
+        >>> Fraction(10, -8)
+        Fraction(-5, 4)
+        >>> Fraction(Fraction(1, 7), 5)
+        Fraction(1, 35)
+        >>> Fraction(Fraction(1, 7), Fraction(2, 3))
+        Fraction(3, 14)
+        >>> Fraction('314')
+        Fraction(314, 1)
+        >>> Fraction('-35/4')
+        Fraction(-35, 4)
+        >>> Fraction('3.1415') # conversion from numeric string
+        Fraction(6283, 2000)
+        >>> Fraction('-47e-2') # string may include a decimal exponent
+        Fraction(-47, 100)
+        >>> Fraction(1.47)  # direct construction from float (exact conversion)
+        Fraction(6620291452234629, 4503599627370496)
+        >>> Fraction(2.25)
+        Fraction(9, 4)
+        >>> Fraction(Decimal('1.47'))
+        Fraction(147, 100)
+
+        """
+        self = super(PdfjamProperty, cls).__new__(cls)
+
+        if isinstance(value, float):
+            self._value = value
+            return self
+        elif isinstance(value, int):
+            self._value = float(value)
+            return self
+        elif isinstance(value, Fraction):
+            self._value = float(value)
+            return self
+        elif isinstance(value, basestring):
+            self._value = float(value)
+            return self
+        else:
+            raise TypeError("value should be a float, int, string "
+                            "or a Fraction instance")
+        
+        self._value = value
+        return self
+    
+    @property
+    def value(a):
+        return a._value
+
+class HandbookPdf(RecognizedFile):
     """
     A mixin for use alongside pims.core.files.base.RecognizedFile, which provides
     additional features for dealing with handbook files.
     """
-    def __init__(self, name, pattern='.*(?P<page>\d{1})(?P<subtitle>qualify|quantify|ancillary)_.*\.pdf$', show_warnings=False):
-        super(HandbookFile, self).__init__(name, pattern, show_warnings=show_warnings)
+    def __init__(self, name, pattern='.*(?P<page>\d{1})(?P<subtitle>qualify|quantify|ancillary)_(?P<notes>.*)\.pdf$', show_warnings=False):
+        super(HandbookPdf, self).__init__(name, pattern, show_warnings=show_warnings)
 
     def __str__(self):
-        s = []
-        s.append( '%s' % self.__class__.__name__)
-        for prop in ['page', 'subtitle', 'scale', 'offset']:
-            s.append("{prop}:{value}".format( prop=prop, value=getattr(self,prop) ))
-        return '\n'.join(s)      
+        s = '%s isa %s\n' % (self.name, self.__class__.__name__)
+        D = [ (x, self.asDict()[x]) for x in self.asDict()] # convert to tuple
+        alpha = sorted(D, key = lambda x: x[0]) # alpha sort on keys
+        s += '\n'.join(elem[0]+':'+str(elem[1]) for elem in alpha)        
+        return s
 
     def __repr__(self):
         return self.__str__()
@@ -32,25 +108,13 @@ class HandbookFile(RecognizedFile):
             s.append("{key}='{value}'".format(key=key, value=self.__dict__[key]))
         print '\n'.join(s)             
 
-    def why(self):
-        if not self._why:
-            self._why = 'matches regexp "%s"' % self.pattern
-        return self._why
-
-    def type(self):
-        if not self._type:
-            self._type = 'a_somewhat_recognized_handbook_file'
-        return self._type
-
     def _get_match(self): return re.search(self.pattern, self.name)
     _match = property(_get_match)
 
     def is_recognized(self):
-        if not self._match:
-            self.recognized = False
-        else:
+        self.recognized = False
+        if self._match:
             self.recognized = True
-            self._type = self.type()
         return self.recognized
    
     def _get_offset(self): return '0cm 0cm'
@@ -65,8 +129,12 @@ class HandbookFile(RecognizedFile):
     def _get_subtitle(self): return self._match.group('subtitle')
     subtitle = property(_get_subtitle)
 
+    def _get_notes(self): return self._match.group('notes') or 'empty'
+    notes = property(_get_notes)
+
     def asDict(self):
-        myDict = super(HandbookFile, self).asDict()
+        myDict = super(HandbookPdf, self).asDict()
+        myDict['notes'] = self.notes
         myDict['page'] = self.page
         myDict['subtitle'] = self.subtitle
         myDict['offset'] = self.offset
@@ -100,7 +168,7 @@ class HandbookFile(RecognizedFile):
             )
         """
 
-class OssBtmfRoadmapPdf(HandbookFile):
+class OssBtmfRoadmapPdf(HandbookPdf):
     """
     OSSBTMF Roadmap PDF handbook file like one of these examples:
     /tmp/1qualify_2013_10_01_08_ossbtmf_roadmap.pdf
@@ -109,14 +177,6 @@ class OssBtmfRoadmapPdf(HandbookFile):
     """
     def __init__(self, name, pattern='.*(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>ossbtmf)_roadmap(?P<notes>.*)\.pdf$', show_warnings=False):
         super(OssBtmfRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings) # pattern is specialized for this class
-
-    def __str__(self):
-        div = '.' * (len(self.name)+5) + '\n'
-        s = super(OssBtmfRoadmapPdf, self).__str__() + '\n' + div
-        D = [ (x, self.asDict()[x]) for x in self.asDict()] # convert to tuple
-        alpha = sorted(D, key = lambda x: x[0]) # alpha sort on keys
-        s = s + '\n'.join(elem[0]+':'+str(elem[1]) for elem in alpha)        
-        return s
 
     def _get_offset(self): return '-4.25cm 1cm'
     offset = property(_get_offset)
@@ -127,16 +187,11 @@ class OssBtmfRoadmapPdf(HandbookFile):
     def _get_timestr(self): return self._match.group('timestr')
     timestr = property(_get_timestr)
 
+    def _get_datetime(self): return underscore_as_datetime(self.timestr)
+    datetime = property(_get_datetime)
+
     def _get_sensor(self): return self._match.group('sensor')
     sensor = property(_get_sensor)
-
-    def _get_notes(self): return self._match.group('notes')
-    notes = property(_get_notes)
-
-    def type(self):
-        if not self._type:
-            self._type = 'hb_ossbmtf_roadmap_pdf'
-        return self._type
 
     def asDict(self):
         # establish page, subtitle, offset, and scale
@@ -147,7 +202,7 @@ class OssBtmfRoadmapPdf(HandbookFile):
         myDict['cutoff'] = 0.01
         myDict['plotType'] = 'gvt3'
         myDict['location'] = 'LAB1O2, ER1, Lockers 3,4' # FIXME if MAMS OSS ever moves
-        myDict['timestr'] = self.timestr
+        myDict['datetime'] = self.datetime
         myDict['notes'] = self.notes
         return myDict
 
@@ -164,11 +219,6 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     def _get_sensor(self): return self._match.group('sensor') + '<< PARSE FURTHER?'
     sensor = property(_get_sensor)
 
-    def type(self):
-        if not self._type:
-            self._type = 'hb_specgram_roadmap_pdf'
-        return self._type
-
     def asDict(self):
         # establish page, subtitle, offset, and scale
         myDict = super(OssBtmfRoadmapPdf, self).asDict()
@@ -178,6 +228,7 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
         myDict['plotType'] = 'spg'
         myDict['location'] = 'LUT4LOC'
         myDict['axis'] = self.axis
-        myDict['timestr'] = self.timestr
+        myDict['datetime'] = self.datetime
         myDict['notes'] = self.notes
         return myDict
+    
