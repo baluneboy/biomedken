@@ -20,7 +20,7 @@ def main():
         targets = selected.splitlines()
     else:
         targets = [curdir]
-    
+# RIGHT THERE    
     files = []
     directories = []
     

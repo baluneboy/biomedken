@@ -4,6 +4,7 @@ Utilities for handling handbook files.
 import re
 from pims.core.files.base import RecognizedFile, UnrecognizedPimsFile
 from pims.core.strings.utils import underscore_as_datetime
+from pims.patterns.handbookpdfs import *
 
 # TODO aggregate all the regexp patterns into neat, easy to update way
 # TODO some properties can be queried from [yoda?] db with time and sensor designation, right?
@@ -12,8 +13,8 @@ class HandbookPdf(RecognizedFile):
     """
     A mixin for use alongside pims.core.files.base.RecognizedFile, which provides
     additional features for dealing with handbook files.
-    """
-    def __init__(self, name, pattern='.*(?P<page>\d{1})(?P<subtitle>qualify|quantify|ancillary)_(?P<notes>.*)\.pdf$', show_warnings=False):
+    """ # WHY CAN WE USE RE OBJ FOR PATTERN INPUT AND NOT NEED ".pattern" FOR A STRING???
+    def __init__(self, name, pattern=_HANDBOOKPDF_FORMAT, show_warnings=False):
         super(HandbookPdf, self).__init__(name, pattern, show_warnings=show_warnings)
 
     def __str__(self):
@@ -73,7 +74,7 @@ class OssBtmfRoadmapPdf(HandbookPdf):
     /tmp/2quantify_2013_10_01_08_ossbtmf_roadmap+some_notes.pdf
     /tmp/3quantify_2013_10_01_08_ossbtmf_roadmap-what.pdf    
     """
-    def __init__(self, name, pattern='.*(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>ossbtmf)_roadmap(?P<notes>.*)\.pdf$', show_warnings=False):
+    def __init__(self, name, pattern=_OSSBTMFROADMAPPDF_FORMAT, show_warnings=False):
         super(OssBtmfRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings) # pattern is specialized for this class
 
     def _get_offset(self): return '-4.25cm 1cm'
@@ -108,7 +109,7 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     """
     Spectrogram Roadmap PDF handbook file like "/tmp/1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500.pdf"
     """
-    def __init__(self, name, pattern='.*(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_spg(?P<axis>.)_roadmaps(?P<sampleRate>[0-9]*[p\.]?[0-9]+)(?P<notes>.*)\.pdf$', show_warnings=False):
+    def __init__(self, name, pattern=_SPGXROADMAPPDF_FORMAT, show_warnings=False):
         super(OssBtmfRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings) # NOTE: we want super of recognized file init here
 
     def _get_axis(self): return self._match.group('axis')
