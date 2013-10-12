@@ -2,7 +2,7 @@
 
 import sys
 from numpy import NaN, Inf, arange, isscalar, array, asarray
-import plot
+import matplotlib.pyplot as plt
  
 def peakdet(v, delta, x = None):
     """
@@ -78,6 +78,9 @@ def peakdet(v, delta, x = None):
 if __name__=="__main__":
     series = [0,0,0,2,0,0,0,-2,0,0,0,2,0,0,0,-2,0]
     maxtab, mintab = peakdet(series,.3)
-    plot(series)
-    scatter(array(maxtab)[:,0], array(maxtab)[:,1], color='blue')
-    scatter(array(mintab)[:,0], array(mintab)[:,1], color='red')
+    print maxtab
+    print mintab
+    plt.plot(series)
+    plt.scatter(array(maxtab)[:,0], array(maxtab)[:,1], color='blue')
+    plt.scatter(array(mintab)[:,0], array(mintab)[:,1], color='red')
+    plt.show()

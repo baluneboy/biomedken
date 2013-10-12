@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# TODO handle when output from pdfjam run contains "pdfjam ERROR: Output file not written"
+
+import os
 from pims.utils.commands import timeLogRun
 
 class PdfjamProperty(object):
@@ -18,9 +21,7 @@ class PdfjamProperty(object):
       - integers
       
     """
-
-    # We're immutable, so use __new__ not __init__
-    def __new__(cls, value=0):
+    def __init__(self, value=0):
         """Constructs a PdfjamProperty.
 
         Takes a string like '3/2' or '1.5', Fraction instance, an
@@ -39,29 +40,20 @@ class PdfjamProperty(object):
         -4.2
         
         """
-        self = super(PdfjamProperty, cls).__new__(cls)
-
+        super(PdfjamProperty, self).__init__()
         try:
-            self._value = float(value)
-            return self
+            self.value = float(value)
         except TypeError:
             raise TypeError("input value should be a float, int, "
                             "string or a Fraction instance")
-        
-        self._value = value
-        return self
     
-    @property
-    def value(a):
-        return a._value
-
     def __repr__(self):
         """repr(self)"""
-        return ('PdfjamProperty(%.2f)' % (self._value))
+        return ('PdfjamProperty(%.2f)' % (self.value))
 
     def __str__(self):
         """str(self)"""
-        return '%.2f' % self._value
+        return '%.2f' % self.value
 
 class PdfjamScale(PdfjamProperty):
     """
@@ -83,37 +75,25 @@ class PdfjamScale(PdfjamProperty):
     >>> PdfjamScale( 9 )
     Traceback (most recent call last):
     ...
-    TypeError: input value must cast to float: 0 < value <=1
+    ValueError: input value must have 0 < value <=1
     >>> from fractions import Fraction
     >>> PdfjamScale( Fraction(1,2) )
     PdfjamScale(0.50)
 
     """
-    def __new__(cls, value=0):
+    def __init__(self, value=0):
         """
         Constructs a PdfjamScale property.
         """
-        self = super(PdfjamScale, cls).__new__(cls)
-
-        if isinstance(value, int):
-            raise TypeError('input value must cast to float: 0 < value <=1')
-        try:
-            foo = float(value)
-            #return self
-        except TypeError:
-            raise TypeError("input value should be a float, int, "
-                            "string or a Fraction instance")
+        super(PdfjamScale, self).__init__(value=value)
         
         # scale must have value between 0 and 1
-        if value <= 0 or value > 1:
+        if self.value <= 0 or self.value > 1:
             raise ValueError('input value must have 0 < value <=1')
         
-        self._value = value
-        return self
-    
     def __repr__(self):
         """repr(self)"""
-        return ('PdfjamScale(%.2f)' % (self._value))
+        return 'PdfjamScale(%.2f)' % self.value
 
 class PdfjamOffsetScale(object):
     """
@@ -124,37 +104,27 @@ class PdfjamOffsetScale(object):
 
     Examples
     --------
-    >>> print PdfjamOffsetScale( xoffset=-3.75 ).string
-    --offset '-3.75cm 1.00cm' --scale 0.85
+    >>> print PdfjamOffsetScale( xoffset=-3.75 )
+    --offset '-3.75cm 0.00cm' --scale 1.00
 
     """    
-    def __init__(self, xoffset=-4.25, yoffset=1, scale=0.85):
-        self._xoffset = PdfjamProperty( xoffset )
-        self._yoffset = PdfjamProperty( yoffset )
-        self._scale = PdfjamScale( scale )
-   
-    @property
-    def xoffset(a): return a._xoffset.value
-    
-    @property
-    def yoffset(a): return a._yoffset.value
-    
-    @property
-    def scale(a): return a._scale.value
+    def __init__(self, xoffset=0.0, yoffset=0.0, scale=1.0):
+        self.xoffset = PdfjamProperty( xoffset )
+        self.yoffset = PdfjamProperty( yoffset )
+        self.scale = PdfjamScale( scale )
 
-    @property
-    def string(a):
+    def __str__(self):
         # pdfjam --offset '-2.75cm 0.75cm' --scale 0.88 inputFile.pdf --landscape etc.
-        return "--offset '{0:0.2f}cm {1:0.2f}cm' --scale {2:0.2f}".format(a.xoffset, a.yoffset, a.scale)
+        return "--offset '{0:0.2f}cm {1:0.2f}cm' --scale {2:0.2f}".format(self.xoffset.value, self.yoffset.value, self.scale.value)
 
 class PdfjamCommand(object):
     """This class implements pdfjam commands.
 
     INPUTS:
     infile - required string to input PDF file
-    xoffset - optional float for X-offset in cm; defaults to -3
-    yoffset - optional float for Y-offset in cm; defaults to 1
-    scale - optional float for 0 < scale <= 1; defaults to 0.88
+    xoffset - optional float for X-offset in cm
+    yoffset - optional float for Y-offset in cm
+    scale - optional float for 0 < scale <= 1
     orient - optional string, either empty or '--landscape'
     
     OUTPUT:
@@ -162,61 +132,49 @@ class PdfjamCommand(object):
     pdfjam --offset '-2.75cm 0.75cm' --scale 0.88 infile.pdf --landscape --outfile infile_offset_-2p75_0p75_scale_0p88.pdf
 
     """
-    def __init__(self, infile, xoffset=-3, yoffset=1, scale=0.88, orient='landscape', log=None):
+    def __init__(self, infile, xoffset=0, yoffset=0, scale=1, orient='landscape', log=None):
         """
         A pdfjam command with appropriate arguments.
         """
-        self._infile = infile
-        self._xoffset = xoffset
-        self._yoffset = yoffset
-        self._scale = scale
-        self._orient = '--' + (orient or '')
-        self._offsetscalestr = PdfjamOffsetScale( xoffset=xoffset, yoffset=yoffset, scale=scale ).string
-        self._log = log
-        self._command = "pdfjam %s %s %s --outfile /tmp/trashout.pdf" % (self.offsetscalestr, self.infile, self.orient)
+        if os.path.exists(infile) and infile.lower().endswith('.pdf'):
+            self.infile = infile
+        else:
+            raise ValueError('input file must exist and have pdf/PDF extension')
+        self._offset_scale = PdfjamOffsetScale(xoffset=xoffset, yoffset=yoffset, scale=scale)
+        self.xoffset = self._offset_scale.xoffset.value
+        self.yoffset = self._offset_scale.yoffset.value
+        self.scale = self._offset_scale.scale.value
+        self.orient = '--' + (orient or '')
+        self.log = log
+        self.outfile = self.get_outfile()
+        self.command = "pdfjam %s %s %s --outfile %s" % (self._offset_scale, self.infile, self.orient, self.outfile)
         
     def __str__(self):
         return self.command
     
-    @property
-    def infile(a): return a._infile
-
-    @property
-    def xoffset(a): return a._xoffset
-    
-    @property
-    def yoffset(a): return a._yoffset
-
-    @property
-    def scale(a): return a._scale   
-
-    @property
-    def orient(a): return a._orient
-    
-    @property
-    def offsetscalestr(a): return a._offsetscalestr
-
-    @property
-    def command(a): return a._command
-
-    @property
-    def log(a): return a._log
+    def get_outfile(self):
+        prefix, ext = os.path.splitext(self.infile)
+        suffix = "offset_{0:0.2f}cm_{1:0.2f}cm_scale_{2:0.2f}.pdf".format(self.xoffset, self.yoffset, self.scale)
+        return prefix + suffix
     
     def run(self, timeoutSec=10, log=None):
         retCode, elapsedSec = timeLogRun('echo -n "Start pdfjam cmd at "; date; %s; echo -n "End   pdfjam cmd at "; date' % self.command, timeoutSec, log=log)
 
 def demo(f, scale=0.5, log=False):
     from pims.core.files.log import demo_log, NoLog
+    from pims.core.files.handbook import SpgPdfjamCommand, Gvt3PdfjamCommand
+
     if log:
         logDemo = demo_log('/tmp/trashdemo.log')
     else:
         logDemo = NoLog()
-    pc = PdfjamCommand(f, scale=scale, log=logDemo)
-    pc.run(log=logDemo)
+
+    pdfjam_cmd = SpgPdfjamCommand(f, log=logDemo)
+    pdfjam_cmd.run(log=logDemo)
 
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
     
     print 'Now for a demo...'
-    demo('/tmp/1qualify_2013_10_01_00_ossbtmf_roadmap.pdf', log=False)
+    demo('/tmp/1qualify_2013_10_01_00_ossbtmf_roadmap.pdf', log=True)
