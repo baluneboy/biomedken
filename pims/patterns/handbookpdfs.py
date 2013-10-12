@@ -1,22 +1,22 @@
 import re
 
 __all__ = [
-    '_HANDBOOKPDF_FORMAT',
-    '_OSSBTMFROADMAPPDF_FORMAT',
-    '_SPGXROADMAPPDF_FORMAT',    
+    '_HANDBOOKPDF_PATTERN',
+    '_OSSBTMFROADMAPPDF_PATTERN',
+    '_SPGXROADMAPPDF_PATTERN',    
     ]
 
-_HANDBOOKPDF_FORMAT = re.compile(
+_HANDBOOKPDF_PATTERN = (
     ".*/"                                       # path at the start, then
     "(?P<page>\d{1})"                           # a digit, then
     "(?P<subtitle>qualify|quantify|ancillary)"  # enum for subtitle, then
     "_"                                         # underscore, then
     "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
-    ,re.VERBOSE | re.IGNORECASE)
+    )
 
 
-_OSSBTMFROADMAPPDF_FORMAT = re.compile(
+_OSSBTMFROADMAPPDF_PATTERN = (
     ".*/"                                       # path at the start, then
     "(?P<page>\d{1})"                           # a digit, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
@@ -27,10 +27,10 @@ _OSSBTMFROADMAPPDF_FORMAT = re.compile(
     "_roadmap"                                  # underscore roadmap, then
     "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
-    ,re.VERBOSE | re.IGNORECASE)
+    )
 
 
-_SPGXROADMAPPDF_FORMAT = re.compile(
+_SPGXROADMAPPDF_PATTERN = (
     ".*/"                                       # path at the start, then
     "(?P<page>\d{1})"                           # a digit, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
@@ -44,7 +44,7 @@ _SPGXROADMAPPDF_FORMAT = re.compile(
     "(?P<sampleRate>[0-9]*[p\.]?[0-9]+)"        # zero or more digits, zero or one pee or dot, one or more digit, then
     "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
-    ,re.VERBOSE | re.IGNORECASE)
+    )
 
 
     #yyyy_mm_dd_HH_MM_ss.sss_SENSOR_PLOTTYPE_roadmapsRATE.pdf
@@ -64,14 +64,14 @@ _SPGXROADMAPPDF_FORMAT = re.compile(
 
 if __name__ == '__main__':
     input_value = '   1/3 '
-    m = _RATIONAL_FORMAT.match(input_value)
+    m = _RATIONAL_PATTERN.match(input_value)
     if m is None:
         raise ValueError('Invalid literal for RATIONAL FORMAT: %r' % input_value)
     else:
         print '"%s/%s" matches rational format' % ( m.group('num'), m.group('denom') )
 
     input_value = '/tmp/1qualify_yes.pdf'
-    m = _HANDBOOKPDF_FORMAT.match(input_value)
+    m = _HANDBOOKPDF_PATTERN.match(input_value)
     if m is None:
         raise ValueError('Invalid literal for HANDBOOKPDF FORMAT: %r' % input_value)
     else:
