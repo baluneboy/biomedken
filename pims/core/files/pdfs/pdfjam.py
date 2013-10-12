@@ -162,7 +162,7 @@ class PdfjamCommand(object):
     pdfjam --offset '-2.75cm 0.75cm' --scale 0.88 infile.pdf --landscape --outfile infile_offset_-2p75_0p75_scale_0p88.pdf
 
     """
-    def __init__(self, infile, xoffset=-3, yoffset=1, scale=0.88, orient='landscape'):
+    def __init__(self, infile, xoffset=-3, yoffset=1, scale=0.88, orient='landscape', log=None):
         """
         A pdfjam command with appropriate arguments.
         """
@@ -172,6 +172,7 @@ class PdfjamCommand(object):
         self._scale = scale
         self._orient = '--' + (orient or '')
         self._offsetscalestr = PdfjamOffsetScale( xoffset=xoffset, yoffset=yoffset, scale=scale ).string
+        self._log = log
         self._command = "pdfjam %s %s %s --outfile /tmp/trashout.pdf" % (self.offsetscalestr, self.infile, self.orient)
         
     def __str__(self):
@@ -197,15 +198,25 @@ class PdfjamCommand(object):
 
     @property
     def command(a): return a._command
-    
-    def run(self, timeoutSec=10):
-        retCode, elapsedSec = timeLogRun('echo start pdfjam; date; %s; echo done' % self.command, timeoutSec, log=None)
 
-pc = PdfjamCommand('/tmp/1qualify_2013_10_01_00_ossbtmf_roadmap.pdf', scale=0.6)
-print pc.command
-pc.run()
-raise SystemExit
+    @property
+    def log(a): return a._log
+    
+    def run(self, timeoutSec=10, log=None):
+        retCode, elapsedSec = timeLogRun('echo -n "Start pdfjam cmd at "; date; %s; echo -n "End   pdfjam cmd at "; date' % self.command, timeoutSec, log=log)
+
+def demo(f, scale=0.5, log=False):
+    from pims.core.files.log import demo_log, NoLog
+    if log:
+        logDemo = demo_log('/tmp/trashdemo.log')
+    else:
+        logDemo = NoLog()
+    pc = PdfjamCommand(f, scale=scale, log=logDemo)
+    pc.run(log=logDemo)
 
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+    
+    print 'Now for a demo...'
+    demo('/tmp/1qualify_2013_10_01_00_ossbtmf_roadmap.pdf', log=False)

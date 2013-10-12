@@ -5,24 +5,6 @@ import sys
 import time
 import subprocess
 import threading
-
-class NoLog(object):
-    def info(self, s): pass
-    def debug(self, s): pass
-    def warning(self, s): pass
-    def warn(self, s): pass
-    def error(self, s): pass
-    def exception(self, s): pass
-    def critical(self, s): pass
-
-class StdoutLog(object):
-    def info(self, s): print s
-    def debug(self, s): print s
-    def warning(self, s): print s
-    def warn(self, s): print s
-    def error(self, s): print 'ERROR ' + s
-    def exception(self, s): print 'EXCEPTION ' + s
-    def critical(self, s): print 'CRITICAL ' + s
     
 class Command(object):
     def __init__(self, cmd, log):
@@ -65,6 +47,7 @@ def timeLogRun(command, timeoutSec, log=None):
     (0, True)
     """
     if not log:
+        from pims.core.files.log import NoLog
         log = NoLog()
     cmdObj = Command(command, log)
     tzero = time.time()
@@ -74,9 +57,6 @@ def timeLogRun(command, timeoutSec, log=None):
     log.info( 'Took about %.3f seconds' % elapsedSec )
     log.info( 'Return code = %d' % retCode)
     return retCode, elapsedSec
-
-#retCode, elapsedSec = timeLogRun('echo start; date; sleep 2; echo done', 3, log=None)
-#raise SystemExit
 
 if __name__ == "__main__":
     import doctest
