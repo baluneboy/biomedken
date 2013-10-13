@@ -147,7 +147,7 @@ class PdfjamCommand(object):
         self.orient = '--' + (orient or '')
         self.log = log
         self.outfile = self.get_outfile()
-        self.command = "pdfjam %s %s %s --outfile %s" % (self._offset_scale, self.infile, self.orient, self.outfile)
+        self.command = self.get_command()
         
     def __str__(self):
         return self.command
@@ -156,6 +156,9 @@ class PdfjamCommand(object):
         prefix, ext = os.path.splitext(self.infile)
         suffix = "offset_{0:0.2f}cm_{1:0.2f}cm_scale_{2:0.2f}.pdf".format(self.xoffset, self.yoffset, self.scale)
         return prefix + suffix
+    
+    def get_command(self):
+        return "pdfjam %s %s %s --outfile %s" % (self._offset_scale, self.infile, self.orient, self.outfile)
     
     def run(self, timeoutSec=10, log=None):
         retCode, elapsedSec = timeLogRun('echo -n "Start pdfjam cmd at "; date; %s; echo -n "End   pdfjam cmd at "; date' % self.command, timeoutSec, log=log)

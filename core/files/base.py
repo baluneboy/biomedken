@@ -12,6 +12,7 @@ class File(object):
     """
     def __init__(self, name):
         self.name = name
+        self.exists = self._get_exists()
         if not self.exists:
             raise PimsFileDoesNotExist('caught IOError for file "%s", is path okay?' % self.name)
         self.size = self._get_size()
@@ -33,8 +34,7 @@ class File(object):
         #s += '\n'.join(elem[0]+':'+str(elem[1]) for elem in alpha)   
         return dict((name, getattr(self, name)) for name in dir(self) if not name.startswith('_'))
     
-    @property
-    def exists(self):
+    def _get_exists(self):
         try:
             with open(self.name):
                 pass
@@ -50,7 +50,8 @@ class RecognizedFile(File):
         super(RecognizedFile, self).__init__(name)
         self._pattern = pattern
         self._show_warnings = show_warnings
-        if not self._match:
+        self._match = self._get_match()
+        if not self._is_recognized():
             raise UnrecognizedPimsFile('"%s"' % self.name)
 
     def __str__(self):
@@ -61,8 +62,8 @@ class RecognizedFile(File):
             return True
         return False
     
-    @property
-    def _match(self): return re.search( re.compile(self._pattern), self.name)
+    def _get_match(self):
+        return re.search( re.compile(self._pattern), self.name)
 
 class StupidRecognizedFile(RecognizedFile):
     """
