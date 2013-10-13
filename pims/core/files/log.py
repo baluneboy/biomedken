@@ -10,9 +10,32 @@ class NoLog(object):
     def exception(self, s): pass
     def critical(self, s): pass
 
-def demo_log(logFile='/tmp/demo_pdfjam.log'):
+class HandbookLog(object):
+
+    def __init__(self, log_file='/home/pims/logs/handbook.log'):
     
-    logging.basicConfig(filename=logFile, filemode='w', level=logging.DEBUG, format='%(asctime)s,%(name)s,%(levelname)s,%(message)s')
+        logging.basicConfig(filename=log_file, filemode='w', level=logging.DEBUG, format='%(asctime)s,%(name)s,%(levelname)s,%(message)s')
+    
+        # Define a Handler which writes INFO messages or higher to the sys.stderr
+        console = logging.StreamHandler()
+        console.setLevel(logging.INFO)
+    
+        # Set a format which is simpler for console use
+        formatter = logging.Formatter('%(name)-9s: %(levelname)-8s: %(message)s')
+    
+        # Tell the handler to use this format
+        console.setFormatter(formatter)
+    
+        # Now, we can log to the root logger, or any other logger. First, the root...
+        logging.info('Logging started now at %s', datetime.datetime.now() )
+    
+        # Now, define a couple of other loggers which might represent areas in your application:
+        self.hbook = logging.getLogger('HBOOK')
+        self.pdf = logging.getLogger('PDF')
+
+def demo_log(log_file='/tmp/demo_pdfjam.log'):
+    
+    logging.basicConfig(filename=log_file, filemode='w', level=logging.DEBUG, format='%(asctime)s,%(name)s,%(levelname)s,%(message)s')
 
     # Define a Handler which writes INFO messages or higher to the sys.stderr
     console = logging.StreamHandler()

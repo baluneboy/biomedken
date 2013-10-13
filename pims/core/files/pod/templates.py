@@ -1,0 +1,2 @@
+_HANDBOOK_TEMPLATE_ODT =          '/home/pims/dev/programs/python/handbook/handbook_template.odt'
+_HANDBOOK_MANIFEST_TEMPLATE_ODS = '/home/pims/dev/programs/python/handbook/handbook_manifest_template.ods'
