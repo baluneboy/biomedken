@@ -4,16 +4,19 @@ Utilities for handling handbook files.
 """
 import os
 import re
+import datetime
 from pims.core.files.base import RecognizedFile, UnrecognizedPimsFile
-from pims.core.strings.utils import underscore_as_datetime
+from pims.core.strings.utils import underscore_as_datetime, title_case_special, sensor_tuple
+from pims.core.files.utils import guess_file
 from pims.patterns.handbookpdfs import *
+from pims.core.files.utils import listdir_filename_pattern
 from pims.core.files.pdfs.pdfjam import PdfjamCommand
 from pims.core.files.log import HandbookLog
 from pims.core.files.pod.templates import _HANDBOOK_TEMPLATE_ODT, _HANDBOOK_MANIFEST_TEMPLATE_ODS
 from appy.pod.renderer import Renderer
+import shutil
 
-# TODO for sensors like 121f03one, we can use patterns to parse further, right?
-# TODO some properties can be queried from [yoda?] db with time and sensor designation, right?
+# TODO DBQ properties can be queried from [yoda?] db with time and sensor designation, right?
 
 class HandbookPdf(RecognizedFile):
     """
@@ -22,70 +25,22 @@ class HandbookPdf(RecognizedFile):
     """
     def __init__(self, name, pattern=_HANDBOOKPDF_PATTERN, show_warnings=False):
         super(HandbookPdf, self).__init__(name, pattern, show_warnings=show_warnings)
-        self._plot_type = None
-        self._page = None
+        self.plot_type = self._get_plot_type()
+        self.page = self._get_page()
         self.subtitle = self._get_subtitle()
-        self._notes = None
+        self.notes = self._get_notes()
 
-    def __str__(self):
-        s = '%s isa %s\n' % (self.name, self.__class__.__name__)   
-        return s
+    def __str__(self): return '%s isa %s\n' % (self.name, self.__class__.__name__)   
 
-    def __repr__(self):
-        return self.__str__()
-    
-    def _get_pdfjam_params(self):
-        """Use plot type to get pdfjam offset/scale parameters."""
-        return sweet_pdfjam_params(self.plot_type)
+    def __repr__(self): return self.__str__()
+   
+    def _get_page(self): return int( self._match.group('page') )
 
-    @property
-    def plot_type(self):
-        """The plot_type property (like 'gvt3' or 'spg')."""
-        return self._plot_type
+    def _get_subtitle(self): return title_case_special( self._match.group('subtitle') )
 
-    @plot_type.setter
-    def plot_type(self, value):
-        self._plot_type = value
+    def _get_notes(self): return self._match.group('notes') or 'empty'
 
-    #def _get_page(self):
-    #    return int( self._match.group('page') )
-    
-    @property
-    def page(self):
-        """The page property (expecting single digit integer)."""
-        return self._page
-
-    @page.setter
-    def page(self, value):
-        self._page = int( self._match.group('page') )
-
-    def _get_subtitle(self):
-        return self._match.group('subtitle')
-    
-    #@property
-    #def subtitle(self):
-    #    """The subtitle property (like 'qualify', 'quantify', or 'ancillary')."""
-    #    return self._subtitle
-    #
-    #@subtitle.setter
-    #def subtitle(self, value):
-    #    self._subtitle = self._match.group('subtitle')
-    #
-    #@subtitle.getter
-    #def subtitle(self):
-    #    return self._subtitle
-
-    #def _get_notes(self):
-    #    return self._match.group('notes') or 'empty'
-    
-    @property
-    def notes(self):
-        """The notes property."""
-        return self._notes
-
-    @notes.setter
-    def notes(self, value):
-        self._notes = self._match.group('notes')
+    def _get_plot_type(self): return _PLOTTYPES['']
     
 class OssBtmfRoadmapPdf(HandbookPdf):
     """
@@ -96,50 +51,50 @@ class OssBtmfRoadmapPdf(HandbookPdf):
     """
     def __init__(self, name, pattern=_OSSBTMFROADMAPPDF_PATTERN, show_warnings=False):
         super(OssBtmfRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings) # pattern is specialized for this class
+        self.timestr = self._get_timestr()
+        self.datetime = self._get_datetime()
+        self.sensor = self._get_sensor()
+        self.system = self._get_system()
+        self.sample_rate = self._get_sample_rate()
+        self.cutoff = self._get_cutoff()
+        self.location = self._get_location()
 
         # Get command object for "jamming" PDF up/left via offset/scale
         self.pdfjam_cmd = self._get_pdfjam_cmd()
         self.pdfjam_cmdstr = str(self.pdfjam_cmd)
-
-        # Get renderer to be run for writing imageless background odt file
-        self.odt_renderer = self._get_odt_renderer()
-        self.odt_renderer.run()
     
-    def _get_odt_renderer(self):
+    def get_odt_renderer(self):
         pth, fname = os.path.split(self.name)
         bname, ext = os.path.splitext(fname)
         self.odt_name = os.path.join(pth, 'build', bname + '.odt')
+        # Explicitly assign page_dict that contains expected names for appy/pod template substitution
         page_dict = self.__dict__
-        page_dict['system'] = 'SYS'
-        page_dict['title'] = 'TITLE'
         return Renderer( _HANDBOOK_TEMPLATE_ODT, page_dict, self.odt_name )
     
     def _get_pdfjam_cmd(self):
         xoffset, yoffset = -4.75, 1.0
         scale = 0.88
         orient = 'landscape'
-        return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient) # , log=log)
-
-    @property
-    def timestr(self): return self._match.group('timestr')
-
-    @property
-    def datetime(self): return underscore_as_datetime(self.timestr)
-
-    @property
-    def sensor(self): return self._match.group('sensor')
-
-    @property
-    def system(self): return 'MAMS'
-
-    @property
-    def sample_rate(self): return 0.0625
-
-    @property
-    def cutoff(self): return 0.01
+        return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
     
-    @property
-    def location(self): return 'LAB1O2, ER1, Lockers 3,4' # FIXME if MAMS OSS ever moves
+    def _get_timestr(self): return self._match.group('timestr')
+
+    def _get_datetime(self): return underscore_as_datetime(self.timestr)
+
+    def _get_sensor(self):
+        tmp = self._match.group('sensor')
+        sensor, suffix = sensor_tuple(tmp)
+        return sensor
+
+    def _get_plot_type(self): return _PLOTTYPES['gvt']
+
+    def _get_system(self): return 'DBQSYS' # FIXME DBQ
+
+    def _get_sample_rate(self): return 0.0625 # FIXME DBQ
+
+    def _get_cutoff(self): return 0.01 # FIXME DBQ
+    
+    def _get_location(self): return 'DBQLOC' # FIXME DBQ
 
 class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     """
@@ -147,15 +102,23 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     """
     def __init__(self, name, pattern=_SPGXROADMAPPDF_PATTERN, show_warnings=False):
         super(SpgxRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings)
+        self.axis = self._get_axis()
         
     def _get_pdfjam_cmd(self):
         xoffset, yoffset = -3, 1.0
         scale = 0.72
         orient = 'landscape'
-        return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient) # , log=log)
+        return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
+   
+    def _get_plot_type(self): return _PLOTTYPES['spg']
+
+    def _get_system(self): return 'DBQSYS' # FIXME DBQ
+
+    def _get_sample_rate(self): return 0 # FIXME DBQ
+
+    def _get_cutoff(self): return 0 # FIXME DBQ
     
-    @property
-    def axis(self): return self._match.group('axis')
+    def _get_axis(self): return self._match.group('axis')
 
 class HandbookPdfjamCommand(PdfjamCommand):
 
@@ -169,38 +132,85 @@ class HandbookPdfjamCommand(PdfjamCommand):
         pth, fn = os.path.split(tmp)
         return os.path.join(pth, self.subdir, fn)
 
-def demo():
-    import os
-    from pims.core.files.handbook import OssBtmfRoadmapPdf, SpgxRoadmapPdf, HandbookPdf
-    from pims.core.files.utils import guess_file
-    
-    log = HandbookLog()
-    
-    pth = '/home/pims/Documents/test/'
-    names = [
-    '3ancillary_yes.pdf',
-    'trash_stupid.txt',
-    '1qualify_2013_10_10_00_00_00.000_121f03one_spgs_roadmaps142_amazing.pdf',
-    '2quantify_2013_10_01_00_ossbtmf_roadmap.pdf',
-    ]
-    files = [os.path.join(pth,n) for n in names]
-    files.sort()
+class HandbookEntry(object):
 
-    filetypes = [ OssBtmfRoadmapPdf, SpgxRoadmapPdf, HandbookPdf ]
-    print 'Working on sourceDir %s' % pth
-    for f in files:
-        try:
-            hbf = guess_file(f, filetypes=filetypes, show_warnings=False)
-            log.hbook.info( hbf._get_dict() ) # this dict should help with ODT creation
-            if hasattr(hbf, 'pdfjam_cmd'):
-                log.pdf.info(hbf.pdfjam_cmdstr)
-                hbf.pdfjam_cmd.run(log=log.pdf)
-                flag = 'ok'
-            else:
-                flag = 'xx'
-            print flag, os.path.basename(f)
-        except UnrecognizedPimsFile:
-            print 'SKIPPED unrecognized file'
+    # FIXME is there way to generate this dynamically from classes in this module that end in "Pdf"?
+    _FILETYPES = [ OssBtmfRoadmapPdf, SpgxRoadmapPdf, HandbookPdf ]
+
+    def __init__( self, source_dir, log=HandbookLog() ):
+
+        # Get info from source_dir
+        self.source_dir = source_dir
+        self.log = log
+        self._parse_source_dir_string() # regime, category, title
+        self.graceful_mkdir_build()
+        self.files = self._get_handbook_files()
+
+    def __str__(self):
+        return "\n".join( [self.title, self.category, self.regime] )
+
+    def _parse_source_dir_string(self):
+        """ Parse source directory string into fields. """
+        parentDir, s = os.path.split(self.source_dir)
+        tup = s.split('_')
+        regime = _ABBREVS[tup[1]]
+        category = title_case_special(tup[2])
+        title = ' '.join(tup[3:])
+        self.regime, self.category, self.title = regime, category, title
+        self.log.process.info( 'Parsed source_dir string: regime:{0}, category:{1}, and title:{2}'.format(regime, category, title) )
+
+    def graceful_mkdir_build(self):
+        builddir = os.path.join(self.source_dir, 'build')
+        if os.path.isdir(builddir):
+            time_stamp = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+            newdir = builddir + '_' + time_stamp
+            shutil.move(builddir, newdir)
+        os.mkdir(builddir)
+
+    def _get_handbook_files(self):
+        """Get files that match pattern for handbook PDFs."""
+        fname_pattern = _HANDBOOKPDF_PATTERN[3:] # get rid of ".*/"   # FIXME with low priority
+        files = listdir_filename_pattern(self.source_dir, fname_pattern)        
+        files.sort()
+        return files
+
+    def process_pages(self):
+        """ process the files found in source_dir """
+        self.log.process.info( 'Attempting to process %d pages from files in %s' % ( len(self.files), self.source_dir ) )
+        for f in self.files:
+            try:
+                
+                hbf = guess_file(f, filetypes=self._FILETYPES, show_warnings=False)
+
+                # Add 3 hb entry props to hb file object
+                hbf.regime = self.regime
+                hbf.category = self.category
+                hbf.title = self.title
+                
+                #self.log.process.info( hbf._get_dict() ) # this dict should help with ODT creation
+
+                # Run pdfjam command if this hbf has one                
+                if hasattr(hbf, 'pdfjam_cmd'):
+                    self.log.process.info(hbf.pdfjam_cmdstr)
+                    hbf.pdfjam_cmd.run(log=self.log.process)
+                    flag = '^'
+                else:
+                    flag = 'v'
+
+                # Get ODT renderer and run it to write to-be-editted (imageless) background odt file
+                if hasattr(hbf, 'get_odt_renderer'):
+                    odt_renderer = hbf.get_odt_renderer()
+                    self.log.process.info('Run odt_renderer for hb file %s' % hbf.name)
+                    odt_renderer.run()
+                    flag += '^'
+                else:
+                    flag += 'v'                
+                
+                self.log.process.info( ' '.join( [flag, os.path.basename(f)] ) )
+            
+            except UnrecognizedPimsFile:
+                self.log.process.warn( 'SKIPPED unrecognized file' % f)
 
 if __name__ == '__main__':
-    demo()            
+    hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
+    hbe.process_pages()

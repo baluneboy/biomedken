@@ -154,7 +154,7 @@ class PdfjamCommand(object):
     
     def get_outfile(self):
         prefix, ext = os.path.splitext(self.infile)
-        suffix = "offset_{0:0.2f}cm_{1:0.2f}cm_scale_{2:0.2f}.pdf".format(self.xoffset, self.yoffset, self.scale)
+        suffix = "_offset_{0:0.2f}cm_{1:0.2f}cm_scale_{2:0.2f}.pdf".format(self.xoffset, self.yoffset, self.scale)
         return prefix + suffix
     
     def get_command(self):

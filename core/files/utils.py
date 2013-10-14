@@ -16,3 +16,7 @@ def guess_file(name, filetypes, show_warnings=False):
     p = File(name)
     p.recognized = False
     return p
+
+def listdir_filename_pattern(dirpath, fname_pattern):
+    import os, re
+    return [os.path.join(dirpath, f) for f in os.listdir(dirpath) if re.match(fname_pattern, f)]
