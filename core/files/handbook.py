@@ -10,9 +10,10 @@ from pims.core.strings.utils import underscore_as_datetime, title_case_special, 
 from pims.core.files.utils import guess_file
 from pims.patterns.handbookpdfs import *
 from pims.core.files.utils import listdir_filename_pattern
-from pims.core.files.pdfs.pdfjam import PdfjamCommand
+from pims.core.files.pdfs.pdfjam import PdfjamCommand, PdfjoinCommand
 from pims.core.files.log import HandbookLog
 from pims.core.files.pod.templates import _HANDBOOK_TEMPLATE_ODT, _HANDBOOK_MANIFEST_TEMPLATE_ODS
+from pims.core.files.pdfs.pdftk import PdftkCommand, convert_odt2pdf
 from appy.pod.renderer import Renderer
 import shutil
 
@@ -132,6 +133,37 @@ class HandbookPdfjamCommand(PdfjamCommand):
         pth, fn = os.path.split(tmp)
         return os.path.join(pth, self.subdir, fn)
 
+# FIXME this class was done without much error trapping and quickly, so...
+class HandbookPdftkCommand(PdftkCommand):
+    """A better way to get pdftk outfile for handbook ODTs."""
+    def __init__(self, odtfile):
+        
+        if self._verify_fname_ext(odtfile, 'odt'):
+            self.odtfile = odtfile
+            infile = odtfile.replace('.odt','.pdf')
+            if os.path.exists(infile):
+                raise RuntimeError('outfile %s already exits' % infile)
+        else:
+            raise ValueError('odtfile must exist and have odt extension')
+        
+        ret_code = convert_odt2pdf(odtfile)
+        if ret_code: # zero is good return by linux cmd line convention
+            raise RuntimeError('did not get zero return from unoconv on %s' % odtfile)
+    
+        bgfile = self._get_bgfile()
+        outfile = infile.replace('.pdf', '_pdftk.pdf')
+        super(HandbookPdftkCommand, self).__init__(infile, bgfile, outfile)
+
+    def _get_bgfile(self):
+        pth = os.path.dirname(self.odtfile)
+        bname = os.path.basename(self.odtfile)
+        fpattern = bname.replace('.odt', '_offset_.*_scale_.*\.pdf$')
+        files = listdir_filename_pattern(pth, fpattern)
+        if len(files) == 1:
+            return files[0]
+        else:
+            return None
+
 class HandbookEntry(object):
 
     # FIXME is there way to generate this dynamically from classes in this module that end in "Pdf"?
@@ -143,8 +175,6 @@ class HandbookEntry(object):
         self.source_dir = source_dir
         self.log = log
         self._parse_source_dir_string() # regime, category, title
-        self.graceful_mkdir_build()
-        self.files = self._get_handbook_files()
 
     def __str__(self):
         return "\n".join( [self.title, self.category, self.regime] )
@@ -167,28 +197,32 @@ class HandbookEntry(object):
             shutil.move(builddir, newdir)
         os.mkdir(builddir)
 
-    def _get_handbook_files(self):
-        """Get files that match pattern for handbook PDFs."""
-        fname_pattern = _HANDBOOKPDF_PATTERN[3:] # get rid of ".*/"   # FIXME with low priority
-        files = listdir_filename_pattern(self.source_dir, fname_pattern)        
+    def _get_files(self, pth, fname_pattern):
+        """Get files that match pattern in pth."""
+        files = listdir_filename_pattern(pth, fname_pattern)        
         files.sort()
         return files
 
+    def _get_handbook_files(self):
+        """Get files that match pattern for handbook PDFs."""
+        fname_pattern = _HANDBOOKPDF_PATTERN[3:] # get rid of ".*/"     # FIXME with low priority
+        return self._get_files(self.source_dir, fname_pattern)
+
     def process_pages(self):
-        """ process the files found in source_dir """
-        self.log.process.info( 'Attempting to process %d pages from files in %s' % ( len(self.files), self.source_dir ) )
-        for f in self.files:
+        """Process the files found in source_dir."""
+        self.pdf_files = self._get_handbook_files()        
+        self.log.process.info( 'Attempting to process %d pages from files in %s' % ( len(self.pdf_files), self.source_dir ) )
+        self.graceful_mkdir_build()
+        for f in self.pdf_files:
             try:
                 
                 hbf = guess_file(f, filetypes=self._FILETYPES, show_warnings=False)
 
-                # Add 3 hb entry props to hb file object
+                # Add 3 high-level hb entry props to hb file object
                 hbf.regime = self.regime
                 hbf.category = self.category
                 hbf.title = self.title
                 
-                #self.log.process.info( hbf._get_dict() ) # this dict should help with ODT creation
-
                 # Run pdfjam command if this hbf has one                
                 if hasattr(hbf, 'pdfjam_cmd'):
                     self.log.process.info(hbf.pdfjam_cmdstr)
@@ -211,6 +245,33 @@ class HandbookEntry(object):
             except UnrecognizedPimsFile:
                 self.log.process.warn( 'SKIPPED unrecognized file' % f)
 
+    def _get_odt_files(self):
+        """Get files that match pattern for ODTs."""
+        fname_pattern = _HANDBOOKPDF_PATTERN[3:].replace('.pdf', '.odt') # FIXME with low priority (SEE _get_handbook_files)
+        return self._get_files(self.build_dir, fname_pattern)
+
+    def process_build(self):
+        """Process the build subdir."""
+        self.build_dir = os.path.join(self.source_dir, 'build')
+        if os.path.isdir(self.build_dir):
+            self.log.process.info( 'Attempting to process build subdir %s' % self.build_dir)
+            self.odt_files = self._get_odt_files()        
+            for odtfile in self.odt_files:
+                pdftk_cmd = HandbookPdftkCommand(odtfile)
+                pdftk_cmd.run() 
+        else:
+            self.log.process.error( 'NOT os.path.isdir for build subdir %s?' % self.build_dir )
+        self.finalize_entry()
+            
+    def finalize_entry(self):
+        fname_pattern = _HANDBOOKPDF_PATTERN[3:].replace('.pdf', '_pdftk.pdf') # FIXME can this be better? yeah, right
+        infiles = self._get_files(self.build_dir, fname_pattern)
+        outfile = os.path.join(self.source_dir, 'hb_OUTFILE.pdf')
+        pdfjoin_cmd = PdfjoinCommand(infiles, outfile)
+        pdfjoin_cmd.run()
+
 if __name__ == '__main__':
-    hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
-    hbe.process_pages()
+    #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
+    #hbe.process_pages()
+    #hbe.process_build() 
+    pass

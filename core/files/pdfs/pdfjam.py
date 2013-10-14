@@ -163,6 +163,54 @@ class PdfjamCommand(object):
     def run(self, timeoutSec=10, log=None):
         retCode, elapsedSec = timeLogRun('echo -n "Start pdfjam cmd at "; date; %s; echo -n "End   pdfjam cmd at "; date' % self.command, timeoutSec, log=log)
 
+class PdfjoinCommand(object):
+    """This class implements pdfjoin command.
+
+    INPUTS:
+    infiles - required list of strings for input PDF files
+    outfile - required string for output PDF file
+    
+    OUTPUT:
+    The PDF output file from:
+    pdfjoin infile1 infile2 infile3 ... --outfile outfile
+
+    """
+    def __init__(self, infiles, outfile):
+        """
+        A pdfjoin command with infiles and outfile arguments.
+        """
+        self.infiles = self._verify_infiles(infiles)
+        self.outfile = self._verify_outfile(outfile)
+        self.command = self.get_command()
+        
+    def __str__(self):
+        return self.command
+
+    def get_command(self):
+        """get command to be run"""
+        s = ['pdfjoin']
+        [s.append(f) for f in self.infiles]
+        s.append('--outfile')
+        s.append(self.outfile)
+        return ' '.join(s)
+    
+    def run(self, timeoutSec=10, log=None):
+        """run the command"""
+        retCode, elapsedSec = timeLogRun('echo -n "Start pdfjoin cmd at "; date; %s; echo -n "End   pdfjoin cmd at "; date' % self.command, timeoutSec, log=log)
+    
+    def _verify_outfile(self, outfile):
+        """outfile must not pre-exist"""
+        if os.path.exists(outfile):
+            raise ValueError('outfile already exists')
+        return outfile
+    
+    def _verify_infiles(self, infiles):
+        """infiles must pre-exist"""
+        for f in infiles:
+            if not os.path.exists(f) and f.lower().endswith('.pdf'):
+                raise ValueError('input file must exist and have pdf/PDF extension')
+        return infiles
+
 def demo(f, scale=0.5, log=False):
     from pims.core.files.log import demo_log, NoLog
     from pims.core.files.handbook import SpgPdfjamCommand, Gvt3PdfjamCommand
@@ -175,9 +223,19 @@ def demo(f, scale=0.5, log=False):
     pdfjam_cmd = SpgPdfjamCommand(f, log=logDemo)
     pdfjam_cmd.run(log=logDemo)
 
+def demojoin():
+    infiles = [
+        '/home/pims/Documents/test/hb_vib_vehicle_Big_Bang/build/1qualify_2013_10_10_00_00_00.000_121f03one_spgs_roadmaps142_amazing_pdftk.pdf',
+        '/home/pims/Documents/test/hb_vib_vehicle_Big_Bang/build/2quantify_2013_10_01_00_ossbtmf_roadmap_pdftk.pdf'
+    ]
+    outfile = '/home/pims/Documents/test/hb_vib_vehicle_Big_Bang/hb_FILE.pdf'
+    pdfjoin_cmd = PdfjoinCommand(infiles, outfile)
+    pdfjoin_cmd.run()
+    
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
     
     print 'Now for a demo...'
-    demo('/tmp/1qualify_2013_10_01_00_ossbtmf_roadmap.pdf', log=True)
+    #demo('/tmp/1qualify_2013_10_01_00_ossbtmf_roadmap.pdf', log=True)
+    demojoin()
