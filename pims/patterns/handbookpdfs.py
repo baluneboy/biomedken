@@ -1,9 +1,10 @@
-import re
 
 __all__ = [
     '_HANDBOOKPDF_PATTERN',
     '_OSSBTMFROADMAPPDF_PATTERN',
-    '_SPGXROADMAPPDF_PATTERN',    
+    '_SPGXROADMAPPDF_PATTERN',
+    '_PLOTTYPES',
+    '_ABBREVS',
     ]
 
 _HANDBOOKPDF_PATTERN = (
@@ -38,14 +39,32 @@ _SPGXROADMAPPDF_PATTERN = (
     "(?P<timestr>.*)"                           # timestr, then    
     "_"                                         # underscore, then
     "(?P<sensor>.*)"                            # sensor, then
-    "_spg"                                      # underscore spg, then
+    "_(?P<plot_type>\w*)"                       # underscore spg, then
     "(?P<axis>.)"                               # axis, then
     "_roadmaps"                                 # underscore roadmaps, then
-    "(?P<sampleRate>[0-9]*[p\.]?[0-9]+)"        # zero or more digits, zero or one pee or dot, one or more digit, then
+    "(?P<sample_rate>[0-9]*[p\.]?[0-9]+)"       # zero or more digits, zero or one pee or dot, one or more digit, then
     "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
     )
 
+#(?P<head>121f0|oss|0bb)(?P<tail>btmf|raw|\w{1})(?P<suffix>one|ten)?
+_SENSOR_PATTERN = (
+    "\A(?P<head>121f0|oss|0bb)"                 # known head at the start of string, then
+    "(?P<tail>btmf|raw|\w{1})"                  # btmf, raw, or single alphanumeric
+    "(?P<suffix>one|ten)?\Z"                    # zero or one enum for suffix to finish string
+    )
+
+_PLOTTYPES = {
+    'gvt':  'Acceleration vs. Time',
+    'spg':  'Spectrogram',
+    'pcss': 'PCSA',    
+    '':     'empty',
+}
+
+_ABBREVS = {
+'vib':  'Vibratory',
+'qs':   'Quasi-Steady',
+}
 
     #yyyy_mm_dd_HH_MM_ss.sss_SENSOR_PLOTTYPE_roadmapsRATE.pdf
     #(DTOBJ, SYSTEM=SMAMS, SENSOR, PLOTTYPE={pcss|spgX}, fs=RATE, fc='unknown', LOCATION='fromdb')
@@ -61,18 +80,13 @@ _SPGXROADMAPPDF_PATTERN = (
     #------------------------------------------------------------
     #2013_10_01_08_ossbtmf_roadmap.pdf
 
-
-if __name__ == '__main__':
-    input_value = '   1/3 '
-    m = _RATIONAL_PATTERN.match(input_value)
-    if m is None:
-        raise ValueError('Invalid literal for RATIONAL FORMAT: %r' % input_value)
-    else:
-        print '"%s/%s" matches rational format' % ( m.group('num'), m.group('denom') )
-
+def demo_hbfpat():
     input_value = '/tmp/1qualify_yes.pdf'
     m = _HANDBOOKPDF_PATTERN.match(input_value)
     if m is None:
         raise ValueError('Invalid literal for HANDBOOKPDF FORMAT: %r' % input_value)
     else:
         print '"%s" matches handbook pdf format' % m.group(0)
+
+if __name__ == "__main__":
+    demo_hbfpat()
