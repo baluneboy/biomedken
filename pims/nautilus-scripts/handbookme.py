@@ -24,17 +24,20 @@ def main():
         
     # Verify curdir matches pattern (this works even in build subdir, a good thing)
     match = re.search( re.compile(_HANDBOOKDIR_PATTERN), curdir )
-    
+       
     # Do branching
     if match:
-        if curdir.endswith('/build'):
+        #alert( match.string )
+        if match.string.endswith('build'):
             # finalize the product
-            msg = 'do pdftk post-processing'
+            hbe = HandbookEntry( source_dir=os.path.dirname(curdir) )
+            hbe.process_build()        
+            msg = 'did pdftk post-processing'
         else:
             # create interim hb entry build products
-            hbe = HandbookEntry(source_dir=curdir)
+            hbe = HandbookEntry( source_dir=curdir )
             hbe.process_pages()     
-            msg = 'did pre-processing'
+            msg = 'pre-processed %d hb pdf files' % len(hbe.pdf_files)
     else:
         msg = 'ignore non-hb dir'
         

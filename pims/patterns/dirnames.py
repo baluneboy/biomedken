@@ -13,7 +13,7 @@ _HANDBOOKDIR_PATTERN = (
 
 if __name__ == '__main__':
     import re
-    input_value = '/tmp/path/hb_vib_vehicle_One_two'
+    input_value = '/tmp/path/hb_vib_vehicle_One_two/build'
     m = re.compile(_HANDBOOKDIR_PATTERN).match(input_value)
     if m is None:
         raise ValueError('Invalid literal for _HANDBOOKDIR_PATTERN: %r' % input_value)
