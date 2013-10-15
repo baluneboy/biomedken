@@ -3,6 +3,7 @@ __all__ = [
     '_HANDBOOKPDF_PATTERN',
     '_OSSBTMFROADMAPPDF_PATTERN',
     '_SPGXROADMAPPDF_PATTERN',
+    '_ISTATPDF_PATTERN',
     '_PLOTTYPES',
     '_ABBREVS',
     ]
@@ -16,6 +17,19 @@ _HANDBOOKPDF_PATTERN = (
     "\.pdf\Z"                                   # extension to finish
     )
 
+_INTSTATPDF_PATTERN = (
+    ".*/"                                       # path at the start, then
+    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
+    "_"                                         # underscore, then
+    "(?P<timestr>.*)"                           # timestr, then    
+    "_"                                         # underscore, then
+    "(?P<sensor>.*)"                            # sensor, then
+    "_(?P<plot_type>\w*)"                       # underscore spg, then
+    "(?P<axis>.)"                               # axis, then
+    "(?P<notes>.*)"                             # notes, then
+    "\.pdf\Z"                                   # extension to finish
+    )
 
 _OSSBTMFROADMAPPDF_PATTERN = (
     ".*/"                                       # path at the start, then
@@ -49,7 +63,7 @@ _SPGXROADMAPPDF_PATTERN = (
 
 #(?P<head>121f0|oss|0bb)(?P<tail>btmf|raw|\w{1})(?P<suffix>one|ten)?
 _SENSOR_PATTERN = (
-    "\A(?P<head>121f0|oss|0bb)"                 # known head at the start of string, then
+    "\A(?P<head>121f0|hira|oss|0bb)"                 # known head at the start of string, then
     "(?P<tail>btmf|raw|\w{1})"                  # btmf, raw, or single alphanumeric
     "(?P<suffix>one|ten)?\Z"                    # zero or one enum for suffix to finish string
     )
@@ -81,10 +95,11 @@ _ABBREVS = {
     #2013_10_01_08_ossbtmf_roadmap.pdf
 
 def demo_hbfpat():
-    input_value = '/tmp/1qualify_yes.pdf'
-    m = _HANDBOOKPDF_PATTERN.match(input_value)
+    import re
+    input_value = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_EWIS_Port_Truss_Unknown/1qualify_2013_09_01_121f05006_spga_irmss_entire_month.pdf'
+    m = re.match( re.compile(_HANDBOOKPDF_PATTERN), input_value)
     if m is None:
-        raise ValueError('Invalid literal for HANDBOOKPDF FORMAT: %r' % input_value)
+        raise ValueError('Invalid literal for PATTERN: %r' % input_value)
     else:
         print '"%s" matches handbook pdf format' % m.group(0)
 

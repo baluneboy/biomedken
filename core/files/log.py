@@ -48,7 +48,7 @@ class NoLog(object):
     def critical(self, s): pass
 
 class HandbookLog(object):
-    def __init__(self, log_file='/home/pims/logs/handbook.log'):
+    def __init__(self, log_file='/home/pims/log/handbook.log'):
         self.inputs, self.process, self.verify = init_log(log_file)
 
 def demo_log(log_file='/tmp/demo_pdfjam.log'):

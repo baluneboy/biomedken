@@ -17,7 +17,7 @@ def alert(msg):
 def main():
     # Get nautilus current uri
     curdir = os.environ.get('NAUTILUS_SCRIPT_CURRENT_URI', os.curdir)
-    
+
     # Strip off uri prefix
     if curdir.startswith('file:///'):
         curdir = curdir[7:]
