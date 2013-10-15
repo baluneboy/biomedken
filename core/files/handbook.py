@@ -121,6 +121,22 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     
     def _get_axis(self): return self._match.group('axis')
 
+class IntStatPdf(SpgxRoadmapPdf):
+    """
+    Interval stat PDF handbook file like "/tmp/2qualify_2013_09_01_121f05006_irmsx_entire_month.pdf"
+    """
+    def __init__(self, name, pattern=_ISTATPDF_PATTERN, show_warnings=False):
+        super(IntStatPdf, self).__init__(name, pattern, show_warnings=show_warnings)
+        self.axis = self._get_axis()
+        
+    def _get_pdfjam_cmd(self):
+        xoffset, yoffset = -2, 1.5
+        scale = 0.74
+        orient = 'landscape'
+        return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
+   
+    def _get_plot_type(self): return _PLOTTYPES['istat']
+
 class HandbookPdfjamCommand(PdfjamCommand):
 
     def __init__(self, *args, **kwargs):
@@ -167,7 +183,7 @@ class HandbookPdftkCommand(PdftkCommand):
 class HandbookEntry(object):
 
     # FIXME is there way to generate this dynamically from classes in this module that end in "Pdf"?
-    _FILETYPES = [ OssBtmfRoadmapPdf, SpgxRoadmapPdf, HandbookPdf ]
+    _FILETYPES = [ OssBtmfRoadmapPdf, SpgxRoadmapPdf, IntStatPdf, HandbookPdf ]
 
     def __init__( self, source_dir, log=HandbookLog() ):
 
@@ -272,6 +288,7 @@ class HandbookEntry(object):
 
 if __name__ == '__main__':
     #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
-    #hbe.process_pages()
+    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_EWIS_Port_Truss_Unknown')
+    hbe.process_pages()
     #hbe.process_build() 
     pass
