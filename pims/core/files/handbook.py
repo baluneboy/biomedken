@@ -12,7 +12,7 @@ from pims.patterns.handbookpdfs import *
 from pims.core.files.utils import listdir_filename_pattern
 from pims.core.files.pdfs.pdfjam import PdfjamCommand, PdfjoinCommand
 from pims.core.files.log import HandbookLog
-from pims.core.files.pod.templates import _HANDBOOK_TEMPLATE_ODT, _HANDBOOK_MANIFEST_TEMPLATE_ODS
+from pims.core.files.pod.templates import _HANDBOOK_TEMPLATE_ODT
 from pims.core.files.pdfs.pdftk import PdftkCommand, convert_odt2pdf
 from appy.pod.renderer import Renderer
 import shutil
