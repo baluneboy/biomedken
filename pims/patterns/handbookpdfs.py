@@ -17,7 +17,7 @@ _HANDBOOKPDF_PATTERN = (
     "\.pdf\Z"                                   # extension to finish
     )
 
-_INTSTATPDF_PATTERN = (
+_ISTATPDF_PATTERN = (
     ".*/"                                       # path at the start, then
     "(?P<page>\d{1})"                           # a digit, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
@@ -25,7 +25,7 @@ _INTSTATPDF_PATTERN = (
     "(?P<timestr>.*)"                           # timestr, then    
     "_"                                         # underscore, then
     "(?P<sensor>.*)"                            # sensor, then
-    "_(?P<plot_type>\w*)"                       # underscore spg, then
+    "_(?P<plot_type>i\w*)"                      # underscore iabbrev, then
     "(?P<axis>.)"                               # axis, then
     "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
@@ -61,7 +61,6 @@ _SPGXROADMAPPDF_PATTERN = (
     "\.pdf\Z"                                   # extension to finish
     )
 
-#(?P<head>121f0|oss|0bb)(?P<tail>btmf|raw|\w{1})(?P<suffix>one|ten)?
 _SENSOR_PATTERN = (
     "\A(?P<head>121f0|hira|oss|0bb)"                 # known head at the start of string, then
     "(?P<tail>btmf|raw|\w{1})"                  # btmf, raw, or single alphanumeric
@@ -69,10 +68,11 @@ _SENSOR_PATTERN = (
     )
 
 _PLOTTYPES = {
-    'gvt':  'Acceleration vs. Time',
-    'spg':  'Spectrogram',
-    'pcss': 'PCSA',    
-    '':     'empty',
+    'gvt':   'Acceleration vs. Time',
+    'spg':   'Spectrogram',
+    'pcss':  'PCSA',
+    'istat': 'Interval Stat',
+    '':      'empty',
 }
 
 _ABBREVS = {
@@ -97,11 +97,11 @@ _ABBREVS = {
 def demo_hbfpat():
     import re
     input_value = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_EWIS_Port_Truss_Unknown/1qualify_2013_09_01_121f05006_spga_irmss_entire_month.pdf'
-    m = re.match( re.compile(_HANDBOOKPDF_PATTERN), input_value)
+    m = re.match( re.compile(_ISTATPDF_PATTERN), input_value)
     if m is None:
         raise ValueError('Invalid literal for PATTERN: %r' % input_value)
     else:
-        print '"%s" matches handbook pdf format' % m.group(0)
+        print 'timestr: %s' % m.group('timestr')
 
 if __name__ == "__main__":
     demo_hbfpat()
