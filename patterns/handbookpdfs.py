@@ -1,4 +1,3 @@
-
 __all__ = [
     '_HANDBOOKPDF_PATTERN',
     '_OSSBTMFROADMAPPDF_PATTERN',
@@ -8,16 +7,22 @@ __all__ = [
     '_ABBREVS',
     ]
 
+
+#/tmp/pth/1qualify_notes.pdf
+#---------------------------
+#.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<notes>.*)\.pdf\Z
 _HANDBOOKPDF_PATTERN = (
     ".*/"                                       # path at the start, then
     "(?P<page>\d{1})"                           # a digit, then
-    "(?P<subtitle>qualify|quantify|ancillary)"  # enum for subtitle, then
+    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
     "_"                                         # underscore, then
     "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
     )
 
+
 #/tmp/pth/3qualify_2013_09_01_121f05006_irmsy_entire_month.pdf
+#-------------------------------------------------------------
 #.*(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>[\d_\.]*)_(?P<sensor>.*)_(?P<plot_type>imm|irms)(?P<axis>.)_(?P<notes>.*)\.pdf
 _ISTATPDF_PATTERN = (
     ".*/"                                       # path at the start, then
@@ -33,6 +38,10 @@ _ISTATPDF_PATTERN = (
     "\.pdf\Z"                                   # extension to finish
     )
 
+
+#/tmp/pth/2quantify_2013_10_01_08_ossbtmf_roadmap+some_notes.pdf
+#---------------------------------------------------------------
+#.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>ossbtmf)_roadmap(?P<notes>.*)\.pdf\Z
 _OSSBTMFROADMAPPDF_PATTERN = (
     ".*/"                                       # path at the start, then
     "(?P<page>\d{1})"                           # a digit, then
@@ -47,6 +56,9 @@ _OSSBTMFROADMAPPDF_PATTERN = (
     )
 
 
+#/tmp/1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500.pdf
+#--------------------------------------------------------------------
+#.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>\w*)(?P<axis>.)_roadmaps(?P<sample_rate>[0-9]*[p\.]?[0-9]+)(?P<notes>.*)\.pdf\Z
 _SPGXROADMAPPDF_PATTERN = (
     ".*/"                                       # path at the start, then
     "(?P<page>\d{1})"                           # a digit, then
@@ -63,11 +75,16 @@ _SPGXROADMAPPDF_PATTERN = (
     "\.pdf\Z"                                   # extension to finish
     )
 
+
+#121f03one, hirap, ossbtmf
+#-------------------------
+#\A(?P<head>121f0|hira|oss|0bb)(?P<tail>btmf|raw|\w{1})(?P<suffix>one|ten|006)?\Z
 _SENSOR_PATTERN = (
     "\A(?P<head>121f0|hira|oss|0bb)"            # known head at the start of string, then
     "(?P<tail>btmf|raw|\w{1})"                  # btmf, raw, or single alphanumeric
     "(?P<suffix>one|ten|006)?\Z"                # zero or one enum for suffix to finish string
     )
+
 
 _PLOTTYPES = {
     'gvt':   'Acceleration vs. Time',
@@ -77,10 +94,12 @@ _PLOTTYPES = {
     '':      'empty',
 }
 
+
 _ABBREVS = {
 'vib':  'Vibratory',
 'qs':   'Quasi-Steady',
 }
+
 
     #yyyy_mm_dd_HH_MM_ss.sss_SENSOR_PLOTTYPE_roadmapsRATE.pdf
     #(DTOBJ, SYSTEM=SMAMS, SENSOR, PLOTTYPE={pcss|spgX}, fs=RATE, fc='unknown', LOCATION='fromdb')
