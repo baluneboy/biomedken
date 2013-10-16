@@ -17,17 +17,19 @@ _HANDBOOKPDF_PATTERN = (
     "\.pdf\Z"                                   # extension to finish
     )
 
+#/tmp/pth/3qualify_2013_09_01_121f05006_irmsy_entire_month.pdf
+#.*(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>[\d_\.]*)_(?P<sensor>.*)_(?P<plot_type>imm|irms)(?P<axis>.)_(?P<notes>.*)\.pdf
 _ISTATPDF_PATTERN = (
     ".*/"                                       # path at the start, then
     "(?P<page>\d{1})"                           # a digit, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
     "_"                                         # underscore, then
-    "(?P<timestr>.*)"                           # timestr, then    
+    "(?P<timestr>[\d_\.]*)"                     # timestr, then    
     "_"                                         # underscore, then
     "(?P<sensor>.*)"                            # sensor, then
-    "_(?P<plot_type>i\w*)"                      # underscore iabbrev, then
+    "_(?P<plot_type>imm|irms)"                  # underscore iabbrev, then
     "(?P<axis>.)"                               # axis, then
-    "(?P<notes>.*)"                             # notes, then
+    "_(?P<notes>.*)"                            # underscore notes, then
     "\.pdf\Z"                                   # extension to finish
     )
 
@@ -62,9 +64,9 @@ _SPGXROADMAPPDF_PATTERN = (
     )
 
 _SENSOR_PATTERN = (
-    "\A(?P<head>121f0|hira|oss|0bb)"                 # known head at the start of string, then
+    "\A(?P<head>121f0|hira|oss|0bb)"            # known head at the start of string, then
     "(?P<tail>btmf|raw|\w{1})"                  # btmf, raw, or single alphanumeric
-    "(?P<suffix>one|ten)?\Z"                    # zero or one enum for suffix to finish string
+    "(?P<suffix>one|ten|006)?\Z"                # zero or one enum for suffix to finish string
     )
 
 _PLOTTYPES = {

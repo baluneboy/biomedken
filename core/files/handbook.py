@@ -12,7 +12,7 @@ from pims.patterns.handbookpdfs import *
 from pims.core.files.utils import listdir_filename_pattern
 from pims.core.files.pdfs.pdfjam import PdfjamCommand, PdfjoinCommand
 from pims.core.files.log import HandbookLog
-from pims.core.files.pod.templates import _HANDBOOK_TEMPLATE_ODT
+from pims.core.files.pod.templates import _HANDBOOK_TEMPLATE_ODT, _HANDBOOK_TEMPLATE_ANCILLARY_ODT
 from pims.core.files.pdfs.pdftk import PdftkCommand, convert_odt2pdf
 from appy.pod.renderer import Renderer
 import shutil
@@ -73,8 +73,8 @@ class OssBtmfRoadmapPdf(HandbookPdf):
         return Renderer( _HANDBOOK_TEMPLATE_ODT, page_dict, self.odt_name )
     
     def _get_pdfjam_cmd(self):
-        xoffset, yoffset = -4.75, 1.0
-        scale = 0.88
+        xoffset, yoffset = -4.25, 1.0
+        scale = 0.86
         orient = 'landscape'
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
     
@@ -106,8 +106,8 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
         self.axis = self._get_axis()
         
     def _get_pdfjam_cmd(self):
-        xoffset, yoffset = -3, 1.0
-        scale = 0.72
+        xoffset, yoffset = -4.25, 1.0
+        scale = 0.86
         orient = 'landscape'
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
    
@@ -130,8 +130,8 @@ class IntStatPdf(SpgxRoadmapPdf):
         self.axis = self._get_axis()
         
     def _get_pdfjam_cmd(self):
-        xoffset, yoffset = -2, 1.5
-        scale = 0.74
+        xoffset, yoffset = -4.25, 1.0
+        scale = 0.86
         orient = 'landscape'
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
    
@@ -260,6 +260,20 @@ class HandbookEntry(object):
             
             except UnrecognizedPimsFile:
                 self.log.process.warn( 'SKIPPED unrecognized file' % f)
+        
+        self.ancillary_odt_renderer = self.get_ancillary_odt_renderer()
+        self.ancillary_odt_renderer.run()
+
+    def get_ancillary_odt_name(self):
+        fname = 'ancillary_notes.odt'
+        return os.path.join(self.source_dir, 'build', fname)
+
+    def get_ancillary_odt_renderer(self):
+        """After processing pages, create ancillary odt as last page."""
+        ancillary_odt_name = self.get_ancillary_odt_name()
+        # Explicitly assign page_dict that contains expected names for appy/pod template substitution
+        ancillary_dict = {'title': self.title}
+        return Renderer( _HANDBOOK_TEMPLATE_ANCILLARY_ODT, ancillary_dict, ancillary_odt_name )        
 
     def _get_odt_files(self):
         """Get files that match pattern for ODTs."""
@@ -277,18 +291,43 @@ class HandbookEntry(object):
                 pdftk_cmd.run() 
         else:
             self.log.process.error( 'NOT os.path.isdir for build subdir %s?' % self.build_dir )
-        self.finalize_entry()
-            
-    def finalize_entry(self):
+        
+        # get list of files to join (except for ancillary at this point)
         fname_pattern = _HANDBOOKPDF_PATTERN[3:].replace('.pdf', '_pdftk.pdf') # FIXME can this be better? yeah, right
-        infiles = self._get_files(self.build_dir, fname_pattern)
+        self.unjoined_files = self._get_files(self.build_dir, fname_pattern)
+        
+        # convert ancillary ODT to PDF, prepend page num, and include with other pages to be joined
+        ancillary_pdf = self.convert_ancillary( len(self.unjoined_files)+1 )
+        self.unjoined_files.append(ancillary_pdf)
+        
+        # finalize
+        self.finalize_entry()
+    
+    def convert_ancillary(self, page_num):
+        """Use unoconv for ancillary odt with prepend of page number."""
+        self.ancillary_odt_name = self.get_ancillary_odt_name()
+        new_name = self.ancillary_odt_name.replace('ancillary_', '%dancillary_' % page_num)
+        shutil.move(self.ancillary_odt_name, new_name)
+        ret_code = convert_odt2pdf(new_name)
+        return new_name.replace('.odt','.pdf')
+    
+    def finalize_entry(self):
         outfile = os.path.join(self.source_dir, 'hb_OUTFILE.pdf')
-        pdfjoin_cmd = PdfjoinCommand(infiles, outfile)
+        pdfjoin_cmd = PdfjoinCommand(self.unjoined_files, outfile)
         pdfjoin_cmd.run()
+        
+    def rebuild(self):
+        # TODO
+        # delete *_pdftk.pdf files
+        # toss *.pdf files that have matching .odt file
+        # get rid of \dancillary_.*\.pdf
+        # rename \dancillary_.*\.odt without leading page num digit
+        # get rid of hb_OUTFILE.pdf in source_dir
+        pass
 
 if __name__ == '__main__':
     #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
-    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_EWIS_Port_Truss_Unknown')
-    hbe.process_pages()
+    #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_EWIS_Port_Truss_Unknown')
+    #hbe.process_pages()
     #hbe.process_build() 
     pass
