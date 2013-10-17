@@ -5,6 +5,8 @@ __all__ = [
     '_ISTATPDF_PATTERN',
     '_PLOTTYPES',
     '_ABBREVS',
+    '_PSD3ROADMAPPDF_PATTERN',
+    '_CVFSROADMAPPDF_PATTERN',
     ]
 
 
@@ -76,11 +78,47 @@ _SPGXROADMAPPDF_PATTERN = (
     )
 
 
+#/tmp/4qualify_2013_10_08_13_35_00_es03_psd3_compare_msg_wv3fans.pdf
+#-------------------------------------------------------------------
+#.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>\w*)(?P<axis>.)_(?P<notes>.*)\.pdf\Z
+_PSD3ROADMAPPDF_PATTERN = (
+    ".*/"                                       # path at the start, then
+    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
+    "_"                                         # underscore, then
+    "(?P<timestr>.*)"                           # timestr, then    
+    "_"                                         # underscore, then
+    "(?P<sensor>.*)"                            # sensor, then
+    "_(?P<plot_type>psd)"                       # underscore spg, then
+    "(?P<axis>.)"                               # axis, then
+    "_(?P<notes>.*)"                            # notes, then
+    "\.pdf\Z"                                   # extension to finish
+    )
+
+
+#/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf
+#-------------------------------------------------------------------
+#.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>\w*)(?P<axis>.)_(?P<notes>.*)\.pdf\Z
+_CVFSROADMAPPDF_PATTERN = (
+    ".*/"                                       # path at the start, then
+    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
+    "_"                                         # underscore, then
+    "(?P<timestr>.*)"                           # timestr, then    
+    "_"                                         # underscore, then
+    "(?P<sensor>.*)"                            # sensor, then
+    "_(?P<plot_type>cvf)"                       # underscore spg, then
+    "(?P<axis>.)"                               # axis, then
+    "_(?P<notes>.*)"                            # notes, then
+    "\.pdf\Z"                                   # extension to finish
+    )
+
+
 #121f03one, hirap, ossbtmf
 #-------------------------
 #\A(?P<head>121f0|hira|oss|0bb)(?P<tail>btmf|raw|\w{1})(?P<suffix>one|ten|006)?\Z
 _SENSOR_PATTERN = (
-    "\A(?P<head>121f0|hira|oss|0bb)"            # known head at the start of string, then
+    "\A(?P<head>121f0|es0|hira|oss|0bb)"        # known head at the start of string, then
     "(?P<tail>btmf|raw|\w{1})"                  # btmf, raw, or single alphanumeric
     "(?P<suffix>one|ten|006)?\Z"                # zero or one enum for suffix to finish string
     )
@@ -88,8 +126,10 @@ _SENSOR_PATTERN = (
 
 _PLOTTYPES = {
     'gvt':   'Acceleration vs. Time',
+    'psd':   'Power Spectral Density',
     'spg':   'Spectrogram',
     'pcss':  'PCSA',
+    'cvf':   'Cumulative RMS vs. Frequency',
     'istat': 'Interval Stat',
     '':      'empty',
 }

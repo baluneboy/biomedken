@@ -126,6 +126,30 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     
     def _get_axis(self): return self._match.group('axis')
 
+class Psd3RoadmapPdf(SpgxRoadmapPdf):
+    """
+    PSD XYZ PDF handbook file like "/tmp/4qualify_2013_10_08_13_35_00_es03_psd3_compare_msg_wv3fans.pdf"
+    """
+    def __init__(self, name, pattern=_PSD3ROADMAPPDF_PATTERN, show_warnings=False):
+        super(Psd3RoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings)
+
+    def _get_plot_type(self): return _PLOTTYPES['psd']
+
+class CvfsRoadmapPdf(SpgxRoadmapPdf):
+    """
+    Cumulative RMS vs. frequency (sum) PDF handbook file like "/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf"
+    """
+    def __init__(self, name, pattern=_CVFSROADMAPPDF_PATTERN, show_warnings=False):
+        super(CvfsRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings)
+
+    def _get_plot_type(self): return _PLOTTYPES['cvf']
+
+    def _get_pdfjam_cmd(self):
+        xoffset, yoffset = -4.25, 1.0
+        scale = 0.82
+        orient = 'landscape'
+        return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
+
 class IntStatPdf(SpgxRoadmapPdf):
     """
     Interval stat PDF handbook file like "/tmp/2qualify_2013_09_01_121f05006_irmsx_entire_month.pdf"
@@ -389,8 +413,8 @@ class HandbookEntry(object):
             self.unbuild(execute=True)
 
 if __name__ == '__main__':
-    hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
-    #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_EWIS_Port_Truss_Unknown')
+    #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
+    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MSG_Operations')
     
     hbe.process_pages()
     
