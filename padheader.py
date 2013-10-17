@@ -4,7 +4,6 @@ PAD Headers.
 """
 
 import os
-from datetime import timedelta
 from interval import Interval
 from pims.pad.parsenames import match_header_filename
 from pims.utils.pimsdateutil import timestr_to_datetime
@@ -42,9 +41,8 @@ class PadHeader(object):
         self.dict = self._get_dict()
     
     def _find_starter_header_file(self):
-        """Find the first header file >= desired_start."""
-        hdr_files = self._get_header_files_for_date(self._day_start)
-        for hdr_file in hdr_files:
+        """Find the first header file with start time >= desired_start."""
+        for hdr_file in self.hdr_files_same_day:
             m = match_header_filename(hdr_file)
             start_str, stop_str = m.group('start_str'), m.group('stop_str')
             start_datetime = timestr_to_datetime(start_str)
@@ -60,15 +58,15 @@ class PadHeader(object):
         day_interval = self._get_day_interval() # created from PAD header filename times
         desired_start_as_interval = Interval(self.desired_start, self.desired_start) # needed for compare
         if self.desired_start in day_interval:
-            # great, now just work from first PAD header in this day_interval
-            day_offset = timedelta(days=0)
+            # same day, find first header with start time >= desired_start
+            hdr_file = self._find_starter_header_file()
         elif desired_start_as_interval.comes_before(day_interval):
-            # desired_start before day_interval, so need to check one day earlier
-            day_offset = timedelta(days=-1)
+            # desired_start before day_interval, SO USE LAST header from PREVIOUS day
+            hdr_file = None # for now
         else:
-            # desired_start not in AND not before SO need to check one day later
-            day_offset = timedelta(days=1)
-        return self.desired_start.date() + day_offset
+            # desired_start not in AND not before SO USE FIRST header from NEXT day
+            hdr_file = None # for now
+        return hdr_file or None
 
     def __str__(self): return '%s for %s at %s' % (self.__class__.__name__, self.sensor, self.desired_start)   
 
@@ -102,6 +100,7 @@ class PadHeader(object):
         # Get header files for desired_start's date
         hdr_files = self._get_header_files_for_date( self.desired_start.date() )
         match_hdr_file_first, match_hdr_file_last = [match_header_filename(f) for f in [hdr_files[0], hdr_files[-1]] ]
+        self.hdr_files_same_day = hdr_files
         
         # Parse each of first/last header to get lower and upper bound of day interval
         if match_hdr_file_first and match_hdr_file_last:
