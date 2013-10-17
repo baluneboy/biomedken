@@ -13,3 +13,5 @@ x. document in each related file how to update including the guess_file list (c'
 - svn mv the subdirs under core up one to be under pims
 - svn delete core
 - scrub code under pims for references to pims.core and change those to pims
+
+7. make sure snippets are common [and/or abbreviations?] in komodo @home and @work

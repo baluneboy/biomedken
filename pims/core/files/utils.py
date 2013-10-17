@@ -1,3 +1,5 @@
+import os
+import re
 from pims.core.files.base import File, UnrecognizedPimsFile
 
 def guess_file(name, filetypes, show_warnings=False):
@@ -18,5 +20,6 @@ def guess_file(name, filetypes, show_warnings=False):
     return p
 
 def listdir_filename_pattern(dirpath, fname_pattern):
-    import os, re
-    return [os.path.join(dirpath, f) for f in os.listdir(dirpath) if re.match(fname_pattern, f)]
+    files = [os.path.join(dirpath, f) for f in os.listdir(dirpath) if re.match(fname_pattern, f)]
+    files.sort()
+    return files

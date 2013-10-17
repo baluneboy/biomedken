@@ -49,6 +49,22 @@ def title_case_special(s, exceptions=['a', 'an', 'of', 'the', 'is', 'for', 'vs.'
         final.append(word in exceptions and word or word.capitalize())
     return " ".join(final)
 
+def convert_from_camel(name):
+    """
+    Return string converted from like camelCase to camel_case.
+    
+    Examples
+    --------
+    >>> convert_from_camel('121f03')
+    '121f03'
+
+    >>> convert_from_camel('nerdRanch')
+    'nerd_ranch'
+    
+    """
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()

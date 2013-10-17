@@ -228,9 +228,7 @@ class HandbookEntry(object):
 
     def _get_files(self, pth, fname_pattern):
         """Get files that match pattern in pth."""
-        files = listdir_filename_pattern(pth, fname_pattern)        
-        files.sort()
-        return files
+        return listdir_filename_pattern(pth, fname_pattern)        
 
     def _get_handbook_files(self):
         """Get files that match pattern for handbook PDFs."""
