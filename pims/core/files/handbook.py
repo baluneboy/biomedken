@@ -56,12 +56,15 @@ class OssBtmfRoadmapPdf(HandbookPdf):
         self.timestr = self._get_timestr()
         self.datetime = self._get_datetime()
         self.sensor = self._get_sensor()
+        
+        # Get header type info
         self.system = self._get_system()
         self.sample_rate = self._get_sample_rate()
         self.cutoff = self._get_cutoff()
         self.location = self._get_location()
+        ###self.header = PadHeader(self.sensor, self.datetime)
 
-        # Get command object for "jamming" PDF up/left via offset/scale
+        # Get command object for pdfjam -> slightly shrunk PDF up/left via offset/scale
         self.pdfjam_cmd = self._get_pdfjam_cmd()
         self.pdfjam_cmdstr = str(self.pdfjam_cmd)
     
@@ -269,7 +272,7 @@ class HandbookEntry(object):
                 self.log.process.info( ' '.join( [flag, os.path.basename(f)] ) )
             
             except UnrecognizedPimsFile:
-                self.log.process.warn( 'SKIPPED unrecognized file' % f)
+                self.log.process.warn( 'SKIPPED unrecognized file %s' % f)
         
         self.ancillary_odt_renderer = self.get_ancillary_odt_renderer()
         self.ancillary_odt_renderer.run()
@@ -390,9 +393,12 @@ class HandbookEntry(object):
 if __name__ == '__main__':
     hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_EWIS_Port_Truss_Unknown')
-    #hbe.process_pages()
+    
+    hbe.process_pages()
+    
     #hbe.process_build()
-    ok_to_unbuild, msg = hbe.unbuild(execute=False)
-    print "ok_to_unbuild", ok_to_unbuild
-    print msg
+    
+    #ok_to_unbuild, msg = hbe.unbuild(execute=False)
+    #print "ok_to_unbuild", ok_to_unbuild
+    #print msg
     pass
