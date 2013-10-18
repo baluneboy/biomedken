@@ -38,12 +38,13 @@ def demo():
         def __keytransform__(self, key):
             return key.lower()
 
-    s = LowerKeysTransformedDict( [ ('Test', 1), ('camelCase', 'dogma') ] )
-    for k,v in s.iteritems():
+    z = LowerKeysTransformedDict( [ ('Test', 1), ('camelCase', 'dogma') ] )
+    z['piNg'] = 'pong'
+    for k,v in z.iteritems():
         print k, v
     
-    assert s.get('TEST') is s['test']   # free get
-    assert 'TeSt' in s                  # free __contains__
+    assert z.get('TEST') is z['test']   # free get
+    assert 'TeSt' in z                  # free __contains__
                                         # free setdefault, __eq__, and so on
     
 if __name__ == "__main__":

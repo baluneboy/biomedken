@@ -16,6 +16,7 @@ from pims.core.files.pdfs.pdfjam import PdfjamCommand, PdfjoinCommand
 from pims.core.files.log import HandbookLog
 from pims.core.files.pod.templates import _HANDBOOK_TEMPLATE_ODT, _HANDBOOK_TEMPLATE_ANCILLARY_ODT
 from pims.core.files.pdfs.pdftk import PdftkCommand, convert_odt2pdf
+from pims.pad.padheader import PadHeaderDict
 from appy.pod.renderer import Renderer
 
 # TODO see /home/pims/dev/programs/python/pims/README.txt
@@ -56,13 +57,13 @@ class OssBtmfRoadmapPdf(HandbookPdf):
         self.timestr = self._get_timestr()
         self.datetime = self._get_datetime()
         self.sensor = self._get_sensor()
+        self.pad_header = PadHeaderDict(self.sensor, self.datetime)
         
         # Get header type info
-        self.system = self._get_system()
-        self.sample_rate = self._get_sample_rate()
-        self.cutoff = self._get_cutoff()
-        self.location = self._get_location()
-        ###self.header = PadHeader(self.sensor, self.datetime)
+        self.system = self.pad_header['System']
+        self.sample_rate = self.pad_header['SampleRate']
+        self.cutoff = self.pad_header['CutoffFreq']
+        self.location = self.pad_header['Location']
 
         # Get command object for pdfjam -> slightly shrunk PDF up/left via offset/scale
         self.pdfjam_cmd = self._get_pdfjam_cmd()
@@ -93,13 +94,7 @@ class OssBtmfRoadmapPdf(HandbookPdf):
 
     def _get_plot_type(self): return _PLOTTYPES['gvt']
 
-    def _get_system(self): return 'DBQSYS' # FIXME DBQ
 
-    def _get_sample_rate(self): return 0.0625 # FIXME DBQ
-
-    def _get_cutoff(self): return 0.01 # FIXME DBQ
-    
-    def _get_location(self): return 'DBQLOC' # FIXME DBQ
 
 class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     """
@@ -117,12 +112,6 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
    
     def _get_plot_type(self): return _PLOTTYPES['spg']
-
-    def _get_system(self): return 'DBQSYS' # FIXME DBQ.
-
-    def _get_sample_rate(self): return 0 # FIXME DBQ
-
-    def _get_cutoff(self): return 0 # FIXME DBQ
     
     def _get_axis(self): return self._match.group('axis')
 
@@ -414,7 +403,8 @@ class HandbookEntry(object):
 
 if __name__ == '__main__':
     #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
-    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MSG_Operations')
+    #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MSG_Operations')
+    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_equipment_Robonaut_Goes_Off')
     
     hbe.process_pages()
     
