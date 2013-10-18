@@ -1,6 +1,6 @@
 import os
 import re
-from pims.core.files.base import File, UnrecognizedPimsFile
+from pims.files.base import File, UnrecognizedPimsFile
 
 def guess_file(name, filetypes, show_warnings=False):
     """

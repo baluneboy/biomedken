@@ -212,8 +212,8 @@ class PdfjoinCommand(object):
         return infiles
 
 def demo(f, scale=0.5, log=False):
-    from pims.core.files.log import demo_log, NoLog
-    from pims.core.files.handbook import SpgPdfjamCommand, Gvt3PdfjamCommand
+    from pims.files.log import demo_log, NoLog
+    from pims.files.handbook import SpgPdfjamCommand, Gvt3PdfjamCommand
 
     if log:
         logDemo = demo_log('/tmp/trashdemo.log')

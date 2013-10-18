@@ -6,7 +6,7 @@ pygtk.require('2.0')
 import gtk
 import re
 from pims.patterns.dirnames import _HANDBOOKDIR_PATTERN
-from pims.core.files.handbook import HandbookEntry
+from pims.files.handbook import HandbookEntry
 
 def alert(msg):
     """Show a dialog with a simple message."""
