@@ -90,7 +90,11 @@ class OssBtmfRoadmapPdf(HandbookPdf):
     def _get_sensor(self):
         tmp = self._match.group('sensor')
         sensor, suffix = sensor_tuple(tmp)
-        return sensor
+        # FIXME a better regex pattern would probably help here:
+        if suffix and ( suffix.endswith('006') or suffix.endswith('one') ):
+            return sensor + '006'
+        else:
+            return sensor
 
     def _get_plot_type(self): return _PLOTTYPES['gvt']
 

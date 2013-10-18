@@ -7,9 +7,9 @@ x. document in each related file how to update including the guess_file list (c'
 
 x. DBQ [more like PAD interval finder to get first header] based on sensor and datetime to get header type info (as much as makes sense)...pull in PAD python code for headers here?
 
-5. 121f03006 PadHeader seems to be using 121f03 as sensor instead of 121f03006
+x. 121f03006 PadHeader seems to be using 121f03 as sensor instead of 121f03006
 
-6. do these next 3 things:
+x. do these next 3 things:
 - svn tag BEFORE doing anything below here!!!
 - svn mv the subdirs under core up one to be under pims
 - svn delete core
