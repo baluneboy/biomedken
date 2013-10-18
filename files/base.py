@@ -93,7 +93,7 @@ def print_fname(f): print f
 
 if __name__ == '__main__':
 
-    from pims.core.files.utils import guess_file
+    from pims.files.utils import guess_file
 
     files = [ '/tmp/trash_stupid.txt', '/tmp/trash.txt' ]
 

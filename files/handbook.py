@@ -7,15 +7,15 @@ import os
 import sys
 import re
 import datetime
-from pims.core.files.base import RecognizedFile, UnrecognizedPimsFile
-from pims.core.strings.utils import underscore_as_datetime, title_case_special, sensor_tuple
-from pims.core.files.utils import guess_file
+from pims.files.base import RecognizedFile, UnrecognizedPimsFile
+from pims.strings.utils import underscore_as_datetime, title_case_special, sensor_tuple
+from pims.files.utils import guess_file
 from pims.patterns.handbookpdfs import * # THIS IS WHERE PATTERNS ARE DEFINED/REFINED
-from pims.core.files.utils import listdir_filename_pattern
-from pims.core.files.pdfs.pdfjam import PdfjamCommand, PdfjoinCommand
-from pims.core.files.log import HandbookLog
-from pims.core.files.pod.templates import _HANDBOOK_TEMPLATE_ODT, _HANDBOOK_TEMPLATE_ANCILLARY_ODT
-from pims.core.files.pdfs.pdftk import PdftkCommand, convert_odt2pdf
+from pims.files.utils import listdir_filename_pattern
+from pims.files.pdfs.pdfjam import PdfjamCommand, PdfjoinCommand
+from pims.files.log import HandbookLog
+from pims.files.pod.templates import _HANDBOOK_TEMPLATE_ODT, _HANDBOOK_TEMPLATE_ANCILLARY_ODT
+from pims.files.pdfs.pdftk import PdftkCommand, convert_odt2pdf
 from pims.pad.padheader import PadHeaderDict
 from appy.pod.renderer import Renderer
 
@@ -23,7 +23,7 @@ from appy.pod.renderer import Renderer
 
 class HandbookPdf(RecognizedFile):
     """
-    A mixin for use alongside pims.core.files.base.RecognizedFile, which provides
+    A mixin for use alongside pims.files.base.RecognizedFile, which provides
     additional features for dealing with handbook files.
     """
     def __init__(self, name, pattern=_HANDBOOKPDF_PATTERN, show_warnings=False):

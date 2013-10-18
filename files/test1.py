@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
-from pims.core.files.base import StupidRecognizedFile
-from pims.core.files.handbook import OssBtmfRoadmapPdf, SpgxRoadmapPdf, HandbookPdf
-from pims.core.files.utils import guess_file
+from pims.files.base import StupidRecognizedFile
+from pims.files.handbook import OssBtmfRoadmapPdf, SpgxRoadmapPdf, HandbookPdf
+from pims.files.utils import guess_file
 
 if __name__ == '__main__':
 

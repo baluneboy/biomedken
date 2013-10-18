@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from pims.core.files.pdfs.pdfjam import PdfjamCommand
-from pims.core.files.pdfs.pdftk import convert_odt2pdf, PdftkCommand
+from pims.files.pdfs.pdfjam import PdfjamCommand
+from pims.files.pdfs.pdftk import convert_odt2pdf, PdftkCommand
 from appy.pod.renderer import Renderer
 
 fullsize_pdf = '/tmp/testing/2013_10_09_00_00_00.000_121f04_spgs_roadmaps500.pdf'

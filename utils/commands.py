@@ -47,7 +47,7 @@ def timeLogRun(command, timeoutSec, log=None):
     (0, True)
     """
     if not log:
-        from pims.core.files.log import NoLog
+        from pims.files.log import NoLog
         log = NoLog()
     cmdObj = Command(command, log)
     tzero = time.time()

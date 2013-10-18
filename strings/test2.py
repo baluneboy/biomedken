@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pims.core.strings.utils import underscore_as_datetime
+from pims.strings.utils import underscore_as_datetime
 
 if __name__ == '__main__':
 

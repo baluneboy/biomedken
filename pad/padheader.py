@@ -11,7 +11,7 @@ from pims.lib.tools import TransformedDict
 from pims.pad.parsenames import match_header_filename
 from pims.utils.pimsdateutil import timestr_to_datetime
 from pims.utils.pimsdateutil import datetime_to_pad_ymd_subdir
-from pims.core.files.utils import listdir_filename_pattern
+from pims.files.utils import listdir_filename_pattern
 from pims.utils.iteratortools import pairwise
 from create_header_dict import parse_header # FIXME old [but trusted] code
 
