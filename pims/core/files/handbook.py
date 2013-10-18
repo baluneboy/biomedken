@@ -118,7 +118,7 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
    
     def _get_plot_type(self): return _PLOTTYPES['spg']
 
-    def _get_system(self): return 'DBQSYS' # FIXME DBQ
+    def _get_system(self): return 'DBQSYS' # FIXME DBQ.
 
     def _get_sample_rate(self): return 0 # FIXME DBQ
 

@@ -4,11 +4,15 @@ PAD Headers.
 """
 
 import os
+from datetime import timedelta
 from interval import Interval
+from pims.lib.tools import TransformedDict
 from pims.pad.parsenames import match_header_filename
 from pims.utils.pimsdateutil import timestr_to_datetime
 from pims.utils.pimsdateutil import datetime_to_pad_ymd_subdir
 from pims.core.files.utils import listdir_filename_pattern
+from pims.utils.iteratortools import pairwise
+from create_header_dict import parse_header # FIXME old [but trusted] code
 
 class PadHeader(object):
     """
@@ -31,53 +35,49 @@ class PadHeader(object):
     
     """
     def __init__(self, sensor, desired_start, pad_dir='/misc/yoda/pub/pad'):
-        self.pad_dir = pad_dir
         self.sensor = sensor
         self.desired_start = desired_start
-        self._day_start = self._get_desired_day()
-        self.header_file = self._find_starter_header_file()
+        self.pad_dir = pad_dir
+        self.header_file = self._find_the_right_header_file()
+        self.dict = parse_header(self.header_file)
         
-        # Use sensor and desired start datetime to get header dict
-        self.dict = self._get_dict()
-    
-    def _find_starter_header_file(self):
-        """Find the first header file with start time >= desired_start."""
-        for hdr_file in self.hdr_files_same_day:
-            m = match_header_filename(hdr_file)
-            start_str, stop_str = m.group('start_str'), m.group('stop_str')
-            start_datetime = timestr_to_datetime(start_str)
-            stop_datetime = timestr_to_datetime(stop_str)
-            hdr_file_interval = Interval(start_datetime, stop_datetime)
-            print self.desired_start, hdr_file_interval
-            if self.desired_start in hdr_file_interval:
-                return hdr_file
-        return None
-    
-    def _get_desired_day(self):
-        """We may need to go to previous or next day the way PAD stream gets chopped."""
-        day_interval = self._get_day_interval() # created from PAD header filename times
-        desired_start_as_interval = Interval(self.desired_start, self.desired_start) # needed for compare
-        if self.desired_start in day_interval:
-            # same day, find first header with start time >= desired_start
-            hdr_file = self._find_starter_header_file()
-        elif desired_start_as_interval.comes_before(day_interval):
-            # desired_start before day_interval, SO USE LAST header from PREVIOUS day
-            hdr_file = None # for now
-        else:
-            # desired_start not in AND not before SO USE FIRST header from NEXT day
-            hdr_file = None # for now
-        return hdr_file or None
+    def _find_the_right_header_file(self):
+        """
+        Get list of header files from day before desired_start through day after, then
+        use pairwise (ftw) to check through those header files.  The one we want is in
+        the following time range:
+         
+               O-------------*
+        |__1___|     |___2___|
+          prev         THIS
+           hdr          hdr!
+         
+        """
+        # Get 3 days worth of header files
+        hdr_files = []
+        base_date = self.desired_start.date()
+        for day in [ base_date + timedelta(days=x) for x in range(-1, 2) ]:
+            hdr_files += self._get_header_files_for_date(day)
+
+        # Iterate pairwise to find the right one to use
+        hdr_file = None
+        for hdr1, hdr2 in pairwise(hdr_files):
+            match1, match2 = [ match_header_filename(f) for f in [hdr1, hdr2] ]
+            # Parse each of first/last header to get lower and upper bound of day interval
+            stop1_str = match1.group('stop_str')
+            stop2_str = match2.group('stop_str')
+            # Convert time strings to datetime objects
+            t1 = timestr_to_datetime(stop1_str)
+            t2 = timestr_to_datetime(stop2_str)
+            if self.desired_start > t1 and self.desired_start <= t2:
+                #print "*", t1, "to", t2, "<<<", self.desired_start
+                hdr_file = hdr2
+                break
+        return hdr_file
 
     def __str__(self): return '%s for %s at %s' % (self.__class__.__name__, self.sensor, self.desired_start)   
 
     def __repr__(self): return self.__str__()
-    
-    def _get_dict(self):
-        """Use sensor and desired start to get totally dict."""
-        return {
-            'sensor': self.sensor,
-            'desired_start': self.desired_start,
-            }
     
     def _get_header_files_for_date(self, d):
         """Get header files for given sensor on d day."""
@@ -93,35 +93,12 @@ class PadHeader(object):
         # Get header files
         header_pattern = '.*\.%s\.header' % self.sensor
         return listdir_filename_pattern(sensor_dir, header_pattern)        
-    
-    # FIXME consolidate with _find_starter_header_file code
-    def _get_day_interval(self):
-        """Use date part of desired_start to get interval from first file start to last file end time."""
-        # Get header files for desired_start's date
-        hdr_files = self._get_header_files_for_date( self.desired_start.date() )
-        match_hdr_file_first, match_hdr_file_last = [match_header_filename(f) for f in [hdr_files[0], hdr_files[-1]] ]
-        self.hdr_files_same_day = hdr_files
-        
-        # Parse each of first/last header to get lower and upper bound of day interval
-        if match_hdr_file_first and match_hdr_file_last:
-            start_str = match_hdr_file_first.group('start_str')
-            stop_str = match_hdr_file_last.group('stop_str')
-        else:
-            return None
-        
-        # Convert time strings to datetime objects
-        start_datetime = timestr_to_datetime(start_str)
-        stop_datetime = timestr_to_datetime(stop_str)
-        
-        return Interval(start_datetime, stop_datetime)
 
 def demo():
-    #print PadHeader( '121f03006', datetime(2012, 12, 31, 11, 59, 59, 999000) ).header_file
+    ph = PadHeader( '121f03006', datetime(2012, 12, 31, 11, 59, 59, 999000) )
+    print ph.dict
     #print PadHeader( '121f03006', datetime(2012, 12, 31, 0, 5, 0) ).header_file
-    print PadHeader( '121f03006', datetime(2012, 12, 31, 23, 57, 0) ).header_file
-    #print ph_too_early
-    #print ph_too_late
-    #print ph
+    #print PadHeader( '121f03006', datetime(2012, 12, 31, 23, 57, 0) ).header_file
     
 if __name__ == "__main__":
     from datetime import datetime
