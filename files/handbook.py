@@ -18,12 +18,14 @@ from pims.files.pod.templates import _HANDBOOK_TEMPLATE_ODT, _HANDBOOK_TEMPLATE_
 from pims.files.pdfs.pdftk import PdftkCommand, convert_odt2pdf
 from pims.pad.padheader import PadHeaderDict
 from appy.pod.renderer import Renderer
+from pims.paths import _YODA_HANDBOOK_DIR
+from pims.database.pimsquery import db_insert_handbook
 
 # TODO see /home/pims/dev/programs/python/pims/README.txt
 
 class HandbookPdf(RecognizedFile):
     """
-    A mixin for use alongside pims.files.base.RecognizedFile, which provides
+    A class derived from RecognizedFile, which provides
     additional features for dealing with handbook files.
     """
     def __init__(self, name, pattern=_HANDBOOKPDF_PATTERN, show_warnings=False):
@@ -47,10 +49,8 @@ class HandbookPdf(RecognizedFile):
     
 class OssBtmfRoadmapPdf(HandbookPdf):
     """
-    OSSBTMF Roadmap PDF handbook file like one of these examples:
-    /tmp/1qualify_2013_10_01_08_ossbtmf_roadmap.pdf
+    OSSBTMF Roadmap PDF handbook file like this example:
     /tmp/2quantify_2013_10_01_08_ossbtmf_roadmap+some_notes.pdf
-    /tmp/3quantify_2013_10_01_08_ossbtmf_roadmap-what.pdf    
     """
     def __init__(self, name, pattern=_OSSBTMFROADMAPPDF_PATTERN, show_warnings=False):
         super(OssBtmfRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings) # pattern is specialized for this class
@@ -98,11 +98,10 @@ class OssBtmfRoadmapPdf(HandbookPdf):
 
     def _get_plot_type(self): return _PLOTTYPES['gvt']
 
-
-
 class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     """
-    Spectrogram Roadmap PDF handbook file like "/tmp/1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500.pdf"
+    Spectrogram Roadmap PDF handbook file like this example:
+    /tmp/1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500_maybe_notes.pdf
     """
     def __init__(self, name, pattern=_SPGXROADMAPPDF_PATTERN, show_warnings=False):
         super(SpgxRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings)
@@ -121,7 +120,8 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
 
 class Psd3RoadmapPdf(SpgxRoadmapPdf):
     """
-    PSD XYZ PDF handbook file like "/tmp/4qualify_2013_10_08_13_35_00_es03_psd3_compare_msg_wv3fans.pdf"
+    PSD XYZ PDF handbook file like this example:
+    /tmp/4qualify_2013_10_08_13_35_00_es03_psd3_compare_msg_wv3fans.pdf
     """
     def __init__(self, name, pattern=_PSD3ROADMAPPDF_PATTERN, show_warnings=False):
         super(Psd3RoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings)
@@ -130,7 +130,8 @@ class Psd3RoadmapPdf(SpgxRoadmapPdf):
 
 class CvfsRoadmapPdf(SpgxRoadmapPdf):
     """
-    Cumulative RMS vs. frequency (sum) PDF handbook file like "/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf"
+    Cumulative RMS vs. frequency (sum) PDF handbook file like this example:
+    /tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf
     """
     def __init__(self, name, pattern=_CVFSROADMAPPDF_PATTERN, show_warnings=False):
         super(CvfsRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings)
@@ -145,7 +146,8 @@ class CvfsRoadmapPdf(SpgxRoadmapPdf):
 
 class IntStatPdf(SpgxRoadmapPdf):
     """
-    Interval stat PDF handbook file like "/tmp/2qualify_2013_09_01_121f05006_irmsx_entire_month.pdf"
+    Interval stat PDF handbook file like this example:
+    /tmp/2qualify_2013_09_01_121f05006_irmsx_entire_month.pdf
     """
     def __init__(self, name, pattern=_ISTATPDF_PATTERN, show_warnings=False):
         super(IntStatPdf, self).__init__(name, pattern, show_warnings=show_warnings)
@@ -161,7 +163,7 @@ class IntStatPdf(SpgxRoadmapPdf):
 
 # FIXME do some log.info
 class HandbookPdfjamCommand(PdfjamCommand):
-
+    """A custom pdfjam command handler."""
     def __init__(self, *args, **kwargs):
         kwargs['log'] = HandbookLog()
         self.subdir = 'build'
@@ -204,18 +206,31 @@ class HandbookPdftkCommand(PdftkCommand):
             return None
 
 class HandbookEntry(object):
-
+    """
+    A handbook entry container that processes recognized pdf files in a recognized
+    source_dir to create editable ODTs as interim products, then can build from those
+    the end item, which gets inserted into db on yoda.
+    """
     def __init__( self, source_dir, log=HandbookLog() ):
         # Get info from source_dir
         self.source_dir = source_dir
         self.log = log
-        self._parse_source_dir_string() # regime, category, title
-        pth, fname = os.path.split(source_dir)
-        self.hb_pdf = os.path.join(source_dir, fname + '.pdf')
+        pth, dname = os.path.split(source_dir)
+        self._fname = dname + '.pdf'
+        self.hb_pdf = os.path.join(source_dir, self._fname)
+        self.regime, self.category, self.title = self._parse_source_dir_string()
         self._pdf_classes = self._get_class_members()
 
     def __str__(self):
         return "\n".join( [self.title, self.category, self.regime] )
+
+    def will_clobber(self):
+        """Return True if we are gonna clobber existing file on yoda."""
+        # check if clobber existing hb pdf at destination on yoda
+        if os.path.exists( os.path.join(_YODA_HANDBOOK_DIR, self._fname) ):
+            return True
+        else:
+            return False
 
     def _get_class_members(self):
         _class_members = []
@@ -226,16 +241,17 @@ class HandbookEntry(object):
         return _class_members
 
     def _parse_source_dir_string(self):
-        """ Parse source directory string into fields. """
+        """ Parse source directory string into regime, category, and title. """
         parentDir, s = os.path.split(self.source_dir)
         tup = s.split('_')
         regime = _ABBREVS[tup[1]]
         category = title_case_special(tup[2])
         title = ' '.join(tup[3:])
-        self.regime, self.category, self.title = regime, category, title
         self.log.process.info( 'Parsed source_dir string: regime:{0}, category:{1}, and title:{2}'.format(regime, category, title) )
+        return regime, category, title
 
     def graceful_mkdir_build(self):
+        """Rename if pre-existing build subdir and make a fresh build subdir."""
         builddir = os.path.join(self.source_dir, 'build')
         if os.path.isdir(builddir):
             time_stamp = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
@@ -244,12 +260,12 @@ class HandbookEntry(object):
         os.mkdir(builddir)
 
     def _get_files(self, pth, fname_pattern):
-        """Get files that match pattern in pth."""
+        """Get files that match filename pattern at path."""
         return listdir_filename_pattern(pth, fname_pattern)        
 
     def _get_handbook_files(self):
         """Get files that match pattern for handbook PDFs."""
-        fname_pattern = _HANDBOOKPDF_PATTERN[3:] # get rid of ".*/"   # FIXME with low priority
+        fname_pattern = _HANDBOOKPDF_PATTERN[3:] # get rid of ".*/"
         return self._get_files(self.source_dir, fname_pattern)
 
     def process_pages(self):
@@ -293,6 +309,7 @@ class HandbookEntry(object):
         self.ancillary_odt_renderer.run()
 
     def get_ancillary_odt_name(self):
+        """Create ancillary odt filename."""
         fname = 'ancillary_notes.odt'
         return os.path.join(self.source_dir, 'build', fname)
 
@@ -309,29 +326,66 @@ class HandbookEntry(object):
         return self._get_files(self.build_dir, fname_pattern)
 
     def process_build(self):
-        """Process the build subdir."""
+        """Process files (pages) in the build subdir."""
         self.build_dir = os.path.join(self.source_dir, 'build')
         if os.path.isdir(self.build_dir):
-            self.log.process.info( 'Attempting to process build subdir %s' % self.build_dir)
+            self.log.process.info( 'Attempting process_build in %s' % self.build_dir)
             self.odt_files = self._get_odt_files()        
             for odtfile in self.odt_files:
                 pdftk_cmd = HandbookPdftkCommand(odtfile)
-                pdftk_cmd.run() 
+                pdftk_cmd.run()
+            self.log.process.info('Ran pdftk_cmd for %d odt files' % len(self.odt_files))
         else:
             self.log.process.error( 'NOT os.path.isdir for build subdir %s?' % self.build_dir )
         
         # get list of files to join (except for ancillary at this point)
-        fname_pattern = _HANDBOOKPDF_PATTERN[3:].replace('.pdf', '_pdftk.pdf') # FIXME can this be better? yeah, right
+        fname_pattern = _HANDBOOKPDF_PATTERN[3:].replace('.pdf', '_pdftk.pdf')
         self.unjoined_files = self._get_files(self.build_dir, fname_pattern)
         
         # convert ancillary ODT to PDF, prepend page num, and include with other pages to be joined
         ancillary_pdf = self.convert_ancillary( len(self.unjoined_files)+1 )
         self.unjoined_files.append(ancillary_pdf)
+        self.log.process.info('We now have %d unjoined files, including ancillary file' % len(self.unjoined_files))
         
         # finalize
-        self.finalize_entry()
+        if self.finalize_entry():
+            self.log.process.info('Okay, finalized entry')
+        else:
+            self.log.process.error('Could NOT finalize_entry for some reason')
+    
+    def finalize_entry(self):
+        """Rename a pre-existing hb pdf, then create final hb pdf for db and web."""
+        self.log.process.info('Attempting to finalize_entry')
+        if os.path.exists(self.hb_pdf):
+            time_stamp = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+            os.rename(self.hb_pdf, self.hb_pdf + '.' + time_stamp)
+            self.log.process.info('Renamed hb_pdf with time stamp')
+        pdfjoin_cmd = PdfjoinCommand(self.unjoined_files, self.hb_pdf)
+        pdfjoin_cmd.run()
+        self.log.process.info('Ran pdfjoin command to get %s' % self.hb_pdf)
+        if os.path.exists(self.hb_pdf):
+            unused_flag, err_msg = self.unbuild(execute=True)
+            if err_msg:
+                self.log.process.error('SKIP db_insert because unbuild error msg: %s' % err_msg)
+                return False
+            else:
+                self.log.process.info('Did the unbuild okay')
+            self.db_insert()
+        else:
+            self.log.process.info('Did NOT unbuild because hb_pdf did not exist')
+        return True
 
-    # FIXME do some log.info here for files getting tossed (or not matching ODT)
+    # TODO needs work for details and PROBABLY a new stored procedure on yoda?
+    def db_insert(self):
+        """Insert db record via Eric's routine on yoda."""
+        fname = os.path.basename(self.hb_pdf)
+        inserted_okay, msg =  db_insert_handbook(fname, self.title, 'vibratory', None)
+        if inserted_okay:
+            self.log.process.info(msg)
+        else:
+            self.log.process.error(msg)
+
+    # FIXME do some log.info here for files getting tossed (or not matching ODT), etc.
     def unbuild(self, execute=True):
         """
         Check if we are ready to unbuild, which allows for modified ODTs.
@@ -343,7 +397,7 @@ class HandbookEntry(object):
         build_dir = os.path.join(self.source_dir, 'build')
         pdftk_files = self._get_files(build_dir, '.*_pdftk.pdf')
         if not pdftk_files:
-            msg = 'no pdftk_pdf files found during unbuild'
+            msg = 'NO pdftk_pdf files found during unbuild'
             return False, msg
         files_to_toss += pdftk_files
 
@@ -355,7 +409,7 @@ class HandbookEntry(object):
             if os.path.exists(pdf_file):
                 pdf_files_matching_odt.append(pdf_file)
             else:
-                msg = 'seemingly unpaired odt/pdf files'
+                msg = 'Seems unpaired odt/pdf files'
                 return False, msg
         files_to_toss += pdf_files_matching_odt
 
@@ -364,7 +418,7 @@ class HandbookEntry(object):
         if len(dancillary_odt) == 1:
             dancillary_odt = dancillary_odt[0]
         else:
-            msg = 'no unbuild because len(dancillary_odt) not exactly one'
+            msg = 'NO unbuild because len(dancillary_odt) not exactly one'
             return False, msg
         
         # Rename \dancillary_.*\.odt WITHOUT leading page num digit
@@ -374,19 +428,18 @@ class HandbookEntry(object):
             os.rename( dancillary_odt, renamed_odt )
             os.rename( renamed_odt, dancillary_odt )
         except:
-            msg = 'could not rename dancillary odt file to no-leading-digit odt file'
+            msg = 'Could not rename dancillary odt file to no-leading-digit odt file'
             return False, msg
 
         # Get out here if okay to unbuild, but not wanting to execute
         if not execute:
-            msg = 'okay to unbuild'
+            msg = 'Okay to unbuild, but execute boolean input is False, so skip out'
             return True, msg
         
         # Actually do the unbuild
         [os.remove(f) for f in files_to_toss]
         os.rename( dancillary_odt, renamed_odt )
-        msg = 'unbuild removed %d files and renamed to %s' % ( len(files_to_toss), renamed_odt )
-        return False, msg
+        return False, None
     
     def convert_ancillary(self, page_num):
         """Use unoconv for ancillary odt with prepend of page number."""
@@ -395,24 +448,31 @@ class HandbookEntry(object):
         os.rename(self.ancillary_odt_name, new_name)
         ret_code = convert_odt2pdf(new_name)
         return new_name.replace('.odt','.pdf')
-    
-    def finalize_entry(self):
-        if os.path.exists(self.hb_pdf):
-            time_stamp = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-            os.rename(self.hb_pdf, self.hb_pdf + '.' + time_stamp)
-        pdfjoin_cmd = PdfjoinCommand(self.unjoined_files, self.hb_pdf)
-        pdfjoin_cmd.run()
-        if os.path.exists(self.hb_pdf):
-            self.unbuild(execute=True)
+
 
 if __name__ == '__main__':
-    #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
+    
+    hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
+    
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MSG_Operations')
-    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_equipment_Robonaut_Goes_Off')
+    #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_equipment_Robonaut_Goes_Off')
     
-    hbe.process_pages()
+    #hbe.dbInsert("It's A Miracle", self.regime, 'vehicle', author='Ken Hrovat', host='localhost', user='pims', passwd='PIMSPASS', db='pimsdoc')
+    #raise SystemExit
     
-    #hbe.process_build()
+    if False: # False for process_build
+        
+        if not hbe.will_clobber():
+            hbe.process_pages()
+        else:
+            print 'ABORT PAGE PROCESSING: hb pdf filename conflict on yoda'
+    
+    else:
+        
+        if not hbe.will_clobber():
+            hbe.process_build()
+        else:
+            print 'ABORT BUILD: hb pdf filename conflict on yoda'
     
     #ok_to_unbuild, msg = hbe.unbuild(execute=False)
     #print "ok_to_unbuild", ok_to_unbuild

@@ -31,7 +31,7 @@ class TransformedDict(MutableMapping):
 
     def __keytransform__(self, key):
         return key
-    
+
 def demo():
     class LowerKeysTransformedDict(TransformedDict):
         """Transform keys to lowercase."""

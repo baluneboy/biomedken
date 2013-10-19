@@ -14,6 +14,24 @@ def alert(msg):
     dialog.set_markup(msg)
     dialog.run()
 
+def do_build(pth):
+    """Create interim hb entry build products."""
+    hbe = HandbookEntry( source_dir=pth )
+    if not hbe.will_clobber():
+        hbe.process_pages()     
+        return 'pre-processed %d hb pdf files' % len(hbe.pdf_files)
+    else:
+        return 'ABORT PAGE PROCESSING: hb pdf filename conflict on yoda'    
+
+def finalize(pth):
+    """Finalize handbook page."""
+    hbe = HandbookEntry(source_dir=pth)
+    if not hbe.will_clobber():
+        hbe.process_build()        
+        return 'did pdftk post-processing'
+    else:
+        return 'ABORT BUILD: hb pdf filename conflict on yoda'    
+
 def main():
     # Get nautilus current uri
     curdir = os.environ.get('NAUTILUS_SCRIPT_CURRENT_URI', os.curdir)
@@ -25,21 +43,15 @@ def main():
     # Verify curdir matches pattern (this works even in build subdir, a good thing)
     match = re.search( re.compile(_HANDBOOKDIR_PATTERN), curdir )
        
-    # Do branching
+    # Do branching based on in build subdir or source_dir
     if match:
         #alert( match.string )
         if match.string.endswith('build'):
-            # finalize the product
-            hbe = HandbookEntry( source_dir=os.path.dirname(curdir) )
-            hbe.process_build()        
-            msg = 'did pdftk post-processing'
+            msg = finalize( os.path.dirname(curdir) )
         else:
-            # create interim hb entry build products
-            hbe = HandbookEntry( source_dir=curdir )
-            hbe.process_pages()     
-            msg = 'pre-processed %d hb pdf files' % len(hbe.pdf_files)
+            msg = do_build(curdir)
     else:
-        msg = 'ignore non-hb dir'
+        msg = 'ABORT: ignore non-hb dir'
         
     alert( '%s' % msg )
 
