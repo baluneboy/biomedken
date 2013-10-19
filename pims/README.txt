@@ -1,20 +1,31 @@
+x
 
-x. during post-processing, for ancillary ODT(s), figure out how to skip offset pdftk part, just do unoconv odt to "_pdftk.pdf" for inclusion
+6. on jimmy, create symlink to target "ISS Handbook" on yoda as /home/pims/yodahb
 
-x. Have hbe.process_build() at the end after "hb_OUT.pdf" file is created, do unbuild
+7. see TODOs in handbook.py
 
-x. document in each related file how to update including the guess_file list (c'mon man)
+8. make sure snippets are common [and/or abbreviations?] in komodo @home and @work
 
-x. DBQ [more like PAD interval finder to get first header] based on sensor and datetime to get header type info (as much as makes sense)...pull in PAD python code for headers here?
+9. cropcat_middle: pdfjam 2013_10_11_08_00_00.000_121f03_spgs_roadmaps500.pdf --trim '3.05cm 0cm 5.5cm 0cm' --clip true --landscape --outfile middle.pdf
 
-x. 121f03006 PadHeader seems to be using 121f03 as sensor instead of 121f03006
 
-x. do these next 3 things:
-- svn tag BEFORE doing anything below here!!!
-- svn mv the subdirs under core up one to be under pims
-- svn delete core
-- scrub code under pims for references to pims.core and change those to pims
 
-7. make sure snippets are common [and/or abbreviations?] in komodo @home and @work
+CREATE TABLE `Testing` (
+  `TestingID` int(11) NOT NULL AUTO_INCREMENT,
+  `Title` varchar(255) DEFAULT NULL,
+  `Source` varchar(255) DEFAULT NULL,
+  `FileName` varchar(255) DEFAULT NULL,
+  `DateEntered` timestamp DEFAULT CURRENT_TIMESTAMP,
+  `LastModified` date DEFAULT NULL,
+  PRIMARY KEY (`TestingID`)
+) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=latin1$$
 
-8. cropcat_middle: pdfjam 2013_10_11_08_00_00.000_121f03_spgs_roadmaps500.pdf --trim '3.05cm 0cm 5.5cm 0cm' --clip true --landscape --outfile middle.pdf
+
+CREATE DEFINER=`pims`@`localhost` PROCEDURE `prototype`(IN title varchar(100), IN fname varchar(100))
+BEGIN
+    DECLARE today TIMESTAMP DEFAULT CURRENT_DATE;
+    DECLARE source varchar(100);
+    SET source = title;
+
+    INSERT INTO Testing (LastModified, FileName, Title, Source) VALUES (today, fname, title, source);
+END

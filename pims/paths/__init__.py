@@ -1,0 +1,1 @@
+_YODA_HANDBOOK_DIR = '/home/pims/yodahb'
