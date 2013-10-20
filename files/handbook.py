@@ -20,6 +20,7 @@ from pims.pad.padheader import PadHeaderDict
 from appy.pod.renderer import Renderer
 from pims.paths import _YODA_HANDBOOK_DIR
 from pims.database.pimsquery import db_insert_handbook, HandbookQueryFilename
+from pims.gui.alert_dialog import simple_gui
 
 # TODO see /home/pims/dev/programs/python/pims/README.txt
 
@@ -228,6 +229,8 @@ class HandbookEntry(object):
         self.regime, self.category, self.title = self._parse_source_dir_string()
         self._pdf_classes = self._get_class_members()
         self.db_entry_exists = self._db_filename_exists()
+        gui_out = simple_gui()
+        print gui_out
 
     def _db_filename_exists(self):
         db_chk = HandbookQueryFilename(self._hb_pdf_basename)
