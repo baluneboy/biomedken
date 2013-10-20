@@ -18,8 +18,8 @@ def do_build(pth):
     """Create interim hb entry build products."""
     hbe = HandbookEntry( source_dir=pth )
     if not hbe.will_clobber():
-        hbe.process_pages()     
-        return 'pre-processed %d hb pdf files' % len(hbe.pdf_files)
+        err_msg = hbe.process_pages()     
+        return err_msg or 'pre-processed %d hb pdf files' % len(hbe.pdf_files)
     else:
         return 'ABORT PAGE PROCESSING: hb pdf filename conflict on yoda'    
 
@@ -27,8 +27,8 @@ def finalize(pth):
     """Finalize handbook page."""
     hbe = HandbookEntry(source_dir=pth)
     if not hbe.will_clobber():
-        hbe.process_build()        
-        return 'did pdftk post-processing'
+        err_msg = hbe.process_build()        
+        return err_msg or 'did pdftk post-processing'
     else:
         return 'ABORT BUILD: hb pdf filename conflict on yoda'    
 
