@@ -19,7 +19,7 @@ from pims.files.pdfs.pdftk import PdftkCommand, convert_odt2pdf
 from pims.pad.padheader import PadHeaderDict
 from appy.pod.renderer import Renderer
 from pims.paths import _YODA_HANDBOOK_DIR
-from pims.database.pimsquery import db_insert_handbook
+from pims.database.pimsquery import db_insert_handbook, HandbookQueryFilename
 
 # TODO see /home/pims/dev/programs/python/pims/README.txt
 
@@ -174,6 +174,13 @@ class HandbookPdfjamCommand(PdfjamCommand):
         pth, fn = os.path.split(tmp)
         return os.path.join(pth, self.subdir, fn)
 
+class OutputFileExistsError(Exception):
+    pass
+class OdtFileError(Exception):
+    pass
+class UnoconvError(Exception):
+    pass
+
 # FIXME do some log.info
 class HandbookPdftkCommand(PdftkCommand):
     """A better way to get pdftk outfile for handbook ODTs."""
@@ -183,13 +190,13 @@ class HandbookPdftkCommand(PdftkCommand):
             self.odtfile = odtfile
             infile = odtfile.replace('.odt','.pdf')
             if os.path.exists(infile):
-                raise RuntimeError('outfile %s already exits' % infile)
+                raise OutputFileExistsError('%s already exits' % infile)
         else:
-            raise ValueError('odtfile must exist and have odt extension')
+            raise OdtFileError('odtfile must exist and have odt extension')
         
         ret_code = convert_odt2pdf(odtfile)
         if ret_code: # zero is good return by linux cmd line convention
-            raise RuntimeError('did not get zero return from unoconv on %s' % odtfile)
+            raise UnoconvError('did not get zero (success) return from unoconv on %s' % odtfile)
     
         bgfile = self._get_bgfile()
         outfile = infile.replace('.pdf', '_pdftk.pdf')
@@ -216,10 +223,15 @@ class HandbookEntry(object):
         self.source_dir = source_dir
         self.log = log
         pth, dname = os.path.split(source_dir)
-        self._fname = dname + '.pdf'
-        self.hb_pdf = os.path.join(source_dir, self._fname)
+        self._hb_pdf_basename = dname + '.pdf'
+        self.hb_pdf = os.path.join(source_dir, self._hb_pdf_basename)
         self.regime, self.category, self.title = self._parse_source_dir_string()
         self._pdf_classes = self._get_class_members()
+        self.db_entry_exists = self._db_filename_exists()
+
+    def _db_filename_exists(self):
+        db_chk = HandbookQueryFilename(self._hb_pdf_basename)
+        return db_chk.file_exists
 
     def __str__(self):
         return "\n".join( [self.title, self.category, self.regime] )
@@ -227,7 +239,7 @@ class HandbookEntry(object):
     def will_clobber(self):
         """Return True if we are gonna clobber existing file on yoda."""
         # check if clobber existing hb pdf at destination on yoda
-        if os.path.exists( os.path.join(_YODA_HANDBOOK_DIR, self._fname) ):
+        if os.path.exists( os.path.join(_YODA_HANDBOOK_DIR, self._hb_pdf_basename) ):
             return True
         else:
             return False
@@ -270,43 +282,64 @@ class HandbookEntry(object):
 
     def process_pages(self):
         """Process the files found in source_dir."""
-        self.pdf_files = self._get_handbook_files()        
-        self.log.process.info( 'Attempting to process %d pages from files in %s' % ( len(self.pdf_files), self.source_dir ) )
-        self.graceful_mkdir_build()
-        for f in self.pdf_files:
-            try:
-                
-                hbf = guess_file(f, filetypes=self._pdf_classes, show_warnings=False)
-
-                # Add 3 high-level hb entry props to hb file object
-                hbf.regime = self.regime
-                hbf.category = self.category
-                hbf.title = self.title
-                
-                # Run pdfjam command if this hbf has one                
-                if hasattr(hbf, 'pdfjam_cmd'):
-                    self.log.process.info(hbf.pdfjam_cmdstr)
-                    hbf.pdfjam_cmd.run(log=self.log.process)
-                    flag = '^'
-                else:
-                    flag = 'v'
-
-                # Get ODT renderer and run it to write to-be-editted (imageless) background odt file
-                if hasattr(hbf, 'get_odt_renderer'):
-                    odt_renderer = hbf.get_odt_renderer()
-                    self.log.process.info('Run odt_renderer for hb file %s' % hbf.name)
-                    odt_renderer.run()
-                    flag += '^'
-                else:
-                    flag += 'v'                
-                
-                self.log.process.info( ' '.join( [flag, os.path.basename(f)] ) )
-            
-            except UnrecognizedPimsFile:
-                self.log.process.warn( 'SKIPPED unrecognized file %s' % f)
+        err_msg = None
         
-        self.ancillary_odt_renderer = self.get_ancillary_odt_renderer()
-        self.ancillary_odt_renderer.run()
+        # make sure the ultimate hb pdf filename is not already in db
+        if self.db_entry_exists:
+            err_msg = 'Database entry with filename %s already exists' % self._hb_pdf_basename
+            self.log.process.error(err_msg)
+            return err_msg
+       
+        try:
+            self.pdf_files = self._get_handbook_files()        
+            self.log.process.info( 'Attempting to process %d pages from files in %s' % ( len(self.pdf_files), self.source_dir ) )
+            self.graceful_mkdir_build()
+            for f in self.pdf_files:
+                bname = os.path.basename(f)
+                try:
+                    
+                    hbf = guess_file(f, filetypes=self._pdf_classes, show_warnings=False)
+    
+                    # Add 3 high-level hb entry props to hb file object
+                    hbf.regime = self.regime
+                    hbf.category = self.category
+                    hbf.title = self.title
+                    
+                    # Run pdfjam command if this hbf has one                
+                    if hasattr(hbf, 'pdfjam_cmd'):
+                        self.log.process.info(hbf.pdfjam_cmdstr)
+                        hbf.pdfjam_cmd.run(log=self.log.process)
+    
+                    # Get ODT renderer and run it to write to-be-editted (imageless) background odt file
+                    if hasattr(hbf, 'get_odt_renderer'):
+                        odt_renderer = hbf.get_odt_renderer()
+                        self.log.process.info('Run odt_renderer for hb file %s' % os.path.basename(hbf.name) )
+                        odt_renderer.run()
+                    
+                    log_msg = 'Done with %s' % bname
+                
+                except UnrecognizedPimsFile:
+                    log_msg = 'SKIPPED unrecognized file %s' % bname
+                except Exception as e:
+                    err_msg = "could not process all pages, pdfjam/odt_render issue with %s, Exception %s" % (bname, e.message)
+                    return err_msg
+                
+                self.log.process.info(log_msg)
+            
+            # now render the ancillary odt file`
+            try:
+                self.ancillary_odt_renderer = self.get_ancillary_odt_renderer()
+                self.ancillary_odt_renderer.run()
+            except Exception as e:
+                err_msg = "could not render ancillary odt file, Exception %s" % e.message
+                return err_msg
+        
+        except Exception as e:
+            err_msg = "Exception %s" % e.message
+        finally:
+            if err_msg: err_msg = 'process_pages err_msg is %s' % err_msg
+
+        return err_msg
 
     def get_ancillary_odt_name(self):
         """Create ancillary odt filename."""
@@ -327,64 +360,88 @@ class HandbookEntry(object):
 
     def process_build(self):
         """Process files (pages) in the build subdir."""
-        self.build_dir = os.path.join(self.source_dir, 'build')
-        if os.path.isdir(self.build_dir):
-            self.log.process.info( 'Attempting process_build in %s' % self.build_dir)
-            self.odt_files = self._get_odt_files()        
-            for odtfile in self.odt_files:
-                pdftk_cmd = HandbookPdftkCommand(odtfile)
-                pdftk_cmd.run()
-            self.log.process.info('Ran pdftk_cmd for %d odt files' % len(self.odt_files))
-        else:
-            self.log.process.error( 'NOT os.path.isdir for build subdir %s?' % self.build_dir )
-        
-        # get list of files to join (except for ancillary at this point)
-        fname_pattern = _HANDBOOKPDF_PATTERN[3:].replace('.pdf', '_pdftk.pdf')
-        self.unjoined_files = self._get_files(self.build_dir, fname_pattern)
-        
-        # convert ancillary ODT to PDF, prepend page num, and include with other pages to be joined
-        ancillary_pdf = self.convert_ancillary( len(self.unjoined_files)+1 )
-        self.unjoined_files.append(ancillary_pdf)
-        self.log.process.info('We now have %d unjoined files, including ancillary file' % len(self.unjoined_files))
-        
-        # finalize
-        if self.finalize_entry():
-            self.log.process.info('Okay, finalized entry')
-        else:
-            self.log.process.error('Could NOT finalize_entry for some reason')
+        err_msg = None
+        try:
+            self.build_dir = os.path.join(self.source_dir, 'build')
+            if os.path.isdir(self.build_dir):
+                self.log.process.info( 'Attempting process_build in %s' % self.build_dir)
+                self.odt_files = self._get_odt_files()
+                for odtfile in self.odt_files:
+                    pdftk_cmd = HandbookPdftkCommand(odtfile)
+                    pdftk_cmd.run()
+                self.log.process.info('Ran HandbookPdftkCommand (unoconv and offset/scale) for %d odt files' % len(self.odt_files))
+            else:
+                raise IOError('The build sudir %s is not a directory' % self.build_dir)
+            
+            # get list of files to join (except for ancillary at this point)
+            fname_pattern = _HANDBOOKPDF_PATTERN[3:].replace('.pdf', '_pdftk.pdf')
+            self.unjoined_files = self._get_files(self.build_dir, fname_pattern)
+            
+            # convert ancillary ODT to PDF, prepend page num, and include with other pages to be joined
+            ancillary_pdf = self.convert_ancillary( len(self.unjoined_files)+1 )
+            self.unjoined_files.append(ancillary_pdf)
+            self.log.process.info('We now have %d unjoined files, including ancillary file' % len(self.unjoined_files))
+            
+            # finalize
+            err_msg = self.finalize_entry()
+            
+        except IOError as e:
+            err_msg = "IOError: {0}".format(e.message)
+        except Exception as e:
+            err_msg = "Exception %s" % e.message
+        finally:
+            if err_msg: err_msg = 'process_build err_msg is %s' % err_msg
+
+        return err_msg
     
     def finalize_entry(self):
         """Rename a pre-existing hb pdf, then create final hb pdf for db and web."""
-        self.log.process.info('Attempting to finalize_entry')
-        if os.path.exists(self.hb_pdf):
-            time_stamp = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-            os.rename(self.hb_pdf, self.hb_pdf + '.' + time_stamp)
-            self.log.process.info('Renamed hb_pdf with time stamp')
-        pdfjoin_cmd = PdfjoinCommand(self.unjoined_files, self.hb_pdf)
-        pdfjoin_cmd.run()
-        self.log.process.info('Ran pdfjoin command to get %s' % self.hb_pdf)
-        if os.path.exists(self.hb_pdf):
-            unused_flag, err_msg = self.unbuild(execute=True)
-            if err_msg:
-                self.log.process.error('SKIP db_insert because unbuild error msg: %s' % err_msg)
-                return False
+        err_msg = None
+        try:
+            self.log.process.info('Attempting to finalize_entry')
+            if os.path.exists(self.hb_pdf):
+                time_stamp = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+                os.rename(self.hb_pdf, self.hb_pdf + '.' + time_stamp)
+                self.log.process.info('Renamed hb_pdf with time stamp')
+            pdfjoin_cmd = PdfjoinCommand(self.unjoined_files, self.hb_pdf)
+            pdfjoin_cmd.run()
+            self.log.process.info('Ran pdfjoin command to get %s' % self.hb_pdf)
+            if os.path.exists(self.hb_pdf):
+                unused_flag, unbuild_err_msg = self.unbuild(execute=True)
+                if unbuild_err_msg:
+                    self.log.process.error('SKIP db_insert because unbuild error msg: %s' % err_msg)
+                    return 'finalize_entry err_msg is %s' % unbuild_err_msg
+                else:
+                    self.log.process.info('Did the unbuild okay')
+                    
+                # Now do db insert for this entry
+                db_err_msg = self.db_insert()
+                if db_err_msg:
+                    self.log.process.error(db_err_msg)
+                    return 'finalize_entry err_msg is %s' % db_err_msg
+                
             else:
-                self.log.process.info('Did the unbuild okay')
-            self.db_insert()
-        else:
-            self.log.process.info('Did NOT unbuild because hb_pdf did not exist')
-        return True
+                err_msg = 'Did NOT unbuild or do db insert because hb_pdf did not exist'
+        
+        except Exception as e:
+            err_msg = "Exception %s" % e.message
+        finally:
+            if err_msg: err_msg = 'finalize_entry err_msg is %s' % err_msg
+    
+        return err_msg
 
     # TODO needs work for details and PROBABLY a new stored procedure on yoda?
     def db_insert(self):
         """Insert db record via Eric's routine on yoda."""
+        err_msg = None
         fname = os.path.basename(self.hb_pdf)
-        inserted_okay, msg =  db_insert_handbook(fname, self.title, 'vibratory', None)
-        if inserted_okay:
-            self.log.process.info(msg)
-        else:
-            self.log.process.error(msg)
+        err_msg =  db_insert_handbook(fname, self.title, 'vibratory', None)
+        if err_msg:
+            self.log.process.error(err_msg)
+            err_msg = 'db_insert err_msg is %s' % err_msg
+        return err_msg
 
+    # FIXME pull out unused error flag output and fix reference to it in finalize_entry
     # FIXME do some log.info here for files getting tossed (or not matching ODT), etc.
     def unbuild(self, execute=True):
         """
@@ -460,19 +517,21 @@ if __name__ == '__main__':
     #hbe.dbInsert("It's A Miracle", self.regime, 'vehicle', author='Ken Hrovat', host='localhost', user='pims', passwd='PIMSPASS', db='pimsdoc')
     #raise SystemExit
     
-    if False: # False for process_build
+    if True: # True for process_pages, False for process_build
         
         if not hbe.will_clobber():
-            hbe.process_pages()
+            err_msg = hbe.process_pages()
+            print err_msg or 'process_pages okay'
         else:
-            print 'ABORT PAGE PROCESSING: hb pdf filename conflict on yoda'
+            print 'ABORT PAGE PROCESSING because hb pdf filename conflict on yoda'
     
     else:
         
         if not hbe.will_clobber():
-            hbe.process_build()
+            err_msg = hbe.process_build()
+            print err_msg or 'process_build okay'
         else:
-            print 'ABORT BUILD: hb pdf filename conflict on yoda'
+            print 'ABORT BUILD because hb pdf filename conflict on yoda'
     
     #ok_to_unbuild, msg = hbe.unbuild(execute=False)
     #print "ok_to_unbuild", ok_to_unbuild
