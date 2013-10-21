@@ -10,24 +10,48 @@
 
 
 
-CREATE TABLE `Testing` (
-  `TestingID` int(11) NOT NULL AUTO_INCREMENT,
-  `Title` varchar(255) DEFAULT NULL,
-  `Source` varchar(255) DEFAULT NULL,
-  `FileName` varchar(255) DEFAULT NULL,
-  `DateEntered` timestamp DEFAULT CURRENT_TIMESTAMP,
-  `LastModified` date DEFAULT NULL,
-  PRIMARY KEY (`TestingID`)
-) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=latin1$$
+-- --------------------------------------------------------------------------------
+-- Routine DDL
+-- Note: comments before and after the routine body will not be stored by the server
+-- --------------------------------------------------------------------------------
+DELIMITER $$
 
-
-CREATE DEFINER=`pims`@`localhost` PROCEDURE `prototype`(IN title varchar(100), IN fname varchar(100))
+CREATE DEFINER=`root`@`localhost` PROCEDURE `auto_insert_handbook`(filename varchar(50), title varchar(50), regime varchar(16), category varchar(16))
 BEGIN
-    DECLARE today TIMESTAMP DEFAULT CURRENT_DATE;
-    DECLARE source varchar(100);
-    SET source = title;
 
-    INSERT INTO Testing (LastModified, FileName, Title, Source) VALUES (today, fname, title, source);
+    #############################################
+    # Do not change these:
+    set @doctypeid = 49;    #PDF
+    set @catid = 1;         #ISS Handbook Page
+    #############################################
+
+    CASE LOWER(regime)
+        WHEN 'vibratory' THEN
+            set @regime = 'Vibratory';
+        WHEN 'quasi-steady' THEN
+            set @regime = 'Quasi-steady';
+        ELSE
+            set @regime = 'Vibratory';
+    END CASE;
+
+    CASE LOWER(category)
+        WHEN 'crew' THEN
+            set @hbcat = 1;
+        WHEN 'vehicle' THEN
+            set @hbcat = 2;
+        ELSE
+            set @hbcat = 3; # assumed to be equipment here
+    END CASE;
+
+    INSERT INTO Document (DocumentTypeID,CategoryID,Title,FileName,Authors,PubDate,Access,PIMSAuthored,Location,DateEntered,EnteredBy,LastModified,ModifiedBy)
+    VALUES (@doctypeid,@catid,@title,@filename,'Ken Hrovat',curdate(),'public','Yes','public/ISS Handbook/',curdate(),126,curdate(),6);
+
+    SELECT LAST_INSERT_ID() INTO @docid;
+
+    IF (@docid > 0) THEN 
+        INSERT INTO Handbook (Source,Regime,HBCategoryID,DocumentID) VALUES (@title,@regime,@hbcat,@docid);
+    END IF;
+
 END
 
 # FIXME the following err_msg prefix propagation is ugly
