@@ -11,33 +11,41 @@ class Panel(wx.Panel):
         wx.Panel.__init__(self, parent, -1)
         self.parent = parent
 
+        # Vertical sizer:
+        # Label above buttons
+        # -----------------------------
+        # Horizontal sizer for buttons
         sizer = wx.BoxSizer(wx.VERTICAL)
 
+        # Label above buttons
         label = wx.StaticText(self, -1, "This is a wx.Dialog")
         sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
 
+        # Horizontal sizer for buttons
         box = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
+        # Add line to vertical sizer
         line = wx.StaticLine(self, -1, size=(20,-1), style=wx.LI_HORIZONTAL)
         sizer.Add(line, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.TOP, 5)
 
+        #btnsizer = wx.StdDialogButtonSizer()
+        
         btnsizer = wx.StdDialogButtonSizer()
 
-        # The OK button completes the dialog.
+        # The OK button.
         btn = wx.Button(self, wx.ID_OK)
         btn.SetDefault()
         btnsizer.AddButton(btn)
         self.Bind(wx.EVT_BUTTON, self.on_okay, btn)
 
-        # The Show Log button cancels the dialog.
+        # The Show Log button.
         btn = wx.Button(self, -1, "Show Log")
         btnsizer.AddButton(btn)
-        btnsizer.Realize()
         self.Bind(wx.EVT_BUTTON, self.on_show_log, btn)
 
-        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
-
+        # Add box to sizer
+        sizer.Add(btnsizer, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        
         self.SetSizer(sizer)
         sizer.Fit(self)
 

@@ -13,7 +13,7 @@ _SCHEMA, _UNAME, _PASSWD = get_db_params('pimsquery')
 # FIXME did this one kinda quick, so scrub it
 class HandbookQueryFilename(object):
     """Query yoda for handbook filename (should be none or one)."""
-    def __init__ (self, filename, host='localhost', user=_UNAME, passwd=_PASSWD, db='pimsdoc', table='Testing'):
+    def __init__ (self, filename, host='localhost', user=_UNAME, passwd=_PASSWD, db='pimsdoc', table='Document'):
         self.filename = filename
         self.host = host
         self.user = user
@@ -42,11 +42,19 @@ class HandbookQueryFilename(object):
         return L
 
 # FIXME this needs scrubbing on jimmy for yoda (and maybe new stored procedure/Routine)
-def db_insert_handbook(fname, title, regime, hbcat, author='Ken Hrovat', host='localhost', user=_UNAME, passwd=_PASSWD, db='pimsdoc'):
+def db_insert_handbook(fname, title, regime, category, host='localhost', user=_UNAME, passwd=_PASSWD, db='pimsdoc'):
     """Attempt db_insert_handbook MySQL routine and output flag_ok boolean and a message."""
-    pubdate = datetime.datetime.now().strftime('%Y-%m-%d')
-    #command = "call insert_handbook('" + title + "','" + fname + "','" + author + "','" + pubdate + "','" + regime + "'," + str(hbcat) + ",'" + title + "');"
     err_msg = None
+
+    # FIXME I do not know how to get MySQLdb callproc to work, so go with execute on this query string:
+    query_str = """
+    use pimsdoc;
+    set @filename = '%s';   # filename
+    set @title = '%s';      # title (same as source in stored procedure)
+    set @regime = '%s';     # vibratory or quasi-steady
+    set @category = '%s';   # crew, vehicle, or equipment
+    call auto_insert_handbook(@filename, @title, @regime, @category);
+    """ % (fname, title, regime, category)
 
     # check for pre-existing filename    
     hbcf = HandbookQueryFilename(fname)
@@ -56,25 +64,30 @@ def db_insert_handbook(fname, title, regime, hbcat, author='Ken Hrovat', host='l
     try:
         con = Connection(host=host, user=user, passwd=passwd, db=db)
         cursor = con.cursor()
-        #cursor.callproc('insert_handbook', (title,fname,author,pubdate,regime,hbcat,title) )
-        cursor.callproc('prototype', (title,fname) )
+
+        # FIXME preferred, but not working: cursor.callproc('auto_insert_handbook', (fname, title, regime, category) )
+        cursor.execute(query_str)
+        
         cursor.close()
         con.close()
         
-    except MySQLdb.Error, e:
+    except Exception, e:
         
-        err_msg = "MySQLdb error db_insert_handbook %d: %s" % (e.args[0], e.args[1])
+        err_msg = "Error db_insert_handbook %s" % e.message
 
     return err_msg
 
 
 def demo():
-    #if db_insert_handbook('hb_vib_vehicle_A_Nice_Enough_Title.pdf', 'A Nice Enough Title', 'vibratory', 2):
-    #    print 'okay fine'
-    #else:
-    #    print 'oh dear'
-    hbcf = HandbookQueryFilename('hb_vib_vehicle_Big_Bang.pdf')
-    print hbcf.file_exists()
+    err_msg = db_insert_handbook('hb_qs_crew_A_Nice_Enough_Title.pdf', 'A Nice Enough Title', 'quasi-steady', 'crew')
+    
+    if err_msg:
+        print 'oh dear'
+    else:
+        print 'okay fine'
+    
+    #hbcf = HandbookQueryFilename('hb_vib_equipment_testing3.pdf')
+    #print hbcf.file_exists
     
 if __name__ == "__main__":
     demo()

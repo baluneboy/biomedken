@@ -229,8 +229,8 @@ class HandbookEntry(object):
         self.regime, self.category, self.title = self._parse_source_dir_string()
         self._pdf_classes = self._get_class_members()
         self.db_entry_exists = self._db_filename_exists()
-        gui_out = simple_gui()
-        print gui_out
+        #gui_out = simple_gui()
+        #print gui_out
 
     def _db_filename_exists(self):
         db_chk = HandbookQueryFilename(self._hb_pdf_basename)
@@ -438,7 +438,8 @@ class HandbookEntry(object):
         """Insert db record via Eric's routine on yoda."""
         err_msg = None
         fname = os.path.basename(self.hb_pdf)
-        err_msg =  db_insert_handbook(fname, self.title, 'vibratory', None)
+        #err_msg =  db_insert_handbook(fname, self.title, 'vibratory', None)
+        err_msg = db_insert_handbook(fname, self.title, self.regime, self.category)
         if err_msg:
             self.log.process.error(err_msg)
             err_msg = 'db_insert err_msg is %s' % err_msg

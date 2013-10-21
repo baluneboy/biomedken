@@ -8,6 +8,24 @@ import re
 from pims.patterns.dirnames import _HANDBOOKDIR_PATTERN
 from pims.files.handbook import HandbookEntry
 
+def alert_dialog(msg, title='ALERT'):
+    label = gtk.Label(msg)
+    dialog = gtk.Dialog(title,
+                       None,
+                       gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                       (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                        gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+    dialog.vbox.pack_start(label)
+    label.show()
+    checkbox = gtk.CheckButton("Useless checkbox")
+    dialog.action_area.pack_end(checkbox)
+    checkbox.show()
+    response = dialog.run()
+    dialog.destroy()
+
+#alert_dialog('my details')
+#raise SystemExit
+
 def alert(msg):
     """Show a dialog with a simple message."""
     dialog = gtk.MessageDialog()
