@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from time import sleep
 import datetime
 from MySQLdb import *
 from _mysql_exceptions import *
@@ -9,6 +10,44 @@ from pims.config.conf import get_db_params
 
 # TODO class this up (c'mon man)
 _SCHEMA, _UNAME, _PASSWD = get_db_params('pimsquery')
+
+#####################################################################################
+# SQL helper routines ---------------------------------------------------------------
+# create a connection (with possible defaults), submit command, return all results
+# try to do all connecting through this function to handle exceptions
+# plugable 0-argument function to be called when idling. It can return true to stop idling. 
+add_idle_function = None
+def add_idle(idle_function):
+    global add_idle_function
+    add_idle_function = idle_function
+def idle_wait(seconds = 0):
+    for i in range(seconds):
+        if add_idle_function:
+            if add_idle_function():
+                return 1
+        sleep(1)
+    else: # always execute at least once
+        if add_idle_function:
+            return add_idle_function()
+    return 0
+def db_connect(command, host='localhost', user=_UNAME, passwd=_PASSWD, db=_SCHEMA):
+    sql_retry_time = 30
+    repeat = 1
+    while repeat:
+        try:
+            con = Connection(host=host, user=user, passwd=passwd, db=db)
+            cursor = con.cursor()
+            cursor.execute(command)
+            results = cursor.fetchall()
+            repeat = 0
+            cursor.close()
+            con.close()
+        except MySQLError, msg:
+            print 'MySQL call failed, will try again in %s seconds' % sql_retry_time
+            if idle_wait(sql_retry_time):
+                return []
+    return results
+#####################################################################################
 
 # FIXME did this one kinda quick, so scrub it
 class HandbookQueryFilename(object):
