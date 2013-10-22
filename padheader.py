@@ -113,7 +113,7 @@ class PadHeaderDict(TransformedDict):
         """Get header files for given sensor on d day."""
         # Components of PAD path pattern
         ymd_subdir = os.path.join( self['_pad_dir'], datetime_to_pad_ymd_subdir(d) )
-        sys_sensor_pattern = '(?P<system>.*)_accel_%s\Z' % self['_sensor']
+        sys_sensor_pattern = '(?P<system>.*)_(accel|rad)_%s\Z' % self['_sensor']
         
         # Verify exactly one subdir matches pattern
         matching_dirs = listdir_filename_pattern(ymd_subdir, sys_sensor_pattern)
