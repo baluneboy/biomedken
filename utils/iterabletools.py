@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import operator
 from itertools import *
 
 def ilen(it):
@@ -102,11 +103,12 @@ def quantify(iterable, pred=bool):
     """Count how many times the predicate is true.
     
     >>> is_divisible_by_3 = lambda i: i % 3 == 0
-    >>> quantify(xrange(14), is_divisible_by_3) # zero counts!
+    >>> quantify( xrange(14), is_divisible_by_3 ) # btw, zero counts!
     5
     
     >>> is_palindrome = lambda x: str(x) == str(x)[::-1]
-    >>> quantify(['radar', 'level', 'Eric'], is_palindrome) # Eric is not
+    >>> #            yes      yes     nope   (Eric is not a palindrome)
+    >>> quantify( ['radar', 'level', 'Eric'], is_palindrome )
     2
     """
     return sum(imap(pred, iterable))
@@ -129,6 +131,10 @@ def ncycles(iterable, n):
     """
     return chain.from_iterable(repeat(tuple(iterable), n))
 
+def prod(iterable):
+    "Multiply elements of iterable."
+    return reduce(operator.mul, iterable, 1)
+
 def dotproduct(vec1, vec2):
     "Dot product."
     return sum(imap(operator.mul, vec1, vec2))
@@ -144,7 +150,7 @@ def flatten(listOfLists):
 
 def repeatfunc(func, times=None, *args):
     """Repeat calls to func with specified arguments.
-        or does it????
+       or does it? can you have kwargs before args??
     """
     if times is None:
         return starmap(func, repeat(args))
@@ -179,14 +185,22 @@ def roundrobin(*iterables):
             nexts = cycle(islice(nexts, pending))
 
 def powerset(iterable):
-    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
+    
+    >>> [ x for x in powerset([1,2,3]) ]
+    [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]
+    """
     s = list(iterable)
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
 def unique_everseen(iterable, key=None):
-    "List unique elements, preserving order. Remember all elements ever seen."
-    # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-    # unique_everseen('ABBCcAD', str.lower) --> A B C D
+    """List unique elements, preserving order. Remember all elements ever seen.
+    
+    >>> [ x for x in unique_everseen('AAAABBBCCDAABBB') ]
+    ['A', 'B', 'C', 'D']
+    >>> [ x for x in unique_everseen('ABBCcAD', key=str.lower) ]
+    ['A', 'B', 'C', 'D']
+    """
     seen = set()
     seen_add = seen.add
     if key is None:
@@ -201,10 +215,14 @@ def unique_everseen(iterable, key=None):
                 yield element
 
 def unique_justseen(iterable, key=None):
-    "List unique elements, preserving order. Remember only the element just seen."
-    # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
-    # unique_justseen('ABBCcAD', str.lower) --> A B C A D
-    return imap(next, imap(itemgetter(1), groupby(iterable, key)))
+    """List unique elements, preserving order. Remember only the element just seen.
+    
+    >>> [ x for x in unique_justseen('AAAABBBCCDAABBB') ]
+    ['A', 'B', 'C', 'D', 'A', 'B']
+    >>> [ x for x in unique_justseen('ABBCcAD', key=str.lower) ]
+    ['A', 'B', 'C', 'A', 'D']
+    """
+    return imap(next, imap(operator.itemgetter(1), groupby(iterable, key)))
 
 def iter_except(func, exception, first=None):
     """ Call a function repeatedly until an exception is raised.

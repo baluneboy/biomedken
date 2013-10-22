@@ -30,21 +30,22 @@ class TransformedDict(MutableMapping):
         return len(self.store)
 
     def __keytransform__(self, key):
+        # key transform code goes here
         return key
 
-def demo():
-    class LowerKeysTransformedDict(TransformedDict):
-        """Transform keys to lowercase."""
-        def __keytransform__(self, key):
-            return key.lower()
+class LowerKeysTransformedDict(TransformedDict):
+    """Transform keys to lowercase."""
+    def __keytransform__(self, key):
+        return key.lower()
 
-    z = LowerKeysTransformedDict( [ ('Test', 1), ('camelCase', 'dogma') ] )
-    z['piNg'] = 'pong'
-    for k,v in z.iteritems():
+def demo():
+    d = LowerKeysTransformedDict( [ ('Test', 1), ('camelCase', 'dogma') ] )
+    d['piNg'] = 'pong'
+    for k,v in d.iteritems():
         print k, v
     
-    assert z.get('TEST') is z['test']   # free get
-    assert 'TeSt' in z                  # free __contains__
+    assert d.get('TEST') is d['test']   # free get
+    assert 'TeSt' in d                  # free __contains__
                                         # free setdefault, __eq__, and so on
     
 if __name__ == "__main__":
