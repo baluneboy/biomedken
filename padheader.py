@@ -75,11 +75,15 @@ class PadHeaderDict(TransformedDict):
            hdr          hdr!
          
         """
-        # Get 3 days worth of header files
+        # Get up to 3 days worth of header files
         hdr_files = []
         base_date = self['_desired_start'].date()
-        for day in [ base_date + timedelta(days=x) for x in range(-1, 2) ]:
-            hdr_files += self._get_header_files_for_date(day)
+        for offset_days in range(-1,2):
+            day = base_date + timedelta(days=offset_days)
+            try:
+                hdr_files += self._get_header_files_for_date(day)
+            except:
+                pass
 
         # Iterate pairwise to find the right one to use
         hdr_file = None
@@ -125,8 +129,10 @@ class PadHeaderDict(TransformedDict):
         return listdir_filename_pattern(sensor_dir, header_pattern)        
 
 def demo():
-    dtm = datetime(2012, 12, 31, 11, 59, 59, 999000)
-    sensors = ['121f03006', 'hirap', '121f02']
+    #dtm = datetime(2012, 12, 31, 11, 59, 59, 999000)
+    #sensors = ['121f03006', 'hirap', '121f02']
+    dtm = datetime(2013, 9, 28, 11, 59, 59, 999000)
+    sensors = ['radgse']
     for sensor in sensors:
         print '-' * 15
         ph = PadHeaderDict( sensor, dtm )
