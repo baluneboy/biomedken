@@ -2,11 +2,20 @@
 
 from time import sleep
 import datetime
+import socket
 from MySQLdb import *
 from _mysql_exceptions import *
 from pims.config.conf import get_db_params
 
+
 # FIXME add logging feature
+
+# FIXME need hostname for testing (db @home vs. @work)
+_HOSTNAME = socket.gethostname()
+if _HOSTNAME == 'jimmy':
+    _HANDBOOK_HOST = 'yoda'
+else:
+    _HANDBOOK_HOST = 'localhost'    
 
 # TODO class this up (c'mon man)
 _SCHEMA, _UNAME, _PASSWD = get_db_params('pimsquery')
@@ -52,7 +61,7 @@ def db_connect(command, host='localhost', user=_UNAME, passwd=_PASSWD, db=_SCHEM
 # FIXME did this one kinda quick, so scrub it
 class HandbookQueryFilename(object):
     """Query yoda for handbook filename (should be none or one)."""
-    def __init__ (self, filename, host='localhost', user=_UNAME, passwd=_PASSWD, db='pimsdoc', table='Document'):
+    def __init__ (self, filename, host=_HANDBOOK_HOST, user=_UNAME, passwd=_PASSWD, db='pimsdoc', table='Document'):
         self.filename = filename
         self.host = host
         self.user = user
@@ -81,7 +90,7 @@ class HandbookQueryFilename(object):
         return L
 
 # FIXME this needs scrubbing on jimmy for yoda (and maybe new stored procedure/Routine)
-def db_insert_handbook(fname, title, regime, category, host='localhost', user=_UNAME, passwd=_PASSWD, db='pimsdoc'):
+def db_insert_handbook(fname, title, regime, category, host=_HANDBOOK_HOST, user=_UNAME, passwd=_PASSWD, db='pimsdoc'):
     """Attempt db_insert_handbook MySQL routine and output flag_ok boolean and a message."""
     err_msg = None
 

@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+
+# For new handbook PDF type, do the following:
+# 1. Add it's name as string to __all__ near top of handbookpdfs.py
+# 2. Add it's regex pattern info section below of handbookpdfs.py
+# 3. Use Rx helper to verify good matching
+# 4. Add new class in this file, handbook.py
+
 """
 Utilities for building handbook files.
 """
@@ -97,6 +104,23 @@ class OssBtmfRoadmapPdf(HandbookPdf):
         else:
             return sensor
 
+    def _get_plot_type(self): return _PLOTTYPES['gvt']
+
+class RadgseRoadmapNup1x2Pdf(OssBtmfRoadmapPdf):
+    """
+    Radgse gvt3 (1x2 nup) Roadmap PDF handbook file like this example name:
+    /tmp/4quantify_2013_09_28_16_radgse_roadmapnup1x2.pdf
+    """
+    def __init__(self, name, pattern=_RADGSEROADMAPNUP1X2PDF_PATTERN, show_warnings=False):
+        super(RadgseRoadmapNup1x2Pdf, self).__init__(name, pattern, show_warnings=show_warnings)
+    
+    # FIXME find sweet spot params here
+    def _get_pdfjam_cmd(self):
+        xoffset, yoffset = -4.25, 1.0
+        scale = 0.86
+        orient = 'landscape'
+        return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
+   
     def _get_plot_type(self): return _PLOTTYPES['gvt']
 
 class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
@@ -229,8 +253,6 @@ class HandbookEntry(object):
         self.regime, self.category, self.title = self._parse_source_dir_string()
         self._pdf_classes = self._get_class_members()
         self.db_entry_exists = self._db_filename_exists()
-        #gui_out = simple_gui()
-        #print gui_out
 
     def _db_filename_exists(self):
         db_chk = HandbookQueryFilename(self._hb_pdf_basename)
@@ -512,14 +534,9 @@ class HandbookEntry(object):
 
 
 if __name__ == '__main__':
-    
-    hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
-    
-    #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MSG_Operations')
-    #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_equipment_Robonaut_Goes_Off')
-    
-    #hbe.dbInsert("It's A Miracle", self.regime, 'vehicle', author='Ken Hrovat', host='localhost', user='pims', passwd='PIMSPASS', db='pimsdoc')
-    #raise SystemExit
+
+    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Cygnus_Capture_Install')
+    #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
     
     if True: # True for process_pages, False for process_build
         
