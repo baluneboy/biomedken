@@ -1,6 +1,13 @@
+# For new handbook PDF type, do the following here:
+# 1. Add it's name as string to __all__ near top
+# 2. Add it's regex pattern info section below
+# 3. Use Rx helper to verify good matching
+# 4. Add new class in handbook.py
+
 __all__ = [
     '_HANDBOOKPDF_PATTERN',
     '_OSSBTMFROADMAPPDF_PATTERN',
+    '_RADGSEROADMAPNUP1X2PDF_PATTERN',    
     '_SPGXROADMAPPDF_PATTERN',
     '_ISTATPDF_PATTERN',
     '_PLOTTYPES',
@@ -37,6 +44,23 @@ _ISTATPDF_PATTERN = (
     "_(?P<plot_type>imm|irms)"                  # underscore iabbrev, then
     "(?P<axis>.)"                               # axis, then
     "_(?P<notes>.*)"                            # underscore notes, then
+    "\.pdf\Z"                                   # extension to finish
+    )
+
+
+#/tmp/pth/4quantify_2013_09_28_16_radgse_roadmapnup1x2.pdf
+#---------------------------------------------------------------
+#.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>radgse)_roadmapnup1x2(?P<notes>.*)\.pdf\Z
+_RADGSEROADMAPNUP1X2PDF_PATTERN = (
+    ".*/"                                       # path at the start, then
+    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
+    "_"                                         # underscore, then
+    "(?P<timestr>.*)"                           # timestr, then    
+    "_"                                         # underscore, then
+    "(?P<sensor>radgse)"                        # sensor, then
+    "_roadmapnup1x2"                            # underscore roadmapnup1x2, then
+    "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
     )
 
@@ -118,8 +142,8 @@ _CVFSROADMAPPDF_PATTERN = (
 #-------------------------
 #\A(?P<head>121f0|hira|oss|0bb)(?P<tail>btmf|raw|\w{1})(?P<suffix>one|ten|006)?\Z
 _SENSOR_PATTERN = (
-    "\A(?P<head>121f0|es0|hira|oss|0bb)"        # known head at the start of string, then
-    "(?P<tail>btmf|raw|\w{1})"                  # btmf, raw, or single alphanumeric
+    "\A(?P<head>121f0|es0|hira|oss|0bb|rad)"    # known head at the start of string, then
+    "(?P<tail>btmf|raw|gse|\w{1})"              # btmf, raw, or single alphanumeric
     "(?P<suffix>one|ten|006)?\Z"                # zero or one enum for suffix to finish string
     )
 
@@ -157,8 +181,8 @@ _ABBREVS = {
 
 def demo_hbfpat():
     import re
-    input_value = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_EWIS_Port_Truss_Unknown/1qualify_2013_09_01_121f05006_spga_irmss_entire_month.pdf'
-    m = re.match( re.compile(_ISTATPDF_PATTERN), input_value)
+    input_value = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Cygnus_Capture_Install/4quantify_2013_09_28_16_radgse_roadmapnup1x2.pdf'
+    m = re.match( re.compile(_RADGSEROADMAPNUP1X2PDF_PATTERN), input_value)
     if m is None:
         raise ValueError('Invalid literal for PATTERN: %r' % input_value)
     else:
