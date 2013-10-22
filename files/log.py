@@ -49,6 +49,7 @@ class NoLog(object):
 
 class HandbookLog(object):
     def __init__(self, log_file='/home/pims/log/handbook.log'):
+        self.file = log_file
         self.inputs, self.process, self.verify = init_log(log_file)
 
 class PadLog(object):
