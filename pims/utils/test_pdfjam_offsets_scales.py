@@ -4,22 +4,22 @@ from pims.files.pdfs.pdfjam import PdfjamCommand
 from pims.files.pdfs.pdftk import convert_odt2pdf, PdftkCommand
 from appy.pod.renderer import Renderer
 
-fullsize_pdf = '/tmp/testing/2013_10_09_00_00_00.000_121f04_spgs_roadmaps500.pdf'
-odt_template = '/home/pims/dev/programs/python/pims/templates/pdfjam_template_offsets_scales_testing.odt'
+fullsize_pdf = '/tmp/4quantify_2013_09_28_16_radgse_roadmapnup1x2.pdf'
+odt_template = '/tmp/1qualify_2013_09_28_08_ossbtmf_roadmap_bigpic.odt'
 
 #pdftk unoconv_odtfile.pdf background unoconv_odtfile_offset_-4.25cm_1cm_scale_0.88.pdf output updir/hb_regime_category_title.pdf
 
-#scales =    [x/100.0 for x in range(80,100,5)]
-#xoffsets =  [x/100.0 for x in range(-425,-250,50)]
-#yoffsets =  [1.5, 1.0, 0.0]
+scales =    [x/100.0 for x in range(74,80,2)]
+xoffsets =  [x/100.0 for x in range(-300,-150,50)]
+yoffsets =  [1.5, 1.0, 0.0]
 
 #scales =    [x/100.0 for x in range(86, 89, 1)]
 #xoffsets =  [x/100.0 for x in range(-435,-415, 10)]
 #yoffsets =  [1.25, 1.00, 0.75]
 
-scales =    [86/100.0]
-xoffsets =  [-425/100.0]
-yoffsets =  [1.00]
+#scales =    [86/100.0]
+#xoffsets =  [-425/100.0]
+#yoffsets =  [1.00]
 
 for scale in scales:
     for xoffset in xoffsets:

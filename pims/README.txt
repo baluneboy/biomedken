@@ -1,3 +1,5 @@
+5. log entry after build (or just after success on insert?)
+
 6. make all log.process calls (info or error or warn) as sentences ending in period or bang or ?
 
 7. see TODOs in handbook.py

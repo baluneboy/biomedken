@@ -113,11 +113,12 @@ class RadgseRoadmapNup1x2Pdf(OssBtmfRoadmapPdf):
     """
     def __init__(self, name, pattern=_RADGSEROADMAPNUP1X2PDF_PATTERN, show_warnings=False):
         super(RadgseRoadmapNup1x2Pdf, self).__init__(name, pattern, show_warnings=show_warnings)
+        self.location = 'ISS'
     
     # FIXME find sweet spot params here
     def _get_pdfjam_cmd(self):
-        xoffset, yoffset = -4.25, 1.0
-        scale = 0.86
+        xoffset, yoffset = -2.5, 1.0
+        scale = 0.75
         orient = 'landscape'
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
    
@@ -535,10 +536,11 @@ class HandbookEntry(object):
 
 if __name__ == '__main__':
 
-    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Cygnus_Capture_Install')
+    #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Cygnus_Capture_Install')
     #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
+    hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Cygnus_Capture_Install')
     
-    if True: # True for process_pages, False for process_build
+    if False: # True for process_pages, False for process_build
         
         if not hbe.will_clobber():
             err_msg = hbe.process_pages()
