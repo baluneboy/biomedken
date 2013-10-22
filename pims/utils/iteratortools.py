@@ -3,7 +3,13 @@
 from itertools import *
 
 def ilen(it):
-    """return the length of an iterable.
+    """Return the length of an iterable.
+    
+    For some, you do not know the length of an
+    iterable until you iterate through it.
+    
+    CAUTION: Some iterables may be infinite or be
+    "consumed" and need to be reset!
     
     >>> ilen(range(7))
     7
@@ -11,7 +17,7 @@ def ilen(it):
     return sum(1 for _ in it)
     
 def runlength_enc(xs):
-    """return a run-length encoded version of the stream, xs.
+    """Return a run-length encoded version of the stream, xs.
     
     The resulting stream consists of (count, x) pairs.
     
@@ -22,9 +28,9 @@ def runlength_enc(xs):
     [(2, 'B'), (3, 'C')]
     """
     return ((ilen(gp),x) for x,gp in groupby(xs))
-        
+
 def runlength_dec(xs):
-    """expand a run-length encoded stream.
+    """Expand a run-length encoded stream.
     
     Each element of xs is a pair, (count, x).
     
@@ -33,33 +39,38 @@ def runlength_dec(xs):
     'A'
     >>> ''.join(ys)
     'AABB'
+    >>> demo_runlength_dec()
+    0 0 1 1 1 5
     """
     return chain.from_iterable(repeat(x,n) for n,x in xs)
 
-#count = 3
-#vals = [0, 1, 2]
-#ys = runlength_dec( ( (count, vals[0]), (count, vals[1]), (count, vals[2]) ) )
-#print [ next(ys) for i in range(len(vals)*count)]; raise SystemExit
-
-
-def runlength_consumer(a,mask):
-    """ apply run-length with consumer feature """
+def runlength_consumer(a, mask):
+    """Apply run-length with consumer feature."""
     RLE = runlength_enc(mask)
     for n,v in RLE:
         print n,v
         if v==0:
-            #print "consume",n
+            print "consume",n
             consume(a,n)
             consume(mask,n)
-        #else:
-        #    print "no consume"    
+        else:
+            print "no consume"    
 
 def dedupe_adjacent(alist):
-    """ return list with adjacent duplicates removed """
+    """Return list with adjacent duplicates removed.
+    
+    >>> dedupe_adjacent( [0, 0, 1, 1, 1, 5] )
+    [0, 1, 5]
+    """
     return [k for k,g in groupby(alist)]
 
 def take(n, iterable):
-    "Return first n items of the iterable as a list"
+    """Return first n items of the iterable as a list.
+    
+    >>> RLD = runlength_dec(((3, 'A'), (15, 'B'))) # ilen is 18
+    >>> take(4, RLD)
+    ['A', 'A', 'A', 'B']
+    """
     return list(islice(iterable, n))
 
 def tabulate(function, start=0):
@@ -77,11 +88,27 @@ def consume(iterator, n):
         next(islice(iterator, n, n), None)
 
 def nth(iterable, n, default=None):
-    "Returns the nth item or a default value"
+    """Returns the nth item or a default value.
+    
+    >>> RLD = runlength_dec(((3, 'A'), (5, 'B'))) # ilen is 8
+    >>> nth(RLD, 2) # two things consumed! (see next call)
+    'A'
+    >>> nth(RLD, 2)
+    'B'
+    """
     return next(islice(iterable, n, None), default)
 
 def quantify(iterable, pred=bool):
-    "Count how many times the predicate is true"
+    """Count how many times the predicate is true.
+    
+    >>> is_divisible_by_3 = lambda i: i % 3 == 0
+    >>> quantify(xrange(14), is_divisible_by_3) # zero counts!
+    5
+    
+    >>> is_palindrome = lambda x: str(x) == str(x)[::-1]
+    >>> quantify(['radar', 'level', 'Eric'], is_palindrome) # Eric is not
+    2
+    """
     return sum(imap(pred, iterable))
 
 def padnone(iterable):
@@ -92,20 +119,32 @@ def padnone(iterable):
     return chain(iterable, repeat(None))
 
 def ncycles(iterable, n):
-    "Returns the sequence elements n times"
+    """Returns the sequence elements n times.
+    
+    >>> for s in ncycles(xrange(3), 2): print s,
+    0 1 2 0 1 2
+    
+    >>> for s in ncycles('ABC', 3): print s,
+    A B C A B C A B C
+    """
     return chain.from_iterable(repeat(tuple(iterable), n))
 
 def dotproduct(vec1, vec2):
+    "Dot product."
     return sum(imap(operator.mul, vec1, vec2))
 
 def flatten(listOfLists):
-    "Flatten one level of nesting"
+    """Flatten one level of nesting.
+    
+    >>> LOL = [ [1,2], ['A','B'], ['Judy',5] ]
+    >>> list(flatten(LOL))
+    [1, 2, 'A', 'B', 'Judy', 5]
+    """
     return chain.from_iterable(listOfLists)
 
 def repeatfunc(func, times=None, *args):
     """Repeat calls to func with specified arguments.
-
-    Example:  repeatfunc(random.random)
+        or does it????
     """
     if times is None:
         return starmap(func, repeat(args))
@@ -118,7 +157,11 @@ def pairwise(iterable):
     return izip(a, b)
 
 def grouper(n, iterable, fillvalue=None):
-    "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
+    """grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx
+    
+    >>> demo_grouper()
+    [[0 1 2] [3 4 5] [6 7 8] [ 9 10 11] None None None]
+    """
     args = [iter(iterable)] * n
     return izip_longest(fillvalue=fillvalue, *args)
 
@@ -188,32 +231,43 @@ def iter_except(func, exception, first=None):
         pass
 
 def random_product(*args, **kwds):
-    "Random selection from itertools.product(*args, **kwds)"
+    "Random selection from itertools.product(*args, **kwds)."
     pools = map(tuple, args) * kwds.get('repeat', 1)
     return tuple(random.choice(pool) for pool in pools)
 
 def random_permutation(iterable, r=None):
-    "Random selection from itertools.permutations(iterable, r)"
+    "Random selection from itertools.permutations(iterable, r)."
     pool = tuple(iterable)
     r = len(pool) if r is None else r
     return tuple(random.sample(pool, r))
 
 def random_combination(iterable, r):
-    "Random selection from itertools.combinations(iterable, r)"
+    "Random selection from itertools.combinations(iterable, r)."
     pool = tuple(iterable)
     n = len(pool)
     indices = sorted(random.sample(xrange(n), r))
     return tuple(pool[i] for i in indices)
 
 def random_combination_with_replacement(iterable, r):
-    "Random selection from itertools.combinations_with_replacement(iterable, r)"
+    "Random selection from itertools.combinations_with_replacement(iterable, r)."
     pool = tuple(iterable)
     n = len(pool)
     indices = sorted(random.randrange(n) for i in xrange(r))
     return tuple(pool[i] for i in indices)
 
-if __name__ == '__main__':
+def demo_runlength_dec( counts=[2, 3, 1], vals=[0, 1, 5] ):
+    """Demonstrate run_length functions."""
+    # default values: get two zeros, three ones, and then one five
+    ys = runlength_dec( ( zip(counts,vals) ) )
+    # iterable ready to roll...gets consumed by iteration though!
+    for y in ys: print y,
+
+def demo_grouper():
     import numpy as np
     a = np.arange(12).reshape((4,3))
     for g in grouper(7, a):
         print np.asarray(g)
+    
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod(verbose=True)
