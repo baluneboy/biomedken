@@ -10,6 +10,16 @@ MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY = range(7)
 
 _DAY = datetime.timedelta(1)
 
+def floor_ten_minutes(t):
+    """Return datetime rounded down (floored) to nearest 10-minute mark.
+    
+    >>> floor_ten_minutes( datetime.datetime(2012,12,31,23,39,59,999000) )
+    datetime.datetime(2012, 12, 31, 23, 30)
+    """
+    return t - datetime.timedelta( minutes=t.minute % 10,
+                                    seconds=t.second,
+                                    microseconds=t.microsecond)
+
 def datetime_to_pad_ymd_subdir(d, pad_dir='/misc/yoda/pub/pad'):
     """
     Return PAD path for datetime, d, like /misc/yoda/pub/pad/yearYYYY/monthMM/dayDD
