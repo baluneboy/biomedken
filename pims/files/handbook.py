@@ -21,7 +21,7 @@ from pims.patterns.handbookpdfs import * # THIS IS WHERE PATTERNS ARE DEFINED/RE
 from pims.files.utils import listdir_filename_pattern
 from pims.files.pdfs.pdfjam import PdfjamCommand, PdfjoinCommand
 from pims.files.log import HandbookLog
-from pims.files.pod.templates import _HANDBOOK_TEMPLATE_ODT, _HANDBOOK_TEMPLATE_ANCILLARY_ODT
+from pims.files.pod.templates import _HANDBOOK_TEMPLATE_ODT, _HANDBOOK_TEMPLATE_ANCILLARY_ODT, _HANDBOOK_TEMPLATE_NUP1x2_ODT
 from pims.files.pdfs.pdftk import PdftkCommand, convert_odt2pdf
 from pims.pad.padheader import PadHeaderDict
 from appy.pod.renderer import Renderer
@@ -115,10 +115,19 @@ class RadgseRoadmapNup1x2Pdf(OssBtmfRoadmapPdf):
         super(RadgseRoadmapNup1x2Pdf, self).__init__(name, pattern, show_warnings=show_warnings)
         self.location = 'ISS'
     
+    # FIXME looks like ODT template should be part of init (maybe?)
+    def get_odt_renderer(self):
+        pth, fname = os.path.split(self.name)
+        bname, ext = os.path.splitext(fname)
+        self.odt_name = os.path.join(pth, 'build', bname + '.odt')
+        # Explicitly assign page_dict that contains expected names for appy/pod template substitution
+        page_dict = self.__dict__
+        return Renderer( _HANDBOOK_TEMPLATE_NUP1x2_ODT, page_dict, self.odt_name )
+        
     # FIXME find sweet spot params here
     def _get_pdfjam_cmd(self):
-        xoffset, yoffset = -2.5, 1.0
-        scale = 0.75
+        xoffset, yoffset = -3.4, 0.0
+        scale = 0.74
         orient = 'landscape'
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
    

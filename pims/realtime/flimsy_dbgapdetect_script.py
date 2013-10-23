@@ -17,10 +17,10 @@ from pims.utils.pimsdateutil import floor_ten_minutes
 defaults = {
 'sensor':           '121f03',       # sensor = table name
 'packets_per_sec':  '8',            # expected value for this sensor for this gap check period
-'host':             'localhost',    # like tweek for 121f03
-'min_pct':          '99',           # show periods that do not meet this min_pct requirements
-'hours_ago':        '12',           # start checking this many hours ago
-'num_minutes':      '10',           # check every num_minutes chunk of time
+'host':             'tweek',        # like tweek for 121f03
+'min_pct':          '90',           # show periods that do not meet this min_pct requirements
+'hours_ago':        '24',           # start checking this many hours ago
+'num_minutes':      '30',           # check every num_minutes chunk of time
 }
 parameters = defaults.copy()
 
