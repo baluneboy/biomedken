@@ -285,7 +285,56 @@ def demo_grouper():
     a = np.arange(12).reshape((4,3))
     for g in grouper(7, a):
         print np.asarray(g)
+
+
+def group_iterable_by_predicate(iterable, is_start):
+    """Group an iterable by a predicate.
     
+    >>> demo_group_iterable_by_predicate()
+    ------------------
+    4
+    ------------------
+    5
+    6
+    7
+    8
+    9
+    ------------------
+    10
+    11
+    12
+    13
+    14
+    ------------------
+    15
+    """
+    def _pairwise2(iterable):
+        a, b = tee(iterable)
+        return izip(a, chain(b, [next(b, None)]))
+
+    pairs = _pairwise2(iterable)
+
+    def extract(current, lookahead, pairs=pairs, is_start=is_start):
+        yield current
+        if is_start(lookahead):
+            return
+        for current, lookahead in pairs:
+            yield current
+            if is_start(lookahead):
+                return
+
+    for start, lookahead in pairs:
+        gen = extract(start, lookahead)
+        yield gen
+        for _ in gen:
+            pass
+
+def demo_group_iterable_by_predicate():
+    for gen in group_iterable_by_predicate(xrange(4, 16), lambda x: x % 5 == 0):
+        print '------------------'
+        for n in gen:
+            print n
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod(verbose=True)
