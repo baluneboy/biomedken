@@ -1,3 +1,6 @@
+4. verify MANUALLY that copy PDF to ~/yodahb/ path, then auto_insert_handbook SQL yields web page end item, then
+verify handbook.py does things in right order (copy file first, then auto_insert_handbook)
+
 5. log entry after build (or just after success on insert?)
 
 6. make all log.process calls (info or error or warn) as sentences ending in period or bang or ?
