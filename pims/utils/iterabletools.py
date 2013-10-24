@@ -110,6 +110,12 @@ def quantify(iterable, pred=bool):
     >>> #            yes      yes     nope   (Eric is not a palindrome)
     >>> quantify( ['radar', 'level', 'Eric'], is_palindrome )
     2
+    
+    >>> import re; fname = '/tmp/file_one.txt'
+    >>> is_matched = lambda pat : bool(re.match(pat, fname))
+    >>> pats = ['.*stupid.*', '.*one.*', '.*dumb.*']
+    >>> quantify(pats, is_matched) # count matches
+    1
     """
     return sum(imap(pred, iterable))
 

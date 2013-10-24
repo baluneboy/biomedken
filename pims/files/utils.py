@@ -1,22 +1,23 @@
 import os
 import re
 from pims.files.base import File, UnrecognizedPimsFile
+from pims.patterns.handbookpdfs import is_unique_handbook_pdf_match
 
-def guess_file(name, filetypes, show_warnings=False):
+def guess_file(name, file_type_classes, show_warnings=False):
     """
-    Attempt to guess file based on its name.
+    Verify unique pattern, then guess class based on its name.
     """
-    # Keep more general types at end of filetypes list
-    for i in filetypes:
-        try:
-            p = i(name, show_warnings=show_warnings)
-            return p
-        except UnrecognizedPimsFile:
-            pass
-    if show_warnings:
-        print 'Unrecognized file "%s"' % name
     p = File(name)
     p.recognized = False
+    if is_unique_handbook_pdf_match(name):
+        for i in file_type_classes:
+            try:
+                p = i(name, show_warnings=show_warnings)
+                return p
+            except UnrecognizedPimsFile:
+                pass
+    if show_warnings and not p.recognized:
+        print 'Unrecognized file "%s"' % name
     return p
 
 def listdir_filename_pattern(dirpath, fname_pattern):
