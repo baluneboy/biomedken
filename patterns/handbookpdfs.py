@@ -188,5 +188,24 @@ def demo_hbfpat():
     else:
         print 'timestr: %s' % m.group('timestr')
 
+def is_unique_handbook_pdf_match(fname):
+    """
+    Return count of handbook pdf regex pattern matches.
+    """
+    import re
+    from pims.utils.iterabletools import quantify
+    # get rid of generic pattern first
+    if '_HANDBOOKPDF_PATTERN' in __all__: __all__.remove('_HANDBOOKPDF_PATTERN')
+    # use eval to get actual patterns from their __all__ names
+    pats = [eval(x) for x in __all__ if x.endswith('PDF_PATTERN')]
+    # define predicate to quantify num matches (hopefully unique patterns!)
+    is_matched = lambda pat : bool(re.match(pat, fname))
+    num_matches = quantify(pats, is_matched)
+    if num_matches == 1:
+        return True
+    else:
+        return False
+    
 if __name__ == "__main__":
-    demo_hbfpat()
+    #demo_hbfpat()
+    print is_unique_handbook_pdf_match('/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf')
