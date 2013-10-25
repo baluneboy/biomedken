@@ -10,7 +10,7 @@ from interval import Interval
 from pims.lib.tools import TransformedDict
 from pims.pad.parsenames import match_header_filename
 from pims.utils.pimsdateutil import timestr_to_datetime
-from pims.utils.pimsdateutil import datetime_to_pad_ymd_subdir
+from pims.utils.pimsdateutil import datetime_to_ymd_path
 from pims.files.utils import listdir_filename_pattern
 from pims.utils.iterabletools import pairwise
 from create_header_dict import parse_header # FIXME old [but trusted] code
@@ -116,7 +116,7 @@ class PadHeaderDict(TransformedDict):
     def _get_header_files_for_date(self, d):
         """Get header files for given sensor on d day."""
         # Components of PAD path pattern
-        ymd_subdir = os.path.join( self['_pad_dir'], datetime_to_pad_ymd_subdir(d) )
+        ymd_subdir = os.path.join( self['_pad_dir'], datetime_to_ymd_path(d) )
         sys_sensor_pattern = '(?P<system>.*)_(accel|rad)_%s\Z' % self['_sensor']
         
         # Verify exactly one subdir matches pattern

@@ -21,6 +21,8 @@ def guess_file(name, file_type_classes, show_warnings=False):
     return p
 
 def listdir_filename_pattern(dirpath, fname_pattern):
+    if not os.path.exists(dirpath):
+        return None
     files = [os.path.join(dirpath, f) for f in os.listdir(dirpath) if re.match(fname_pattern, f)]
     files.sort()
     return files
