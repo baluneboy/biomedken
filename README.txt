@@ -1,3 +1,5 @@
+3. add cronjob on jimmy for backfill_ossbtmf_roadmap.py with better default args
+
 4. verify MANUALLY that copy PDF to ~/yodahb/ path, then auto_insert_handbook SQL yields web page end item, then
 verify handbook.py does things in right order (copy file first, then auto_insert_handbook)
 

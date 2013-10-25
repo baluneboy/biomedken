@@ -20,22 +20,21 @@ def floor_ten_minutes(t):
                                     seconds=t.second,
                                     microseconds=t.microsecond)
 
-def datetime_to_pad_ymd_subdir(d, pad_dir='/misc/yoda/pub/pad'):
+def datetime_to_ymd_path(d, base_dir='/misc/yoda/pub/pad'):
     """
     Return PAD path for datetime, d, like /misc/yoda/pub/pad/yearYYYY/monthMM/dayDD
     
     Examples
     --------
     
-    >>> datetime_to_pad_ymd_subdir(datetime.date(2002, 12, 28))
+    >>> datetime_to_ymd_path(datetime.date(2002, 12, 28))
     '/misc/yoda/pub/pad/year2002/month12/day28'
     
-    >>> datetime_to_pad_ymd_subdir(datetime.datetime(2009, 12, 31, 23, 59, 59, 999000))
+    >>> datetime_to_ymd_path(datetime.datetime(2009, 12, 31, 23, 59, 59, 999000))
     '/misc/yoda/pub/pad/year2009/month12/day31'
     
     """
-    return os.path.join( pad_dir, d.strftime('year%Y/month%m/day%d') )
-
+    return os.path.join( base_dir, d.strftime('year%Y/month%m/day%d') )
 
 def timestr_to_datetime(timestr):
     """
@@ -50,16 +49,25 @@ def timestr_to_datetime(timestr):
     """
     return datetime.datetime.strptime(timestr,'%Y_%m_%d_%H_%M_%S.%f')
 
+def format_datetime_as_pad_underscores(dtm):
+    """
+    Format datetime as underscore-delimited PAD string.
+    
+    >>> format_datetime_as_pad_underscores( datetime.datetime(2013,10,25,1,2,3,456789) ) # NO ROUNDING!
+    '2013_10_25_01_02_03.456'
+    
+    """
+    return dtm.strftime('%Y_%m_%d_%H_%M_%S.%f')[:-3] # remove 3 trailing zeros
 
 def days_ago_string(n):
     """Return n days ago as YYYY_mm_dd string."""
     n_days_ago = datetime.date.today()-datetime.timedelta(n)
     return n_days_ago.strftime('%Y_%m_%d')    
 
-def days_ago_path_path(pad_dir,n):
+def days_ago_path_path(base_dir,n):
     """Return PAD path for n days ago like PADPATH/yearYYYY/monthMM/dayDD"""
     date_n_days_ago = datetime.date.today()-datetime.timedelta(n)
-    return os.path.join( pad_dir, date_n_days_ago.strftime('year%Y/month%m/day%d') )
+    return os.path.join( base_dir, date_n_days_ago.strftime('year%Y/month%m/day%d') )
 
 def days_ago_to_date(n): 
     """Convert daysAgo integer to date object."""
