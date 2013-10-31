@@ -37,15 +37,6 @@ def init_log(log_file):
     #log_verify.addHandler(rot_file_handler)
 
     return log_inputs, log_process, log_verify
-    
-class NoLog(object):
-    def info(self, s): pass
-    def debug(self, s): pass
-    def warning(self, s): pass
-    def warn(self, s): pass
-    def error(self, s): pass
-    def exception(self, s): pass
-    def critical(self, s): pass
 
 class HandbookLog(object):
     def __init__(self, log_file='/home/pims/log/handbook.log'):

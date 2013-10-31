@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Some hopefully useful bedrock tools.
+Some hopefully useful classes and functions.
 """
 from collections import MutableMapping
 
