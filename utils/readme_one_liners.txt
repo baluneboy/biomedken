@@ -109,3 +109,6 @@ mkfifo pipe && (cat pipe | (COMMAND 1) &) && echo 'test' | tee pipe | (COMMAND 2
 
 # tee pipe example
 mkfifo pipe && (cat pipe | grep yoda &) && df -h | tee pipe | awk 'NR>1{exit};1' && rm pipe
+
+# check packetWriters
+for H in $TSCCOMPUTERS; do ssh ${H} pgrep -fl packetWriter; done

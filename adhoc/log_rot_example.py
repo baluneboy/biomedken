@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import time
 import logging
 import logging.config
@@ -50,7 +51,7 @@ def demo_log_config():
     log = logging.getLogger('inputs')
     
     # log stuff
-    for i in range(94):
+    for i in range(12):
         log.debug('debug message %03d' % i)
     log.info('info message')
 
@@ -61,7 +62,7 @@ def demo_log_config():
     log = logging.getLogger('verify')
     log.critical('critical message')
     
-    log.debug('Done %s.\n' % time.asctime() + '-'*88)
+    log.debug('Done %s.\n' % time.asctime() + '-'*99)
     
 if __name__ == "__main__":
     demo_log_config()
