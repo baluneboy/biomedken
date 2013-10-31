@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+Date/time functions mostly for PIMS/PAD utility.
+"""
 
 import os
 import datetime

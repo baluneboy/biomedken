@@ -1,1 +1,3 @@
-#from django.core.files.base import File
+"""
+Core routines for working with files that we have to deal with regularly.
+"""
