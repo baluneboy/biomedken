@@ -5,6 +5,8 @@ import os
 import re
 import sys
 import time
+import logging
+import logging.config
 import datetime
 import threading
 import subprocess
@@ -46,14 +48,10 @@ def params_ok(log):
     record_inputs(log)
     return True
 
-def record_inputs( logInps ):
-    logInps.info( '='*50 )
+def record_inputs(log):
     for k,v in parameters.iteritems():
-        logInps.info( k + ':' + str(v) )
-    logInps.info( '='*20 )
-    logInps.info( 'START = %s' % parameters['date_range'].start.strftime('%Y-%m-%d') )
-    logInps.info( 'STOP  = %s' % parameters['date_range'].stop.strftime('%Y-%m-%d') )
-    logInps.info( '='*20 )
+        log.info( k + ':' + str(v) )
+    log.info( '='*99 )
     
 def print_usage():
     """print short description of how to run the program"""
@@ -68,7 +66,7 @@ def get_day_files(day, batch_dir, log, ext):
     fname_pattern = day.strftime('%Y_%m_%d_\d{2}_ossbtmf_roadmap.' + ext)
     pth = datetime_to_ymd_path(day, base_dir=batch_dir)
     if not os.path.exists(pth):
-        log.warn('No such path %s found while checking for %s.' % (pth, fname_pattern))
+        log.warn('No such path %s during check for JPGs.' % pth)
         return None
     files = listdir_filename_pattern(pth, fname_pattern)
     if not files:
@@ -84,7 +82,7 @@ def get_day_pdfs(day, batch_dir, log):
     """Check for ossbtmf roadmap PDF files for day."""
     pdf_files = get_day_files(day, batch_dir, log, 'pdf')
 
-def run_backfill(day, batch_dir, jpg_files, log_process):
+def run_backfill(day, batch_dir, jpg_files, log):
     """Convert JPGs to PDFs and move the PDFs to batch dir."""
     ymd_path = datetime_to_ymd_path(day, base_dir=batch_dir)
     count = 0
@@ -92,45 +90,47 @@ def run_backfill(day, batch_dir, jpg_files, log_process):
         for jpg_file in jpg_files:
             pdf_file = jpg_file.replace('.jpg','.pdf')
             cmdstr = 'convert %s %s && mv %s %s/' % (jpg_file, pdf_file, pdf_file, ymd_path)
-            timeLogRun(cmdstr, 44, log_process) # timeout of 44 seconds
+            timeLogRun(cmdstr, 44, log) # timeout of 44 seconds
             count += 1
     return count
 
-def run_ike_repair(years, log_process):
+def run_ike_repair(years, log):
     """Run processRoadmap.py on ike to get new PDFs into the fold"""
     # ssh ike 'cd /home/pims/roadmap && python /home/pims/roadmap/processRoadmap.py logLevel=3 mode=repair repairModTime=5 | grep nserted'
     for repair_year in years:
-        log_process.info('Run ike repair for year %d.' % repair_year)
+        log.info('Run ike repair for year %d.' % repair_year)
         cmdstr = "ssh ike 'cd /home/pims/roadmap && python /home/pims/roadmap/processRoadmap.py logLevel=3 mode=repair repairModTime=5 repairYear=%d | grep Inserted'" % repair_year
-        timeLogRun(cmdstr, 900, log_process) # timeout of 900 seconds for 15 minutes
+        timeLogRun(cmdstr, 900, log) # timeout of 900 seconds for 15 minutes
 
-def backfill_ossbtmf_roadmaps(date_range, batch_dir, log_process):
+def backfill_ossbtmf_roadmaps(date_range, batch_dir, log):
     """
     Convert daily ossbtmf roadmap JPGs to PDFs and move for web display
     for entirety of date range.
     """
-    log_process.info("See about backfill of ossbtmf roadmap PDFs for %s." % date_range)
+    log.info("Try backfill of ossbtmf roadmap PDFs for %s." % date_range)
 
     # Loop backwards in time over days in date range
     repair_years = set( (date_range.stop.year,) )
     num_days_backfilled = 0
     d = date_range.stop
     while d >= date_range.start:
-        jpg_files = get_day_jpgs(d, batch_dir, log_process)
+        log.debug('Day %s.' % d.date())
+        jpg_files = get_day_jpgs(d, batch_dir, log)
         if jpg_files:
-            pdf_files = get_day_pdfs(d, batch_dir, log_process)
+            pdf_files = get_day_pdfs(d, batch_dir, log)
             if not pdf_files:
-                log_process.info('Backfilling for day %s' % d.date())
-                num_back_filled = run_backfill(d, batch_dir, jpg_files, log_process)
+                log.info('Backfilling for day %s' % d.date())
+                num_back_filled = run_backfill(d, batch_dir, jpg_files, log)
                 repair_years.add( d.year )
+                log.debug('Years %s' % repair_years)
                 num_days_backfilled += 1
         d -= datetime.timedelta(days=1)
     
-    log_process.info('Backfilled a total of %d days.' % num_days_backfilled)
+    log.info('Backfilled a total of %d days.' % num_days_backfilled)
     
     # If any backfills, then do repair routine on ike
     if num_days_backfilled > 0:
-        run_ike_repair(repair_years, log_process)
+        run_ike_repair(repair_years, log)
     
 def main(argv):
     """describe what this routine does here"""
@@ -143,16 +143,21 @@ def main(argv):
         else:
             parameters[pair[0]] = pair[1]
     else:
-        log = OssbtmfBackfillRoadmapsLog()
-        if params_ok(log.inputs):
+        # set up logging
+        bname = os.path.splitext( os.path.basename(__file__) )[0]
+        log_config_file = os.path.join('/home/pims/dev/programs/python/pims/files', bname + '_log.conf')
+        logging.config.fileConfig(log_config_file)
+        log = logging.getLogger('inputs')
+        if params_ok(log):
             try:
-                backfill_ossbtmf_roadmaps(parameters['date_range'], parameters['batch_dir'], log.process)
+                log = logging.getLogger('process')
+                backfill_ossbtmf_roadmaps(parameters['date_range'], parameters['batch_dir'], log)
             except Exception, e:
                 # Log error
                 log.process.error( e.message )
                 return -1
             # Message with time when done
-            log.process.info('Logging done at %s.', datetime.datetime.now() )
+            log.debug('Done %s.\n' % datetime.datetime.now() + '-'*99)
             return 0
     print_usage()  
 
