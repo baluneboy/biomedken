@@ -297,22 +297,7 @@ def group_iterable_by_predicate(iterable, is_start):
     """Group an iterable by a predicate.
     
     >>> demo_group_iterable_by_predicate()
-    ------------------
-    4
-    ------------------
-    5
-    6
-    7
-    8
-    9
-    ------------------
-    10
-    11
-    12
-    13
-    14
-    ------------------
-    15
+    grp: 04, grp: 05, 06, 07, 08, 09, grp: 10, 11, 12, 13, 14, grp: 15,
     """
     def _pairwise2(iterable):
         a, b = tee(iterable)
@@ -337,9 +322,9 @@ def group_iterable_by_predicate(iterable, is_start):
 
 def demo_group_iterable_by_predicate():
     for gen in group_iterable_by_predicate(xrange(4, 16), lambda x: x % 5 == 0):
-        print '------------------'
+        print 'grp:',
         for n in gen:
-            print n
+            print '%02d,' % n,
 
 if __name__ == '__main__':
     import doctest
