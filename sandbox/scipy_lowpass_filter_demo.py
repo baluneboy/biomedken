@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from scipy import signal
 from numpy import arange, cos, pi
 from numpy import random

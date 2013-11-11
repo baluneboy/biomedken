@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # update a distribution based on new data.
 import numpy as np
 import matplotlib.pyplot as plt
