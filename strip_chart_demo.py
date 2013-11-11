@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Emulate an oscilloscope.  Requires the animation API introduced in
 matplotlib 1.0 SVN.
