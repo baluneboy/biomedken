@@ -26,11 +26,11 @@ y=sin(t)
 z=cos(t)
 
 # Create main figure
-fig=p.figure(figsize=(12,6))
-fig.suptitle('Helix model', fontsize=14, fontweight='bold')
+fig=p.figure(figsize=(12,8))
+fig.suptitle('Spiral Example', fontsize=14, fontweight='bold')
 
 # Include 3D graph as rectangle using 60% width and 100% height in
-# fugure space
+# figure space
 ax = a3d.Axes3D(fig,rect=[0,0,0.6,1])
 ax.set_autoscale_on(False)
 ax.set_xlim3d((0,30))
@@ -46,33 +46,33 @@ fig.subplots_adjust(left=0.66,bottom=0.05,top=0.95)
 
 # Add subplots to figure one by one. Value passed to add_subplot 411
 # should be read as (4 rows, 1 column, 1st plot)
-bx = fig.add_subplot(411)
+bx = fig.add_subplot(414)
 bx.set_autoscale_on(False)
 bx.set_ylabel('z')
-bx.set_title('t')
+bx.set_xlabel('t')
 bx.set_xlim((0,30))
 bx.set_ylim((-1,1))
 bx.plot(t,z)
 
-cx = fig.add_subplot(412)
+cx = fig.add_subplot(413)
 cx.set_autoscale_on(False)
 cx.set_xlim((0,30))
 cx.set_ylabel('y')
 cx.set_ylim((-1,1))
 cx.plot(t,y)
 
-dx = fig.add_subplot(413)
+dx = fig.add_subplot(412)
 dx.set_autoscale_on(False)
 dx.set_ylabel('x')
 dx.set_xlim((0,30))
 dx.set_ylim((0,30))
 dx.plot(t,x)
 
-fx = fig.add_subplot(414)
+fx = fig.add_subplot(411)
 fx.set_autoscale_on(False)
-fx.text(5, 5, 'x: %s'% x[299], fontsize=12)
+fx.text(5, 15, 'x: %s'% x[299], fontsize=12)
 fx.text(5, 10, 'y: %s'% y[299], fontsize=12)
-fx.text(5, 15, 'z: %s'% z[299], fontsize=12)
+fx.text(5,  5, 'z: %s'% z[299], fontsize=12)
 fx.set_xlim((0,30))
 fx.set_ylim((0,20))
 for tick in fx.yaxis.get_major_ticks():
