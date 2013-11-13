@@ -47,8 +47,8 @@ def timeLogRun(command, timeoutSec, log=None):
     (0, True)
     """
     if not log:
-        from pims.files.log import NoLog
-        log = NoLog()
+        from pims.files.log import TrashLog
+        log = TrashLog().process
     cmdObj = Command(command, log)
     tzero = time.time()
     log.info( 'START: ' + command )

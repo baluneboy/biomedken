@@ -51,6 +51,10 @@ class OssbtmfBackfillRoadmapsLog(object):
     def __init__(self, log_file='/home/pims/log/ossbtmfbackfillroadmaps.log'):
         self.inputs, self.process, self.verify = init_log(log_file)
 
+class TrashLog(object):
+    def __init__(self, log_file='/home/pims/log/trash.log'):
+        self.inputs, self.process, self.verify = init_log(log_file)
+        
 def demo_log(log_file='/tmp/demo_pdfjam.log'):
     
     logging.basicConfig(filename=log_file, filemode='w', level=logging.DEBUG, format='%(asctime)s,%(name)s,%(levelname)s,%(message)s')
