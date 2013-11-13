@@ -18,11 +18,10 @@
 from numpy import arange, zeros, float64, sqrt, pi, exp
 import pylab as p
 import matplotlib.axes as a
-#from matplotlib.matlab import *   # For plotting graphs.
 import os                         # For issuing commands to the OS.
 import sys                        # For determining the Python version.
+from pims.utils.commands import timeLogRun
 
-#
 # Print the version information for the machine, OS,
 # Python interpreter, and matplotlib.  The version of
 # Mencoder is printed when it is called.
@@ -41,11 +40,7 @@ import sys                        # For determining the Python version.
 #
 print 'Executing on', os.uname()
 print 'Python version', sys.version
-#print 'matplotlib version', matplotlib.__version__
 
-
-
-#
 # First, let's create some data to work with.  In this example
 # we'll use a normalized Gaussian waveform whose mean and
 # standard deviation both increase linearly with time.  Such a
@@ -126,18 +121,5 @@ for i in range(len(y)) :
 # See the MPlayer and Mencoder documentation for details.
 #
 
-command = ('mencoder',
-           'mf://*.png',
-           '-mf',
-           'type=png:w=800:h=600:fps=25',
-           '-ovc',
-           'lavc',
-           '-lavcopts',
-           'vcodec=mpeg4',
-           '-oac',
-           'copy',
-           '-o',
-           'output.avi')
-
-print command
-#os.spawnvp(os.P_WAIT, 'mencoder', command)
+command = 'cd /tmp/nu; mencoder mf://*.png -mf type=png:w=800:h=600:fps=25 -ovc lavc -lavcopts vcodec=mpeg4 -oac copy -o output.mp4'
+timeLogRun(command, 90)

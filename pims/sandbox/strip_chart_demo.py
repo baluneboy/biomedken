@@ -35,7 +35,6 @@ class Scope:
         self.line.set_data(self.tdata, self.ydata)
         return self.line,
 
-
 def emitter(p=0.03):
     'return a random value with probability p, else 0'
     while True:
@@ -49,8 +48,6 @@ fig, ax = plt.subplots()
 scope = Scope(ax)
 
 # pass a generator in "emitter" to produce data for the update func
-ani = animation.FuncAnimation(fig, scope.update, emitter, interval=10,
-    blit=True)
-
+ani = animation.FuncAnimation(fig, scope.update, emitter, interval=10, blit=True)
 
 plt.show()
