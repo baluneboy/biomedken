@@ -40,7 +40,7 @@ def params_ok(log):
 def record_inputs(log):
     for k,v in parameters.iteritems():
         log.info( k + ':' + str(v) )
-    log.info( '='*99 )
+    log.info( '=' * 33 )
     
 def print_usage():
     """Print short description of how to run this program."""
