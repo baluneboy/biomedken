@@ -2,7 +2,7 @@
 """Classes for PIMS real-time plotting support."""
 
 class RealtimeStream(object):
-    """fake it for now"""
+    """A stream from pims db table."""
     
     def __init__(self, sensor):
         """Initialize real-time stream object."""
