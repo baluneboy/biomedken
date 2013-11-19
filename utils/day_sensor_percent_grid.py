@@ -8,48 +8,8 @@ import re
 import datetime
 from dateutil import parser
 from datetime_ranger import DateRange
-from pims.utils.pimsdateutil import timestr_to_datetime
-from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN
+from pims.files.utils import filter_filenames, parse_roadmap_filename
 from pyvttbl import DataFrame
-
-def parse_roadmap_filename(f):
-    m = re.match(_BATCHROADMAPS_PATTERN, f)
-    if m:
-        dtm = timestr_to_datetime(m.group('dtm'))
-        sensor = m.group('sensor')
-        abbrev = m.group('abbrev')
-        return dtm, sensor, abbrev, os.path.basename(f)
-    else:
-        return 'UNKNOWN', 'UNKNOWN', 'UNKNOWN', "%s" % os.path.basename(f)
-
-#dtm, sensor, abbrev, pth = parse_roadmap_filename('/misc/yoda/www/plots/batch/year2013/month09/day29/2013_09_29_00_00_00.000_121f03_spgs_roadmaps500.pdf')
-#print dtm, sensor, abbrev, pth
-#raise SystemExit
-
-def pivot_table_insert_day_roadmaps(df, d=datetime.date.today()-datetime.timedelta(days=2), batchpath='/misc/yoda/www/plots/batch', pattern='.*roadmaps.*\.pdf$'):
-    """Walk ymd path and insert regex matches of filename pattern into data frame."""
-    dirpath = os.path.join( batchpath, d.strftime('year%Y/month%m/day%d') )
-    fullfile_pattern = os.path.join(dirpath, pattern)
-    for f in filter_filenames(dirpath, re.compile(fullfile_pattern).match):
-        dtm, sensor, abbrev, bname = parse_roadmap_filename(f)
-        dat = dtm.date()
-        hr = dtm.hour
-        df.insert({'date':dat, 'hour':hr, 'sensor':sensor, 'abbrev':abbrev, 'bname':bname, 'fname':f})
-
-def demo_pivot_roadmap_pdfs():
-    d = datetime.date(2013,8,1)
-    dStop = datetime.date(2013,8,19)
-    pattern = '.*_121f0\d{1}one_.*roadmaps.*\.pdf$' # '.*roadmaps.*\.pdf$'
-    print 'FROM %s TO %s USING PATTERN "%s"' % (str(d), str(dStop), pattern)
-    build_pivot_roadmap_pdfs(d, dStop, pattern)
-    
-def build_pivot_roadmap_pdfs(d, dStop, pattern):
-    df = DataFrame()
-    while d <= dStop:
-        pivot_table_insert_day_roadmaps(df, d=d, pattern=pattern)
-        d += datetime.timedelta(days=1)
-    pt = df.pivot('abbrev', ['date'],['sensor'], aggregate='count')
-    print pt
 
 class DaySensorPercentGrid(object):
     """
@@ -58,6 +18,7 @@ class DaySensorPercentGrid(object):
     
     def __init__(self, date_range):
         self.date_range = date_range
+        self.data_frame = DataFrame()
 
     def __str__(self): return 'This is a %s for %s.\n' % (self.__class__.__name__, self.date_range)
 
@@ -70,10 +31,68 @@ class DaySensorPercentGrid(object):
     def get_percentages(self):
         """Get percentages with outer loop for days (rows) & inner loop for sensors (cols)."""
         raise NotImplementedError('your subclass must implement this method')
+    
+class VibratoryRoadmapsGrid(DaySensorPercentGrid):
+    """
+    A grid with days as rows, vibratory sensors_axis as columns, & percents (in thirds) as cell values.
+    """    
+    
+    def __init__(self, date_range, pattern='.*_121f0\d{1}.*_.*roadmaps.*\.pdf$', batchpath='/misc/yoda/www/plots/batch'):
+        super(VibratoryRoadmapsGrid, self).__init__(date_range)
+        self.pattern = pattern
+        self.batchpath = batchpath
 
-if __name__ == '__main__':
-    d1 = parser.parse('2013-10-31').date()
-    d2 = parser.parse('2013-11-02').date()
+    def pivot_table_insert_day_roadmaps(self, d):
+        """Walk ymd path and insert regex matches of filename pattern into data frame."""
+        dirpath = os.path.join( self.batchpath, d.strftime('year%Y/month%m/day%d') )
+        fullfile_pattern = os.path.join(dirpath, self.pattern)
+        for f in filter_filenames(dirpath, re.compile(fullfile_pattern).match):
+            dtm, sensor, abbrev, bname = parse_roadmap_filename(f)
+            dat = dtm.date()
+            hr = dtm.hour
+            self.data_frame.insert({'date':dat, 'hour':hr, 'sensor':sensor, 'abbrev':abbrev, 'bname':bname, 'fname':f})
+        
+    def fill_data_frame(self):
+        """Populate data frame day-by-day."""
+        d = self.date_range.start
+        while d <= self.date_range.stop:
+            self.pivot_table_insert_day_roadmaps(d)
+            d += datetime.timedelta(days=1)
+    
+    def get_pivot_table(self, val='abbrev', rows=['date'], cols=['sensor'], aggregate='count'):
+        return self.data_frame.pivot(val, rows, cols, aggregate)
+    
+    def attach(self, other):
+        """attaches other DataFrame to this one (both must have the same columns)"""
+
+        # do minimal checking
+        if not isinstance(other, VibratoryRoadmapsGrid):
+            raise TypeError('second argument must be a VibratoryRoadmapsGrid')
+        
+        # perform attachment
+        self.data_frame.attach(other.data_frame)
+
+def ugly_demo():
+    d1 = parser.parse('2013-10-18').date()
+    d2 = parser.parse('2013-11-17').date()
     date_range = DateRange(start=d1, stop=d2)
-    g = DaySensorPercentGrid(date_range)
-    print g
+    
+    vgrid1 = VibratoryRoadmapsGrid(date_range, pattern='.*_121f0\d{1}_.*roadmaps.*\.pdf$')
+    vgrid1.fill_data_frame()
+    pt1 = vgrid1.get_pivot_table()
+    print pt1
+    
+    vgrid2 = VibratoryRoadmapsGrid(date_range, pattern='.*_121f0\d{1}one_.*roadmaps.*\.pdf$')
+    vgrid2.fill_data_frame()
+    pt2 = vgrid2.get_pivot_table()
+    print pt2
+    
+    # combine the two and pivot the combo
+    vgrid1.attach(vgrid2)
+    pt = vgrid1.get_pivot_table()
+    print pt
+
+if __name__ == "__main__":
+    #import doctest
+    #doctest.testmod(verbose=True)
+    ugly_demo()
