@@ -195,9 +195,18 @@ def weekday_of_month(weekday, dt, index):
                                           dt.replace(day=days_in_month(dt)))
         return base + datetime.timedelta(weeks=1+index)
 
+def days_ago_to_date(n): 
+    """Convert days_ago integer, n, to date object."""
+    return datetime.date.today()-datetime.timedelta(n)
+    
+def days_ago_to_date_time(n):
+    """Convert days_ago integer, n, to date object."""
+    d = days_ago_to_date(n)
+    return datetime.datetime.combine(d, datetime.time(0))
+
 def testdoc(verbose=True):
     import doctest
     return doctest.testmod(verbose=verbose)
 
 if __name__ == "__main__":
-    testdoc(verbose=True) # pass "-v" as input arg to see verbose test output
+    testdoc(verbose=True)
