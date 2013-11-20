@@ -5,6 +5,9 @@ Populate wx grid structure with days as rows, sensors as columns, and percents a
 
 import os
 import re
+import wx
+import sys
+from pims.gui.percent_grid import VibRoadmapsGrid
 import datetime
 from dateutil import parser
 from datetime_ranger import DateRange
@@ -72,27 +75,67 @@ class VibratoryRoadmapsGrid(DaySensorPercentGrid):
         # perform attachment
         self.data_frame.attach(other.data_frame)
 
+class TestFrame(wx.Frame):
+    def __init__(self, parent, log, dayrow_labels, sensorcolumn_labels, rows):
+        wx.Frame.__init__(self, parent, -1, "VibratoryRoadmapsGrid", size=(1200, 1000))
+        #dayrow_labels = ['2013-10-31', '2013-11-01']
+        #sensorcolumn_labels = ['hirap','121f03','121f05onex']
+        #rows = [ [0.0, 0.5, 1.0], [0.9, 0.4, 0.2] ]
+        self.grid = VibRoadmapsGrid(self, log, dayrow_labels, sensorcolumn_labels, rows)
+
 def ugly_demo():
-    d1 = parser.parse('2013-10-18').date()
-    d2 = parser.parse('2013-11-17').date()
+    d1 = parser.parse('2013-09-29').date()
+    d2 = parser.parse('2013-10-01').date()
     date_range = DateRange(start=d1, stop=d2)
     
-    vgrid1 = VibratoryRoadmapsGrid(date_range, pattern='.*_121f0\d{1}_.*roadmaps.*\.pdf$')
+    vgrid1 = VibratoryRoadmapsGrid(date_range, pattern='.*_121f0\d{1}_pcss_roadmaps.*\.pdf$')
     vgrid1.fill_data_frame()
     pt1 = vgrid1.get_pivot_table()
-    print pt1
+    #print pt1
     
-    vgrid2 = VibratoryRoadmapsGrid(date_range, pattern='.*_121f0\d{1}one_.*roadmaps.*\.pdf$')
+    vgrid2 = VibratoryRoadmapsGrid(date_range, pattern='.*_121f0\d{1}one_pcss_roadmaps.*\.pdf$')
     vgrid2.fill_data_frame()
     pt2 = vgrid2.get_pivot_table()
-    print pt2
+    #print pt2
     
     # combine the two and pivot the combo
     vgrid1.attach(vgrid2)
     pt = vgrid1.get_pivot_table()
-    print pt
+    #print pt
+    
+    day_rows = [ str(i[0][1]) for i in pt.rnames]
+    sensor_columns = [ str(i[0][1]) for i in pt.cnames]
+    rows = [ i for i in pt ]
+    #print day_rows
+    #print sensor_columns
+    #for r in rows:
+    #    print r
+    demo(day_rows, sensor_columns, rows)
+
+def ugly_demo2():
+    d1 = parser.parse('2013-09-29').date()
+    d2 = parser.parse('2013-10-01').date()
+    date_range = DateRange(start=d1, stop=d2)
+    
+    vgrid1 = VibratoryRoadmapsGrid(date_range, pattern='.*_121f0\d{1}_pcss_roadmaps.*\.pdf$')
+    vgrid1.fill_data_frame()
+    
+    vgrid2 = VibratoryRoadmapsGrid(date_range, pattern='.*_121f0\d{1}one_pcss_roadmaps.*\.pdf$')
+    vgrid2.fill_data_frame()
+    
+    # combine the two and pivot the combo
+    vgrid1.attach(vgrid2)
+    print vgrid1.data_frame
+
+def demo(rlabels, clabels, rows):
+    app = wx.PySimpleApp()
+    frame = TestFrame(None, sys.stdout, rlabels, clabels, rows)
+    frame.Show(True)
+    app.MainLoop()
 
 if __name__ == "__main__":
     #import doctest
     #doctest.testmod(verbose=True)
+    
     ugly_demo()
+    #ugly_demo2()
