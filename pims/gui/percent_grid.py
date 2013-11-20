@@ -3,158 +3,225 @@
 import wx
 import wx.grid as  gridlib
 
-class VibRoadmapsRenderer(gridlib.PyGridCellRenderer):
-    def __init__(self):
-        gridlib.PyGridCellRenderer.__init__(self)
+class ThirdsCellFormatRGY(object):
+    """Less 1/3 is white-on-red, greater than 2/3 is black-on-green; otherwise, black-on-yellow."""
+    def __init__(self, value):
+        self.value = value
+        self.bg_color, self.fg_color = self._get_colors()
+    
+    def _get_colors(self):
+        if self.value < 1.0/3.0:
+            bg, fg = 'RED', 'WHITE'
+        elif self.value > 2.0/3.0:
+            bg, fg = 'LIGHTGREEN', 'BLACK'
+        else:
+            bg, fg = 'PALEGOLDENROD', 'BLACK'
+        return bg, fg
 
-    def Draw(self, grid, attr, dc, rect, row, col, isSelected):
-        dc.SetBackgroundMode(wx.SOLID)
-        dc.SetBrush(wx.Brush("LIGHTGREEN", wx.SOLID)) # LIGHTGREEN, PALEGOLDENROD, or RED
-        dc.SetPen(wx.TRANSPARENT_PEN)
-        dc.DrawRectangleRect(rect)
-
-        dc.SetBackgroundMode(wx.TRANSPARENT)
-        dc.SetFont(attr.GetFont())
-
-        text = grid.GetCellValue(row, col)
-        colors = ["RED", "WHITE", "SKY BLUE"]
-        x = rect.x + 1
-        y = rect.y + 1
-
-        for ch in text:
-            dc.SetTextForeground(wx.BLACK)
-            dc.DrawText(ch, x, y)
-            w, h = dc.GetTextExtent(ch)
-            x = x + w
-            if x > rect.right - 5:
-                break
-
-    def GetBestSize(self, grid, attr, dc, row, col):
-        text = grid.GetCellValue(row, col)
-        dc.SetFont(attr.GetFont())
-        w, h = dc.GetTextExtent(text)
-        return wx.Size(w, h)
-
-    def Clone(self):
-        return VibRoadmapsRenderer()
-
-rendererDemoData = [
-    ('GridCellStringRenderer\n(the default)', 'this is a text value', gridlib.GridCellStringRenderer, ()),
-    ('GridCellNumberRenderer', '12345', gridlib.GridCellNumberRenderer, ()),
-    ('GridCellFloatRenderer', '1234.5678', gridlib.GridCellFloatRenderer, (6,2)),
-    ('GridCellBoolRenderer', '1', gridlib.GridCellBoolRenderer, ()),
-    ('VibRoadmapsRenderer', 'This is my renderer', VibRoadmapsRenderer, ()),
-    ]
-
-editorDemoData = [
-    ('GridCellTextEditor\n(the default)', 'Here is some more text', gridlib.GridCellTextEditor, ()),
-    ('GridCellNumberEditor\nwith min,max', '101', gridlib.GridCellNumberEditor, (5, 10005)),
-    ('GridCellNumberEditor\nwithout bounds', '101', gridlib.GridCellNumberEditor, ()),
-    ('GridCellFloatEditor', '1234.5678', gridlib.GridCellFloatEditor, ()),
-    ('GridCellBoolEditor', '1', gridlib.GridCellBoolEditor, ()),
-    ('GridCellChoiceEditor', 'one', gridlib.GridCellChoiceEditor, (['one', 'two', 'three', 'four',
-                                                         'kick', 'Microsoft', 'out the',
-                                                         'door'], False)),
-    ]
-
-comboDemoData = [
-    ('GridCellNumberRenderer\nGridCellNumberEditor', '20792', gridlib.GridCellNumberRenderer, gridlib.GridCellNumberEditor),
-    ('GridCellBoolRenderer\nGridCellBoolEditor', '1', gridlib.GridCellBoolRenderer, gridlib.GridCellBoolEditor),
-    ]
-
-class EditorsAndRenderersGrid(gridlib.Grid):
-    def __init__(self, parent, log):
+class VibRoadmapsGrid(gridlib.Grid):
+    """Simple grid for vibratory roadmaps PDFs accounting."""
+    
+    def __init__(self, parent, log, dayrow_labels, sensorcolumn_labels, rows):
         gridlib.Grid.__init__(self, parent, -1)
         self.log = log
+        self.moveTo = None
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+        self.CreateGrid(len(dayrow_labels), len(sensorcolumn_labels))
+        self.EnableEditing(False)
 
-        self.CreateGrid(25, 8)
-        renCol = 1
-        edCol = 4
+        # set row labels with days
+        for idx, day in enumerate(dayrow_labels):
+            self.SetRowLabelValue(idx, day)
 
+        # set column labels as sensors
+        for idx, sensor in enumerate(sensorcolumn_labels):
+            self.SetColLabelValue(idx, sensor)
 
-        self.SetCellValue(0, renCol, '''\
-Cell Renderers are used to draw
-the contents of the cell when they
-need to be refreshed.  Different
-types of Renderers can be plugged in
-to different cells in the grid, it can
-even be automatically determined based
-on the type of data in the cell.
-''')
+        # loop over rows
+        r = 0
+        for row in rows:
+            c = 0
+            for val in row:
+                self.SetCellValue(r, c, str(val))
+                self.SetCellAlignment(r, c, wx.ALIGN_CENTER, wx.ALIGN_CENTER)
+                self.SetCellTextColour(r, c, wx.BLUE)
+                c += 1
+            r += 1
 
-        self.SetCellValue(0, edCol, '''\
-Cell Editors are used when the
-value of the cell is edited by
-the user.  An editor class is
-wrapped around a an object
-derived from wxControl and it
-implements some methods required
-to integrate with the grid.
-''')
+        # loop over rows
+        for r in range(len(rows)):
+            for c in range(len(rows[r])):
+                self.SetCellValue(r, c, str(rows[r][c]))
+                self.SetCellAlignment(r, c, wx.ALIGN_CENTER, wx.ALIGN_CENTER)
+                self.SetCellTextColour(r, c, wx.BLUE)
 
-        self.SetCellValue(16, renCol, '''\
-Here are some combinations of Editors and
-Renderers used together.
-''')
+        ## attribute objects let you keep a set of formatting values
+        ## in one spot, and reuse them if needed
+        #_NORMAL_ATTR = gridlib.GridCellAttr()
+        #_NORMAL_ATTR.SetTextColour(wx.BLACK)
+        #_NORMAL_ATTR.SetBackgroundColour(wx.WHITE)
+        #_NORMAL_ATTR.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL))
+        #
+        ### you can set cell attributes for the whole row (or column)
+        #self.SetColAttr(1, _NORMAL_ATTR)
+        
+        # test all the events
+        self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
+        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_CLICK, self.OnCellRightClick)
+        self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
+        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_DCLICK, self.OnCellRightDClick)
 
-        row = 2
+        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_CLICK, self.OnLabelLeftClick)
+        self.Bind(gridlib.EVT_GRID_LABEL_RIGHT_CLICK, self.OnLabelRightClick)
+        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_DCLICK, self.OnLabelLeftDClick)
+        self.Bind(gridlib.EVT_GRID_LABEL_RIGHT_DCLICK, self.OnLabelRightDClick)
 
-        for label, value, renderClass, args in rendererDemoData:
-            renderer = renderClass(*args)
-            self.SetCellValue(row, renCol, label)
-            self.SetCellValue(row, renCol+1, value)
-            self.SetCellRenderer(row, renCol+1, renderer)
-            row = row + 2
+        self.Bind(gridlib.EVT_GRID_ROW_SIZE, self.OnRowSize)
+        self.Bind(gridlib.EVT_GRID_COL_SIZE, self.OnColSize)
 
+        self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
+        self.Bind(gridlib.EVT_GRID_CELL_CHANGE, self.OnCellChange)
+        self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
 
-        row = 2
+        self.Bind(gridlib.EVT_GRID_EDITOR_SHOWN, self.OnEditorShown)
+        self.Bind(gridlib.EVT_GRID_EDITOR_HIDDEN, self.OnEditorHidden)
+        self.Bind(gridlib.EVT_GRID_EDITOR_CREATED, self.OnEditorCreated)
 
-        for label, value, editorClass, args in editorDemoData:
-            editor = editorClass(*args)
-            self.SetCellValue(row, edCol, label)
-            self.SetCellValue(row, edCol+1, value)
-            self.SetCellEditor(row, edCol+1, editor)
-            row = row + 2
+    def OnCellLeftClick(self, evt):
+        self.log.write("OnCellLeftClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
 
+    def OnCellRightClick(self, evt):
+        self.log.write("OnCellRightClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
 
-        row = 18
+    def OnCellLeftDClick(self, evt):
+        self.log.write("OnCellLeftDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
 
-        for label, value, renClass, edClass in comboDemoData:
-            self.SetCellValue(row, renCol, label)
-            self.SetCellValue(row, renCol+1, value)
-            editor = edClass()
-            renderer = renClass()
-            self.SetCellEditor(row, renCol+1, editor)
-            self.SetCellRenderer(row, renCol+1, renderer)
-            row = row + 2
+    def OnCellRightDClick(self, evt):
+        self.log.write("OnCellRightDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
 
-        font = self.GetFont()
-        font.SetWeight(wx.BOLD)
-        attr = gridlib.GridCellAttr()
-        attr.SetFont(font)
-        attr.SetBackgroundColour(wx.LIGHT_GREY)
-        attr.SetReadOnly(True)
-        attr.SetAlignment(wx.RIGHT, -1)
-        self.SetColAttr(renCol, attr)
-        attr.IncRef()
-        self.SetColAttr(edCol, attr)
+    def OnLabelLeftClick(self, evt):
+        self.log.write("OnLabelLeftClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
 
-        # There is a bug in wxGTK for this method...
-        self.AutoSizeColumns(True)
-        self.AutoSizeRows(True)
+    def OnLabelRightClick(self, evt):
+        self.log.write("OnLabelRightClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
 
-        self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnLeftDClick)
+    def OnLabelLeftDClick(self, evt):
+        self.log.write("OnLabelLeftDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
 
-    # I do this because I don't like the default behaviour of not starting the
-    # cell editor on double clicks, but only a second click.
-    def OnLeftDClick(self, evt):
-        if self.CanEnableCellControl():
-            self.EnableCellEditControl()
+    def OnLabelRightDClick(self, evt):
+        self.log.write("OnLabelRightDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnRowSize(self, evt):
+        self.log.write("OnRowSize: row %d, %s\n" %
+                       (evt.GetRowOrCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnColSize(self, evt):
+        self.log.write("OnColSize: col %d, %s\n" %
+                       (evt.GetRowOrCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnRangeSelect(self, evt):
+        if evt.Selecting():
+            msg = 'Selected'
+        else:
+            msg = 'Deselected'
+        self.log.write("OnRangeSelect: %s  top-left %s, bottom-right %s\n" %
+                           (msg, evt.GetTopLeftCoords(), evt.GetBottomRightCoords()))
+        evt.Skip()
+
+    def OnCellChange(self, evt):
+        self.log.write("OnCellChange: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+
+        # Show how to stay in a cell that has bad data.  We can't just
+        # call SetGridCursor here since we are nested inside one so it
+        # won't have any effect.  Instead, set coordinates to move to in
+        # idle time.
+        value = self.GetCellValue(evt.GetRow(), evt.GetCol())
+
+        if value == 'no good':
+            self.moveTo = evt.GetRow(), evt.GetCol()
+
+    def OnIdle(self, evt):
+        if self.moveTo != None:
+            self.SetGridCursor(self.moveTo[0], self.moveTo[1])
+            self.moveTo = None
+
+        evt.Skip()
+
+    def OnSelectCell(self, evt):
+        if evt.Selecting():
+            msg = 'Selected'
+        else:
+            msg = 'Deselected'
+        self.log.write("OnSelectCell: %s (%d,%d) %s\n" %
+                       (msg, evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+
+        # Another way to stay in a cell that has a bad value...
+        row = self.GetGridCursorRow()
+        col = self.GetGridCursorCol()
+
+        if self.IsCellEditControlEnabled():
+            self.HideCellEditControl()
+            self.DisableCellEditControl()
+
+        value = self.GetCellValue(row, col)
+
+        if value == 'no good 2':
+            return  # cancels the cell selection
+
+        evt.Skip()
+
+    def OnEditorShown(self, evt):
+        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
+           wx.MessageBox("Are you sure you wish to edit this cell?",
+                        "Checking", wx.YES_NO) == wx.NO:
+            evt.Veto()
+            return
+
+        self.log.write("OnEditorShown: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnEditorHidden(self, evt):
+        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
+           wx.MessageBox("Are you sure you wish to  finish editing this cell?",
+                        "Checking", wx.YES_NO) == wx.NO:
+            evt.Veto()
+            return
+
+        self.log.write("OnEditorHidden: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnEditorCreated(self, evt):
+        self.log.write("OnEditorCreated: (%d, %d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetControl()))
 
 class TestFrame(wx.Frame):
     def __init__(self, parent, log):
-        wx.Frame.__init__(self, parent, -1, "Editors and Renderers Demo", size=(1280, 800))
-        grid = EditorsAndRenderersGrid(self, log)
+        wx.Frame.__init__(self, parent, -1, "VibratoryRoadmapsGrid", size=(1200, 1000))
+        dayrow_labels = ['2013-10-31', '2013-11-01']
+        sensorcolumn_labels = ['hirap','121f03','121f05onex']
+        rows = [ [0.0, 0.5, 1.0], [0.9, 0.4, 0.2] ]
+        self.grid = VibRoadmapsGrid(self, log, dayrow_labels, sensorcolumn_labels, rows)
 
 if __name__ == '__main__':
     import sys
