@@ -29,13 +29,17 @@ class VibRoadmapsGrid(gridlib.Grid):
         self.CreateGrid(len(dayrow_labels), len(sensorcolumn_labels))
         self.EnableEditing(False)
 
+        self.SetDefaultRowSize(20)
+
         # set row labels with days
         for idx, day in enumerate(dayrow_labels):
             self.SetRowLabelValue(idx, day)
+        self.SetRowLabelSize(99)            
 
         # set column labels as sensors
         for idx, sensor in enumerate(sensorcolumn_labels):
             self.SetColLabelValue(idx, sensor)
+        self.SetColLabelSize(22)            
 
         # loop over rows
         r = 0
@@ -54,6 +58,8 @@ class VibRoadmapsGrid(gridlib.Grid):
                 self.SetCellValue(r, c, str(rows[r][c]))
                 self.SetCellAlignment(r, c, wx.ALIGN_CENTER, wx.ALIGN_CENTER)
                 self.SetCellTextColour(r, c, wx.BLUE)
+
+        #print self.GetRowSize(0), self.GetColSize(0)
 
         ## attribute objects let you keep a set of formatting values
         ## in one spot, and reuse them if needed
@@ -108,8 +114,23 @@ class VibRoadmapsGrid(gridlib.Grid):
         evt.Skip()
 
     def OnLabelLeftClick(self, evt):
+        if evt.GetRow() == -1:
+            if evt.GetCol() == -1:
+                wise = 'BOTH'
+                label = 'both'
+            else:
+                wise = 'COLUMN'
+                label = self.GetColLabelValue(evt.GetCol())
+        elif evt.GetCol() == -1:
+            wise = 'ROW'
+            label = self.GetRowLabelValue(evt.GetRow())
+        else:
+            wise = 'NEITHER'
+            label = 'neither'
+            
         self.log.write("OnLabelLeftClick: (%d,%d) %s\n" %
                        (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        self.log.write("%s-WISE: %s\n" % (wise, label))
         evt.Skip()
 
     def OnLabelRightClick(self, evt):
@@ -217,7 +238,7 @@ class VibRoadmapsGrid(gridlib.Grid):
 
 class TestFrame(wx.Frame):
     def __init__(self, parent, log):
-        wx.Frame.__init__(self, parent, -1, "VibratoryRoadmapsGrid", size=(1200, 1000))
+        wx.Frame.__init__(self, parent, -1, "VibratoryRoadmapsGrid", size=(1280, 1000))
         dayrow_labels = ['2013-10-31', '2013-11-01']
         sensorcolumn_labels = ['hirap','121f03','121f05onex']
         rows = [ [0.0, 0.5, 1.0], [0.9, 0.4, 0.2] ]

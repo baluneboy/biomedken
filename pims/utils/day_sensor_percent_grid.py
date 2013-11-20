@@ -76,16 +76,16 @@ class VibratoryRoadmapsGrid(DaySensorPercentGrid):
         self.data_frame.attach(other.data_frame)
 
 class TestFrame(wx.Frame):
-    def __init__(self, parent, log, dayrow_labels, sensorcolumn_labels, rows):
-        wx.Frame.__init__(self, parent, -1, "VibratoryRoadmapsGrid", size=(1200, 1000))
+    def __init__(self, parent, log, pattern, dayrow_labels, sensorcolumn_labels, rows):
+        wx.Frame.__init__(self, parent, -1, pattern, size=(1200, 1000))
         #dayrow_labels = ['2013-10-31', '2013-11-01']
         #sensorcolumn_labels = ['hirap','121f03','121f05onex']
         #rows = [ [0.0, 0.5, 1.0], [0.9, 0.4, 0.2] ]
         self.grid = VibRoadmapsGrid(self, log, dayrow_labels, sensorcolumn_labels, rows)
 
-def ugly_demo():
-    d1 = parser.parse('2013-09-29').date()
-    d2 = parser.parse('2013-10-01').date()
+def ugly_demo2():
+    d1 = parser.parse('2013-10-23').date()
+    d2 = parser.parse('2013-11-18').date()
     date_range = DateRange(start=d1, stop=d2)
     
     vgrid1 = VibratoryRoadmapsGrid(date_range, pattern='.*_121f0\d{1}_pcss_roadmaps.*\.pdf$')
@@ -110,32 +110,30 @@ def ugly_demo():
     #print sensor_columns
     #for r in rows:
     #    print r
-    demo(day_rows, sensor_columns, rows)
+    show_grid(day_rows, sensor_columns, rows)
 
-def ugly_demo2():
-    d1 = parser.parse('2013-09-29').date()
-    d2 = parser.parse('2013-10-01').date()
+def ugly_demo(pattern='.*_pcss_roadmaps.*\.pdf$'):
+    d1 = parser.parse('2013-10-18').date()
+    d2 = parser.parse('2013-11-18').date()
     date_range = DateRange(start=d1, stop=d2)
     
-    vgrid1 = VibratoryRoadmapsGrid(date_range, pattern='.*_121f0\d{1}_pcss_roadmaps.*\.pdf$')
+    vgrid1 = VibratoryRoadmapsGrid(date_range, pattern=pattern)
     vgrid1.fill_data_frame()
+    pt1 = vgrid1.get_pivot_table()
     
-    vgrid2 = VibratoryRoadmapsGrid(date_range, pattern='.*_121f0\d{1}one_pcss_roadmaps.*\.pdf$')
-    vgrid2.fill_data_frame()
-    
-    # combine the two and pivot the combo
-    vgrid1.attach(vgrid2)
-    print vgrid1.data_frame
+    day_rows = [ str(i[0][1]) for i in pt1.rnames]
+    sensor_columns = [ str(i[0][1]) for i in pt1.cnames]
+    rows = [ i for i in pt1 ]
+    show_grid(pattern, day_rows, sensor_columns, rows)
 
-def demo(rlabels, clabels, rows):
+def show_grid(pattern, rlabels, clabels, rows):
     app = wx.PySimpleApp()
-    frame = TestFrame(None, sys.stdout, rlabels, clabels, rows)
+    frame = TestFrame(None, sys.stdout, pattern, rlabels, clabels, rows)
     frame.Show(True)
     app.MainLoop()
 
 if __name__ == "__main__":
     #import doctest
     #doctest.testmod(verbose=True)
-    
-    ugly_demo()
-    #ugly_demo2()
+
+    ugly_demo(pattern='.*_spg._roadmaps.*\.pdf$')
