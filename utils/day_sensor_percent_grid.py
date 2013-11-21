@@ -7,7 +7,7 @@ import os
 import re
 import wx
 import sys
-from pims.gui.percent_grid import VibRoadmapsGrid
+from pims.gui.percent_grid import TallyGrid
 import datetime
 from dateutil import parser
 from datetime_ranger import DateRange
@@ -121,10 +121,8 @@ class PadHeaderFilesGrid(VibratoryRoadmapsGrid):
 class TestFrame(wx.Frame):
     def __init__(self, parent, log, pattern, dayrow_labels, sensorcolumn_labels, rows):
         wx.Frame.__init__(self, parent, -1, pattern, size=(1200, 1000))
-        #dayrow_labels = ['2013-10-31', '2013-11-01']
-        #sensorcolumn_labels = ['hirap','121f03','121f05onex']
-        #rows = [ [0.0, 0.5, 1.0], [0.9, 0.4, 0.2] ]
-        self.grid = VibRoadmapsGrid(self, log, dayrow_labels, sensorcolumn_labels, rows)
+        self.Maximize(True)
+        self.grid = TallyGrid(self, log, dayrow_labels, sensorcolumn_labels, rows)
 
 def ugly_demo2():
     d1 = parser.parse('2013-10-23').date()
@@ -170,7 +168,9 @@ def pad_hours_gridify(date_range, pattern='.*\.header$'):
     
     day_rows = [ str(i[0][1]) for i in pt.rnames]
     sensor_columns = [ str(i[0][1]) for i in pt.cnames]
-    rows = [ i for i in pt ]
+    temp_rows = [ i for i in pt ]
+    # replace None's with zero's in the rows
+    rows = [ [0 if not x else x for x in r] for r in temp_rows ]
     show_grid(pattern, day_rows, sensor_columns, rows)
 
 def show_grid(pattern, rlabels, clabels, rows):
@@ -183,14 +183,21 @@ if __name__ == "__main__":
     #import doctest
     #doctest.testmod(verbose=True)
 
+    d1 = parser.parse('2013-09-29').date()
+    d2 = parser.parse('2013-10-01').date()
+    date_range = DateRange(start=d1, stop=d2)
+    spgdot_roadmaps_gridify(date_range, pattern='.*_spg._roadmaps.*\.pdf$')
+    
+    raise SystemExit
+
     #d1 = parser.parse('2013-10-22').date()
     ##d2 = parser.parse('2013-11-19').date()
     #d2 = datetime.date.today()-datetime.timedelta(days=2)
     #date_range = DateRange(start=d1, stop=d2)
     #spgdot_roadmaps_gridify(date_range, pattern='.*_spg._roadmaps.*\.pdf$')
     
-    d1 = parser.parse('2013-10-22').date()
-    #d2 = parser.parse('2013-11-19').date()
-    d2 = datetime.date.today()-datetime.timedelta(days=2)
+    d1 = parser.parse('2013-01-01').date()
+    d2 = parser.parse('2013-01-03').date()
+    #d2 = datetime.date.today()-datetime.timedelta(days=2)
     date_range = DateRange(start=d1, stop=d2)    
-    pad_hours_gridify(date_range, pattern='.*121f0[35]006\.header$')
+    pad_hours_gridify(date_range, pattern='.*121f0[358]006\.header$')
