@@ -4,9 +4,9 @@ import datetime
 import wx
 import wx.grid as  gridlib
 
-# TODO move status bar init to TestFrame (not in grid class)
-# TODO add buttons to start and stop "selected/orange cells" thread
-# TODO maximize main frame window
+# TODO add buttons to start and stop "selected/orange cells" for 2 types of threads:
+#      monitor thread - disable grid interaction and just update cells every so often
+#      remedy thread - how in the world do we get remedy specifics?
 
 # Status bar constants
 SB_LEFT = 0
@@ -28,47 +28,36 @@ class ThirdsCellFormatRGY(object):
             bg, fg = 'PALEGOLDENROD', 'BLACK'
         return bg, fg
 
-class VibRoadmapsGrid(gridlib.Grid):
-    """Simple grid for vibratory roadmaps PDFs accounting."""
+class TallyGrid(gridlib.Grid):
+    """Simple grid for tallying."""
     
-    def __init__(self, parent, log, dayrow_labels, sensorcolumn_labels, rows):
+    def __init__(self, parent, log, row_labels, column_labels, rows):
         gridlib.Grid.__init__(self, parent, -1)
         self.log = log
         self.moveTo = None
         self.Bind(wx.EVT_IDLE, self.OnIdle)
-        self.CreateGrid(len(dayrow_labels), len(sensorcolumn_labels))
+        self.CreateGrid(len(row_labels), len(column_labels))
         self.EnableEditing(False)
 
         self.SetDefaultRowSize(20)
 
-        # set row labels with days
-        for idx, day in enumerate(dayrow_labels):
+        # set row labels
+        for idx, day in enumerate(row_labels):
             self.SetRowLabelValue(idx, day)
         self.SetRowLabelSize(99)            
 
-        # set column labels as sensors
-        for idx, sensor in enumerate(sensorcolumn_labels):
+        # set column labels
+        for idx, sensor in enumerate(column_labels):
             self.SetColLabelValue(idx, sensor)
         self.SetColLabelSize(22)            
 
-        # loop over rows
-        r = 0
-        for row in rows:
-            c = 0
-            for val in row:
-                self.SetCellValue(r, c, str(val))
-                self.SetCellAlignment(r, c, wx.ALIGN_CENTER, wx.ALIGN_CENTER)
-                self.SetCellTextColour(r, c, wx.BLUE)
-                c += 1
-            r += 1
-
-        # loop over rows
+        # loop over rows to set cell values
         for r in range(len(rows)):
             for c in range(len(rows[r])):
                 self.SetCellValue(r, c, str(rows[r][c]))
                 self.SetCellAlignment(r, c, wx.ALIGN_CENTER, wx.ALIGN_CENTER)
                 self.SetCellTextColour(r, c, wx.BLUE)
-                self.SetCellRenderer(r, c, gridlib.GridCellFloatRenderer(width=6, precision=2))
+                self.SetCellRenderer(r, c, gridlib.GridCellFloatRenderer(width=6, precision=1))
 
         #print self.GetRowSize(0), self.GetColSize(0)
 
@@ -112,13 +101,13 @@ class VibRoadmapsGrid(gridlib.Grid):
         # Set up a timer to update the date/time (every few seconds)
         self.timer = wx.PyTimer(self.notify)
         self.timer.Start(SB_MSEC)
-        self.notify() # - call it once right away
+        self.notify() # call it once right away
 
     def get_time_str(self):
         return datetime.datetime.now().strftime('%d-%b-%Y,%j/%H:%M:%S ')
 
     def notify(self):
-        """Timer event."""
+        """Timer event updated every so often."""
         t = self.get_time_str() + ' (update every ' + str(int(SB_MSEC/1000.0)) + 's)'
         self.statusbar.SetStatusText(t, SB_RIGHT)
 
@@ -268,11 +257,12 @@ class VibRoadmapsGrid(gridlib.Grid):
 
 class TestFrame(wx.Frame):
     def __init__(self, parent, log):
-        wx.Frame.__init__(self, parent, -1, "VibratoryRoadmapsGrid", size=(1280, 1000))
-        dayrow_labels = ['2013-10-31', '2013-11-01']
-        sensorcolumn_labels = ['hirap','121f03','121f05onex']
+        wx.Frame.__init__(self, parent, -1, "SimpleTallyGrid", size=(1280, 1000))
+        row_labels = ['2013-10-31', '2013-11-01']
+        column_labels = ['hirap','121f03','121f05onex']
         rows = [ [0.0, 0.5, 1.0], [0.9, 0.4, 0.2] ]
-        self.grid = VibRoadmapsGrid(self, log, dayrow_labels, sensorcolumn_labels, rows)
+        self.Maximize(True)
+        self.grid = TallyGrid(self, log, row_labels, column_labels, rows)
 
 if __name__ == '__main__':
     import sys
