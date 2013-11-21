@@ -6,6 +6,7 @@ import wx.grid as  gridlib
 
 # TODO move status bar init to TestFrame (not in grid class)
 # TODO add buttons to start and stop "selected/orange cells" thread
+# TODO maximize main frame window
 
 # Status bar constants
 SB_LEFT = 0
@@ -67,6 +68,7 @@ class VibRoadmapsGrid(gridlib.Grid):
                 self.SetCellValue(r, c, str(rows[r][c]))
                 self.SetCellAlignment(r, c, wx.ALIGN_CENTER, wx.ALIGN_CENTER)
                 self.SetCellTextColour(r, c, wx.BLUE)
+                self.SetCellRenderer(r, c, gridlib.GridCellFloatRenderer(width=6, precision=2))
 
         #print self.GetRowSize(0), self.GetColSize(0)
 

@@ -13,6 +13,8 @@ from dateutil import parser
 from datetime_ranger import DateRange
 from pims.files.utils import filter_filenames, parse_roadmap_filename
 from pyvttbl import DataFrame
+from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
+from pims.utils.pimsdateutil import timestr_to_datetime
 
 class DaySensorPercentGrid(object):
     """
@@ -40,26 +42,36 @@ class VibratoryRoadmapsGrid(DaySensorPercentGrid):
     A grid with days as rows, vibratory sensors_axis as columns, & percents (in thirds) as cell values.
     """    
     
-    def __init__(self, date_range, pattern='.*_121f0\d{1}.*_.*roadmaps.*\.pdf$', batchpath='/misc/yoda/www/plots/batch'):
+    def __init__(self, date_range, pattern='.*_121f0\d{1}.*_.*roadmaps.*\.pdf$', basepath='/misc/yoda/www/plots/batch'):
         super(VibratoryRoadmapsGrid, self).__init__(date_range)
         self.pattern = pattern
-        self.batchpath = batchpath
+        self.basepath = basepath
 
-    def pivot_table_insert_day_roadmaps(self, d):
+    # FIXME this can be made generic
+    def pivot_table_insert_day_entries(self, d):
         """Walk ymd path and insert regex matches of filename pattern into data frame."""
-        dirpath = os.path.join( self.batchpath, d.strftime('year%Y/month%m/day%d') )
+        dirpath = os.path.join( self.basepath, d.strftime('year%Y/month%m/day%d') )
         fullfile_pattern = os.path.join(dirpath, self.pattern)
         for f in filter_filenames(dirpath, re.compile(fullfile_pattern).match):
-            dtm, sensor, abbrev, bname = parse_roadmap_filename(f)
-            dat = dtm.date()
-            hr = dtm.hour
-            self.data_frame.insert({'date':dat, 'hour':hr, 'sensor':sensor, 'abbrev':abbrev, 'bname':bname, 'fname':f})
-        
+            dtm, sensor, abbrev, bname = self.parse_basename(f)
+            self.data_frame.insert({'date':dtm.date(), 'hour':dtm.hour, 'sensor':sensor, 'abbrev':abbrev, 'bname':bname, 'fname':f})
+    
+    def parse_basename(self, f):
+        """Parse file basename."""
+        m = re.match(_BATCHROADMAPS_PATTERN, f)
+        if m:
+            dtm = timestr_to_datetime(m.group('dtm'))
+            sensor = m.group('sensor')
+            abbrev = m.group('abbrev')
+            return dtm, sensor, abbrev, os.path.basename(f)
+        else:
+            return 'UNKNOWN', 'UNKNOWN', 'UNKNOWN', "%s" % os.path.basename(f)
+    
     def fill_data_frame(self):
         """Populate data frame day-by-day."""
         d = self.date_range.start
         while d <= self.date_range.stop:
-            self.pivot_table_insert_day_roadmaps(d)
+            self.pivot_table_insert_day_entries(d)
             d += datetime.timedelta(days=1)
     
     def get_pivot_table(self, val='abbrev', rows=['date'], cols=['sensor'], aggregate='count'):
@@ -74,6 +86,37 @@ class VibratoryRoadmapsGrid(DaySensorPercentGrid):
         
         # perform attachment
         self.data_frame.attach(other.data_frame)
+
+class PadHeaderFilesGrid(VibratoryRoadmapsGrid):
+    """
+    A grid with days as rows, sensors as columns, & number of PAD header files as cell values.
+    """    
+    
+    def __init__(self, date_range, pattern='.*\.header$', basepath='/misc/yoda/pub/pad'):
+        super(PadHeaderFilesGrid, self).__init__(date_range)
+        self.pattern = pattern
+        self.basepath = basepath
+
+    def parse_basename(self, f):
+        """Parse file basename."""
+        m = re.match(_PADHEADERFILES_PATTERN, f)
+        if m:
+            start = timestr_to_datetime(m.group('start'))
+            stop = timestr_to_datetime(m.group('stop'))
+            sensor = m.group('sensor')
+            return start, stop, sensor, os.path.basename(f)
+        else:
+            return 'UNKNOWN', 'UNKNOWN', 'UNKNOWN', "%s" % os.path.basename(f)
+
+    # FIXME this can be made generic
+    def pivot_table_insert_day_entries(self, d):
+        """Walk ymd path and insert regex matches of filename pattern into data frame."""
+        dirpath = os.path.join( self.basepath, d.strftime('year%Y/month%m/day%d') )
+        fullfile_pattern = os.path.join(dirpath, self.pattern)
+        for f in filter_filenames(dirpath, re.compile(fullfile_pattern).match):
+            start, stop, sensor, bname = self.parse_basename(f)
+            span_hours = (stop - start).seconds / 3600.0
+            self.data_frame.insert({'date':start.date(), 'span_hours':span_hours, 'sensor':sensor, 'bname':bname, 'fname':f})
 
 class TestFrame(wx.Frame):
     def __init__(self, parent, log, pattern, dayrow_labels, sensorcolumn_labels, rows):
@@ -108,15 +151,26 @@ def ugly_demo2():
     rows = [ i for i in pt ]
     show_grid(day_rows, sensor_columns, rows)
 
-def ugly_demo(date_range, pattern='.*_pcss_roadmaps.*\.pdf$'):
+def spgdot_roadmaps_gridify(date_range, pattern='.*_pcss_roadmaps.*\.pdf$'):
     
-    vgrid1 = VibratoryRoadmapsGrid(date_range, pattern=pattern)
-    vgrid1.fill_data_frame()
-    pt1 = vgrid1.get_pivot_table()
+    vgrid = VibratoryRoadmapsGrid(date_range, pattern=pattern)
+    vgrid.fill_data_frame()
+    pt = vgrid.get_pivot_table()
     
-    day_rows = [ str(i[0][1]) for i in pt1.rnames]
-    sensor_columns = [ str(i[0][1]) for i in pt1.cnames]
-    rows = [ i for i in pt1 ]
+    day_rows = [ str(i[0][1]) for i in pt.rnames]
+    sensor_columns = [ str(i[0][1]) for i in pt.cnames]
+    rows = [ i for i in pt ]
+    show_grid(pattern, day_rows, sensor_columns, rows)
+
+def pad_hours_gridify(date_range, pattern='.*\.header$'):
+    
+    vgrid = PadHeaderFilesGrid(date_range, pattern=pattern, basepath='/misc/yoda/pub/pad')
+    vgrid.fill_data_frame()
+    pt = vgrid.get_pivot_table(val='span_hours', rows=['date'], cols=['sensor'], aggregate='sum')
+    
+    day_rows = [ str(i[0][1]) for i in pt.rnames]
+    sensor_columns = [ str(i[0][1]) for i in pt.cnames]
+    rows = [ i for i in pt ]
     show_grid(pattern, day_rows, sensor_columns, rows)
 
 def show_grid(pattern, rlabels, clabels, rows):
@@ -129,8 +183,14 @@ if __name__ == "__main__":
     #import doctest
     #doctest.testmod(verbose=True)
 
+    #d1 = parser.parse('2013-10-22').date()
+    ##d2 = parser.parse('2013-11-19').date()
+    #d2 = datetime.date.today()-datetime.timedelta(days=2)
+    #date_range = DateRange(start=d1, stop=d2)
+    #spgdot_roadmaps_gridify(date_range, pattern='.*_spg._roadmaps.*\.pdf$')
+    
     d1 = parser.parse('2013-10-22').date()
     #d2 = parser.parse('2013-11-19').date()
     d2 = datetime.date.today()-datetime.timedelta(days=2)
-    date_range = DateRange(start=d1, stop=d2)
-    ugly_demo(date_range, pattern='.*_spg._roadmaps.*\.pdf$')
+    date_range = DateRange(start=d1, stop=d2)    
+    pad_hours_gridify(date_range, pattern='.*121f0[35]006\.header$')
