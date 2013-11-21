@@ -1,7 +1,16 @@
 #!/usr/bin/env python
 
+import datetime
 import wx
 import wx.grid as  gridlib
+
+# TODO move status bar init to TestFrame (not in grid class)
+# TODO add buttons to start and stop "selected/orange cells" thread
+
+# Status bar constants
+SB_LEFT = 0
+SB_RIGHT = 1
+SB_MSEC = 20000
 
 class ThirdsCellFormatRGY(object):
     """Less 1/3 is white-on-red, greater than 2/3 is black-on-green; otherwise, black-on-yellow."""
@@ -93,6 +102,24 @@ class VibRoadmapsGrid(gridlib.Grid):
         self.Bind(gridlib.EVT_GRID_EDITOR_HIDDEN, self.OnEditorHidden)
         self.Bind(gridlib.EVT_GRID_EDITOR_CREATED, self.OnEditorCreated)
 
+        # Status bar
+        self.statusbar = parent.CreateStatusBar(2, 0)        
+        self.statusbar.SetStatusWidths([-1, 320])
+        self.statusbar.SetStatusText("Ready", SB_LEFT)
+        
+        # Set up a timer to update the date/time (every few seconds)
+        self.timer = wx.PyTimer(self.notify)
+        self.timer.Start(SB_MSEC)
+        self.notify() # - call it once right away
+
+    def get_time_str(self):
+        return datetime.datetime.now().strftime('%d-%b-%Y,%j/%H:%M:%S ')
+
+    def notify(self):
+        """Timer event."""
+        t = self.get_time_str() + ' (update every ' + str(int(SB_MSEC/1000.0)) + 's)'
+        self.statusbar.SetStatusText(t, SB_RIGHT)
+
     def OnCellLeftClick(self, evt):
         self.log.write("OnCellLeftClick: (%d,%d) %s\n" %
                        (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
@@ -130,7 +157,9 @@ class VibRoadmapsGrid(gridlib.Grid):
             
         self.log.write("OnLabelLeftClick: (%d,%d) %s\n" %
                        (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        self.log.write("%s-WISE: %s\n" % (wise, label))
+        msg = "%s-WISE: %s" % (wise, label)
+        self.log.write(msg + '\n')
+        self.statusbar.SetStatusText(msg, SB_LEFT)
         evt.Skip()
 
     def OnLabelRightClick(self, evt):
@@ -184,7 +213,6 @@ class VibRoadmapsGrid(gridlib.Grid):
         if self.moveTo != None:
             self.SetGridCursor(self.moveTo[0], self.moveTo[1])
             self.moveTo = None
-
         evt.Skip()
 
     def OnSelectCell(self, evt):

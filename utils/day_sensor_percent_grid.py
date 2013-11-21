@@ -106,16 +106,9 @@ def ugly_demo2():
     day_rows = [ str(i[0][1]) for i in pt.rnames]
     sensor_columns = [ str(i[0][1]) for i in pt.cnames]
     rows = [ i for i in pt ]
-    #print day_rows
-    #print sensor_columns
-    #for r in rows:
-    #    print r
     show_grid(day_rows, sensor_columns, rows)
 
-def ugly_demo(pattern='.*_pcss_roadmaps.*\.pdf$'):
-    d1 = parser.parse('2013-10-18').date()
-    d2 = parser.parse('2013-11-18').date()
-    date_range = DateRange(start=d1, stop=d2)
+def ugly_demo(date_range, pattern='.*_pcss_roadmaps.*\.pdf$'):
     
     vgrid1 = VibratoryRoadmapsGrid(date_range, pattern=pattern)
     vgrid1.fill_data_frame()
@@ -136,4 +129,8 @@ if __name__ == "__main__":
     #import doctest
     #doctest.testmod(verbose=True)
 
-    ugly_demo(pattern='.*_spg._roadmaps.*\.pdf$')
+    d1 = parser.parse('2013-10-22').date()
+    #d2 = parser.parse('2013-11-19').date()
+    d2 = datetime.date.today()-datetime.timedelta(days=2)
+    date_range = DateRange(start=d1, stop=d2)
+    ugly_demo(date_range, pattern='.*_spg._roadmaps.*\.pdf$')
