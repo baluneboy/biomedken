@@ -159,13 +159,13 @@ if __name__ == "__main__":
     ##
     ##raise SystemExit
 
-    #d1 = parser.parse('2013-10-18').date()
-    ##d2 = parser.parse('2013-11-19').date()
-    #d2 = datetime.date.today()-datetime.timedelta(days=2)
-    #date_range = DateRange(start=d1, stop=d2)
-    #spgdot_roadmaps_gridify(date_range, pattern='.*_spg._roadmaps.*\.pdf$')
-    #
-    #raise SystemExit
+    d1 = parser.parse('2013-10-18').date()
+    #d2 = parser.parse('2013-11-19').date()
+    d2 = datetime.date.today()-datetime.timedelta(days=2)
+    date_range = DateRange(start=d1, stop=d2)
+    spgdot_roadmaps_gridify(date_range, pattern='.*_spg._roadmaps.*\.pdf$')
+    
+    raise SystemExit
     
     d1 = parser.parse('2013-10-18').date()
     d2 = parser.parse('2013-10-19').date()
