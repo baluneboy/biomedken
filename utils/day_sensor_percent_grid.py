@@ -22,7 +22,8 @@ class RoadmapGrid(object):
     """A grid with days as rows, sensors as columns, & file count as cell values."""    
 
     def __init__(self, date_range,
-                 pattern='.*roadmap.*\.pdf$',
+                 #pattern='.*roadmap.*\.pdf$',
+                 pattern=_BATCHROADMAPS_PATTERN,
                  basepath='/misc/yoda/www/plots/batch'):
         self.date_range = date_range
         self.pattern = pattern
@@ -53,13 +54,12 @@ class RoadmapGrid(object):
         dtm, sensor, abbrev, bname = tup
         return {'date':dtm.date(), 'hour':dtm.hour, 'sensor':sensor, 'abbrev':abbrev, 'bname':bname, 'fname':f}
     
+    
     # FIXME this can be made generic
     def parse_basename(self, f):
         """Parse file basename."""
-        # FIXME for generic, move PATTERN as default input to class init
-        m = re.match(_BATCHROADMAPS_PATTERN, f)
-        # FIXME for generic, group fields can be list input to class init
-        # FIXME for generic, output can be a tuple
+        m = re.match(self.pattern, f)
+        # FIXME for generic, tuple's group fields can be list input to class init
         if m:
             dtm = timestr_to_datetime(m.group('dtm'))
             sensor = m.group('sensor')
@@ -67,6 +67,7 @@ class RoadmapGrid(object):
         else:
             dtm, sensor, abbrev = None, None, None
         return (dtm, sensor, abbrev, os.path.basename(f))
+    
     
     def fill_data_frame(self):
         """Populate data frame day-by-day."""
@@ -76,15 +77,14 @@ class RoadmapGrid(object):
             d += datetime.timedelta(days=1)
     
     def get_pivot_table(self, val='abbrev', rows=['date'], cols=['sensor'], aggregate='count'):
+        """This is where we pivot."""
         return self.data_frame.pivot(val, rows, cols, aggregate)
     
     def attach(self, other):
-        """attaches other DataFrame to this one (both must have the same columns)"""
-
+        """Attach other DataFrame to this one (both must have the same columns)"""
         # do minimal checking
         if not isinstance(other, RoadmapGrid):
             raise TypeError('second argument must be a RoadmapGrid')
-        
         # perform attachment
         self.data_frame.attach(other.data_frame)
 
@@ -93,7 +93,7 @@ class CheapPadHoursGrid(RoadmapGrid):
     A grid with days as rows, sensors as columns, & number of PAD header files as cell values.
     """    
 
-    # FIXME this can be made generic (see base class)
+    # FIXME this can be made generic (see its base class)
     def parse_basename(self, f):
         """Parse file basename."""
         m = re.match(_PADHEADERFILES_PATTERN, f)
@@ -105,7 +105,7 @@ class CheapPadHoursGrid(RoadmapGrid):
         else:
             return 'UNKNOWN', 'UNKNOWN', 'UNKNOWN', "%s" % os.path.basename(f)
 
-    # FIXME this can be made generic (see base class)
+    # FIXME this can be made generic (see its base class)
     def pivot_table_insert_day_entries(self, d):
         """Walk ymd path and insert regex matches of filename pattern into data frame."""
         dirpath = os.path.join( self.basepath, d.strftime('year%Y/month%m/day%d') )
@@ -120,7 +120,7 @@ class CheapPadHoursGrid(RoadmapGrid):
             # do not skip any days/rows, insert zero span
             self.data_frame.insert({'date':d, 'span_hours':0.0, 'sensor':None, 'bname':None, 'fname':None})
 
-def spgdot_roadmaps_gridify(date_range, pattern='.*_121f0\d{1}.*_.*roadmaps.*\.pdf$', basepath='/misc/yoda/www/plots/batch'):
+def spgdot_roadmaps_gridify(date_range, pattern=_BATCHROADMAPS_PATTERN, basepath='/misc/yoda/www/plots/batch'):
     
     vgrid = RoadmapGrid(date_range, pattern=pattern, basepath=basepath)
     vgrid.fill_data_frame()
@@ -132,7 +132,7 @@ def spgdot_roadmaps_gridify(date_range, pattern='.*_121f0\d{1}.*_.*roadmaps.*\.p
     
     show_grid(vgrid.title, day_rows, sensor_columns, rows, ['None'])
 
-def pad_hours_gridify(date_range, pattern='.*\.header$', basepath='/misc/yoda/pub/pad'):
+def pad_hours_gridify(date_range, pattern=_PADHEADERFILES_PATTERN, basepath='/misc/yoda/pub/pad'):
     
     vgrid = CheapPadHoursGrid(date_range, pattern=pattern, basepath=basepath)
     vgrid.fill_data_frame()
@@ -161,20 +161,28 @@ if __name__ == "__main__":
     d1 = parser.parse('2013-09-28').date()
     d2 = parser.parse('2013-10-02').date()
     date_range = DateRange(start=d1, stop=d2)
-    spgdot_roadmaps_gridify(date_range, pattern='.*_spg._roadmaps.*\.pdf$')
-    
+    pth_field = "(?P<ymdpath>.*)"
+    date_field = "(?P<dtm>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})"
+    sensor_field = "_(?P<sensor>.*)"
+    abbrev_field = "_(?P<abbrev>.*)"
+    suffix_field = "_roadmaps(?P<rate>.*)\.pdf\Z"
+    pattern = pth_field + date_field + sensor_field + abbrev_field + suffix_field
+    spgdot_roadmaps_gridify(date_range, pattern)
     raise SystemExit
+
+#------------------------------------
 
     #d1 = parser.parse('2013-10-18').date()
     ##d2 = parser.parse('2013-11-19').date()
     #d2 = datetime.date.today()-datetime.timedelta(days=2)
     #date_range = DateRange(start=d1, stop=d2)
     #spgdot_roadmaps_gridify(date_range, pattern='.*_spg._roadmaps.*\.pdf$')
-    #
     #raise SystemExit
+
+#------------------------------------
     
-    #d1 = parser.parse('2013-01-01').date()
-    #d2 = parser.parse('2013-01-05').date()
-    ##d2 = datetime.date.today()-datetime.timedelta(days=2)
-    #date_range = DateRange(start=d1, stop=d2)    
-    #pad_hours_gridify(date_range, pattern='.*121f0[358]006\.header$')
+    d1 = parser.parse('2013-01-01').date()
+    d2 = parser.parse('2013-01-05').date()
+    #d2 = datetime.date.today()-datetime.timedelta(days=2)
+    date_range = DateRange(start=d1, stop=d2)    
+    pad_hours_gridify(date_range)
