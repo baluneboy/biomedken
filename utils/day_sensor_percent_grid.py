@@ -3,11 +3,13 @@
 Populate wx grid structure with days as rows, sensors as columns, and percents as cell values.
 """
 
+# FIXME must have one row for each day (no skips)
+
 import os
 import re
 import wx
 import sys
-from pims.gui.percent_grid import TallyGrid
+from pims.gui.percent_grid import TallyFrame, TallyGrid
 import datetime
 from dateutil import parser
 from datetime_ranger import DateRange
@@ -36,9 +38,14 @@ class RoadmapGrid(object):
         """Walk ymd path and insert regex matches of filename pattern into data frame."""
         dirpath = os.path.join( self.basepath, d.strftime('year%Y/month%m/day%d') )
         fullfile_pattern = os.path.join(dirpath, self.pattern)
+        bool_got_match = False
         for f in filter_filenames(dirpath, re.compile(fullfile_pattern).match):
             dfin = self.get_dict_for_insert(f)
             self.data_frame.insert(dfin)
+            bool_got_match = True
+        if not bool_got_match:
+            # do not skip any days/rows, insert dummy dict for dfin
+            self.data_frame.insert({'date':d, 'hour':None, 'sensor':None, 'abbrev':None, 'bname':None, 'fname':None})
                 
     def get_dict_for_insert(self, f):
         """Get dict to use for data frame insertion."""
@@ -103,16 +110,15 @@ class CheapPadHoursGrid(RoadmapGrid):
         """Walk ymd path and insert regex matches of filename pattern into data frame."""
         dirpath = os.path.join( self.basepath, d.strftime('year%Y/month%m/day%d') )
         fullfile_pattern = os.path.join(dirpath, self.pattern)
+        bool_got_match = False
         for f in filter_filenames(dirpath, re.compile(fullfile_pattern).match):
             start, stop, sensor, bname = self.parse_basename(f)
             span_hours = (stop - start).seconds / 3600.0
-            self.data_frame.insert({'date':start.date(), 'span_hours':span_hours, 'sensor':sensor, 'bname':bname, 'fname':f})
-
-class TestFrame(wx.Frame):
-    def __init__(self, parent, log, title, dayrow_labels, sensorcolumn_labels, rows):
-        wx.Frame.__init__(self, parent, -1, title, size=(1200, 1000))
-        self.Maximize(True)
-        self.grid = TallyGrid(self, log, dayrow_labels, sensorcolumn_labels, rows)
+            self.data_frame.insert({'date':d, 'span_hours':span_hours, 'sensor':sensor, 'bname':bname, 'fname':f})
+            bool_got_match = True
+        if not bool_got_match:
+            # do not skip any days/rows, insert zero span
+            self.data_frame.insert({'date':d, 'span_hours':0.0, 'sensor':None, 'bname':None, 'fname':None})
 
 def spgdot_roadmaps_gridify(date_range, pattern='.*_121f0\d{1}.*_.*roadmaps.*\.pdf$', basepath='/misc/yoda/www/plots/batch'):
     
@@ -124,7 +130,7 @@ def spgdot_roadmaps_gridify(date_range, pattern='.*_121f0\d{1}.*_.*roadmaps.*\.p
     sensor_columns = [ str(i[0][1]) for i in pt.cnames]
     rows = [ i for i in pt ]
     
-    show_grid(vgrid.title, day_rows, sensor_columns, rows)
+    show_grid(vgrid.title, day_rows, sensor_columns, rows, ['None'])
 
 def pad_hours_gridify(date_range, pattern='.*\.header$', basepath='/misc/yoda/pub/pad'):
     
@@ -140,11 +146,11 @@ def pad_hours_gridify(date_range, pattern='.*\.header$', basepath='/misc/yoda/pu
     # replace None's with zero's in the rows
     rows = [ [0 if not x else x for x in r] for r in temp_rows ]
     
-    show_grid(vgrid.title, day_rows, sensor_columns, rows)
+    show_grid(vgrid.title, day_rows, sensor_columns, rows, ['None'])
 
-def show_grid(title, rlabels, clabels, rows):
+def show_grid(title, rlabels, clabels, rows, exclude_cols):
     app = wx.PySimpleApp()
-    frame = TestFrame(None, sys.stdout, title, rlabels, clabels, rows)
+    frame = TallyFrame(None, sys.stdout, title, rlabels, clabels, rows, exclude_cols)
     frame.Show(True)
     app.MainLoop()
 
@@ -152,23 +158,23 @@ if __name__ == "__main__":
     #import doctest
     #doctest.testmod(verbose=True)
 
-    ##d1 = parser.parse('2013-09-29').date()
-    ##d2 = parser.parse('2013-10-01').date()
-    ##date_range = DateRange(start=d1, stop=d2)
-    ##spgdot_roadmaps_gridify(date_range, pattern='.*_spg._roadmaps.*\.pdf$')
-    ##
-    ##raise SystemExit
-
-    d1 = parser.parse('2013-10-18').date()
-    #d2 = parser.parse('2013-11-19').date()
-    d2 = datetime.date.today()-datetime.timedelta(days=2)
+    d1 = parser.parse('2013-09-28').date()
+    d2 = parser.parse('2013-10-02').date()
     date_range = DateRange(start=d1, stop=d2)
     spgdot_roadmaps_gridify(date_range, pattern='.*_spg._roadmaps.*\.pdf$')
     
     raise SystemExit
-    
-    d1 = parser.parse('2013-10-18').date()
-    d2 = parser.parse('2013-10-19').date()
+
+    #d1 = parser.parse('2013-10-18').date()
+    ##d2 = parser.parse('2013-11-19').date()
     #d2 = datetime.date.today()-datetime.timedelta(days=2)
-    date_range = DateRange(start=d1, stop=d2)    
-    pad_hours_gridify(date_range, pattern='.*121f0[358]006\.header$')
+    #date_range = DateRange(start=d1, stop=d2)
+    #spgdot_roadmaps_gridify(date_range, pattern='.*_spg._roadmaps.*\.pdf$')
+    #
+    #raise SystemExit
+    
+    #d1 = parser.parse('2013-01-01').date()
+    #d2 = parser.parse('2013-01-05').date()
+    ##d2 = datetime.date.today()-datetime.timedelta(days=2)
+    #date_range = DateRange(start=d1, stop=d2)    
+    #pad_hours_gridify(date_range, pattern='.*121f0[358]006\.header$')

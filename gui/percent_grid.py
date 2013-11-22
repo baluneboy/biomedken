@@ -13,51 +13,41 @@ SB_LEFT = 0
 SB_RIGHT = 1
 SB_MSEC = 20000
 
-class ThirdsCellFormatRGY(object):
-    """Less 1/3 is white-on-red, greater than 2/3 is black-on-green; otherwise, black-on-yellow."""
-    def __init__(self, value):
-        self.value = value
-        self.bg_color, self.fg_color = self._get_colors()
-    
-    def _get_colors(self):
-        if self.value < 1.0/3.0:
-            bg, fg = 'RED', 'WHITE'
-        elif self.value > 2.0/3.0:
-            bg, fg = 'LIGHTGREEN', 'BLACK'
-        else:
-            bg, fg = 'PALEGOLDENROD', 'BLACK'
-        return bg, fg
-
 class TallyGrid(gridlib.Grid):
     """Simple grid for tallying."""
     
-    def __init__(self, parent, log, row_labels, column_labels, rows):
+    def __init__(self, parent, log, row_labels, column_labels, rows, exclude_columns=[]):
         gridlib.Grid.__init__(self, parent, -1)
         self.log = log
         self.moveTo = None
         self.Bind(wx.EVT_IDLE, self.OnIdle)
         self.CreateGrid(len(row_labels), len(column_labels))
         self.EnableEditing(False)
-
         self.SetDefaultRowSize(20)
-
-        # set row labels
-        for idx, day in enumerate(row_labels):
-            self.SetRowLabelValue(idx, day)
         self.SetRowLabelSize(99)            
-
-        # set column labels
-        for idx, sensor in enumerate(column_labels):
-            self.SetColLabelValue(idx, sensor)
-        self.SetColLabelSize(22)            
-
+        self.SetColLabelSize(22)
+        
         # loop over rows to set cell values
         for r in range(len(rows)):
+            self.SetRowLabelValue(r, row_labels[r])
             for c in range(len(rows[r])):
                 self.SetCellValue(r, c, str(rows[r][c]))
                 self.SetCellAlignment(r, c, wx.ALIGN_CENTER, wx.ALIGN_CENTER)
                 self.SetCellTextColour(r, c, wx.BLUE)
                 self.SetCellRenderer(r, c, gridlib.GridCellFloatRenderer(width=6, precision=1))
+
+        # if needed, then exclude some columns
+        for ex_col in exclude_columns:
+            # get rid of columns that have ex_col as label
+            idx_none_cols = [i for i,x in enumerate(column_labels) if x == ex_col]
+            for idx in idx_none_cols:
+                self.DeleteCols(idx)
+            # get rid of 'None' labels too
+            column_labels = [i for i in column_labels if i != ex_col]
+
+        # set column labels
+        for idx, clabel in enumerate(column_labels):
+            self.SetColLabelValue(idx, clabel)
 
         #print self.GetRowSize(0), self.GetColSize(0)
 
@@ -255,18 +245,27 @@ class TallyGrid(gridlib.Grid):
         self.log.write("OnEditorCreated: (%d, %d) %s\n" %
                        (evt.GetRow(), evt.GetCol(), evt.GetControl()))
 
-class TestFrame(wx.Frame):
-    def __init__(self, parent, log):
-        wx.Frame.__init__(self, parent, -1, "SimpleTallyGrid", size=(1280, 1000))
-        row_labels = ['2013-10-31', '2013-11-01']
-        column_labels = ['hirap','121f03','121f05onex']
-        rows = [ [0.0, 0.5, 1.0], [0.9, 0.4, 0.2] ]
+class TallyFrame(wx.Frame):
+    def __init__(self, parent, log, title, rlabels, clabels, rows, exclude_cols):
+        wx.Frame.__init__(self, parent, -1, title)
         self.Maximize(True)
-        self.grid = TallyGrid(self, log, row_labels, column_labels, rows)
+        self.grid = TallyGrid(self, log, rlabels, clabels, rows, exclude_cols)
 
-if __name__ == '__main__':
+def demo():
     import sys
+    
+    # define inputs
+    title = 'Demo Tally'
+    row_labels = ['2013-10-31', '2013-11-01']
+    column_labels = ['hirap','121f03','121f05onex']
+    rows = [ [0.0, 0.5, 1.0], [0.9, 0.4, 0.2] ]
+    exclude_cols = []
+    
+    # run main loop
     app = wx.PySimpleApp()
-    frame = TestFrame(None, sys.stdout)
+    frame = TallyFrame(None, sys.stdout, title, row_labels, column_labels, rows, exclude_cols)
     frame.Show(True)
     app.MainLoop()
+
+if __name__ == '__main__':
+    demo()
