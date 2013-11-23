@@ -1,33 +1,34 @@
 #!/usr/bin/env python
 """
-Populate wx grid structure with days as rows, sensors as columns, and percents as cell values.
+Populate wx grid structure with days as rows, sensors as columns, and tallies as cell values.
 """
 
 import os
 import re
 import wx
 import sys
-from pims.gui.percent_grid import TallyFrame, TallyGrid
 import datetime
 from dateutil import parser
-from datetime_ranger import DateRange
-from pims.files.utils import filter_filenames, parse_roadmap_filename
 from pyvttbl import DataFrame
-from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
+from datetime_ranger import DateRange
 from pims.utils.pimsdateutil import timestr_to_datetime
+from pims.gui.tally_grid import TallyFrame, TallyGrid
+from pims.files.utils import filter_filenames, parse_roadmap_filename
+from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 
-class RoadmapGrid(object):
+class RoadmapGridWorker(object):
     """A grid with days as rows, sensors as columns, & file count as cell values."""    
 
     def __init__(self, date_range,
                  pattern=_BATCHROADMAPS_PATTERN,
-                 basepath='/misc/yoda/www/plots/batch'):
+                 basepath='/misc/yoda/www/plots/batch',
+                 update_sec=30):
         self.date_range = date_range
         self.pattern = pattern
         self.basepath = basepath
+        self.update_sec = update_sec
         self.title = self.__class__.__name__ + ' for "%s"' % self.pattern
-        self.data_frame = DataFrame()
-
+        
     def do_data_frame_insert(self, d, f):
         """Parse file basename to get dict and do data frame insert."""
         # handle degenerate case of no matching files
@@ -54,6 +55,7 @@ class RoadmapGrid(object):
 
     def show_grid(self):
         """Fill data frame, pivot, and show grid."""
+        self.data_frame = DataFrame()
         self.fill_data_frame()
         
         # use default pivot parameters
@@ -63,11 +65,12 @@ class RoadmapGrid(object):
         self.row_labels = [ str(i[0][1]) for i in pt.rnames]     # days as row labels
         self.column_labels = [ str(i[0][1]) for i in pt.cnames]  # sensors as column labels
         self.rows = [ i for i in pt ]                            # count roadmap files for cell values
-        self.run_main_loop(exclude_cols=['None'])
+        self.run_main_loop(exclude_columns=['None'])
 
-    def run_main_loop(self, exclude_cols=['None']):
+    def run_main_loop(self, exclude_columns=['None']):
         app = wx.PySimpleApp()
-        frame = TallyFrame(None, sys.stdout, self.title, self.row_labels, self.column_labels, self.rows, exclude_cols)
+        frame = TallyFrame(None, sys.stdout, self,
+                           exclude_columns=exclude_columns, update_sec=self.update_sec)
         frame.Show(True)
         app.MainLoop()
 
@@ -97,8 +100,8 @@ class RoadmapGrid(object):
     def attach(self, other):
         """Attach other DataFrame to this one (both must have the same columns)"""
         # do minimal checking
-        if not isinstance(other, RoadmapGrid):
-            raise TypeError('second argument must be a RoadmapGrid')
+        if not isinstance(other, RoadmapGridWorker):
+            raise TypeError('second argument must be a RoadmapGridWorker')
         # perform attachment
         self.data_frame.attach(other.data_frame)
 
@@ -106,13 +109,13 @@ class RoadmapGrid(object):
 
     def __repr__(self): return self.__str__()
 
-class CheapPadHoursGrid(RoadmapGrid):
-    """A grid with days as rows, sensors as columns, & approx. PAD hours as cell values."""    
+class CheapPadHoursGridWorker(RoadmapGridWorker):
+    """A grid with days as rows, sensors as columns, & "cheap" PAD hours as cell values."""    
 
     def __init__(self, date_range,
                  pattern=_PADHEADERFILES_PATTERN,
                  basepath='/misc/yoda/pub/pad'):        
-        super(CheapPadHoursGrid, self).__init__(date_range, pattern=pattern, basepath=basepath)
+        super(CheapPadHoursGridWorker, self).__init__(date_range, pattern=pattern, basepath=basepath)
 
     def do_data_frame_insert(self, d, f):
         """Parse file basename to get dict and do data frame insert."""
@@ -153,7 +156,7 @@ class CheapPadHoursGrid(RoadmapGrid):
         
         # replace None's with zero's in the rows
         self.rows = [ [0 if not x else x for x in r] for r in rows ]        
-        self.run_main_loop(exclude_cols=['None'])
+        self.run_main_loop(exclude_columns=['None'])
 
 if __name__ == "__main__":
     #import doctest
@@ -172,8 +175,8 @@ if __name__ == "__main__":
     suffix_field = "_roadmaps(?P<rate>.*)\.pdf\Z"
     pattern = pth_field + date_field + sensor_field + abbrev_field + suffix_field
 
-    roadmaps_count_grid = RoadmapGrid(date_range, pattern=pattern)
-    roadmaps_count_grid.show_grid()    
+    roadmaps_count_grid = RoadmapGridWorker(date_range, pattern=pattern)
+    roadmaps_count_grid.show_grid()
     
     raise SystemExit
 
@@ -188,5 +191,5 @@ if __name__ == "__main__":
     d2 = parser.parse('2013-01-05').date()
     #d2 = datetime.date.today()-datetime.timedelta(days=2)
     date_range = DateRange(start=d1, stop=d2)
-    pad_hours_grid = CheapPadHoursGrid(date_range)
+    pad_hours_grid = CheapPadHoursGridWorker(date_range)
     pad_hours_grid.show_grid()
