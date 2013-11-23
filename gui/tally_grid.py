@@ -11,27 +11,31 @@ import wx.grid as  gridlib
 # Status bar constants
 SB_LEFT = 0
 SB_RIGHT = 1
-SB_MSEC = 20000
 
 class TallyGrid(gridlib.Grid):
     """Simple grid for tallying."""
     
-    def __init__(self, parent, log, row_labels, column_labels, rows, exclude_columns=[]):
+    def __init__(self, parent, log, grid_worker, exclude_columns=[], update_sec=30):
         gridlib.Grid.__init__(self, parent, -1)
         self.log = log
+        self.grid_worker = grid_worker
+        self.row_labels = grid_worker.row_labels
+        self.column_labels = grid_worker.column_labels
+        self.rows = grid_worker.rows
+        self.update_sec = update_sec
         self.moveTo = None
         self.Bind(wx.EVT_IDLE, self.OnIdle)
-        self.CreateGrid(len(row_labels), len(column_labels))
+        self.CreateGrid(len(self.row_labels), len(self.column_labels))
         self.EnableEditing(False)
         self.SetDefaultRowSize(20)
         self.SetRowLabelSize(99)            
         self.SetColLabelSize(22)
         
-        # loop over rows to set cell values
-        for r in range(len(rows)):
-            self.SetRowLabelValue(r, row_labels[r])
-            for c in range(len(rows[r])):
-                self.SetCellValue(r, c, str(rows[r][c]))
+        # loop over self.rows to set cell values
+        for r in range(len(self.rows)):
+            self.SetRowLabelValue(r, self.row_labels[r])
+            for c in range(len(self.rows[r])):
+                self.SetCellValue(r, c, str(self.rows[r][c]))
                 self.SetCellAlignment(r, c, wx.ALIGN_CENTER, wx.ALIGN_CENTER)
                 self.SetCellTextColour(r, c, wx.BLUE)
                 self.SetCellRenderer(r, c, gridlib.GridCellFloatRenderer(width=6, precision=1))
@@ -39,14 +43,14 @@ class TallyGrid(gridlib.Grid):
         # if needed, then exclude some columns
         for ex_col in exclude_columns:
             # get rid of columns that have ex_col as label
-            idx_none_cols = [i for i,x in enumerate(column_labels) if x == ex_col]
+            idx_none_cols = [i for i,x in enumerate(self.column_labels) if x == ex_col]
             for idx in idx_none_cols:
                 self.DeleteCols(idx)
             # get rid of 'None' labels too
-            column_labels = [i for i in column_labels if i != ex_col]
+            self.column_labels = [i for i in self.column_labels if i != ex_col]
 
         # set column labels
-        for idx, clabel in enumerate(column_labels):
+        for idx, clabel in enumerate(self.column_labels):
             self.SetColLabelValue(idx, clabel)
 
         #print self.GetRowSize(0), self.GetColSize(0)
@@ -90,7 +94,7 @@ class TallyGrid(gridlib.Grid):
         
         # Set up a timer to update the date/time (every few seconds)
         self.timer = wx.PyTimer(self.notify)
-        self.timer.Start(SB_MSEC)
+        self.timer.Start( int(self.update_sec * 1000) )
         self.notify() # call it once right away
 
     def get_time_str(self):
@@ -98,7 +102,7 @@ class TallyGrid(gridlib.Grid):
 
     def notify(self):
         """Timer event updated every so often."""
-        t = self.get_time_str() + ' (update every ' + str(int(SB_MSEC/1000.0)) + 's)'
+        t = self.get_time_str() + ' (update every ' + str(int(self.update_sec)) + 's)'
         self.statusbar.SetStatusText(t, SB_RIGHT)
 
     def OnCellLeftClick(self, evt):
@@ -246,24 +250,28 @@ class TallyGrid(gridlib.Grid):
                        (evt.GetRow(), evt.GetCol(), evt.GetControl()))
 
 class TallyFrame(wx.Frame):
-    def __init__(self, parent, log, title, rlabels, clabels, rows, exclude_cols):
-        wx.Frame.__init__(self, parent, -1, title)
+    """The main window (frame) that contains the tally grid."""
+    def __init__(self, parent, log, grid_worker, exclude_columns=[], update_sec=20):
+        wx.Frame.__init__(self, parent, -1, grid_worker.title)
         self.Maximize(True)
-        self.grid = TallyGrid(self, log, rlabels, clabels, rows, exclude_cols)
+        self.grid = TallyGrid(self, log, grid_worker,
+                              exclude_columns=exclude_columns, update_sec=update_sec)
+
+class DummyGridWorker(object):
+    
+    def __init__(self):
+        self.title = 'Demo Tally'
+        self.row_labels = ['2013-10-31', '2013-11-01']
+        self.column_labels = ['hirap','121f03','121f05onex']
+        self.rows = [ [0.0, 0.5, 1.0], [0.9, 0.4, 0.2] ]        
 
 def demo():
     import sys
-    
-    # define inputs
-    title = 'Demo Tally'
-    row_labels = ['2013-10-31', '2013-11-01']
-    column_labels = ['hirap','121f03','121f05onex']
-    rows = [ [0.0, 0.5, 1.0], [0.9, 0.4, 0.2] ]
-    exclude_cols = []
-    
+    grid_worker = DummyGridWorker()
     # run main loop
     app = wx.PySimpleApp()
-    frame = TallyFrame(None, sys.stdout, title, row_labels, column_labels, rows, exclude_cols)
+    frame = TallyFrame(None, sys.stdout, grid_worker,
+                       exclude_columns=[], update_sec=3) # update normally 30
     frame.Show(True)
     app.MainLoop()
 
