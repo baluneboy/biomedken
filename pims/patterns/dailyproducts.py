@@ -19,7 +19,7 @@ _PADHEADERFILES_PATTERN = (
 #/misc/yoda/www/plots/batch/year2013/month09/day29/2013_09_29_00_00_00.000_121f03_spgs_roadmaps500.pdf
 _BATCHROADMAPS_PATTERN = (
     "(?P<ymdpath>.*)"                                       # perhaps a path at the start, then
-    "(?P<dtm>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})"   # underscore-delimited dtm part of fname, then
+    "(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})" # underscore-delimited dtm part of fname, then
     "_(?P<sensor>.*)_(?P<abbrev>.*)_roadmaps(?P<rate>.*)"   # placeholders for sensor, plot type, rate, then
     "\.pdf\Z"                                               # pdf extension to finish
     )
