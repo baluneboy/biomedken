@@ -4,6 +4,8 @@ import datetime
 import wx
 import wx.grid as  gridlib
 
+# TODO use 2-panels: (1) input grid, and (2) output grid
+#
 # TODO add buttons to start and stop "selected/orange cells" for 2 types of threads:
 #      monitor thread - disable grid interaction and just update cells every so often
 #      remedy thread - how in the world do we get remedy specifics?
@@ -22,36 +24,43 @@ class TallyGrid(gridlib.Grid):
         self.row_labels = grid_worker.row_labels
         self.column_labels = grid_worker.column_labels
         self.rows = grid_worker.rows
+        self.exclude_columns = exclude_columns
         self.update_sec = update_sec
         self.moveTo = None
         self.Bind(wx.EVT_IDLE, self.OnIdle)
+        
         self.CreateGrid(len(self.row_labels), len(self.column_labels))
         self.EnableEditing(False)
+        
+        # set default attributes of grid
         self.SetDefaultRowSize(20)
         self.SetRowLabelSize(99)            
         self.SetColLabelSize(22)
+        self.SetDefaultColSize(88)
+        self.SetDefaultRenderer(gridlib.GridCellFloatRenderer(width=6, precision=1))
+        self.SetDefaultCellAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
         
-        # loop over self.rows to set cell values
-        for r in range(len(self.rows)):
-            self.SetRowLabelValue(r, self.row_labels[r])
-            for c in range(len(self.rows[r])):
-                self.SetCellValue(r, c, str(self.rows[r][c]))
-                self.SetCellAlignment(r, c, wx.ALIGN_CENTER, wx.ALIGN_CENTER)
-                self.SetCellTextColour(r, c, wx.BLUE)
-                self.SetCellRenderer(r, c, gridlib.GridCellFloatRenderer(width=6, precision=1))
-
-        # if needed, then exclude some columns
-        for ex_col in exclude_columns:
-            # get rid of columns that have ex_col as label
-            idx_none_cols = [i for i,x in enumerate(self.column_labels) if x == ex_col]
-            for idx in idx_none_cols:
-                self.DeleteCols(idx)
-            # get rid of 'None' labels too
-            self.column_labels = [i for i in self.column_labels if i != ex_col]
-
-        # set column labels
-        for idx, clabel in enumerate(self.column_labels):
-            self.SetColLabelValue(idx, clabel)
+        ## loop over self.rows to set cell values
+        #for r in range(len(self.rows)):
+        #    self.SetRowLabelValue(r, self.row_labels[r])
+        #    for c in range(len(self.rows[r])):
+        #        self.SetCellValue(r, c, str(self.rows[r][c]))
+        #        self.SetCellTextColour(r, c, wx.BLUE)
+        #
+        ## if needed, then exclude some columns
+        #for ex_col in exclude_columns:
+        #    # get rid of columns that have ex_col as label
+        #    idx_none_cols = [i for i,x in enumerate(self.column_labels) if x == ex_col]
+        #    for idx in idx_none_cols:
+        #        self.DeleteCols(idx)
+        #    # get rid of 'None' labels too
+        #    self.column_labels = [i for i in self.column_labels if i != ex_col]
+        #
+        ## set column labels
+        #for idx, clabel in enumerate(self.column_labels):
+        #    self.SetColLabelValue(idx, clabel)
+        #self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
+        self.update_grid()
 
         #print self.GetRowSize(0), self.GetColSize(0)
 
@@ -97,11 +106,35 @@ class TallyGrid(gridlib.Grid):
         self.timer.Start( int(self.update_sec * 1000) )
         self.notify() # call it once right away
 
+    def update_grid(self):
+        """Write labels and values to grid."""
+        # loop over self.rows to set cell values
+        for r in range(len(self.rows)):
+            self.SetRowLabelValue(r, self.row_labels[r])
+            for c in range(len(self.rows[r])):
+                self.SetCellValue(r, c, str(self.rows[r][c]))
+                self.SetCellTextColour(r, c, wx.BLUE)
+
+        # if needed, then exclude some columns
+        for ex_col in self.exclude_columns:
+            # get rid of columns that have undesired label
+            idx_none_cols = [i for i,x in enumerate(self.column_labels) if x == ex_col]
+            for idx in idx_none_cols:
+                self.DeleteCols(idx)
+            # get rid of 'None' labels too
+            self.column_labels = [i for i in self.column_labels if i != ex_col]
+
+        # set column labels
+        for idx, clabel in enumerate(self.column_labels):
+            self.SetColLabelValue(idx, clabel)
+        self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)        
+
     def get_time_str(self):
         return datetime.datetime.now().strftime('%d-%b-%Y,%j/%H:%M:%S ')
 
     def notify(self):
         """Timer event updated every so often."""
+        self.update_grid()
         t = self.get_time_str() + ' (update every ' + str(int(self.update_sec)) + 's)'
         self.statusbar.SetStatusText(t, SB_RIGHT)
 
@@ -271,7 +304,7 @@ def demo():
     # run main loop
     app = wx.PySimpleApp()
     frame = TallyFrame(None, sys.stdout, grid_worker,
-                       exclude_columns=[], update_sec=3) # update normally 30
+                       exclude_columns=[], update_sec=5) # update normally 30
     frame.Show(True)
     app.MainLoop()
 
