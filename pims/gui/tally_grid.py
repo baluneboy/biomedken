@@ -3,6 +3,7 @@
 import datetime
 import wx
 import wx.grid as  gridlib
+import numpy as np
 
 # TODO use 2-panels: (1) input grid, and (2) output grid
 #
@@ -28,8 +29,6 @@ class TallyGrid(gridlib.Grid):
         self.update_sec = update_sec
         self.moveTo = None
         self.Bind(wx.EVT_IDLE, self.OnIdle)
-        
-        self.CreateGrid(len(self.row_labels), len(self.column_labels))
         self.EnableEditing(False)
         
         # set default attributes of grid
@@ -60,7 +59,6 @@ class TallyGrid(gridlib.Grid):
         #for idx, clabel in enumerate(self.column_labels):
         #    self.SetColLabelValue(idx, clabel)
         #self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
-        self.update_grid()
 
         #print self.GetRowSize(0), self.GetColSize(0)
 
@@ -108,24 +106,28 @@ class TallyGrid(gridlib.Grid):
 
     def update_grid(self):
         """Write labels and values to grid."""
-        # loop over self.rows to set cell values
-        for r in range(len(self.rows)):
+        # if needed, then exclude some columns
+        idx_toss = []
+        for xcol in self.exclude_columns:
+            idx_toss += [i for i,x in enumerate(self.column_labels) if x == xcol]
+        arr = np.array(self.rows)
+        arr = np.delete(arr, idx_toss, axis=1)
+            
+        # get rid of labels for exclude columns too
+        column_labels = [i for i in self.column_labels if i not in self.exclude_columns]
+
+        # now we have enough info to create grid
+        self.CreateGrid(arr.shape[0], arr.shape[1])
+
+        # loop over array to set cell values
+        for r in range(arr.shape[0]):
             self.SetRowLabelValue(r, self.row_labels[r])
-            for c in range(len(self.rows[r])):
-                self.SetCellValue(r, c, str(self.rows[r][c]))
+            for c in range(arr.shape[1]):
+                self.SetCellValue(r, c, str(arr[r][c]))
                 self.SetCellTextColour(r, c, wx.BLUE)
 
-        # if needed, then exclude some columns
-        for ex_col in self.exclude_columns:
-            # get rid of columns that have undesired label
-            idx_none_cols = [i for i,x in enumerate(self.column_labels) if x == ex_col]
-            for idx in idx_none_cols:
-                self.DeleteCols(idx)
-            # get rid of 'None' labels too
-            self.column_labels = [i for i in self.column_labels if i != ex_col]
-
         # set column labels
-        for idx, clabel in enumerate(self.column_labels):
+        for idx, clabel in enumerate(column_labels):
             self.SetColLabelValue(idx, clabel)
         self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)        
 
@@ -291,12 +293,12 @@ class TallyFrame(wx.Frame):
                               exclude_columns=exclude_columns, update_sec=update_sec)
 
 class DummyGridWorker(object):
-    
+    """Quick look."""
     def __init__(self):
         self.title = 'Demo Tally'
         self.row_labels = ['2013-10-31', '2013-11-01']
-        self.column_labels = ['hirap','121f03','121f05onex']
-        self.rows = [ [0.0, 0.5, 1.0], [0.9, 0.4, 0.2] ]        
+        self.column_labels = ['None','hirap','121f03','121f05onex']
+        self.rows = [ [-1.0, 0.0, 0.5, 1.0], [-1.0, 0.9, 0.4, 0.2] ]        
 
 def demo():
     import sys
@@ -304,7 +306,7 @@ def demo():
     # run main loop
     app = wx.PySimpleApp()
     frame = TallyFrame(None, sys.stdout, grid_worker,
-                       exclude_columns=[], update_sec=5) # update normally 30
+                       exclude_columns=['None'], update_sec=5) # update normally 30
     frame.Show(True)
     app.MainLoop()
 

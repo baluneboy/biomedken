@@ -144,6 +144,7 @@ class CheapPadHoursGridWorker(RoadmapGridWorker):
 
     def show_grid(self):
         """Fill data frame, pivot, and show grid."""
+        self.data_frame = DataFrame()
         self.fill_data_frame()
         
         # use default pivot parameters
@@ -166,7 +167,7 @@ if __name__ == "__main__":
     d1 = parser.parse('2013-09-28').date()
     d2 = parser.parse('2013-10-02').date()
     date_range = DateRange(start=d1, stop=d2)
-
+    
     # use special pattern
     pth_field = "(?P<ymdpath>.*)"
     date_field = "(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})"
@@ -174,8 +175,8 @@ if __name__ == "__main__":
     abbrev_field = "_(?P<abbrev>.*)"
     suffix_field = "_roadmaps(?P<rate>.*)\.pdf\Z"
     pattern = pth_field + date_field + sensor_field + abbrev_field + suffix_field
-
-    roadmaps_count_grid = RoadmapGridWorker(date_range, pattern=pattern)
+    
+    roadmaps_count_grid = RoadmapGridWorker(date_range, pattern=pattern, update_sec=5)
     roadmaps_count_grid.show_grid()
     
     raise SystemExit
@@ -188,7 +189,7 @@ if __name__ == "__main__":
 #------------------------------------
     
     d1 = parser.parse('2013-01-01').date()
-    d2 = parser.parse('2013-01-05').date()
+    d2 = parser.parse('2013-01-04').date()
     #d2 = datetime.date.today()-datetime.timedelta(days=2)
     date_range = DateRange(start=d1, stop=d2)
     pad_hours_grid = CheapPadHoursGridWorker(date_range)
