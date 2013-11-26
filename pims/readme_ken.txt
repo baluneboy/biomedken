@@ -1,3 +1,5 @@
+SELECT count(*) FROM pims.121f03 where time>unix_timestamp('2013-10-23 18:45:01') and time<unix_timestamp('2013-10-25 00:05:34');
+
 3. add cronjob on jimmy for backfill_ossbtmf_roadmap.py with better default args
 
 4. verify MANUALLY that copy PDF to ~/yodahb/ path, then auto_insert_handbook SQL yields web page end item, then

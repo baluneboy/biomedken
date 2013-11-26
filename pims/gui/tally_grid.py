@@ -304,7 +304,7 @@ class TallyFrame(wx.Frame):
     def __init__(self, parent, log, input_grid, grid_worker):
         wx.Frame.__init__(self, parent, -1, 'untitled')
         #self.input_grid = input_grid(self, log)
-        self.grid_worker = grid_worker(log)
+        self.grid_worker = grid_worker()
         self.SetTitle( self.grid_worker.title )
         self.Maximize(True)
         self.grid = TallyOutputGrid(self, log, input_grid, grid_worker)
@@ -321,7 +321,7 @@ class DummyGridWorker(object):
         self.exclude_columns = inputs['exclude_columns']
         self.update_sec = inputs['update_sec']
 
-# FIXME with wx grid gets, but for now we show example here
+# FIXME with getting values from wx grid methods, but for now we show example here
 class ExampleRoadmapsInputGrid(gridlib.Grid):
     """Simple grid for inputs to a grid worker that gets results for tallying."""
     def __init__(self, parent, log):
@@ -349,8 +349,12 @@ class ExampleRoadmapsInputGrid(gridlib.Grid):
             self.SetRowLabelValue( r, t[0] )
             self.SetCellValue( r, 0, str(t[1]) )
     
+    # FIXME this needs actual code!
     def get_inputs(self):
         """Get inputs from cells in the grid."""
+        return dummy_roadmaps_getter()
+
+def dummy_roadmaps_getter():
         inputs = {}
         # get range of days (dates)
         d1 = parser.parse('2013-09-28').date()
@@ -369,7 +373,7 @@ class ExampleRoadmapsInputGrid(gridlib.Grid):
         inputs['update_sec'] = 5
         inputs['exclude_columns'] = ['None']
         
-        return inputs
+        return inputs    
 
 def run_main_loop(input_grid, grid_worker):
     app = wx.PySimpleApp()
@@ -378,9 +382,7 @@ def run_main_loop(input_grid, grid_worker):
     app.MainLoop()   
 
 def demo():
-    input_grid = ExampleRoadmapsInputGrid
-    grid_worker = DummyGridWorker
-    run_main_loop(input_grid, grid_worker)
+    run_main_loop(ExampleRoadmapsInputGrid, DummyGridWorker)
 
 if __name__ == '__main__':
     demo()
