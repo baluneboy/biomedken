@@ -304,7 +304,7 @@ class TallyFrame(wx.Frame):
     def __init__(self, parent, log, input_grid, grid_worker):
         wx.Frame.__init__(self, parent, -1, 'untitled')
         #self.input_grid = input_grid(self, log)
-        self.grid_worker = grid_worker()
+        self.grid_worker = grid_worker(log)
         self.SetTitle( self.grid_worker.title )
         self.Maximize(True)
         self.grid = TallyOutputGrid(self, log, input_grid, grid_worker)
