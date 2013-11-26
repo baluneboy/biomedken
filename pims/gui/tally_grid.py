@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
-import datetime
+import sys
 import wx
 import wx.grid as  gridlib
 import numpy as np
+import datetime
+from dateutil import parser
+from pims.utils.datetime_ranger import DateRange
+from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 
 # TODO use 2-panels: (1) input grid, and (2) output grid
 #
@@ -14,19 +18,27 @@ import numpy as np
 # Status bar constants
 SB_LEFT = 0
 SB_RIGHT = 1
-
-class TallyGrid(gridlib.Grid):
-    """Simple grid for tallying."""
     
-    def __init__(self, parent, log, grid_worker, exclude_columns=[], update_sec=30):
+class TallyOutputGrid(gridlib.Grid):
+    """Simple grid for output of tally."""
+    
+    def __init__(self, parent, log, input_grid, grid_worker):
         gridlib.Grid.__init__(self, parent, -1)
         self.log = log
-        self.grid_worker = grid_worker
-        self.row_labels = grid_worker.row_labels
-        self.column_labels = grid_worker.column_labels
-        self.rows = grid_worker.rows
-        self.exclude_columns = exclude_columns
-        self.update_sec = update_sec
+        
+        self.input_grid = input_grid(self, log)
+        self.input_grid.Hide()
+        
+        self.grid_worker = grid_worker()
+        self.grid_worker.get_results( self.input_grid )
+        
+        self.row_labels = self.grid_worker.row_labels
+        self.column_labels = self.grid_worker.column_labels
+        self.rows = self.grid_worker.rows
+        
+        self.exclude_columns = self.grid_worker.exclude_columns
+        self.update_sec = self.grid_worker.update_sec
+        
         self.moveTo = None
         self.Bind(wx.EVT_IDLE, self.OnIdle)
         self.EnableEditing(False)
@@ -106,6 +118,9 @@ class TallyGrid(gridlib.Grid):
 
     def update_grid(self):
         """Write labels and values to grid."""
+        # call grid_worker's get_results method
+        self.grid_worker.get_results( self.input_grid )
+        
         # if needed, then exclude some columns
         idx_toss = []
         for xcol in self.exclude_columns:
@@ -286,29 +301,86 @@ class TallyGrid(gridlib.Grid):
 
 class TallyFrame(wx.Frame):
     """The main window (frame) that contains the tally grid."""
-    def __init__(self, parent, log, grid_worker, exclude_columns=[], update_sec=20):
-        wx.Frame.__init__(self, parent, -1, grid_worker.title)
+    def __init__(self, parent, log, input_grid, grid_worker):
+        wx.Frame.__init__(self, parent, -1, 'untitled')
+        #self.input_grid = input_grid(self, log)
+        self.grid_worker = grid_worker()
+        self.SetTitle( self.grid_worker.title )
         self.Maximize(True)
-        self.grid = TallyGrid(self, log, grid_worker,
-                              exclude_columns=exclude_columns, update_sec=update_sec)
+        self.grid = TallyOutputGrid(self, log, input_grid, grid_worker)
 
 class DummyGridWorker(object):
     """Quick look."""
     def __init__(self):
         self.title = 'Demo Tally'
+    def get_results(self, input_grid):
+        inputs = input_grid.get_inputs()
         self.row_labels = ['2013-10-31', '2013-11-01']
         self.column_labels = ['None','hirap','121f03','121f05onex']
-        self.rows = [ [-1.0, 0.0, 0.5, 1.0], [-1.0, 0.9, 0.4, 0.2] ]        
+        self.rows = [ [-1.0, 0.0, 0.5, 1.0], [-1.0, 0.9, 0.4, 0.2] ]
+        self.exclude_columns = inputs['exclude_columns']
+        self.update_sec = inputs['update_sec']
+
+# FIXME with wx grid gets, but for now we show example here
+class ExampleRoadmapsInputGrid(gridlib.Grid):
+    """Simple grid for inputs to a grid worker that gets results for tallying."""
+    def __init__(self, parent, log):
+        gridlib.Grid.__init__(self, parent, -1)
+        self.log = log
+        self.set_defaults()
+    
+    def set_defaults(self):
+        """Populate roadmaps input grid with default values."""
+        default_rows = {
+            0:  ('start', '2013-10-18'),
+            1:  ('stop', '2013-10-24'),
+            2:  ('pattern', _BATCHROADMAPS_PATTERN),
+            3:  ('basepath', '/misc/yoda/www/plots/batch'),
+            4:  ('update_sec', 5),
+            5:  ('exclude_columns', 'None,junk,trash'),
+        }
+
+        # set column labels
+        self.SetColLabelValue(0, 'value')
+        self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE) 
+        
+        # loop to set cell values
+        for r,t in default_rows.iteritems():
+            self.SetRowLabelValue( r, t[0] )
+            self.SetCellValue( r, 0, str(t[1]) )
+    
+    def get_inputs(self):
+        """Get inputs from cells in the grid."""
+        inputs = {}
+        # get range of days (dates)
+        d1 = parser.parse('2013-09-28').date()
+        d2 = parser.parse('2013-10-02').date()
+        
+        # use special pattern
+        pth_field = "(?P<ymdpath>.*)"
+        date_field = "(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})"
+        sensor_field = "_(?P<sensor>.*one)" # sensor field ends with "one"
+        abbrev_field = "_(?P<abbrev>.*)"
+        suffix_field = "_roadmaps(?P<rate>.*)\.pdf\Z"
+
+        inputs['date_range'] = DateRange(start=d1, stop=d2)
+        inputs['pattern'] = pth_field + date_field + sensor_field + abbrev_field + suffix_field
+        inputs['basepath'] = '/misc/yoda/www/plots/batch'
+        inputs['update_sec'] = 5
+        inputs['exclude_columns'] = ['None']
+        
+        return inputs
+
+def run_main_loop(input_grid, grid_worker):
+    app = wx.PySimpleApp()
+    frame = TallyFrame(None, sys.stdout, input_grid, grid_worker)
+    frame.Show(True)
+    app.MainLoop()   
 
 def demo():
-    import sys
-    grid_worker = DummyGridWorker()
-    # run main loop
-    app = wx.PySimpleApp()
-    frame = TallyFrame(None, sys.stdout, grid_worker,
-                       exclude_columns=['None'], update_sec=5) # update normally 30
-    frame.Show(True)
-    app.MainLoop()
+    input_grid = ExampleRoadmapsInputGrid
+    grid_worker = DummyGridWorker
+    run_main_loop(input_grid, grid_worker)
 
 if __name__ == '__main__':
     demo()
