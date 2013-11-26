@@ -18,7 +18,13 @@ from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_
 # Status bar constants
 SB_LEFT = 0
 SB_RIGHT = 1
-    
+
+class TallyApp(wx.PySimpleApp):
+    """Main app for tallying."""
+    def __init__(self, input_grid, grid_worker, log=sys.stdout):
+        super(TallyApp, self).__init__()
+        self.frame = TallyFrame(None, log, input_grid, grid_worker)
+
 class TallyOutputGrid(gridlib.Grid):
     """Simple grid for output of tally."""
     
@@ -331,23 +337,26 @@ class ExampleRoadmapsInputGrid(gridlib.Grid):
     
     def set_defaults(self):
         """Populate roadmaps input grid with default values."""
-        default_rows = {
-            0:  ('start', '2013-10-18'),
-            1:  ('stop', '2013-10-24'),
-            2:  ('pattern', _BATCHROADMAPS_PATTERN),
-            3:  ('basepath', '/misc/yoda/www/plots/batch'),
-            4:  ('update_sec', 5),
-            5:  ('exclude_columns', 'None,junk,trash'),
-        }
+        default_rows = [
+        #    row_label          default_value
+        #--------------------------------------------------
+            ('start',           '2013-10-18'),
+            ('stop',            '2013-10-24'),
+            ('pattern',         _BATCHROADMAPS_PATTERN),
+            ('basepath',        '/misc/yoda/www/plots/batch'),
+            ('update_sec',      5),
+            ('exclude_columns', 'None,junk,trash'),
+        ]
 
         # set column labels
         self.SetColLabelValue(0, 'value')
         self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE) 
         
         # loop to set cell values
-        for r,t in default_rows.iteritems():
-            self.SetRowLabelValue( r, t[0] )
-            self.SetCellValue( r, 0, str(t[1]) )
+        for r, label_value in enumerate(default_rows):
+            self.SetRowLabelValue( r, label_value[0] )
+            self.SetCellValue( r, 0, str(label_value[1]) )
+        self.nrows = r + 1
     
     # FIXME this needs actual code!
     def get_inputs(self):
@@ -375,14 +384,16 @@ def dummy_roadmaps_getter():
         
         return inputs    
 
-def run_main_loop(input_grid, grid_worker):
-    app = wx.PySimpleApp()
-    frame = TallyFrame(None, sys.stdout, input_grid, grid_worker)
-    frame.Show(True)
-    app.MainLoop()   
-
 def demo():
-    run_main_loop(ExampleRoadmapsInputGrid, DummyGridWorker)
+    # define log, input_grid, and grid_worker
+    log = sys.stdout
+    input_grid = ExampleRoadmapsInputGrid
+    grid_worker = DummyGridWorker
+    
+    # init and run app
+    app = TallyApp(input_grid, grid_worker, log=log)
+    app.frame.Show(True)
+    app.MainLoop()   
 
 if __name__ == '__main__':
     demo()
