@@ -12,7 +12,7 @@ from dateutil import parser
 from pyvttbl import DataFrame
 from datetime_ranger import DateRange
 from pims.utils.pimsdateutil import timestr_to_datetime
-from pims.gui.tally_grid import TallyFrame, TallyInputGrid, TallyOutputGrid, run_main_loop
+from pims.gui.tally_grid import TallyFrame, ExampleRoadmapsInputGrid, TallyOutputGrid, run_main_loop
 from pims.files.utils import filter_filenames, parse_roadmap_filename
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 
@@ -264,9 +264,9 @@ if __name__ == "__main__":
     #                                        basepath=basepath,
     #                                        update_sec=update_sec)
     
-    roadmaps_count_grid = RoadmapGridWorker(input_grid)
-    
-    run_main_loop(roadmaps_count_grid, exclude_columns=['None'])
+    input_grid = ExampleRoadmapsInputGrid
+    grid_worker = RoadmapGridWorker
+    run_main_loop(input_grid, grid_worker)
     
     raise SystemExit
 
