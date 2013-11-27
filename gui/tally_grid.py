@@ -327,41 +327,67 @@ class DummyGridWorker(object):
         self.exclude_columns = inputs['exclude_columns']
         self.update_sec = inputs['update_sec']
 
-# FIXME with getting values from wx grid methods, but for now we show example here
+# FIXME with full implementation, then rename w/o "Example" prefix
 class ExampleRoadmapsInputGrid(gridlib.Grid):
     """Simple grid for inputs to a grid worker that gets results for tallying."""
     def __init__(self, parent, log):
         gridlib.Grid.__init__(self, parent, -1)
         self.log = log
-        self.set_defaults()
+        self.get_default_values()
+        self.set_default_attributes()
     
-    def set_defaults(self):
+    def set_default_attributes(self):
+        """Set default attributes of grid."""
+        # FIXME make this dynamic, not hard-coded
+        self.SetDefaultRowSize(20)
+        self.SetRowLabelSize(199)            
+        self.SetColLabelSize(22)
+        self.SetDefaultColSize(1080)
+        #self.SetDefaultRenderer(gridlib.GridCellFloatRenderer(width=6, precision=1))
+        self.SetDefaultCellAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
+        self.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
+        self.SetRowLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
+    
+    def get_default_values(self):
         """Populate roadmaps input grid with default values."""
-        default_rows = [
-        #    row_label          default_value
+        self.column_labels = [ 'value']
+        self.rows = [
+        #    row_label          default_value1
         #--------------------------------------------------
-            ('start',           '2013-10-18'),
-            ('stop',            '2013-10-24'),
-            ('pattern',         _BATCHROADMAPS_PATTERN),
-            ('basepath',        '/misc/yoda/www/plots/batch'),
-            ('update_sec',      5),
-            ('exclude_columns', 'None,junk,trash'),
+            ('start',           '2013-10-18',                   str),
+            ('stop',            '2013-10-24',                   str),
+            ('pattern',         _BATCHROADMAPS_PATTERN,         str),
+            ('basepath',        '/misc/yoda/www/plots/batch',   str),
+            ('update_sec',      '5',                            int),
+            ('exclude_columns', 'None,junk,trash',              lambda x: x.split(',')),
         ]
+        self.row_labels = [ t[0] for t in self.rows]
 
-        # set column labels
-        self.SetColLabelValue(0, 'value')
-        self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE) 
-        
-        # loop to set cell values
-        for r, label_value in enumerate(default_rows):
-            self.SetRowLabelValue( r, label_value[0] )
-            self.SetCellValue( r, 0, str(label_value[1]) )
-        self.nrows = r + 1
+    def set_row_labels(self):
+        """Set the row labels."""
+        for i,v in enumerate(self.row_labels):
+            self.SetRowLabelValue(i, v) 
+
+    def set_column_labels(self):
+        """Set the column labels."""
+        for i,v in enumerate(self.column_labels):
+            self.SetColLabelValue(i, v)
+            #self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE) 
+            
+    def set_default_cell_values(self):
+        """Set default cell values using rows."""
+        # loop over rows to set cell values
+        for r, rowtup in enumerate(self.rows):
+            self.SetCellValue( r, 0, str(rowtup[1]) )
     
     # FIXME this needs actual code!
     def get_inputs(self):
         """Get inputs from cells in the grid."""
-        return dummy_roadmaps_getter()
+        new_rows = []
+        for i,v in enumerate(self.rows):
+            label, val, conv = v[0], self.GetCellValue(i, 0), v[2]
+            new_rows.append( (label, conv(val), conv))
+        self.rows = new_rows
 
 def dummy_roadmaps_getter():
         inputs = {}

@@ -4,38 +4,6 @@ import sys
 import wx
 import wx.grid as gridlib
 from wx.lib.pubsub import Publisher
-from pims.gui.tally_grid import ExampleRoadmapsInputGrid
-
-#class BasePanel(wx.Panel):
-#    """Base panel."""
-#    
-#    def __init__(self, parent, input_grid):
-#        """Constructor"""
-#        wx.Panel.__init__(self, parent=parent)
-#        
-#        grid = gridlib.Grid(self)
-#        grid.CreateGrid(5,4)
-#        btn = wx.Button(self, label="Switch")
-#        btn.Bind(wx.EVT_BUTTON, self.switchback)
-#        
-#        sizer = wx.BoxSizer(wx.VERTICAL)
-#        sizer.Add(grid, 0, wx.EXPAND)
-#        sizer.Add(btn, 0, wx.ALL|wx.LEFT, 5)
-#        self.SetSizer(sizer)
-#
-#    def switchback(self, event):
-#        """Send message for switching."""
-#        Publisher.sendMessage("switch", "message")
-#
-#class PimsGrid(gridlib.Grid):
-#    
-#    def init_row_labels(self, row_labels):
-#        self.row_labels = row_labels
-#        self.nrows = len(row_labels)
-#
-#    def init_column_labels(self, column_labels):
-#        self.column_labels = column_labels
-#        self.ncols = len(column_labels)
 
 class InputPanel(wx.Panel):
     """The input panel."""
@@ -45,10 +13,11 @@ class InputPanel(wx.Panel):
         wx.Panel.__init__(self, parent=parent)
         
         self.grid = input_grid(self, log)
-        self.grid.CreateGrid( self.grid.nrows, self.grid.ncols )
+        self.grid.CreateGrid( len(self.grid.row_labels), len(self.grid.column_labels) )
         
-        #self.set_grid_row_labels()
-        #self.set_grid_column_labels()
+        self.grid.set_row_labels()
+        self.grid.set_column_labels()
+        self.grid.set_default_cell_values()  
         
         btn = wx.Button(self, label="Switch")
         btn.Bind(wx.EVT_BUTTON, self.switchback)
@@ -57,16 +26,6 @@ class InputPanel(wx.Panel):
         sizer.Add(self.grid, 0, wx.EXPAND)
         sizer.Add(btn, 0, wx.ALL|wx.LEFT, 5)
         self.SetSizer(sizer)
-
-    def set_grid_row_labels(self):
-        """Set the row labels for this panel's grid."""
-        for i,v in enumerate(self.grid.row_labels):
-            self.grid.SetRowLabelValue(i, v) 
-
-    def set_grid_column_labels(self):
-        """Set the column labels for this panel's grid."""
-        for i,v in enumerate(self.grid.column_labels):
-            self.grid.SetColLabelValue(i, v)       
 
     def switchback(self, event):
         """"""
@@ -97,8 +56,13 @@ class OutputPanel(wx.Panel):
 class MainFrame(wx.Frame):
     """The parent frame for the i/o panels."""
     
-    def __init__(self, log, title, input_grid):
+    def __init__(self, log, title, input_grid, grid_worker):
         wx.Frame.__init__(self, None, wx.ID_ANY, title)
+ 
+        self.SetPosition( (1850, 22) )
+        self.SetSize( (1533, 955) )
+ 
+        self.grid_worker = grid_worker
  
         self.input_panel = InputPanel(self, log, input_grid)
         self.output_panel = OutputPanel(self)
@@ -156,9 +120,10 @@ class MainFrame(wx.Frame):
             
         self.Fit()
         
+        self.input_panel.grid.get_inputs()
+        print '- ' * 22
+        for i, v in enumerate(self.input_panel.grid.rows):
+            print 'row %02d: %s = %s' %( i, v[0], v[1])
+    
 if __name__ == "__main__":
-    app = wx.App(False)
-    log = sys.stdout
-    frame = MainFrame(log, "Panel Switcher Tutorial", ExampleRoadmapsInputGrid)
-    frame.Show()
-    app.MainLoop()
+    demo()
