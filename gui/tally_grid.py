@@ -4,91 +4,111 @@ import sys
 import wx
 import wx.grid as  gridlib
 import numpy as np
-import datetime
+#import datetime
 from dateutil import parser
 from pims.utils.datetime_ranger import DateRange
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 
-# TODO use 2-panels: (1) input grid, and (2) output grid
-#
 # TODO add buttons to start and stop "selected/orange cells" for 2 types of threads:
 #      monitor thread - disable grid interaction and just update cells every so often
 #      remedy thread - how in the world do we get remedy specifics?
 
-# Status bar constants
-SB_LEFT = 0
-SB_RIGHT = 1
+class CheapPadHoursInputGrid(gridlib.Grid):
+    """Simple grid for inputs to a grid worker that gets results for tallying."""
+    def __init__(self, parent, log, pattern=_PADHEADERFILES_PATTERN):
+        gridlib.Grid.__init__(self, parent, -1)
+        self.parent = parent
+        self.log = log
+        self.pattern = pattern
+        self.get_default_values()
+        self.set_default_attributes()
+    
+    def set_default_attributes(self):
+        """Set default attributes of grid."""
+        # FIXME make this dynamic, not hard-coded
+        self.SetDefaultRowSize(20)
+        self.SetRowLabelSize(199)            
+        self.SetColLabelSize(22)
+        self.SetDefaultColSize(1200)
+        #self.SetDefaultRenderer(gridlib.GridCellFloatRenderer(width=6, precision=1))
+        self.SetDefaultCellAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
+        self.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
+        self.SetRowLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
+    
+    def get_default_values(self):
+        """Gather columns_labels, row_labels, and rows for input grid defaults."""
+        self.column_labels = [ 'value']
+        self.rows = [
+        #    row_label          default_value1
+        #--------------------------------------------------
+            ('start',           '2013-01-01',           parser.parse),
+            ('stop',            '2013-01-04',           parser.parse),
+            ('pattern',         self.pattern,           str),
+            ('basepath',        '/misc/yoda/pub/pad',   str),
+            ('update_sec',      '5',                    int),
+            ('exclude_columns', 'None',                 lambda x: x.split(',')),
+        ]
+        self.row_labels = [ t[0] for t in self.rows]
 
-class TallyApp(wx.PySimpleApp):
-    """Main app for tallying."""
-    def __init__(self, input_grid, grid_worker, log=sys.stdout):
-        super(TallyApp, self).__init__()
-        self.frame = TallyFrame(None, log, input_grid, grid_worker)
+    def set_row_labels(self):
+        """Set the row labels."""
+        for i,v in enumerate(self.row_labels):
+            self.SetRowLabelValue(i, v) 
+
+    def set_column_labels(self):
+        """Set the column labels."""
+        for i,v in enumerate(self.column_labels):
+            self.SetColLabelValue(i, v)
+            #self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE) 
+            
+    def set_default_cell_values(self):
+        """Set default cell values using values in rows."""
+        # loop over rows to set cell values
+        for r, rowtup in enumerate(self.rows):
+            self.SetCellValue( r, 0, str(rowtup[1]) )
+    
+    def get_inputs(self):
+        """Get inputs from cells in the grid."""
+        inputs = {}
+        for i,v in enumerate(self.rows):
+            label, val, conv = v[0], self.GetCellValue(i, 0), v[2]
+            inputs[label] = conv(val)
+        return inputs
 
 class TallyOutputGrid(gridlib.Grid):
     """Simple grid for output of tally."""
     
-    def __init__(self, parent, log, input_grid, grid_worker):
+    def __init__(self, parent, log):
         gridlib.Grid.__init__(self, parent, -1)
+        self.parent = parent
         self.log = log
-        
-        self.input_grid = input_grid(self, log)
-        self.input_grid.Hide()
-        
-        self.grid_worker = grid_worker()
-        self.grid_worker.get_results( self.input_grid )
-        
-        self.row_labels = self.grid_worker.row_labels
-        self.column_labels = self.grid_worker.column_labels
-        self.rows = self.grid_worker.rows
-        
-        self.exclude_columns = self.grid_worker.exclude_columns
-        self.update_sec = self.grid_worker.update_sec
-        
+        self.set_default_attributes()
+        #self.CreateGrid(25, 5)
+
+    def set_default_attributes(self):
+        """Set default attributes of grid."""
+        # FIXME make this dynamic, not hard-coded
+        self.SetDefaultRowSize(20)
+        self.SetRowLabelSize(199)            
+        self.SetColLabelSize(22)
+        self.SetDefaultColSize(1200)
+        #self.SetDefaultRenderer(gridlib.GridCellFloatRenderer(width=6, precision=1))
+        self.SetDefaultCellAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
+        self.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
+        self.SetRowLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
+
+    def bind_events(self):        
         self.moveTo = None
         self.Bind(wx.EVT_IDLE, self.OnIdle)
         self.EnableEditing(False)
         
-        # set default attributes of grid
-        self.SetDefaultRowSize(20)
-        self.SetRowLabelSize(99)            
-        self.SetColLabelSize(22)
-        self.SetDefaultColSize(88)
-        self.SetDefaultRenderer(gridlib.GridCellFloatRenderer(width=6, precision=1))
-        self.SetDefaultCellAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
-        
-        ## loop over self.rows to set cell values
-        #for r in range(len(self.rows)):
-        #    self.SetRowLabelValue(r, self.row_labels[r])
-        #    for c in range(len(self.rows[r])):
-        #        self.SetCellValue(r, c, str(self.rows[r][c]))
-        #        self.SetCellTextColour(r, c, wx.BLUE)
-        #
-        ## if needed, then exclude some columns
-        #for ex_col in exclude_columns:
-        #    # get rid of columns that have ex_col as label
-        #    idx_none_cols = [i for i,x in enumerate(self.column_labels) if x == ex_col]
-        #    for idx in idx_none_cols:
-        #        self.DeleteCols(idx)
-        #    # get rid of 'None' labels too
-        #    self.column_labels = [i for i in self.column_labels if i != ex_col]
-        #
-        ## set column labels
-        #for idx, clabel in enumerate(self.column_labels):
-        #    self.SetColLabelValue(idx, clabel)
-        #self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
-
-        #print self.GetRowSize(0), self.GetColSize(0)
-
-        ## attribute objects let you keep a set of formatting values
-        ## in one spot, and reuse them if needed
-        #_NORMAL_ATTR = gridlib.GridCellAttr()
-        #_NORMAL_ATTR.SetTextColour(wx.BLACK)
-        #_NORMAL_ATTR.SetBackgroundColour(wx.WHITE)
-        #_NORMAL_ATTR.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL))
-        #
-        ### you can set cell attributes for the whole row (or column)
-        #self.SetColAttr(1, _NORMAL_ATTR)
+        ## set default attributes of grid
+        #self.SetDefaultRowSize(20)
+        #self.SetRowLabelSize(99)            
+        #self.SetColLabelSize(22)
+        #self.SetDefaultColSize(88)
+        #self.SetDefaultRenderer(gridlib.GridCellFloatRenderer(width=6, precision=1))
+        #self.SetDefaultCellAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
         
         # test all the events
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
@@ -112,21 +132,16 @@ class TallyOutputGrid(gridlib.Grid):
         self.Bind(gridlib.EVT_GRID_EDITOR_HIDDEN, self.OnEditorHidden)
         self.Bind(gridlib.EVT_GRID_EDITOR_CREATED, self.OnEditorCreated)
 
-        # Status bar
-        self.statusbar = parent.CreateStatusBar(2, 0)        
-        self.statusbar.SetStatusWidths([-1, 320])
-        self.statusbar.SetStatusText("Ready", SB_LEFT)
-        
-        # Set up a timer to update the date/time (every few seconds)
-        self.timer = wx.PyTimer(self.notify)
-        self.timer.Start( int(self.update_sec * 1000) )
-        self.notify() # call it once right away
-
+    def early_method(self, results):
+        # set attributes with results
+        self.row_labels = results['row_labels']
+        self.column_labels = results['column_labels']
+        self.rows = results['rows']
+        self.exclude_columns = results['exclude_columns']
+        self.update_sec = results['update_sec']
+ 
     def update_grid(self):
         """Write labels and values to grid."""
-        # call grid_worker's get_results method
-        self.grid_worker.get_results( self.input_grid )
-        
         # if needed, then exclude some columns
         idx_toss = []
         for xcol in self.exclude_columns:
@@ -137,8 +152,9 @@ class TallyOutputGrid(gridlib.Grid):
         # get rid of labels for exclude columns too
         column_labels = [i for i in self.column_labels if i not in self.exclude_columns]
 
-        # now we have enough info to create grid
-        self.CreateGrid(arr.shape[0], arr.shape[1])
+        ## now we have enough info to create grid
+        #self.CreateGrid(arr.shape[0], arr.shape[1])
+        #self.parent.output_panel.sizer.Add(self, 0, wx.EXPAND)
 
         # loop over array to set cell values
         for r in range(arr.shape[0]):
@@ -151,15 +167,6 @@ class TallyOutputGrid(gridlib.Grid):
         for idx, clabel in enumerate(column_labels):
             self.SetColLabelValue(idx, clabel)
         self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)        
-
-    def get_time_str(self):
-        return datetime.datetime.now().strftime('%d-%b-%Y,%j/%H:%M:%S ')
-
-    def notify(self):
-        """Timer event updated every so often."""
-        self.update_grid()
-        t = self.get_time_str() + ' (update every ' + str(int(self.update_sec)) + 's)'
-        self.statusbar.SetStatusText(t, SB_RIGHT)
 
     def OnCellLeftClick(self, evt):
         self.log.write("OnCellLeftClick: (%d,%d) %s\n" %
@@ -305,121 +312,6 @@ class TallyOutputGrid(gridlib.Grid):
         self.log.write("OnEditorCreated: (%d, %d) %s\n" %
                        (evt.GetRow(), evt.GetCol(), evt.GetControl()))
 
-class TallyFrame(wx.Frame):
-    """The main window (frame) that contains the tally grid."""
-    def __init__(self, parent, log, input_grid, grid_worker):
-        wx.Frame.__init__(self, parent, -1, 'untitled')
-        #self.input_grid = input_grid(self, log)
-        self.grid_worker = grid_worker()
-        self.SetTitle( self.grid_worker.title )
-        self.Maximize(True)
-        self.grid = TallyOutputGrid(self, log, input_grid, grid_worker)
-
-class DummyGridWorker(object):
-    """Quick look."""
-    def __init__(self):
-        self.title = 'Demo Tally'
-    def get_results(self, input_grid):
-        inputs = input_grid.get_inputs()
-        self.row_labels = ['2013-10-31', '2013-11-01']
-        self.column_labels = ['None','hirap','121f03','121f05onex']
-        self.rows = [ [-1.0, 0.0, 0.5, 1.0], [-1.0, 0.9, 0.4, 0.2] ]
-        self.exclude_columns = inputs['exclude_columns']
-        self.update_sec = inputs['update_sec']
-
-# FIXME with full implementation, then rename w/o "Example" prefix
-class ExampleRoadmapsInputGrid(gridlib.Grid):
-    """Simple grid for inputs to a grid worker that gets results for tallying."""
-    def __init__(self, parent, log):
-        gridlib.Grid.__init__(self, parent, -1)
-        self.log = log
-        self.get_default_values()
-        self.set_default_attributes()
-    
-    def set_default_attributes(self):
-        """Set default attributes of grid."""
-        # FIXME make this dynamic, not hard-coded
-        self.SetDefaultRowSize(20)
-        self.SetRowLabelSize(199)            
-        self.SetColLabelSize(22)
-        self.SetDefaultColSize(1080)
-        #self.SetDefaultRenderer(gridlib.GridCellFloatRenderer(width=6, precision=1))
-        self.SetDefaultCellAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
-        self.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
-        self.SetRowLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
-    
-    def get_default_values(self):
-        """Populate roadmaps input grid with default values."""
-        self.column_labels = [ 'value']
-        self.rows = [
-        #    row_label          default_value1
-        #--------------------------------------------------
-            ('start',           '2013-10-18',                   str),
-            ('stop',            '2013-10-24',                   str),
-            ('pattern',         _BATCHROADMAPS_PATTERN,         str),
-            ('basepath',        '/misc/yoda/www/plots/batch',   str),
-            ('update_sec',      '5',                            int),
-            ('exclude_columns', 'None,junk,trash',              lambda x: x.split(',')),
-        ]
-        self.row_labels = [ t[0] for t in self.rows]
-
-    def set_row_labels(self):
-        """Set the row labels."""
-        for i,v in enumerate(self.row_labels):
-            self.SetRowLabelValue(i, v) 
-
-    def set_column_labels(self):
-        """Set the column labels."""
-        for i,v in enumerate(self.column_labels):
-            self.SetColLabelValue(i, v)
-            #self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE) 
-            
-    def set_default_cell_values(self):
-        """Set default cell values using rows."""
-        # loop over rows to set cell values
-        for r, rowtup in enumerate(self.rows):
-            self.SetCellValue( r, 0, str(rowtup[1]) )
-    
-    # FIXME this needs actual code!
-    def get_inputs(self):
-        """Get inputs from cells in the grid."""
-        new_rows = []
-        for i,v in enumerate(self.rows):
-            label, val, conv = v[0], self.GetCellValue(i, 0), v[2]
-            new_rows.append( (label, conv(val), conv))
-        self.rows = new_rows
-
-def dummy_roadmaps_getter():
-        inputs = {}
-        # get range of days (dates)
-        d1 = parser.parse('2013-09-28').date()
-        d2 = parser.parse('2013-10-02').date()
-        
-        # use special pattern
-        pth_field = "(?P<ymdpath>.*)"
-        date_field = "(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})"
-        sensor_field = "_(?P<sensor>.*one)" # sensor field ends with "one"
-        abbrev_field = "_(?P<abbrev>.*)"
-        suffix_field = "_roadmaps(?P<rate>.*)\.pdf\Z"
-
-        inputs['date_range'] = DateRange(start=d1, stop=d2)
-        inputs['pattern'] = pth_field + date_field + sensor_field + abbrev_field + suffix_field
-        inputs['basepath'] = '/misc/yoda/www/plots/batch'
-        inputs['update_sec'] = 5
-        inputs['exclude_columns'] = ['None']
-        
-        return inputs    
-
-def demo():
-    # define log, input_grid, and grid_worker
-    log = sys.stdout
-    input_grid = ExampleRoadmapsInputGrid
-    grid_worker = DummyGridWorker
-    
-    # init and run app
-    app = TallyApp(input_grid, grid_worker, log=log)
-    app.frame.Show(True)
-    app.MainLoop()   
-
 if __name__ == '__main__':
+    from pims.utils.pad_hours_grid import demo
     demo()
