@@ -14,10 +14,10 @@ from datetime_ranger import DateRange
 from pims.utils.pimsdateutil import timestr_to_datetime
 from pims.files.utils import filter_filenames, parse_roadmap_filename
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
-from pims.gui.tally_grid import CheapPadHoursInputGrid, TallyOutputGrid
+from pims.gui.tally_grid import RoadmapsInputGrid, CheapPadHoursInputGrid, TallyOutputGrid
 from pims.gui.iogrids import MainFrame
 
-class RoadmapGridWorker(object):
+class RoadmapsGridWorker(object):
     """A grid with days as rows, sensors as columns, & file count as cell values."""    
 
     def __init__(self, inputs):
@@ -64,7 +64,7 @@ class RoadmapGridWorker(object):
         """Parse file basename to get dict and do data frame insert."""
         # handle degenerate case of no matching files
         if not f:
-            self.data_frame.insert({'date':d, 'hour':None, 'sensor':None, 'abbrev':None, 'bname':None, 'fname':None})
+            self.data_frame.insert({'date':d.strftime('%Y-%m-%d'), 'hour':None, 'sensor':None, 'abbrev':None, 'bname':None, 'fname':None})
             return
         # otherwise, parse file basename via pattern and get dict to insert
         m = re.match(self.pattern, f)
@@ -91,8 +91,8 @@ class RoadmapGridWorker(object):
     def attach(self, other):
         """Attach other DataFrame to this one (both must have the same columns)"""
         # do minimal checking
-        if not isinstance(other, RoadmapGridWorker):
-            raise TypeError('second argument must be a RoadmapGridWorker')
+        if not isinstance(other, RoadmapsGridWorker):
+            raise TypeError('second argument must be a RoadmapsGridWorker')
         # perform attachment
         self.data_frame.attach(other.data_frame)
 
@@ -100,14 +100,14 @@ class RoadmapGridWorker(object):
 
     def __repr__(self): return self.__str__()
 
-class CheapPadHoursGridWorker(RoadmapGridWorker):
+class CheapPadHoursGridWorker(RoadmapsGridWorker):
     """A grid with days as rows, sensors as columns, & "cheap" PAD hours as cell values."""    
 
     def do_data_frame_insert(self, d, f):
         """Parse file basename to get dict and do data frame insert."""
         # handle case of no matching files
         if not f:
-            self.data_frame.insert({'date':d, 'span_hours':0.0, 'sensor':None, 'bname':None, 'fname':None})
+            self.data_frame.insert({'date':d.strftime('%Y-%m-%d'), 'span_hours':0.0, 'sensor':None, 'bname':None, 'fname':None})
             return
         # otherwise, parse file basename via pattern and get dict to insert
         m = re.match(self.pattern, f)
@@ -147,8 +147,8 @@ class CheapPadHoursGridWorker(RoadmapGridWorker):
 def demo():
     # gather input info
     log = sys.stdout
-    input_grid = CheapPadHoursInputGrid
-    grid_worker = CheapPadHoursGridWorker
+    input_grid =  CheapPadHoursInputGrid #RoadmapsInputGrid
+    grid_worker = CheapPadHoursGridWorker #RoadmapsGridWorker
     output_grid = TallyOutputGrid
     # launch app
     app = wx.App(False)

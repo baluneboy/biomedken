@@ -4,14 +4,21 @@ import sys
 import wx
 import wx.grid as  gridlib
 import numpy as np
-#import datetime
 from dateutil import parser
 from pims.utils.datetime_ranger import DateRange
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 
+# TODO add Pause button so that we can freeze state to do remedy or digging
+#      initially, remedy will just be a filtered look at data frame [or pivot table?]
+
 # TODO add buttons to start and stop "selected/orange cells" for 2 types of threads:
 #      monitor thread - disable grid interaction and just update cells every so often
 #      remedy thread - how in the world do we get remedy specifics?
+
+# FIXME we can fold 'basepath' into the PATTERNS and get rid of that attribute -- right?  TAG FIRST!!!
+
+# FIXME for statusbar access to get rid of following line and "grandparents" issue in callbacks
+SB_LEFT = 0
 
 class CheapPadHoursInputGrid(gridlib.Grid):
     """Simple grid for inputs to a grid worker that gets results for tallying."""
@@ -48,7 +55,7 @@ class CheapPadHoursInputGrid(gridlib.Grid):
             ('update_sec',      '5',                    int),
             ('exclude_columns', 'None',                 lambda x: x.split(',')),
         ]
-        self.row_labels = [ t[0] for t in self.rows]
+        self.row_labels = [ t[0] for t in self.rows ]
 
     def set_row_labels(self):
         """Set the row labels."""
@@ -74,6 +81,26 @@ class CheapPadHoursInputGrid(gridlib.Grid):
             label, val, conv = v[0], self.GetCellValue(i, 0), v[2]
             inputs[label] = conv(val)
         return inputs
+
+class RoadmapsInputGrid(CheapPadHoursInputGrid):
+    """Simple grid for inputs to a grid worker that gets roadmap results for tallying."""
+    def __init__(self, parent, log, pattern=_BATCHROADMAPS_PATTERN):
+        super(RoadmapsInputGrid, self).__init__(parent, log, pattern=pattern)
+        
+    def get_default_values(self):
+        """Gather columns_labels, row_labels, and rows for input grid defaults."""
+        self.column_labels = [ 'value']
+        self.rows = [
+        #    row_label          default_value1
+        #--------------------------------------------------
+            ('start',           '2013-09-28',                   parser.parse),
+            ('stop',            '2013-10-02',                   parser.parse),
+            ('pattern',         self.pattern,                   str),
+            ('basepath',        '/misc/yoda/www/plots/batch',   str),
+            ('update_sec',      '5',                            int),
+            ('exclude_columns', 'None',                         lambda x: x.split(',')),
+        ]
+        self.row_labels = [ t[0] for t in self.rows ]   
 
 class TallyOutputGrid(gridlib.Grid):
     """Simple grid for output of tally."""
@@ -199,7 +226,10 @@ class TallyOutputGrid(gridlib.Grid):
                        (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         msg = "%s-WISE: %s" % (wise, label)
         self.log.write(msg + '\n')
-        self.statusbar.SetStatusText(msg, SB_LEFT)
+        ###############################
+        # FIXME the "grandparent" issue
+        ###############################
+        self.parent.parent.statusbar.SetStatusText(msg, SB_LEFT)
         evt.Skip()
 
     def OnLabelRightClick(self, evt):
