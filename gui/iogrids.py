@@ -26,7 +26,7 @@ class InputPanel(wx.Panel):
         self.main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        switch_btn = wx.Button(self, label="Switch")
+        switch_btn = wx.Button(self, label="Show Outputs")
         switch_btn.Bind(wx.EVT_BUTTON, self.switchback)
         
         run_btn = wx.Button(self, label="Run")
@@ -42,9 +42,8 @@ class InputPanel(wx.Panel):
         """Callback for panel switch button."""
         Publisher.sendMessage("switch", "message")
 
-    def on_run(self, event):
-        """Callback for run button."""
-        
+    def run(self):
+        """Get inputs, then results, and update output grid."""
         # get inputs from input grid
         inputs = self.grid.get_inputs()
         
@@ -57,19 +56,13 @@ class InputPanel(wx.Panel):
         inputs['column_labels'] = gw.column_labels
         inputs['rows'] = gw.rows
         
-        # out with the old results grid
-        self.parent.output_panel.remove_grid()
-        
-        # in with the new results grid
-        self.parent.output_panel.add_grid(results=inputs)
-        
-        #for k,v in inputs.iteritems():
-        #    print '-' * 11
-        #    print k
-        #    print v
-            
-        # now we can fill the output grid
-        #self.parent.output_panel.grid.early_method(inputs)
+        # update output grid with new results
+        self.parent.output_panel.refresh_grid(results=inputs)
+
+    def on_run(self, event):
+        """Callback for run button."""
+        self.run() # get results via input grid and grid_worker
+        Publisher.sendMessage("switch", "message")
 
 class OutputPanel(wx.Panel):
     """The output panel."""
@@ -88,7 +81,7 @@ class OutputPanel(wx.Panel):
         control_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.widget_sizer = wx.BoxSizer(wx.VERTICAL)
  
-        self.switch_btn = wx.Button(self, label="Switch")
+        self.switch_btn = wx.Button(self, label="Show Inputs")
         self.switch_btn.Bind(wx.EVT_BUTTON, self.switchback)
         control_sizer.Add(self.switch_btn, 0, wx.LEFT|wx.ALL, 5)
  
@@ -105,15 +98,17 @@ class OutputPanel(wx.Panel):
         """Callback for panel switch button."""
         Publisher.sendMessage("switch", "message")
  
+    def refresh_grid(self, results=None):
+        """Refresh grid with results."""
+        self.remove_grid()
+        self.add_grid(results=results)
+ 
     def add_grid(self, results=None):
         """Add grid."""
         if results:
-            nrows = len(results['row_labels'])
-            ncols = len(results['column_labels'])
-            new_grid = gridlib.Grid(self, -1)
-            new_grid.CreateGrid(nrows, ncols)
-            new_grid.SetCellValue(0, 0, 'this is where results would go')
+            new_grid = self.output_grid(self, self.log, results)
         else:
+            # create a dummy grid if results is None
             new_grid = gridlib.Grid(self, -1)
             new_grid.CreateGrid(3, 3)
             new_grid.SetCellValue(0, 0, 'no results yet')
@@ -226,10 +221,10 @@ class MainFrame(wx.Frame):
 
     def notify(self):
         """Timer event updated every so often."""
-        #self.update_grid()
+        self.input_panel.run()
         t = self.get_time_str() + ' (update every ' + str(int(self.update_sec)) + 's)'
         self.statusbar.SetStatusText(t, self.SB_RIGHT)
     
 if __name__ == "__main__":
-    from pims.utils.pad_hours_grid import demo
+    from pims.utils.gridworkers import demo
     demo()

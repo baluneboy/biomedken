@@ -55,3 +55,11 @@ def filter_filenames(dirpath, predicate):
             if predicate(abspath):
                 yield abspath
                 
+def demo():
+    dirpath = '/misc/yoda/pub/pad/year2013/month01/day03'
+    fullfile_pattern = '(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_(?P<sensor>.*))/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.(?P=sensor)\.header\Z'
+    for f in filter_filenames(dirpath, re.compile(fullfile_pattern).match):
+        print f
+
+if __name__ == "__main__":
+    demo()

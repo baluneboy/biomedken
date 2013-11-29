@@ -50,7 +50,8 @@ class RoadmapGridWorker(object):
     def pivot_table_insert_day_entries(self, d):
         """Walk ymd path and insert regex matches of filename pattern into data frame."""
         dirpath = os.path.join( self.basepath, d.strftime('year%Y/month%m/day%d') )
-        fullfile_pattern = os.path.join(dirpath, self.pattern)
+        #fullfile_pattern = os.path.join(dirpath, self.pattern)
+        fullfile_pattern = self.pattern
         bool_got_match = False
         for f in filter_filenames(dirpath, re.compile(fullfile_pattern).match):
             self.do_data_frame_insert(d, f)
@@ -144,11 +145,12 @@ class CheapPadHoursGridWorker(RoadmapGridWorker):
         self.rows = [ [0 if not x else x for x in r] for r in rows ]        
 
 def demo():
+    # gather input info
     log = sys.stdout
     input_grid = CheapPadHoursInputGrid
     grid_worker = CheapPadHoursGridWorker
     output_grid = TallyOutputGrid
-
+    # launch app
     app = wx.App(False)
     frame = MainFrame(log, input_grid, grid_worker, output_grid)
     frame.Show()

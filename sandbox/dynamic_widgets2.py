@@ -169,7 +169,7 @@ class MainFrame(wx.Frame):
 def demo():
     import sys
     from pims.gui.tally_grid import CheapPadHoursInputGrid, TallyOutputGrid
-    from pims.utils.pad_hours_grid import CheapPadHoursGridWorker
+    from pims.utils.gridworkers import CheapPadHoursGridWorker
     
     log = sys.stdout
     input_grid = CheapPadHoursInputGrid

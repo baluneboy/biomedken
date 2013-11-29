@@ -26,10 +26,10 @@ class CheapPadHoursInputGrid(gridlib.Grid):
     def set_default_attributes(self):
         """Set default attributes of grid."""
         # FIXME make this dynamic, not hard-coded
-        self.SetDefaultRowSize(20)
+        #self.SetDefaultRowSize(20)
         self.SetRowLabelSize(199)            
         self.SetColLabelSize(22)
-        self.SetDefaultColSize(1200)
+        self.SetDefaultColSize(1280)
         #self.SetDefaultRenderer(gridlib.GridCellFloatRenderer(width=6, precision=1))
         self.SetDefaultCellAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
         self.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
@@ -78,12 +78,21 @@ class CheapPadHoursInputGrid(gridlib.Grid):
 class TallyOutputGrid(gridlib.Grid):
     """Simple grid for output of tally."""
     
-    def __init__(self, parent, log):
+    def __init__(self, parent, log, results):
         gridlib.Grid.__init__(self, parent, -1)
         self.parent = parent
         self.log = log
+        
+        # get properties from results dictionary 
+        self.row_labels = results['row_labels']
+        self.column_labels = results['column_labels']
+        self.rows = results['rows']
+        self.exclude_columns = results['exclude_columns']
+        self.update_sec = results['update_sec']
+        
         self.set_default_attributes()
-        #self.CreateGrid(25, 5)
+        self.bind_events()
+        self.update_grid()
 
     def set_default_attributes(self):
         """Set default attributes of grid."""
@@ -91,7 +100,7 @@ class TallyOutputGrid(gridlib.Grid):
         self.SetDefaultRowSize(20)
         self.SetRowLabelSize(199)            
         self.SetColLabelSize(22)
-        self.SetDefaultColSize(1200)
+        #self.SetDefaultColSize(1280)
         #self.SetDefaultRenderer(gridlib.GridCellFloatRenderer(width=6, precision=1))
         self.SetDefaultCellAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
         self.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
@@ -102,15 +111,7 @@ class TallyOutputGrid(gridlib.Grid):
         self.Bind(wx.EVT_IDLE, self.OnIdle)
         self.EnableEditing(False)
         
-        ## set default attributes of grid
-        #self.SetDefaultRowSize(20)
-        #self.SetRowLabelSize(99)            
-        #self.SetColLabelSize(22)
-        #self.SetDefaultColSize(88)
-        #self.SetDefaultRenderer(gridlib.GridCellFloatRenderer(width=6, precision=1))
-        #self.SetDefaultCellAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
-        
-        # test all the events
+        # for now, just simple callbacks on all the events
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
         self.Bind(gridlib.EVT_GRID_CELL_RIGHT_CLICK, self.OnCellRightClick)
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
@@ -132,14 +133,6 @@ class TallyOutputGrid(gridlib.Grid):
         self.Bind(gridlib.EVT_GRID_EDITOR_HIDDEN, self.OnEditorHidden)
         self.Bind(gridlib.EVT_GRID_EDITOR_CREATED, self.OnEditorCreated)
 
-    def early_method(self, results):
-        # set attributes with results
-        self.row_labels = results['row_labels']
-        self.column_labels = results['column_labels']
-        self.rows = results['rows']
-        self.exclude_columns = results['exclude_columns']
-        self.update_sec = results['update_sec']
- 
     def update_grid(self):
         """Write labels and values to grid."""
         # if needed, then exclude some columns
@@ -152,9 +145,8 @@ class TallyOutputGrid(gridlib.Grid):
         # get rid of labels for exclude columns too
         column_labels = [i for i in self.column_labels if i not in self.exclude_columns]
 
-        ## now we have enough info to create grid
-        #self.CreateGrid(arr.shape[0], arr.shape[1])
-        #self.parent.output_panel.sizer.Add(self, 0, wx.EXPAND)
+        # now we have enough info to create grid
+        self.CreateGrid(arr.shape[0], arr.shape[1])
 
         # loop over array to set cell values
         for r in range(arr.shape[0]):
@@ -313,5 +305,5 @@ class TallyOutputGrid(gridlib.Grid):
                        (evt.GetRow(), evt.GetCol(), evt.GetControl()))
 
 if __name__ == '__main__':
-    from pims.utils.pad_hours_grid import demo
+    from pims.utils.gridworkers import demo
     demo()
