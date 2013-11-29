@@ -32,8 +32,12 @@ class InputPanel(wx.Panel):
         self.run_btn = wx.Button(self, label="Run")
         self.run_btn.Bind(wx.EVT_BUTTON, self.on_run)
         
+        self.close_btn = wx.Button(self, label="Close")
+        self.close_btn.Bind(wx.EVT_BUTTON, self.on_close)
+        
         self.btn_sizer.Add(self.switch_btn, 0, wx.ALL|wx.LEFT, 5)
         self.btn_sizer.Add(self.run_btn, 0, wx.ALL|wx.LEFT, 4)
+        self.btn_sizer.Add(self.close_btn,0, wx.ALL|wx.LEFT, 4)
         self.main_sizer.Add(self.btn_sizer)
         self.main_sizer.Add(self.grid, 0, wx.EXPAND)
         self.SetSizer(self.main_sizer)
@@ -63,6 +67,12 @@ class InputPanel(wx.Panel):
         """Callback for run button."""
         self.run() # get results via input grid and grid_worker
         Publisher.sendMessage("switch", "message")
+        
+    def on_close(self, event):
+        """Callback for close button."""
+        #self.frame.statusbar.Destroy()
+        self.frame.Destroy()
+        sys.exit(0)
 
 class OutputPanel(wx.Panel):
     """The output panel."""

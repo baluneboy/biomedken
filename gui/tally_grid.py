@@ -17,6 +17,72 @@ from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_
 
 # FIXME we can fold 'basepath' into the PATTERNS and get rid of that attribute -- right?  TAG FIRST!!!
 
+class CheapPadHoursRenderer(gridlib.PyGridCellRenderer):
+    def __init__(self):
+        gridlib.PyGridCellRenderer.__init__(self)
+
+    def Draw(self, grid, attr, dc, rect, row, col, isSelected):
+        text = grid.GetCellValue(row, col)
+        hours = float(text)
+        hAlign, vAlign = attr.GetAlignment()
+        dc.SetFont( attr.GetFont() )
+        if isSelected:
+            bg = grid.GetSelectionBackground()
+            fg = grid.GetSelectionForeground()
+        else:
+            bg = 'white'
+            fg = attr.GetTextColour()
+            if hours == 0.0:
+                bg = 'pink'
+            elif hours < 8.0:
+                bg = 'yellow'
+            elif hours >= 8.0 and hours < 20.0:
+                fg = 'red'
+            
+        dc.SetTextBackground(bg)
+        dc.SetTextForeground(fg)
+        dc.SetBrush(wx.Brush(bg, wx.SOLID))
+        dc.SetPen(wx.TRANSPARENT_PEN)
+        dc.DrawRectangleRect(rect)           
+        grid.DrawTextRectangle(dc, text, rect, hAlign, vAlign)
+
+    def GetBestSize(self, grid, attr, dc, row, col):
+        text = grid.GetCellValue(row, col)
+        dc.SetFont(attr.GetFont())
+        w, h = dc.GetTextExtent(text)
+        return wx.Size(w, h)
+  
+    def Clone(self):
+        return CheapPadHoursRenderer()
+
+class RoadmapsRenderer(CheapPadHoursRenderer):
+
+    def Draw(self, grid, attr, dc, rect, row, col, isSelected):
+        text = grid.GetCellValue(row, col)
+        numfiles = int(text)
+        hAlign, vAlign = attr.GetAlignment()
+        dc.SetFont( attr.GetFont() )
+        if isSelected:
+            bg = grid.GetSelectionBackground()
+            fg = grid.GetSelectionForeground()
+        else:
+            bg = 'yellow'
+            if numfiles == 0:
+                bg = 'pink'
+            elif numfiles == 4 or numfiles == 13:
+                bg = 'white'
+            fg = attr.GetTextColour()
+
+        dc.SetTextBackground(bg)
+        dc.SetTextForeground(fg)
+        dc.SetBrush(wx.Brush(bg, wx.SOLID))
+        dc.SetPen(wx.TRANSPARENT_PEN)
+        dc.DrawRectangleRect(rect)           
+        grid.DrawTextRectangle(dc, text, rect, hAlign, vAlign)
+  
+    def Clone(self):
+        return RoadmapsRenderer()
+
 class CheapPadHoursInputGrid(gridlib.Grid):
     """Simple grid for inputs to a grid worker that gets results for tallying."""
     def __init__(self, parent, log, pattern=_PADHEADERFILES_PATTERN):
@@ -31,7 +97,7 @@ class CheapPadHoursInputGrid(gridlib.Grid):
         """Set default attributes of grid."""
         # FIXME make this dynamic, not hard-coded
         #self.SetDefaultRowSize(20)
-        self.SetRowLabelSize(199)            
+        self.SetRowLabelSize(140)            
         self.SetColLabelSize(22)
         self.SetDefaultColSize(1280)
         #self.SetDefaultRenderer(gridlib.GridCellFloatRenderer(width=6, precision=1))
@@ -122,12 +188,12 @@ class TallyOutputGrid(gridlib.Grid):
         """Set default attributes of grid."""
         # FIXME make this dynamic, not hard-coded
         self.SetDefaultRowSize(20)
-        self.SetRowLabelSize(199)            
+        self.SetRowLabelSize(99)            
         self.SetColLabelSize(22)
         #self.SetDefaultColSize(1280)
         #self.SetDefaultRenderer(gridlib.GridCellFloatRenderer(width=6, precision=1))
-        self.SetDefaultCellAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
-        self.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
+        self.SetDefaultCellAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
+        self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
         self.SetRowLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
 
     def bind_events(self):        
@@ -175,9 +241,10 @@ class TallyOutputGrid(gridlib.Grid):
         # loop over array to set cell values
         for r in range(arr.shape[0]):
             self.SetRowLabelValue(r, self.row_labels[r])
+            #self.SetRowAttr(r, attr)
             for c in range(arr.shape[1]):
                 self.SetCellValue(r, c, str(arr[r][c]))
-                self.SetCellTextColour(r, c, wx.BLUE)
+                #self.SetCellTextColour(r, c, wx.BLUE)
 
         # set column labels
         for idx, clabel in enumerate(column_labels):
@@ -223,12 +290,7 @@ class TallyOutputGrid(gridlib.Grid):
                        (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         msg = "%s-WISE: %s" % (wise, label)
         self.log.write(msg + '\n')
-        #
-        #####################################################################################
-        ## FIXME the "grandparent" issue
-        #####################################################################################
-        #self.panel.frame.statusbar.SetStatusText(msg, SB_LEFT)
-        #
+
         evt.Skip()
 
     def OnLabelRightClick(self, evt):
@@ -332,6 +394,75 @@ class TallyOutputGrid(gridlib.Grid):
     def OnEditorCreated(self, evt):
         self.log.write("OnEditorCreated: (%d, %d) %s\n" %
                        (evt.GetRow(), evt.GetCol(), evt.GetControl()))
+
+class CheapPadHoursOutputGrid(TallyOutputGrid):
+
+    def update_grid(self):
+        """Write labels and values to grid."""
+        # if needed, then exclude some columns
+        idx_toss = []
+        for xcol in self.exclude_columns:
+            idx_toss += [i for i,x in enumerate(self.column_labels) if x == xcol]
+        arr = np.array(self.rows)
+        arr = np.delete(arr, idx_toss, axis=1)
+            
+        # get rid of labels for exclude columns too
+        column_labels = [i for i in self.column_labels if i not in self.exclude_columns]
+
+        # now we have enough info to create grid
+        self.CreateGrid(arr.shape[0], arr.shape[1])
+
+        # set custom renderer, just for row 4
+        attr = gridlib.GridCellAttr()
+        attr.SetRenderer(CheapPadHoursRenderer())
+
+        # loop over array to set cell values
+        for r in range(arr.shape[0]):
+            self.SetRowLabelValue(r, self.row_labels[r])
+            self.SetRowAttr(r, attr)
+            for c in range(arr.shape[1]):
+                #self.SetCellValue(r, c, str(arr[r][c]))
+                self.SetCellValue(r, c, str( np.round( arr[r][c], 1 )))
+                #self.SetCellTextColour(r, c, wx.BLUE)
+
+        # set column labels
+        for idx, clabel in enumerate(column_labels):
+            self.SetColLabelValue(idx, clabel)
+        self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE) 
+
+class RoadmapsOutputGrid(TallyOutputGrid):
+
+    def update_grid(self):
+        """Write labels and values to grid."""
+        # if needed, then exclude some columns
+        idx_toss = []
+        for xcol in self.exclude_columns:
+            idx_toss += [i for i,x in enumerate(self.column_labels) if x == xcol]
+        arr = np.array(self.rows)
+        arr = np.delete(arr, idx_toss, axis=1)
+            
+        # get rid of labels for exclude columns too
+        column_labels = [i for i in self.column_labels if i not in self.exclude_columns]
+
+        # now we have enough info to create grid
+        self.CreateGrid(arr.shape[0], arr.shape[1])
+
+        # set custom renderer, just for row 4
+        attr = gridlib.GridCellAttr()
+        attr.SetRenderer(RoadmapsRenderer())
+
+        # loop over array to set cell values
+        for r in range(arr.shape[0]):
+            self.SetRowLabelValue(r, self.row_labels[r])
+            self.SetRowAttr(r, attr)
+            for c in range(arr.shape[1]):
+                self.SetCellValue(r, c, str(arr[r][c]))
+                #self.SetCellTextColour(r, c, wx.BLUE)
+
+        # set column labels
+        for idx, clabel in enumerate(column_labels):
+            self.SetColLabelValue(idx, clabel)
+        self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE) 
 
 if __name__ == '__main__':
     from pims.utils.gridworkers import demo

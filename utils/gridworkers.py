@@ -14,7 +14,7 @@ from datetime_ranger import DateRange
 from pims.utils.pimsdateutil import timestr_to_datetime
 from pims.files.utils import filter_filenames, parse_roadmap_filename
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
-from pims.gui.tally_grid import RoadmapsInputGrid, CheapPadHoursInputGrid, TallyOutputGrid
+from pims.gui.tally_grid import RoadmapsInputGrid, CheapPadHoursInputGrid, RoadmapsOutputGrid, CheapPadHoursOutputGrid
 from pims.gui.iogrids import MainFrame
 
 class RoadmapsGridWorker(object):
@@ -144,12 +144,24 @@ class CheapPadHoursGridWorker(RoadmapsGridWorker):
         # replace None's with zero's in the rows
         self.rows = [ [0 if not x else x for x in r] for r in rows ]        
 
-def demo():
+def demo1():
     # gather input info
     log = sys.stdout
     input_grid =  CheapPadHoursInputGrid #RoadmapsInputGrid
     grid_worker = CheapPadHoursGridWorker #RoadmapsGridWorker
-    output_grid = TallyOutputGrid
+    output_grid = CheapPadHoursOutputGrid #RoadmapsOutputGrid
+    # launch app
+    app = wx.App(False)
+    frame = MainFrame(log, input_grid, grid_worker, output_grid)
+    frame.Show()
+    app.MainLoop()
+
+def demo2():
+    # gather input info
+    log = sys.stdout
+    input_grid =  RoadmapsInputGrid
+    grid_worker = RoadmapsGridWorker
+    output_grid = RoadmapsOutputGrid
     # launch app
     app = wx.App(False)
     frame = MainFrame(log, input_grid, grid_worker, output_grid)
@@ -158,7 +170,7 @@ def demo():
 
 if __name__ == "__main__":
     
-    demo()
+    demo2()
     raise SystemExit
 
     #d1 = parser.parse('2013-10-18').date()
