@@ -9,10 +9,10 @@ import datetime
 class InputPanel(wx.Panel):
     """The input panel."""
     
-    def __init__(self, parent, log, input_grid, grid_worker):
+    def __init__(self, frame, log, input_grid, grid_worker):
         """Constructor"""
-        wx.Panel.__init__(self, parent=parent)
-        self.parent = parent
+        wx.Panel.__init__(self, frame)
+        self.frame = frame
 
         self.grid = input_grid(self, log)
         self.grid.CreateGrid( len(self.grid.row_labels), len(self.grid.column_labels) )
@@ -26,14 +26,14 @@ class InputPanel(wx.Panel):
         self.main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        switch_btn = wx.Button(self, label="Show Outputs")
-        switch_btn.Bind(wx.EVT_BUTTON, self.switchback)
+        self.switch_btn = wx.Button(self, label="Show Outputs")
+        self.switch_btn.Bind(wx.EVT_BUTTON, self.switchback)
         
-        run_btn = wx.Button(self, label="Run")
-        run_btn.Bind(wx.EVT_BUTTON, self.on_run)
+        self.run_btn = wx.Button(self, label="Run")
+        self.run_btn.Bind(wx.EVT_BUTTON, self.on_run)
         
-        self.btn_sizer.Add(switch_btn, 0, wx.ALL|wx.LEFT, 5)
-        self.btn_sizer.Add(run_btn, 0, wx.ALL|wx.LEFT, 4)
+        self.btn_sizer.Add(self.switch_btn, 0, wx.ALL|wx.LEFT, 5)
+        self.btn_sizer.Add(self.run_btn, 0, wx.ALL|wx.LEFT, 4)
         self.main_sizer.Add(self.btn_sizer)
         self.main_sizer.Add(self.grid, 0, wx.EXPAND)
         self.SetSizer(self.main_sizer)
@@ -57,7 +57,7 @@ class InputPanel(wx.Panel):
         inputs['rows'] = gw.rows
         
         # update output grid with new results
-        self.parent.output_panel.refresh_grid(results=inputs)
+        self.frame.output_panel.refresh_grid(results=inputs)
 
     def on_run(self, event):
         """Callback for run button."""
@@ -67,29 +67,30 @@ class InputPanel(wx.Panel):
 class OutputPanel(wx.Panel):
     """The output panel."""
  
-    def __init__(self, parent, log, output_grid):
+    def __init__(self, frame, log, output_grid):
         """Constructor"""
-        wx.Panel.__init__(self, parent)
-        self.parent = parent
+        wx.Panel.__init__(self, frame)
+        self.frame = frame
         self.log = log        
         self.output_grid = output_grid
+        self.output_grid.set_status_text = self.frame.set_status_text
         
         self.number_of_grids = 0
-        self.frame = parent
+        self.frame = frame
  
         self.main_sizer = wx.BoxSizer(wx.VERTICAL)
-        control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.control_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.widget_sizer = wx.BoxSizer(wx.VERTICAL)
  
         self.switch_btn = wx.Button(self, label="Show Inputs")
         self.switch_btn.Bind(wx.EVT_BUTTON, self.switchback)
-        control_sizer.Add(self.switch_btn, 0, wx.LEFT|wx.ALL, 5)
+        self.control_sizer.Add(self.switch_btn, 0, wx.LEFT|wx.ALL, 5)
  
         self.update_btn = wx.Button(self, label="Update")
         self.update_btn.Bind(wx.EVT_BUTTON, self.on_update)
-        control_sizer.Add(self.update_btn, 0, wx.LEFT|wx.ALL, 5)
+        self.control_sizer.Add(self.update_btn, 0, wx.LEFT|wx.ALL, 5)
  
-        self.main_sizer.Add(control_sizer, 0, wx.LEFT)
+        self.main_sizer.Add(self.control_sizer, 0, wx.LEFT)
         self.main_sizer.Add(self.widget_sizer, 0, wx.LEFT|wx.ALL, 10)
  
         self.SetSizer(self.main_sizer)
@@ -172,7 +173,7 @@ class MainFrame(wx.Frame):
         # Status bar
         self.statusbar = self.CreateStatusBar(2, 0)        
         self.statusbar.SetStatusWidths([-1, 320])
-        self.statusbar.SetStatusText("Ready", self.SB_LEFT)
+        self.set_status_text("Ready")
         
         # Set up a timer to update the date/time (every few seconds)
         self.update_sec = 5
@@ -224,6 +225,10 @@ class MainFrame(wx.Frame):
         self.input_panel.run()
         t = self.get_time_str() + ' (update every ' + str(int(self.update_sec)) + 's)'
         self.statusbar.SetStatusText(t, self.SB_RIGHT)
+    
+    def set_status_text(self, s):
+        """Set LEFT status text."""
+        self.statusbar.SetStatusText(s, self.SB_LEFT)
     
 if __name__ == "__main__":
     from pims.utils.gridworkers import demo

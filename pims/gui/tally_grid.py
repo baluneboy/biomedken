@@ -8,7 +8,7 @@ from dateutil import parser
 from pims.utils.datetime_ranger import DateRange
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 
-# TODO add Pause button so that we can freeze state to do remedy or digging
+# TODO add Pause button so that we can freeze state to do remedy or maybe "digging"
 #      initially, remedy will just be a filtered look at data frame [or pivot table?]
 
 # TODO add buttons to start and stop "selected/orange cells" for 2 types of threads:
@@ -16,9 +16,6 @@ from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_
 #      remedy thread - how in the world do we get remedy specifics?
 
 # FIXME we can fold 'basepath' into the PATTERNS and get rid of that attribute -- right?  TAG FIRST!!!
-
-# FIXME for statusbar access to get rid of following line and "grandparents" issue in callbacks
-SB_LEFT = 0
 
 class CheapPadHoursInputGrid(gridlib.Grid):
     """Simple grid for inputs to a grid worker that gets results for tallying."""
@@ -105,9 +102,9 @@ class RoadmapsInputGrid(CheapPadHoursInputGrid):
 class TallyOutputGrid(gridlib.Grid):
     """Simple grid for output of tally."""
     
-    def __init__(self, parent, log, results):
-        gridlib.Grid.__init__(self, parent, -1)
-        self.parent = parent
+    def __init__(self, panel, log, results):
+        gridlib.Grid.__init__(self, panel, -1)
+        self.panel = panel
         self.log = log
         
         # get properties from results dictionary 
@@ -226,10 +223,12 @@ class TallyOutputGrid(gridlib.Grid):
                        (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         msg = "%s-WISE: %s" % (wise, label)
         self.log.write(msg + '\n')
-        ###############################
-        # FIXME the "grandparent" issue
-        ###############################
-        self.parent.parent.statusbar.SetStatusText(msg, SB_LEFT)
+        #
+        #####################################################################################
+        ## FIXME the "grandparent" issue
+        #####################################################################################
+        #self.panel.frame.statusbar.SetStatusText(msg, SB_LEFT)
+        #
         evt.Skip()
 
     def OnLabelRightClick(self, evt):
