@@ -184,6 +184,23 @@ class TallyOutputGrid(gridlib.Grid):
         self.bind_events()
         self.update_grid()
 
+    # FIXME can we work around what seems like bug in GetSelectedCells?
+    #       for now, just go with a la carte selection style results
+    def process_selected_cells(self, evt):
+        """Get/process selected cells."""
+        selected_cells = self.GetSelectedCells()
+        #if not cells:
+        #    if self.GetSelectionBlockTopLeft():
+        #        top_left = self.GetSelectionBlockTopLeft()[0]
+        #        bottom_right = self.GetSelectionBlockBottomRight()[0]
+        #        print "top-left, bottom-right:", top_left, bottom_right
+        #    else:
+        #        print "cells ", cells
+        #else:
+        #    print "cells ", cells
+        if selected_cells:
+            self.log.write( '%d selected cells are: %s' % ( len(selected_cells), str(selected_cells) ) )
+
     def set_default_attributes(self):
         """Set default attributes of grid."""
         # FIXME make this dynamic, not hard-coded
@@ -464,6 +481,15 @@ class RoadmapsOutputGrid(TallyOutputGrid):
             self.SetColLabelValue(idx, clabel)
         self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE) 
 
+    # FIXME see base class for bug in selected cells
+    def process_selected_cells(self, evt):
+        """Do roadmaps for selected cells."""
+        selected_cells = self.GetSelectedCells()
+        if selected_cells:
+            self.log.write( '%d jobs to do:\n' % len(selected_cells) )
+            for cell in selected_cells:
+                self.log.write( "generate_vibratory_roadmap('%s', {'*_accel_%s'}, 'CONFIG_FILE', 'ABBREV');\n" % (self.GetRowLabelValue(cell[0]), self.GetColLabelValue(cell[1])))
+
 if __name__ == '__main__':
-    from pims.utils.gridworkers import demo
-    demo()
+    from pims.utils.gridworkers import demo1
+    demo1()

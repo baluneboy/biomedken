@@ -96,9 +96,14 @@ class OutputPanel(wx.Panel):
         self.switch_btn.Bind(wx.EVT_BUTTON, self.switchback)
         self.control_sizer.Add(self.switch_btn, 0, wx.LEFT|wx.ALL, 5)
  
-        self.update_btn = wx.Button(self, label="Update")
-        self.update_btn.Bind(wx.EVT_BUTTON, self.on_update)
-        self.control_sizer.Add(self.update_btn, 0, wx.LEFT|wx.ALL, 5)
+        self.pause_btn = wx.Button(self, label="Pause")
+        self.pause_btn.Bind(wx.EVT_BUTTON, self.on_pause)
+        self.control_sizer.Add(self.pause_btn, 0, wx.LEFT|wx.ALL, 5)
+ 
+        self.process_btn = wx.Button(self, label="Process Selected Cells")
+        # we cannot bind the process button until the "add_grid" method happens
+        self.control_sizer.Add(self.process_btn, 0, wx.LEFT|wx.ALL, 5)
+        self.process_btn.Disable()
  
         self.main_sizer.Add(self.control_sizer, 0, wx.LEFT)
         self.main_sizer.Add(self.widget_sizer, 0, wx.LEFT|wx.ALL, 10)
@@ -118,6 +123,7 @@ class OutputPanel(wx.Panel):
         """Add grid."""
         if results:
             new_grid = self.output_grid(self, self.log, results)
+            self.process_btn.Bind(wx.EVT_BUTTON, new_grid.process_selected_cells)
         else:
             # create a dummy grid if results is None
             new_grid = gridlib.Grid(self, -1)
@@ -135,9 +141,21 @@ class OutputPanel(wx.Panel):
            self.frame.sizer.Layout()
            self.frame.Fit()
  
-    def on_update(self, event):
-        """Remove output grid."""
-        print 'output panel update not implemented yet'
+    def on_continue(self, event):
+        """Continue."""
+        self.frame.timer.Start()
+        self.pause_btn.SetLabel('Pause')
+        self.pause_btn.Bind(wx.EVT_BUTTON, self.on_pause)
+        self.process_btn.Disable()
+        self.frame.notify()
+ 
+    def on_pause(self, event):
+        """Pause."""
+        self.frame.timer.Stop()
+        self.frame.statusbar.SetStatusText('PAUSED', self.frame.SB_RIGHT)
+        self.pause_btn.SetLabel('Continue')
+        self.pause_btn.Bind(wx.EVT_BUTTON, self.on_continue)
+        self.process_btn.Enable()
 
 class MainFrame(wx.Frame):
     """The parent frame for the i/o panels."""
@@ -150,7 +168,7 @@ class MainFrame(wx.Frame):
         wx.Frame.__init__(self, None, wx.ID_ANY, 'Main Frame Title')
  
         self.SetPosition( (1850, 22) )
-        self.SetSize( (1533, 955) )
+        self.SetSize( (1558, 955) )
  
         self.grid_worker = grid_worker
  
@@ -215,7 +233,6 @@ class MainFrame(wx.Frame):
                 item.SetItemLabel("Go Input Panel")
             except:
                 pass
-            
         else:
             self.SetTitle("Input Panel")
             self.input_panel.Show()
@@ -224,7 +241,7 @@ class MainFrame(wx.Frame):
             item = self.panelMenu.FindItemById(self.panelMenu.FindItem("Go Input Panel"))
             item.SetItemLabel("Go Output Panel")
             
-        #self.Fit()
+        self.Fit()
         self.Layout()
 
     def get_time_str(self):
@@ -241,5 +258,5 @@ class MainFrame(wx.Frame):
         self.statusbar.SetStatusText(s, self.SB_LEFT)
     
 if __name__ == "__main__":
-    from pims.utils.gridworkers import demo
-    demo()
+    from pims.utils.gridworkers import demo1
+    demo1()
