@@ -5,6 +5,8 @@ import wx
 import wx.grid as  gridlib
 import numpy as np
 from dateutil import parser
+from datetime import timedelta
+from pims.utils.pimsdateutil import dtm2unix
 from pims.utils.datetime_ranger import DateRange
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 
@@ -111,11 +113,11 @@ class CheapPadHoursInputGrid(gridlib.Grid):
         self.rows = [
         #    row_label          default_value1
         #--------------------------------------------------
-            ('start',           '2013-01-01',           parser.parse),
-            ('stop',            '2013-01-04',           parser.parse),
+            ('start',           '2013-10-23',           parser.parse),
+            ('stop',            '2013-10-31',           parser.parse),
             ('pattern',         self.pattern,           str),
             ('basepath',        '/misc/yoda/pub/pad',   str),
-            ('update_sec',      '5',                    int),
+            ('update_sec',      '60',                   int),
             ('exclude_columns', 'None',                 lambda x: x.split(',')),
         ]
         self.row_labels = [ t[0] for t in self.rows ]
@@ -160,7 +162,7 @@ class RoadmapsInputGrid(CheapPadHoursInputGrid):
             ('stop',            '2013-10-02',                   parser.parse),
             ('pattern',         self.pattern,                   str),
             ('basepath',        '/misc/yoda/www/plots/batch',   str),
-            ('update_sec',      '5',                            int),
+            ('update_sec',      '60',                           int),
             ('exclude_columns', 'None',                         lambda x: x.split(',')),
         ]
         self.row_labels = [ t[0] for t in self.rows ]   
@@ -447,6 +449,19 @@ class CheapPadHoursOutputGrid(TallyOutputGrid):
             self.SetColLabelValue(idx, clabel)
         self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE) 
 
+    # FIXME see base class for bug in selected cells
+    def process_selected_cells(self, evt):
+        """Do roadmaps for selected cells."""
+        selected_cells = self.GetSelectedCells()
+        if selected_cells:
+            self.log.write( '%d jobs to do:\n' % len(selected_cells) )
+            for cell in selected_cells:
+                sensor = self.GetColLabelValue(cell[1])
+                dtm = parser.parse( self.GetRowLabelValue(cell[0]) )
+                u1 = dtm2unix(dtm)
+                u2 = dtm2unix(dtm+timedelta(days=1))
+                print "rm packetWriterState; python /usr/local/bin/pims/packetWriter.py tables=%s ancillaryHost=kyle cutoffDelay=0 delete=0 startTime=%.1f endTime=%.1f" %( sensor, u1, u2)
+
 class RoadmapsOutputGrid(TallyOutputGrid):
 
     def update_grid(self):
@@ -481,6 +496,9 @@ class RoadmapsOutputGrid(TallyOutputGrid):
             self.SetColLabelValue(idx, clabel)
         self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE) 
 
+    # TODO loop over zero cells, ONLY f0[23458] NOT 006 (and desc by date):
+    #      1. kill prev PID
+    #      2. run next cmd (including rm at start)
     # FIXME see base class for bug in selected cells
     def process_selected_cells(self, evt):
         """Do roadmaps for selected cells."""
