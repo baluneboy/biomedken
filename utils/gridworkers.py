@@ -170,7 +170,7 @@ def demo2():
 
 if __name__ == "__main__":
     
-    demo2()
+    demo1()
     raise SystemExit
 
     #d1 = parser.parse('2013-10-18').date()

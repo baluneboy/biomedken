@@ -204,6 +204,14 @@ def days_ago_to_date_time(n):
     d = days_ago_to_date(n)
     return datetime.datetime.combine(d, datetime.time(0))
 
+def unix2dtm(u):
+    """convert a unix time u to a datetime object"""
+    return datetime.datetime.utcfromtimestamp(u)
+
+def dtm2unix(d):
+    """convert a datetime object to unix time (seconds since 01-Jan-1970)"""
+    return (d-datetime.datetime(1970,1,1)).total_seconds()
+
 def testdoc(verbose=True):
     import doctest
     return doctest.testmod(verbose=verbose)

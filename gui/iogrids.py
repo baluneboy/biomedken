@@ -204,7 +204,7 @@ class MainFrame(wx.Frame):
         self.set_status_text("Ready")
         
         # Set up a timer to update the date/time (every few seconds)
-        self.update_sec = 5
+        self.update_sec = 60
         self.timer = wx.PyTimer(self.notify)
         self.timer.Start( int(self.update_sec * 1000) )
         self.notify() # call it once right away
