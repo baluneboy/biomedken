@@ -6,7 +6,7 @@ import wx.grid as  gridlib
 import numpy as np
 from dateutil import parser
 from datetime import timedelta
-from pims.utils.pimsdateutil import dtm2unix
+from pims.utils.pimsdateutil import dtm2unix, format_datetime_as_pad_underscores
 from pims.utils.datetime_ranger import DateRange
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 
@@ -113,11 +113,11 @@ class CheapPadHoursInputGrid(gridlib.Grid):
         self.rows = [
         #    row_label          default_value1
         #--------------------------------------------------
-            ('start',           '2013-10-23',           parser.parse),
-            ('stop',            '2013-10-31',           parser.parse),
+            ('start',           '2013-10-22',           parser.parse),
+            ('stop',            '2013-11-01',           parser.parse),
             ('pattern',         self.pattern,           str),
             ('basepath',        '/misc/yoda/pub/pad',   str),
-            ('update_sec',      '60',                   int),
+            ('update_sec',      '600',                  int),
             ('exclude_columns', 'None',                 lambda x: x.split(',')),
         ]
         self.row_labels = [ t[0] for t in self.rows ]
@@ -158,11 +158,11 @@ class RoadmapsInputGrid(CheapPadHoursInputGrid):
         self.rows = [
         #    row_label          default_value1
         #--------------------------------------------------
-            ('start',           '2013-09-28',                   parser.parse),
-            ('stop',            '2013-10-02',                   parser.parse),
+            ('start',           '2013-10-22',           parser.parse),
+            ('stop',            '2013-11-01',           parser.parse),
             ('pattern',         self.pattern,                   str),
             ('basepath',        '/misc/yoda/www/plots/batch',   str),
-            ('update_sec',      '60',                           int),
+            ('update_sec',      '600',                          int),
             ('exclude_columns', 'None',                         lambda x: x.split(',')),
         ]
         self.row_labels = [ t[0] for t in self.rows ]   
@@ -456,11 +456,14 @@ class CheapPadHoursOutputGrid(TallyOutputGrid):
         if selected_cells:
             self.log.write( '%d jobs to do:\n' % len(selected_cells) )
             for cell in selected_cells:
-                sensor = self.GetColLabelValue(cell[1])
                 dtm = parser.parse( self.GetRowLabelValue(cell[0]) )
-                u1 = dtm2unix(dtm)
-                u2 = dtm2unix(dtm+timedelta(days=1))
-                print "rm packetWriterState; python /usr/local/bin/pims/packetWriter.py tables=%s ancillaryHost=kyle cutoffDelay=0 delete=0 startTime=%.1f endTime=%.1f" %( sensor, u1, u2)
+                sensor = self.GetColLabelValue(cell[1])
+                #u1 = dtm2unix(dtm)
+                #u2 = dtm2unix(dtm+timedelta(days=1))
+                #print "rm packetWriterState; python /usr/local/bin/pims/packetWriter.py tables=%s ancillaryHost=kyle cutoffDelay=0 delete=0 startTime=%.1f endTime=%.1f" %( sensor, u1, u2)
+                s1 = format_datetime_as_pad_underscores(dtm)
+                s2 = format_datetime_as_pad_underscores(dtm+timedelta(days=1))
+                print "python /home/pims/dev/programs/python/packet/resample.py fcNew=6 sensor=%s dateStart=%s dateStop=%s" %( sensor.strip('006'), s1, s2)
 
 class RoadmapsOutputGrid(TallyOutputGrid):
 
