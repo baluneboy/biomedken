@@ -203,8 +203,9 @@ class MainFrame(wx.Frame):
         self.statusbar.SetStatusWidths([-1, 320])
         self.set_status_text("Ready")
         
+        # FIXME this does not change update_sec with input_grid value's changes
         # Set up a timer to update the date/time (every few seconds)
-        self.update_sec = 60
+        self.update_sec = self.input_panel.grid.get_inputs()['update_sec']
         self.timer = wx.PyTimer(self.notify)
         self.timer.Start( int(self.update_sec * 1000) )
         self.notify() # call it once right away

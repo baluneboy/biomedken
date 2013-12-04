@@ -9,12 +9,13 @@ import numpy as np
 ##st1 = read("http://examples.obspy.org/dis.G.SCZ.__.BHE")
 ##st2 = read("http://examples.obspy.org/dis.G.SCZ.__.BHE.1")
 ##st3 = read("http://examples.obspy.org/dis.G.SCZ.__.BHE.2")
-##st1.write('/tmp/stream1.mseed', format='MSEED')
-##st2.write('/tmp/stream2.mseed', format='MSEED')
-##st3.write('/tmp/stream3.mseed', format='MSEED')
-st1 = read('/tmp/stream1.mseed')
-st2 = read('/tmp/stream2.mseed')
-st3 = read('/tmp/stream3.mseed')
+##st1.write('/misc/yoda/tmp/stream1.mseed', format='MSEED')
+##st2.write('/misc/yoda/tmp/stream2.mseed', format='MSEED')
+##st3.write('/misc/yoda/tmp/stream3.mseed', format='MSEED')
+##raise SystemExit
+st1 = read('/misc/yoda/tmp/stream1.mseed')
+st2 = read('/misc/yoda/tmp/stream2.mseed')
+st3 = read('/misc/yoda/tmp/stream3.mseed')
 #st = st1 + st2 + st3
 
 # Introduce some gaps
