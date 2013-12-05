@@ -1,5 +1,17 @@
 #!/usr/bin/env python
 
+# TODO how to read rttrace from db
+#from obspy import read
+#from StringIO import StringIO
+#import urllib2
+#example_url = "http://examples.obspy.org/loc_RJOB20050831023349.z"
+#stringio_obj = StringIO(urllib2.urlopen(example_url).read())
+#st = read(stringio_obj)
+#print(st)
+
+# TODO see how "nice/easy" updates happen with rttrace
+# TODO see how gaps and skewness affects rttrace and plot updates
+
 import numpy as np
 from obspy.realtime import RtTrace
 from obspy import read
