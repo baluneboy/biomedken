@@ -9,6 +9,8 @@ from datetime import timedelta
 from pims.utils.pimsdateutil import dtm2unix, format_datetime_as_pad_underscores
 from pims.utils.datetime_ranger import DateRange
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
+#from pims.utils import pyperclip
+from pims.utils.commands import timeLogRun
 
 # TODO add Pause button so that we can freeze state to do remedy or maybe "digging"
 #      initially, remedy will just be a filtered look at data frame [or pivot table?]
@@ -449,12 +451,14 @@ class CheapPadHoursOutputGrid(TallyOutputGrid):
             self.SetColLabelValue(idx, clabel)
         self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE) 
 
+    # FIXME only allow this for "006" columns [ OR should it be the "unfiltered" sensor column?]
     # FIXME see base class for bug in selected cells
     def process_selected_cells(self, evt):
-        """Do roadmaps for selected cells."""
+        """Do resample for selected cells."""
         selected_cells = self.GetSelectedCells()
         if selected_cells:
             self.log.write( '%d jobs to do:\n' % len(selected_cells) )
+            prefix_cmd = 'export OCTAVEPATH=/home/pims/dev/programs/octave;'
             for cell in selected_cells:
                 dtm = parser.parse( self.GetRowLabelValue(cell[0]) )
                 sensor = self.GetColLabelValue(cell[1])
@@ -463,7 +467,8 @@ class CheapPadHoursOutputGrid(TallyOutputGrid):
                 #print "rm packetWriterState; python /usr/local/bin/pims/packetWriter.py tables=%s ancillaryHost=kyle cutoffDelay=0 delete=0 startTime=%.1f endTime=%.1f" %( sensor, u1, u2)
                 s1 = format_datetime_as_pad_underscores(dtm)
                 s2 = format_datetime_as_pad_underscores(dtm+timedelta(days=1))
-                print "python /home/pims/dev/programs/python/packet/resample.py fcNew=6 sensor=%s dateStart=%s dateStop=%s" %( sensor.strip('006'), s1, s2)
+                cmdstr = prefix_cmd + "python /home/pims/dev/programs/python/packet/resample.py fcNew=6 sensor=%s dateStart=%s dateStop=%s" %( sensor.strip('006'), s1, s2)
+                timeLogRun(cmdstr, 2700, None) # timeout of 2700 seconds for 45 minutes
 
 class RoadmapsOutputGrid(TallyOutputGrid):
 
@@ -499,6 +504,25 @@ class RoadmapsOutputGrid(TallyOutputGrid):
             self.SetColLabelValue(idx, clabel)
         self.SetColLabelAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE) 
 
+    def runMatlabSuperfine(self, sensor, d, logProcess=None):
+        """run generate_vibratory_roadmap_superfine on ike for this day/sensor"""
+        cmdstr = 'ssh ike /home/pims/dev/programs/bash/backfillsuperfine.bash %s %s "*_accel_*%s"' % (d.strftime('%Y-%m-%d'), d.strftime('%Y-%m-%d'), sensor)
+        #print cmdstr
+        timeLogRun(cmdstr, 3600, logProcess) # timeout of 3600 seconds for 60 minutes
+
+    def runMatlabRoadmap(self, sensor, d, mfile, abbrev, logProcess=None):
+        """run cutoff or 10 Hz version of generate_vibratory_roadmap on ike for this day/sensor"""
+        cmdstr = 'ssh ike /home/pims/dev/programs/bash/backfill_roadmap.bash %s "*_accel_*%s" %s %s' % (d.strftime('%Y-%m-%d'), sensor, mfile, abbrev)
+        #print cmdstr        
+        timeLogRun(cmdstr, 3600, logProcess) # timeout of 3600 seconds for 60 minutes
+    
+    def runIkePythonRoadmap(self, dateRange, logProcess=None):
+        """run processRoadmap.py on ike to get new PDFs into the mix"""
+        repairYear = dateRange.start.strftime('%Y')
+        cmdstr = "ssh ike 'cd /home/pims/roadmap && python /home/pims/roadmap/processRoadmap.py logLevel=3 mode=repair repairModTime=5 repairYear=%s | grep Inserted'" % repairYear
+        #print cmdstr        
+        timeLogRun(cmdstr, 900, logProcess) # timeout of 900 seconds for 15 minutes
+
     # TODO loop over zero cells, ONLY f0[23458] NOT 006 (and desc by date):
     #      1. kill prev PID
     #      2. run next cmd (including rm at start)
@@ -508,9 +532,17 @@ class RoadmapsOutputGrid(TallyOutputGrid):
         selected_cells = self.GetSelectedCells()
         if selected_cells:
             self.log.write( '%d jobs to do:\n' % len(selected_cells) )
+            prefix_cmd = 'export OCTAVEPATH=/home/pims/dev/programs/octave;'
             for cell in selected_cells:
-                self.log.write( "generate_vibratory_roadmap('%s', {'*_accel_%s'}, 'CONFIG_FILE', 'ABBREV');\n" % (self.GetRowLabelValue(cell[0]), self.GetColLabelValue(cell[1])))
+                dtm = parser.parse( self.GetRowLabelValue(cell[0]) )
+                sensor = self.GetColLabelValue(cell[1])
+                if sensor.endswith('one'):
+                    self.runMatlabSuperfine(sensor.strip('one'), dtm)
+                elif sensor.endswith('ten'):
+                    self.runMatlabRoadmap(sensor.strip('ten'), dtm, 'configure_roadmap_spectrogram_10hz', "ten")
+                else:
+                    self.runMatlabRoadmap(sensor, dtm, 'configure_roadmap_spectrogram', "''")
 
 if __name__ == '__main__':
-    from pims.utils.gridworkers import demo1
-    demo1()
+    from pims.utils.gridworkers import demo1, demo2
+    demo2()
