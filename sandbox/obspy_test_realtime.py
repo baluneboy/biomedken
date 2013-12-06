@@ -195,22 +195,26 @@ class RtTraceTestCase(unittest.TestCase):
         rt_trace.registerRtProcess('tauc', width=20, notexistingoption=True)
         self.assertRaises(TypeError, rt_trace.append, trace)
 
-    ##def test_appendFloats(self):
-    ##    """
-    ##    Test for appending floats (float32) values.
-    ##    """
-    ##    rtr = RtTrace()
-    ##    tr1 = Trace(data=np.array([0, 1]))
-    ##    tr2 = Trace(data=np.array([2, 3]))
-    ##    tr2.stats.starttime = tr1.stats.endtime
-    ##    rtr.append(tr1)        
-    ##    
-    ##    tr = read()[0]
-    ##    tr.data = np.require(tr.data, dtype='>f4')
-    ##    traces = tr / 3
-    ##    rtr = RtTrace()
-    ##    for trace in traces:
-    ##        rtr.append(trace)    
+    def test_appendFloats(self):
+        """
+        Test for appending floats (float32) values.
+        """
+        #rtr = RtTrace()
+        #tr1 = Trace(data=np.array([0, 1]))
+        #tr2 = Trace(data=np.array([2, 3]))
+        #tr3 = Trace(data=np.array([7, 8]))
+        #tr2.stats.starttime = tr1.stats.endtime - 1 # overlap
+        #tr3.stats.starttime = tr2.stats.endtime + 3 # gap
+        #rtr.append(tr1)
+        #rtr.append(tr2)
+        #rtr.append(tr3)
+        
+        tr = read()[0]
+        tr.data = np.require(tr.data, dtype='>f4')
+        traces = tr / 3
+        rtr = RtTrace()
+        for trace in traces:
+            rtr.append(trace)
 
 def suite():
     return unittest.makeSuite(RtTraceTestCase, 'test')
