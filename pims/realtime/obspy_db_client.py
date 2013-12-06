@@ -4,10 +4,10 @@ from obspy.db.client import Client
 
 class PimsClient(Client):
     """
-    Client for a database created by PIMS packetGrabber (instead of obspy.db).
+    Client for database created by PIMS packetGrabber (instead of obspy.db).
     """
-    def __init__(self, *args, **kwargs):
-        super(PimsClient, self).__init__(*args, **kwargs)
+    def __init__(self, url=None, session=None, debug=False):
+        super(PimsClient, self).__init__(url, session, debug)
         """
         Initializes the client.
 
@@ -23,5 +23,5 @@ class PimsClient(Client):
         :type debug: boolean, optional
         :param debug: Enables verbose output.
         """
-        super(PimsClient, self).__init__(*args, **kwargs)
+        super(PimsClient, self).__init__(url, session, debug)
         self.extra_stuff = 'extra_stuff'
