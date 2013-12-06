@@ -12,6 +12,27 @@
 # TODO see how "nice/easy" updates happen with rttrace
 # TODO see how gaps and skewness affects rttrace and plot updates
 
+#  SEED Conventions
+#  Agency.Deployment.Station.Location.Channel
+  
+#  CHANNEL CHAR 1
+#  F (unknown description)		fs >= 1000 and fs < 5000
+#  C (unknown description)		fs >=  250 and fs < 1000
+#  E (Extremely Short Period)	fs >=   80 and fs <  250
+#  S (Short Period)			    fs >=   10 and fs <   80
+#  
+#  CHANNEL CHAR 2
+#  N (Accelerometer)
+#  
+#  CHANNEL CHAR 3
+#  A B C (SSA's X, Y, Z)
+#  1 2 3 (sensor's X, Y, Z)
+#  
+#  NASA.ISS.SAMS.05.CNA for SAMS, SE-05,  500 sps, X-axis of SSA
+#  NASA.ISS.SAME.06.CNB for SAMS, ES-06,  500 sps, Y-axis of SSA
+#  NASA.ISS.MAMS.HI.FNC for MAMS, HiRAP, 1000 sps, Z-axis of SSA
+#  NASA.ISS.SAMS.02.CN3 for SAMS, SE-02,  500 sps, X-axis of sensor
+
 import numpy as np
 from obspy.realtime import RtTrace
 from obspy import read

@@ -516,10 +516,10 @@ class RoadmapsOutputGrid(TallyOutputGrid):
         #print cmdstr        
         timeLogRun(cmdstr, 3600, logProcess) # timeout of 3600 seconds for 60 minutes
     
-    def runIkePythonRoadmap(self, dateRange, logProcess=None):
+    def runIkeRepairRoadmap(self, d, logProcess=None):
         """run processRoadmap.py on ike to get new PDFs into the mix"""
-        repairYear = dateRange.start.strftime('%Y')
-        cmdstr = "ssh ike 'cd /home/pims/roadmap && python /home/pims/roadmap/processRoadmap.py logLevel=3 mode=repair repairModTime=5 repairYear=%s | grep Inserted'" % repairYear
+        repairYear = d.strftime('%Y')
+        cmdstr = "ssh ike 'cd /home/pims/roadmap && python /home/pims/roadmap/processRoadmap.py logLevel=3 mode=repair repairModTime=4 repairYear=%s | grep nserted'" % repairYear
         #print cmdstr        
         timeLogRun(cmdstr, 900, logProcess) # timeout of 900 seconds for 15 minutes
 
@@ -542,6 +542,7 @@ class RoadmapsOutputGrid(TallyOutputGrid):
                     self.runMatlabRoadmap(sensor.strip('ten'), dtm, 'configure_roadmap_spectrogram_10hz', "ten")
                 else:
                     self.runMatlabRoadmap(sensor, dtm, 'configure_roadmap_spectrogram', "''")
+                self.runIkeRepairRoadmap(dtm)
 
 if __name__ == '__main__':
     from pims.utils.gridworkers import demo1, demo2

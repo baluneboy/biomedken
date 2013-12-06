@@ -7,7 +7,6 @@ from MySQLdb import *
 from _mysql_exceptions import *
 from pims.config.conf import get_db_params
 
-
 # FIXME add logging feature
 
 # FIXME need hostname for testing (db @home vs. @work)
@@ -19,6 +18,25 @@ else:
 
 # TODO class this up (c'mon man)
 _SCHEMA, _UNAME, _PASSWD = get_db_params('pimsquery')
+
+# FIXME did this sqlalchemy quick test wrt obspy
+def quick_test(host, schema):
+    from sqlalchemy import create_engine
+    # 'mysql+mysqldb://<user>:<password>@<host>[:<port>]/<dbname>'
+    # 'mysql://username:password@serverlocation/mysqldb_databasename?charset=utf8&use_unicode=0'
+    engine = create_engine('mysql://' + _UNAME + ':' + _PASSWD + '@' + host + '/' + schema + '?charset=utf8&use_unicode=0')
+    connection = engine.connect()
+    result = engine.execute("select time from 121f03 order by time desc limit 9")
+    for row in result:
+        print "time:", row['time']
+    r2 = engine.execute('select from_unixtime(time) as gmt from 121f03 order by time desc limit 6')
+    for r in r2:
+        print "GMT:", r['gmt']
+    result.close()
+    r2.close()
+    
+#quick_test('manbearpig', 'pims')
+#raise SystemExit
 
 #####################################################################################
 # SQL helper routines ---------------------------------------------------------------
