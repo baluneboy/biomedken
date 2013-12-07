@@ -1,121 +1,210 @@
 #!/usr/bin/env python
 
-# TODO how to read rttrace from db
-#from obspy import read
-#from StringIO import StringIO
-#import urllib2
-#example_url = "http://examples.obspy.org/loc_RJOB20050831023349.z"
-#stringio_obj = StringIO(urllib2.urlopen(example_url).read())
-#st = read(stringio_obj)
-#print(st)
+###############################################################################
+# For SeedLink RtTrace example, see:
+# /usr/lib/python2.7/dist-packages/obspy/seedlink/tests/example_SL_RTTrace.py
+###############################################################################
 
-# TODO see how "nice/easy" updates happen with rttrace
-# TODO see how gaps and skewness affects rttrace and plot updates
+# TODO see ~/dev/programs/python/realtime/examples$ komodo strip_chart_example.py
 
-#  SEED Conventions
-#  Agency.Deployment.Station.Location.Channel
-  
-#  CHANNEL CHAR 1
-#  F (unknown description)		fs >= 1000 and fs < 5000
-#  C (unknown description)		fs >=  250 and fs < 1000
-#  E (Extremely Short Period)	fs >=   80 and fs <  250
-#  S (Short Period)			    fs >=   10 and fs <   80
-#  
-#  CHANNEL CHAR 2
-#  N (Accelerometer)
-#  
-#  CHANNEL CHAR 3
-#  A B C (SSA's X, Y, Z)
-#  1 2 3 (sensor's X, Y, Z)
-#  
-#  NASA.ISS.SAMS.05.CNA for SAMS, SE-05,  500 sps, X-axis of SSA
-#  NASA.ISS.SAME.06.CNB for SAMS, ES-06,  500 sps, Y-axis of SSA
-#  NASA.ISS.MAMS.HI.FNC for MAMS, HiRAP, 1000 sps, Z-axis of SSA
-#  NASA.ISS.SAMS.02.CN3 for SAMS, SE-02,  500 sps, X-axis of sensor
+import sys
+import traceback
+import logging
 
 import numpy as np
-from obspy.realtime import RtTrace
-from obspy import read
-from obspy.realtime.signal import calculateMwpMag
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
-def read_example_trace():
-    """Read first trace of example SAC data file and extract contained time offset and epicentral distance of an earthquake"""
-    data_trace = read('/path/to/II.TLY.BHZ.SAC')[0]
-    ref_time_offset = data_trace.stats.sac.a
-    epicentral_distance = data_trace.stats.sac.gcarc
-    return data_trace, ref_time_offset, epicentral_distance 
+from obspy.core.utcdatetime import UTCDateTime
+from obspy.realtime.rttrace import RtTrace
+from obspy.seedlink.seedlinkexception import SeedLinkException
+from obspy.seedlink.slclient import SLClient
+from obspy.seedlink.slpacket import SLPacket
 
-def split_trace_into3(data_trace):
-    """Split given trace into a list of three sub-traces"""
-    traces = data_trace / 3
-    return traces
+# log
+logging.basicConfig(filename='/tmp/pims_realtime.log', level=logging.DEBUG,
+                    format='%(asctime)s,%(name)s,%(levelname)s: %(message)s')
+log = logging.getLogger('pims.realtime')
+log.info('Logging started.')
 
-def assemble_rttrace_register2procs(data_trace, ref_time_offset):
-    """Assemble real time trace and register two processes"""
-    rt_trace = RtTrace()
-    return rt_trace, rt_trace.registerRtProcess('integrate'), rt_trace.registerRtProcess('mwpIntegral', mem_time=240,
-                                                                    ref_time=(data_trace.stats.starttime + ref_time_offset),
-                                                                    max_time=120, gain=1.610210e+09)
-
-def append_and_autoprocess_packet(rt_trace, traces):
-    """Append and auto-process packet data into RtTrace"""
-    for tr in traces:
-        processed_trace = rt_trace.append(tr, gap_overlap_check=True)
-
-def postprocess_Mwp(rt_trace, epicentral_distance):    
-    """Some post processing to get Mwp"""
-    peak = np.amax(np.abs(rt_trace.data))
-    mwp = calculateMwpMag(peak, epicentral_distance)
-    return peak, mwp
-
-def demo():
+class MySLClient(SLClient):
     """
-    from http://docs.obspy.org/packages/autogen/obspy.realtime.rttrace.RtTrace.html#obspy.realtime.rttrace.RtTrace
-    
-    >>> demo()    
-    12684 301.506 30.0855
-    3 Trace(s) in Stream:
-    II.TLY.00.BHZ | 2011-03-11T05:47:30.033400Z - 2011-03-11T05:51:01.384085Z | 20.0 Hz, 4228 samples
-    II.TLY.00.BHZ | 2011-03-11T05:51:01.434086Z - 2011-03-11T05:54:32.784771Z | 20.0 Hz, 4228 samples
-    II.TLY.00.BHZ | 2011-03-11T05:54:32.834771Z - 2011-03-11T05:58:04.185456Z | 20.0 Hz, 4228 samples
-    1 2
-    0.136404 8.78902911791
-    
+    A custom SeedLink client.
     """
-    
-    # 1. Read first trace of example SAC data file and extract contained time offset and epicentral distance of an earthquake:
-    data_trace, ref_time_offset, epicentral_distance = read_example_trace()
-    print len(data_trace), ref_time_offset, epicentral_distance
+    def __init__(self, rt_trace=RtTrace(), *args, **kwargs):
+        """
+        Creates a new instance of SLClient accepting a realtime trace handler.
+        """
+        self.rt_trace = rt_trace
+        super(self.__class__, self).__init__(*args, **kwargs)
 
-    # 2. Split given trace into a list of three sub-traces:
-    traces = split_trace_into3(data_trace)
-    print traces
+    def packetHandler(self, count, slpack):
+        """
+        Processes each packet received from the SeedLinkConnection.
+
+        This method should be overridden when sub-classing SLClient.
+
+        :type count: int
+        :param count:  Packet counter.
+        :type slpack: :class:`~obspy.seedlink.SLPacket`
+        :param slpack: packet to process.
+        :return: Boolean true if connection to SeedLink server should be \
+            closed and session terminated, false otherwise.
+        """
+        # check if not a complete packet
+        if slpack is None or (slpack == SLPacket.SLNOPACKET) or \
+                (slpack == SLPacket.SLERROR):
+            return False
+
+        # get basic packet info
+        seqnum = slpack.getSequenceNumber()
+        type = slpack.getType()
+
+        # process INFO packets here
+        if (type == SLPacket.TYPE_SLINF):
+            return False
+        if (type == SLPacket.TYPE_SLINFT):
+            print "-" * 40
+            print "Complete INFO:\n" + self.slconn.getInfoString()
+            if self.infolevel is not None:
+                return True
+            else:
+                return False
+
+        # can send an in-line INFO request here
+        if (count % 100 == 0):
+            infostr = "ID"
+            self.slconn.requestInfo(infostr)
+
+        # if here, must be a data blockette
+        print "-" * 40
+        print self.__class__.__name__ + ": packet seqnum:",
+        print str(seqnum) + ": blockette type: " + str(type)
+
+        # process packet data
+        trace = slpack.getTrace()
+        if trace is not None:
+            print self.__class__.__name__ + ": blockette contains a trace: ",
+            print trace.id, trace.stats['starttime'],
+            print " dt:" + str(1.0 / trace.stats['sampling_rate']),
+            print " npts:" + str(trace.stats['npts']),
+            print " sampletype:" + str(trace.stats['sampletype']),
+            print " dataquality:" + str(trace.stats['dataquality'])
+            # Custom: append packet data to RtTrace
+            #g_o_check = True    # raises Error on gap or overlap
+            g_o_check = False   # clears RTTrace memory on gap or overlap
+            self.rt_trace.append(trace, gap_overlap_check=g_o_check,
+                                 verbose=True)
+            length = self.rt_trace.stats.npts / self.rt_trace.stats.sampling_rate
+            print self.__class__.__name__ + ":",
+            print "append to RTTrace: npts:", str(self.rt_trace.stats.npts),
+            print "length:" + str(length) + "s"
+            print "rt_trace: ", self.rt_trace
+            print "last several samples: ", self.rt_trace[-9:]
+
+            # post processing to do something interesting
+            peak = np.amax(np.abs(self.rt_trace.data))
+            print self.__class__.__name__ + ": abs peak = " + str(peak)
+        else:
+            print self.__class__.__name__ + ": blockette contains no trace"
+
+        return False
+
+def main():
+    # initialize realtime trace
+    rttrace = RtTrace(max_length=30) # seconds
+    rttrace.registerRtProcess(np.abs) # also see rttrace.registerRtProcess('integrate')
+
+    # width in num samples
+    boxcar_width = 10 * int(rttrace.stats.sampling_rate + 0.5)
+    rttrace.registerRtProcess('boxcar', width=boxcar_width)
+
+    print "The SeedLink client collects data packets & appends them to RTTrace object."
+
+    # create SeedLink client
+    slClient = None
+    try:
+        slClient = MySLClient(rt_trace=rttrace)
+
+        #slClient.slconn.setSLAddress("geofon.gfz-potsdam.de:18000")
+        #slClient.multiselect = ("GE_STU:BHZ")
+
+        #slClient.slconn.setSLAddress("discovery.rm.ingv.it:39962")
+        #slClient.multiselect = ("IV_MGAB:BHZ")
+
+        slClient.slconn.setSLAddress("rtserve.iris.washington.edu:18000")
+        slClient.multiselect = ("AT_TTA:BHZ")
+        
+        # set a time window from 90 sec in the past to 30 sec in the future
+        dt = UTCDateTime()
+        slClient.begin_time = (dt - 90.0).formatSeedLink()
+        slClient.end_time = (dt + 30.0).formatSeedLink()
+        print "SeedLink date-time range:", slClient.begin_time, " -> ",
+        print slClient.end_time
+        slClient.verbose = 3
+        slClient.initialize()
+        slClient.run()
+    except SeedLinkException as sle:
+        log.critical(sle)
+        traceback.print_exc()
+        raise sle
+    except Exception as e:
+        sys.stderr.write("Error:" + str(e))
+        traceback.print_exc()
+        raise e
+
+class CheapDemoSpecgram(object):
+    """cheap animated specgram demo using RtTrace!"""    
     
-    # 3. Assemble real time trace and register two processes:
-    rt_trace, i1, i2 = assemble_rttrace_register2procs(data_trace, ref_time_offset)
-    print i1, i2
+    def __init__(self, fig):
+        self.fig = fig
     
-    # 4. Append and auto-process packet data into RtTrace:
-    append_and_autoprocess_packet(rt_trace, traces)
+    def initialize(self):
+        """initialize animation"""
+        ##global fig, ax, t, fs, Nfft, No, tzero_text
+        self.fs, self.Nfft, self.No = 2000, 1024, 512
+        self.t = self.getTimeInSeconds(0.0, 20.0)     
+        self.ax = self.fig.add_subplot(111) #, autoscale_on=False, xlim=(-2, 2), ylim=(-2, 2))
+        self.tzero_text = self.ax.text(0.05, 0.9, '', transform=self.ax.transAxes)
+        self.im = self.specgram()
+        return self.im, self.tzero_text
     
-    # 5. Some post processing to get Mwp:
-    peak, mwp = postprocess_Mwp(rt_trace, epicentral_distance)
-    print peak, mwp
+    def animate(self, i):
+        """perform animation step, return tuple of things that change"""
+        ##global fig, ax, t, fs, Nfft, No, tzero_text
+        self.t += 100.0/self.fs
+        self.tzero_text.set_text('t[0] = %.3fs' % self.t[0])
+        self.im = self.specgram()
+        return self.im, self.tzero_text
+
+    def getTimeInSeconds(self, tmin, tmax):
+        """generate time array (in seconds) based on sample rate (fs) and min/max"""
+        return np.arange(tmin, tmax, 1.0/self.fs)
     
-    # 6. Plot
-    #rt_trace.plot(color='red', tick_rotation=45, number_of_ticks=6)
+    def getSignal(self):
+        """this has to be made '3d' for xyz accel signal, but for now..."""
+        s1 = np.sin(2 * np.pi * 100 * self.t)
+        s2 = 2*np.sin(2 * np.pi * 500 * self.t)
+        # create a transient "chirp" (zero s2 signal before/after chirp)
+        mask = np.where(np.logical_and(self.t>10, self.t<12), 1.0, 0.0)
+        s2 = s2 * mask
+        # add some noise into the mix
+        nse = 0.01*np.random.randn(len(self.t))/1.0
+        s = s1 + s2 + nse
+        return s # the signal
     
-    fig, ax = plt.subplots()
-    rt_trace.plot(color='red', tick_rotation=45, fig=fig)
-    ymin, ymax = ax.get_ylim()
-    #ax.xaxis.set_ticks(np.arange(start, end, 0.712123))
-    #ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
-    plt.yaxis.set_ticks(np.arange(ymin, ymax, 0.02))
+    def specgram(self):
+        """spectrogram"""
+        y = self.getSignal()
+        self.Pxx, self.fbins, self.tbins, self.im = plt.specgram(y, Fs=self.fs, NFFT=self.Nfft, noverlap=self.No, cmap=plt.get_cmap('jet') )
+        return self.im
+    
+def cheap_demo_specgram():
+    fig = plt.figure()
+    cds = CheapDemoSpecgram(fig)
+    ani = animation.FuncAnimation(fig, cds.animate, init_func=cds.initialize, interval=500, blit=True) # interval in msec
     plt.show()    
-    
-if __name__ == "__main__":
-    #import doctest
-    #doctest.testmod(verbose=True)
-    demo()
-    
+
+if __name__ == '__main__':
+    #main()
+    cheap_demo_specgram()
