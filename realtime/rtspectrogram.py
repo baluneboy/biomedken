@@ -23,27 +23,6 @@ def getSignal(t):
     s = s1 + s2 + nse
     return s # the signal
 
-def NEWgetSignal():
-    """
-    Test for appending floats (float32) values.
-    """
-    #rtr = RtTrace()
-    #tr1 = Trace(data=np.array([0, 1]))
-    #tr2 = Trace(data=np.array([2, 3]))
-    #tr3 = Trace(data=np.array([7, 8]))
-    #tr2.stats.starttime = tr1.stats.endtime - 1 # overlap
-    #tr3.stats.starttime = tr2.stats.endtime + 3 # gap
-    #rtr.append(tr1)
-    #rtr.append(tr2)
-    #rtr.append(tr3)
-    
-    tr = read()[0]
-    tr.data = np.require(tr.data, dtype='>f4')
-    traces = tr / 3
-    rtr = RtTrace()
-    for trace in traces:
-        rtr.append(trace)
-
 def specgram(t, fs, Nfft, No):
     """spectrogram"""
     y = getSignal(t)
@@ -68,7 +47,6 @@ def animate(i):
     t += 100.0/fs
     tzero_text.set_text('t[0] = %.3fs' % t[0])
     im = specgram(t, fs, Nfft, No)
-    print i, im.shape
     return im, tzero_text
 
 def main():
