@@ -5,7 +5,7 @@
 # /usr/lib/python2.7/dist-packages/obspy/seedlink/tests/example_SL_RTTrace.py
 ###############################################################################
 
-# TODO see ~/dev/programs/python/realtime/examples$ komodo strip_chart_example.py
+# TODO see ~/dev/programs/python/realtime/examples/strip_chart_example.py
 
 import sys
 import traceback
@@ -37,6 +37,7 @@ class MySLClient(SLClient):
         """
         self.rt_trace = rt_trace
         super(self.__class__, self).__init__(*args, **kwargs)
+        self.count = 0
 
     def packetHandler(self, count, slpack):
         """
@@ -110,6 +111,36 @@ class MySLClient(SLClient):
 
         return False
 
+    # FIXME for memory leaks the slconn has to be closed at some point ROBUSTLY!
+    def next(self):
+        """
+        Pulse this SLClient.
+        """
+        if self.infolevel is not None:
+            self.slconn.requestInfo(self.infolevel)
+
+        # next via connection manager
+        slpack = self.slconn.collect()
+        if (slpack == SLPacket.SLTERMINATE):
+            self.slconn.close()
+        
+        # try to do something with packet
+        try:
+            terminate = self.packetHandler(self.count, slpack)
+            if terminate:
+                self.slconn.close()
+        except SeedLinkException as sle:
+            print(self.__class__.__name__ + ": " + sle.value)
+
+        if self.count >= sys.maxint:
+            self.count = 1
+            print "DEBUG INFO: " + self.__class__.__name__ + ":",
+            print "Packet self.count reset to 1"
+        elif self.count > 3:
+            self.slconn.close()
+        else:
+            self.count += 1
+
 def main():
     # initialize realtime trace
     rttrace = RtTrace(max_length=30) # seconds
@@ -126,24 +157,33 @@ def main():
     try:
         slClient = MySLClient(rt_trace=rttrace)
 
-        #slClient.slconn.setSLAddress("geofon.gfz-potsdam.de:18000")
-        #slClient.multiselect = ("GE_STU:BHZ")
+        slClient.slconn.setSLAddress("geofon.gfz-potsdam.de:18000")
+        slClient.multiselect = ("GE_STU:BHZ")
 
         #slClient.slconn.setSLAddress("discovery.rm.ingv.it:39962")
         #slClient.multiselect = ("IV_MGAB:BHZ")
 
-        slClient.slconn.setSLAddress("rtserve.iris.washington.edu:18000")
-        slClient.multiselect = ("AT_TTA:BHZ")
+        #slClient.slconn.setSLAddress("rtserve.iris.washington.edu:18000")
+        #slClient.multiselect = ("AT_TTA:BHZ")
         
-        # set a time window from 90 sec in the past to 30 sec in the future
+        # set a time window from 90 sec in the past to 60 sec in the future
         dt = UTCDateTime()
         slClient.begin_time = (dt - 90.0).formatSeedLink()
-        slClient.end_time = (dt + 30.0).formatSeedLink()
+        slClient.end_time = (dt + 60.0).formatSeedLink()
         print "SeedLink date-time range:", slClient.begin_time, " -> ",
         print slClient.end_time
         slClient.verbose = 3
         slClient.initialize()
-        slClient.run()
+
+        #slClient.run() # this free runs for a while
+        for i in range(11):
+            try:
+                slClient.next()
+            except Exception as e:
+                slClient.slconn.close()
+                sys.stderr.write('Error:' + str(e))
+        slClient.slconn.close()
+        
     except SeedLinkException as sle:
         log.critical(sle)
         traceback.print_exc()
@@ -161,7 +201,6 @@ class CheapDemoSpecgram(object):
     
     def initialize(self):
         """initialize animation"""
-        ##global fig, ax, t, fs, Nfft, No, tzero_text
         self.fs, self.Nfft, self.No = 2000, 1024, 512
         self.t = self.getTimeInSeconds(0.0, 20.0)     
         self.ax = self.fig.add_subplot(111) #, autoscale_on=False, xlim=(-2, 2), ylim=(-2, 2))
@@ -171,7 +210,6 @@ class CheapDemoSpecgram(object):
     
     def animate(self, i):
         """perform animation step, return tuple of things that change"""
-        ##global fig, ax, t, fs, Nfft, No, tzero_text
         self.t += 100.0/self.fs
         self.tzero_text.set_text('t[0] = %.3fs' % self.t[0])
         self.im = self.specgram()
@@ -202,9 +240,9 @@ class CheapDemoSpecgram(object):
 def cheap_demo_specgram():
     fig = plt.figure()
     cds = CheapDemoSpecgram(fig)
-    ani = animation.FuncAnimation(fig, cds.animate, init_func=cds.initialize, interval=500, blit=True) # interval in msec
+    ani = animation.FuncAnimation(fig, cds.animate, init_func=cds.initialize, interval=100, blit=True) # interval in msec
     plt.show()    
 
 if __name__ == '__main__':
-    #main()
-    cheap_demo_specgram()
+    main()
+    #cheap_demo_specgram()
