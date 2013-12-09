@@ -39,12 +39,19 @@ from obspy import read
 from obspy.realtime.signal import calculateMwpMag
 import matplotlib.pyplot as plt
 
-def read_example_trace():
+def read_example_trace_SAC():
     """Read first trace of example SAC data file and extract contained time offset and epicentral distance of an earthquake"""
     data_trace = read('/path/to/II.TLY.BHZ.SAC')[0]
     ref_time_offset = data_trace.stats.sac.a
     epicentral_distance = data_trace.stats.sac.gcarc
     return data_trace, ref_time_offset, epicentral_distance 
+
+def read_example_trace():
+    """Read first trace of example data file"""
+    st = read('/home/pims/dev/programs/python/pims/sandbox/data/slist_for_example.ascii')
+    st.detrend('demean')
+    data_trace = st[0]
+    return data_trace
 
 def split_trace_into3(data_trace):
     """Split given trace into a list of three sub-traces"""
@@ -58,6 +65,11 @@ def assemble_rttrace_register2procs(data_trace, ref_time_offset):
                                                                     ref_time=(data_trace.stats.starttime + ref_time_offset),
                                                                     max_time=120, gain=1.610210e+09)
 
+def assemble_rttrace_register1proc(data_trace):
+    """Assemble real time trace and register one process"""
+    rt_trace = RtTrace()
+    return rt_trace, rt_trace.registerRtProcess('scale', factor=0.1)
+
 def append_and_autoprocess_packet(rt_trace, traces):
     """Append and auto-process packet data into RtTrace"""
     for tr in traces:
@@ -69,11 +81,11 @@ def postprocess_Mwp(rt_trace, epicentral_distance):
     mwp = calculateMwpMag(peak, epicentral_distance)
     return peak, mwp
 
-def demo():
+def demoSAC():
     """
     from http://docs.obspy.org/packages/autogen/obspy.realtime.rttrace.RtTrace.html#obspy.realtime.rttrace.RtTrace
     
-    >>> demo()    
+    >>> demoSAC()    
     12684 301.506 30.0855
     3 Trace(s) in Stream:
     II.TLY.00.BHZ | 2011-03-11T05:47:30.033400Z - 2011-03-11T05:51:01.384085Z | 20.0 Hz, 4228 samples
@@ -85,7 +97,7 @@ def demo():
     """
     
     # 1. Read first trace of example SAC data file and extract contained time offset and epicentral distance of an earthquake:
-    data_trace, ref_time_offset, epicentral_distance = read_example_trace()
+    data_trace, ref_time_offset, epicentral_distance = read_example_trace_SAC()
     print len(data_trace), ref_time_offset, epicentral_distance
 
     # 2. Split given trace into a list of three sub-traces:
@@ -104,18 +116,55 @@ def demo():
     print peak, mwp
     
     # 6. Plot
-    #rt_trace.plot(color='red', tick_rotation=45, number_of_ticks=6)
+    rt_trace.plot(color='red', tick_rotation=45, number_of_ticks=6)
+
+def demo_rt_split_scale():
     
-    fig, ax = plt.subplots()
-    rt_trace.plot(color='red', tick_rotation=45, fig=fig)
-    ymin, ymax = ax.get_ylim()
-    #ax.xaxis.set_ticks(np.arange(start, end, 0.712123))
-    #ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
-    plt.yaxis.set_ticks(np.arange(ymin, ymax, 0.02))
-    plt.show()    
+    drt = DemoRtSplitScale(scale_factor=0.2, num_splits=11)
+    drt.rt_trace.plot(color='red', tick_rotation=45, number_of_ticks=6)
+
+class DemoRtSplitScale(object):
+    """Generator for RtTrace using trace split and rt scaling too."""
     
+    def __init__(self, scale_factor=0.1, num_splits=3):
+        self.scale_factor = scale_factor
+        self.num_splits = num_splits
+        
+        # read example trace (with demean stream first)
+        self.data_trace = self.read_example_trace_demean()
+        
+        # split given trace into a list of three sub-traces:
+        self.traces = self.split_trace()
+        
+        # assemble real time trace and register rt proc (scale by factor)
+        self.rt_trace, i1 = self.assemble_rttrace_register1proc()
+    
+        # append and auto-process packet data into RtTrace:
+        self.append_and_autoprocess_packet()
+    
+    def read_example_trace_demean(self):
+        """Read first trace of example data file"""
+        st = read('/home/pims/dev/programs/python/pims/sandbox/data/slist_for_example.ascii')
+        st.detrend('demean')
+        data_trace = st[0]
+        return data_trace
+
+    def split_trace(self):
+        """split given trace into a list of three sub-traces"""
+        traces = self.data_trace / self.num_splits
+        return traces
+
+    def assemble_rttrace_register1proc(self):
+        """assemble real time trace and register one process"""
+        rt_trace = RtTrace()
+        return rt_trace, rt_trace.registerRtProcess('scale', factor=self.scale_factor)
+
+    def append_and_autoprocess_packet(self):
+        """append and auto-process packet data into RtTrace"""
+        for tr in self.traces:
+            self.rt_trace.append(tr, gap_overlap_check=True)
+
 if __name__ == "__main__":
     #import doctest
     #doctest.testmod(verbose=True)
-    demo()
-    
+    demo_rt_split_scale()

@@ -175,14 +175,16 @@ def main():
         slClient.verbose = 3
         slClient.initialize()
 
-        #slClient.run() # this free runs for a while
-        for i in range(11):
-            try:
-                slClient.next()
-            except Exception as e:
-                slClient.slconn.close()
-                sys.stderr.write('Error:' + str(e))
-        slClient.slconn.close()
+        slClient.run() # this free runs for a while
+        
+        # ...OR do the next-next-next... approach:
+        ##for i in range(11):
+        ##    try:
+        ##        slClient.next()
+        ##    except Exception as e:
+        ##        slClient.slconn.close()
+        ##        sys.stderr.write('Error:' + str(e))
+        ##slClient.slconn.close()
         
     except SeedLinkException as sle:
         log.critical(sle)
