@@ -152,9 +152,9 @@ _PLOTTYPES = {
     'gvt':   'Acceleration vs. Time',
     'psd':   'Power Spectral Density',
     'spg':   'Spectrogram',
-    'pcss':  'PCSA',
+    'pcs':   'PCSA',
     'cvf':   'Cumulative RMS vs. Frequency',
-    'istat': 'Interval Stat',
+    'ist':   'Interval Stat',
     '':      'empty',
 }
 
@@ -181,12 +181,21 @@ _ABBREVS = {
 
 def demo_hbfpat():
     import re
+
     input_value = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Cygnus_Capture_Install/4quantify_2013_09_28_16_radgse_roadmapnup1x2.pdf'
     m = re.match( re.compile(_RADGSEROADMAPNUP1X2PDF_PATTERN), input_value)
+
+    input_value = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf'
+    m = re.match( re.compile(_SPGXROADMAPPDF_PATTERN), input_value)
+
+    input_value = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf'
+    m = re.match( re.compile(_ISTATPDF_PATTERN), input_value)
+    
     if m is None:
         raise ValueError('Invalid literal for PATTERN: %r' % input_value)
     else:
         print 'timestr: %s' % m.group('timestr')
+        print 'plot_type: %s' % m.group('plot_type')
 
 def is_unique_handbook_pdf_match(fname):
     """
@@ -207,5 +216,9 @@ def is_unique_handbook_pdf_match(fname):
         return False
     
 if __name__ == "__main__":
-    #demo_hbfpat()
+    demo_hbfpat(); raise SystemExit
     print is_unique_handbook_pdf_match('/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf')
+    #/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf
+    print is_unique_handbook_pdf_match('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf')
+    #/tmp/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf
+    print is_unique_handbook_pdf_match('/tmp/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf')

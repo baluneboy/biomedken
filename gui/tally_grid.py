@@ -545,5 +545,6 @@ class RoadmapsOutputGrid(TallyOutputGrid):
                 self.runIkeRepairRoadmap(dtm)
 
 if __name__ == '__main__':
+    # SEE ROADMAPS TALLY GRID FOR F02, F04, AND HIRAP FOR 15-OCT-2013 THRU 18-NOV-2013
     from pims.utils.gridworkers import demo1, demo2
     demo2()
