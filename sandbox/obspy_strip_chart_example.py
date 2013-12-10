@@ -30,7 +30,6 @@ from collections import deque
 
 # The recommended way to use wx with mpl is with the WXAgg
 # backend. 
-#
 import matplotlib
 matplotlib.use('WXAgg')
 from matplotlib.figure import Figure
@@ -364,7 +363,6 @@ class GraphFrame(wx.Frame):
     def on_redraw_timer(self, event):
         # if paused do not add data, but still redraw the plot
         # (to respond to scale modifications, grid change, etc.)
-        #
         if not self.paused:
             self.data.append( self.datagen.next() )
         
