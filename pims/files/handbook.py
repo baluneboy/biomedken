@@ -152,6 +152,9 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     def _get_plot_type(self): return _PLOTTYPES['spg']
     
     def _get_axis(self): return self._match.group('axis')
+    
+class PcsaRoadmapPdf(SpgxRoadmapPdf):
+    def _get_plot_type(self): return _PLOTTYPES['pcs']
 
 class Psd3RoadmapPdf(SpgxRoadmapPdf):
     """
@@ -194,7 +197,7 @@ class IntStatPdf(SpgxRoadmapPdf):
         orient = 'landscape'
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
    
-    def _get_plot_type(self): return _PLOTTYPES['istat']
+    def _get_plot_type(self): return _PLOTTYPES['ist']
 
 # FIXME do some log.info
 class HandbookPdfjamCommand(PdfjamCommand):
@@ -333,7 +336,7 @@ class HandbookEntry(object):
                 bname = os.path.basename(f)
                 try:
                     
-                    hbf = guess_file(f, filetypes=self._pdf_classes, show_warnings=False)
+                    hbf = guess_file(f, self._pdf_classes, show_warnings=False)
     
                     # Add 3 high-level hb entry props to hb file object
                     hbf.regime = self.regime
@@ -548,8 +551,9 @@ if __name__ == '__main__':
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Cygnus_Capture_Install')
     #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
     hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Cygnus_Capture_Install')
+    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan')
     
-    if False: # True for process_pages, False for process_build
+    if True: # True for process_pages, False for process_build
         
         if not hbe.will_clobber():
             err_msg = hbe.process_pages()
