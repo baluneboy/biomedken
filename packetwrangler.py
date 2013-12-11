@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-version = '$Id: packetWriter.py,v 1.22 2004-11-29 20:00:04 pims Exp $'
+version = '$Id: packetWrangler.py,v 1.22 2004-11-29 20:00:04 pims Exp $'
+
+# Adapted from Ted Wright's packetWriter.py
 
 import os
 import sys
@@ -13,27 +15,28 @@ from MySQLdb import *
 from pims.realtime.accelpacket import *
 from commands import *
 from pims.utils.pimsdateutil import unix2dtm
+from pims.kinematics.rotation import rotation_matrix
+from pims.database.pimsquery import ceil4
 
 DEBUGPRINT = False # for testing
 
 # Absolute minimum time to leave data alone for it to settle and to allow other
 # tasks to get access to it in the database (even if contiguous data is present after this)
-minimumDelay = 60
+minimumDelay = 10
 
-# Wake up and process database every 30 minutes (reduce for testing from 30*60 seconds)
-sleepTime = 120
+# Wake up and process database every 20 seconds (this value is 30 *minutes* in packetWriter)
+sleepTime = 20
 
 # Max records in database request
 maxResults = 100
 
 # Max records to process before deleting processed data and/or working on another table for a while
-maxResultsOneTable = 5000
+maxResultsOneTable = 1000
 
+# Packet counters
 packetsWritten = 0
 packetsDeleted = 0
-def ceil4(input): # the database has time to only 4 decimal places of precision
-    """round a float up at the 4th decimal place"""
-    return math.ceil(input*10000.0)/10000.0
+totalPacketsWrangled = 0 # global variable for tracking if any progress is being made 
 
 # set default command line parameters, times are always measured in seconds
 defaults = { 'ancillaryHost':'kyle', # the name of the computer with the auxiliary databases (or 'None')
@@ -67,8 +70,6 @@ ancillaryXML = ''
 ancillaryUpdate = 0 # next time ancillaryXML should by updated
 ancillaryDatabases = ['bias', 'coord_system_db', 'data_coord_system', 'dqm', 'iss_config', 'scale']
 
-totalPacketsWritten = 0 # global variable for tracking if any progress is being made 
-
 # simple timing based benchmark routine
 benTotal = 0
 benCount = 0
@@ -76,42 +77,6 @@ def benchmark(startTime):
     global benCount, benTotal
     benCount = benCount + 1
     benTotal = benTotal + (time() - startTime)
-
-# convert roll, pitch, yaw into a 3 by 3 Float32 rotation matrix, inverting if requested
-# examples:
-# [ x'                           [ x
-#   y'   = rotationMatrix(...) *   y
-#   z' ]                           z ]
-#
-# [x' y' z'] = [x y z] * transpose(rotationMatrix(...))
-#
-# [ x0' y0' z0'   = [ x0 y0 z0  
-#   x1' y1' z1'   =   x1 y1 z1   * transpose(rotationMatrix(...))
-#   x2' y2' z2'   =   x2 y2 z2
-#    .   .   .         .  .  .
-#   xn' yn' zn' ] =   xn yn zn ]
-#
-def rotationMatrix(roll, pitch, yaw, invert=0):
-    r = roll * math.pi/180 # convert to radians
-    p = pitch * math.pi/180
-    w = yaw * math.pi/180
-    cr = math.cos(r)
-    sr = math.sin(r)
-    cp = math.cos(p)
-    sp = math.sin(p)
-    cw = math.cos(w)
-    sw = math.sin(w)
-
-# Using new numpy now
-    rot = np.array(( [cp*cw,          cp*sw,          -sp  ],
-                  [sr*sp*cw-cr*sw, sr*sp*sw+cr*cw, sr*cp],
-                  [cr*sp*cw+sr*sw, cr*sp*sw-sr*cw, cr*cp] ), np.float32)
-#    rot = array(( [cp*cw,          cp*sw,          -sp  ],
-#                 [sr*sp*cw-cr*sw, sr*sp*sw+cr*cw, sr*cp],
-#                 [cr*sp*cw+sr*sw, cr*sp*sw-sr*cw, cr*cp] ), Float32)
-    if invert: # invert is the same as transpose for any rotation matrix
-        rot = np.transpose(rot)
-    return rot
 
 # debug printer
 def printDebug(s):
@@ -121,9 +86,24 @@ def printDebug(s):
         print s
         sleep(2)
 
-# class to keep track of what's been written
-class packetWriter:
+# sample idle function
+# FIXME keeping track of previous total is kludge
+previousTotal = 0
+def sampleIdleFunction():
+    """a sample idle function"""
+    global previousTotal
+    if previousTotal != totalPacketsWrangled:
+        print "totalPacketsWrangled %d" % totalPacketsWrangled
+    previousTotal = totalPacketsWrangled
+
+# add sample idle function
+addIdle(sampleIdleFunction)
+
+# class to keep track of what's been wrangled (processed)
+class packetWrangler:
+    """Class to keep track of what has been wrangled (processed)."""
     def __init__(self, showWarnings):
+        """initialize this packet wrangler"""
         self._showWarnings_ = showWarnings
         self.lastPacket = None
         self._file_ = None
@@ -131,17 +111,17 @@ class packetWriter:
         self._fileStart_ = 0
         self._forceNewFile_ = 0
         self._fileSep_ = '-'
-        self._dataCoordSystem_ = 'sensor' # 'sensor' means don't do any transformation
+        self._dataCoordSystem_ = 'sensor' # NOTICE: 'sensor' means do NOT do any transformation
         self._rotateData_ = 0
-        #self._rotationMatrix_ = np.identity(3).astype(Float32)
         self._rotationMatrix_ = np.identity(3).astype(np.float32)
         self._headerPacket_ = None
         self._header_ = None
         self._dataDirName_ = "error" # should be replace by packet's dataDirName() function
         self._maybeMove_ = '' # indicator that a file has been generated and should eventually be moved
-         
-    # create the PIMS directory tree for pad files (locally)
+    
+    # DEFUNCT create the PIMS directory tree for pad files (locally)
     def buildDirTree(self, filename):
+        """DEFUNCT # create the PIMS directory tree for pad files (locally)"""
         printDebug("buildDirTree input: %s" % filename)
         s = split(filename, '-')
         if len(s) == 1:
@@ -165,7 +145,9 @@ class packetWriter:
             return '%s' % (y)
         return '%s' % (y)
         
+    # move PAD file
     def movePadFile(self, source):
+        """move PAD file"""
         dest = parameters['destination']
         if dest == '.':
             return
@@ -192,13 +174,17 @@ class packetWriter:
         # getoutput('beep -f 4000 -l 50') 
         self._maybeMove_ = ''
         
+    # return time of last packet (or zero)
     def lastTime(self):
+        """return time of last packet (or zero)"""
         if self.lastPacket:
             return self.lastPacket.time()
         else:
             return 0
 
+    # build XML header
     def buildHeader(self, dataFileName):
+        """build XML header"""
         header = '<?xml version="1.0" encoding="US-ASCII"?>\n'
         header = header + '<%s>\n' % self._headerPacket_.type
         header = header + self._headerPacket_.xmlHeader() # extract packet specific header info
@@ -227,8 +213,9 @@ class packetWriter:
     
     # set the coordinate system we want the data to be in
     def setDataCoordSystem(self, dataName, dataTime, sensor = ''):
-        # sensor name is passed in because we might not have recieved any real packets
-        # yet to determine the sensor name for coordinate transformation
+        """set the coordinate system we want the data to be in"""
+        # sensor name is passed in because we might not have received any
+        # real packets yet to determine sensor name for coord. transformation
         if dataName == self._dataCoordSystem_: 
             return 1 # no change
         if dataName == 'sensor' or dataName == sensor:
@@ -241,12 +228,12 @@ class packetWriter:
             if sensorEntry and dataEntry:
                 self._rotateData_ = 1
                 # use inverse matrix to get to ref system
-                firstRot = rotationMatrix(sensorEntry[2], sensorEntry[3], sensorEntry[4], 1)
+                firstRot = rotation_matrix(sensorEntry[2], sensorEntry[3], sensorEntry[4], 1)
                 # use forward matrix to get where we want to go
-                secondRot = rotationMatrix(dataEntry[2], dataEntry[3], dataEntry[4], 0)
+                secondRot = rotation_matrix(dataEntry[2], dataEntry[3], dataEntry[4], 0)
                 #self._rotationMatrix_ =  matrixmultiply(secondRot, firstRot).astype(Float32)
                 self._rotationMatrix_ =  np.dot(secondRot, firstRot).astype(np.float32)
-                # transpose (invert) the rotationMatrix so that we can postMultiply the data
+                # transpose (invert) the rotation_matrix so that we can postMultiply the data
                 self._rotationMatrix_ =  np.transpose(self._rotationMatrix_)
                 success = 1
             else: # coord sys lookup failed
@@ -258,8 +245,9 @@ class packetWriter:
         self._dataCoordSystem_ = dataName
         return success
 
-    # do whatever it takes to write the packet to disk
+    # DEFUNCT do whatever it takes to write the packet to disk
     def writePacket(self, packet, contiguous = -1):
+        """DEFUNCT do whatever it takes to write the packet to disk"""
         global packetsWritten
         packetsWritten += 1
         #print "packetsWritten", packetsWritten
@@ -285,6 +273,7 @@ class packetWriter:
 
     # finished writing for a while, close and name the file if it was in use 
     def end(self):
+        """finished writing for a while, close and name the file if it was in use"""
         if self._file_ != None:
             self._file_.close()
             self._file_ = None
@@ -325,7 +314,7 @@ class packetWriter:
 
     # append data to the file, may need to reopen it
     def append(self, packet):
-        global totalPacketsWritten
+        global totalPacketsWrangled
         if self._file_ == None:
             newName = 'temp.' + packet.name()
             os.system('rm -rf %s.header' % self._fileName_)
@@ -343,18 +332,14 @@ class packetWriter:
 
         txyzs = packet.txyz()
         packetStart = packet.time()
-        #atxyzs = array(txyzs, Float32)
         atxyzs = np.array(txyzs, np.float32)
         if  self._rotateData_ and 4 == len(atxyzs[0]):  # do coordinate system rotation
-            #atxyzs[:,1:] = matrixmultiply(atxyzs[:,1:], self._rotationMatrix_ )
             atxyzs[:,1:] = np.dot(atxyzs[:,1:], self._rotationMatrix_ )
-        #atxyzs[:,0] = atxyzs[:,0] + array(packetStart-self._fileStart_, Float32) # add offset to times
         atxyzs[:,0] = atxyzs[:,0] + np.array(packetStart-self._fileStart_, np.float32) # add offset to times
 
         aextra = None
         extra = packet.extraColumns()
         if extra:
-            #aextra = array(extra, Float32)
             aextra = np.array(extra, np.float32)
 
         if not parameters['ascii']:
@@ -377,17 +362,17 @@ class packetWriter:
                 s = s + formatString % tuple(row)
             self._file_.write(s)
         self.lastPacket = packet
-        totalPacketsWritten = totalPacketsWritten + 1
+        totalPacketsWrangled = totalPacketsWrangled + 1
 
 # class to keep track of unexpected changes
-class packetInspector(packetWriter):
+class packetInspector(packetWrangler):
     """class to keep track of unexpected changes in header rate info"""
 
     # FIXME we may be able to streamline this more so by making some method
     #       routines do less/nothing; for now, just neutralize things a bit
 
     def __init__(self, showWarnings, padExpect=None):
-        packetWriter.__init__(self, showWarnings)
+        packetWrangler.__init__(self, showWarnings)
         self.padExpect = padExpect
         print self.padExpect
 
@@ -401,7 +386,7 @@ class packetInspector(packetWriter):
 
     def append(self, packet):
         """inspect packet for unexpected changes (do not append to file)"""
-        global totalPacketsWritten
+        global totalPacketsWrangled
         if self._file_ == None:
             newName = 'temp.' + packet.name()
             os.system('rm -rf %s.header' % self._fileName_)
@@ -442,7 +427,7 @@ class packetInspector(packetWriter):
                 s = s + formatString % tuple(row)
             #self._file_.write(s) # NOTE THIS IS "NOT-WRITING" JUST INSPECTING
         self.lastPacket = packet
-        totalPacketsWritten = totalPacketsWritten + 1
+        totalPacketsWrangled = totalPacketsWrangled + 1
         
         # TODO this is where we track changes
         hdr = packet.header()
@@ -611,6 +596,7 @@ def updateAncillaryDatabases():
         printLog(t)
         sys.exit()
 
+# dispose of processed data
 def disposeProcessedData(tableName, lastTime):
     global packetsWritten
     if parameters['startTime'] > 0.0:
@@ -661,8 +647,7 @@ def disposeProcessedData(tableName, lastTime):
         # print out times within plus/minus 5 seconds of lastTime
         print 'The problem occurred writing and deleting packets in database time <= %.6lf' % ceil4(lastTime)
         print 'The next packet in the database to be processed is at time %.6lf' % around[0] # assumes that around will be after lastTime
-
-    
+  
 # main packet writing loop
 def mainLoop():    
     pws = {}
@@ -686,7 +671,7 @@ def mainLoop():
 
     try:
         while 1: # until killed or ctrl-C or no more data (if parameters['quitWhenDone'])
-            lastPacketTotal = totalPacketsWritten
+            lastPacketTotal = totalPacketsWrangled
             moreToDo = 0
             timeNow = time()
             cutoffTime = timeNow - max(parameters['cutoffDelay'], minimumDelay)
@@ -729,7 +714,7 @@ def mainLoop():
                     if parameters['inspect']:
                         pw = packetInspector(parameters['showWarnings'],padExpect=padExpect)
                     else:
-                        pw = packetWriter(parameters['showWarnings'])
+                        pw = packetWrangler(parameters['showWarnings'])
                     pws[tableName] = pw
                 else:
                     pw = pws[tableName]
@@ -803,8 +788,9 @@ def mainLoop():
                 pw.end()
                 disposeProcessedData(tableName, pw.lastTime())
 
+            print "totalPacketsWrangled", totalPacketsWrangled, "moreToDo", moreToDo
             if not moreToDo:
-                if lastPacketTotal == totalPacketsWritten and parameters['quitWhenDone']:
+                if lastPacketTotal == totalPacketsWrangled and parameters['quitWhenDone']:
                     break # quit mainLoop() and exit the program
                 if idleWait(sleepTime):
                     break # quit mainLoop() and exit the program
@@ -826,7 +812,7 @@ def mainLoop():
         pickle.dump(pws, file)
         file.close()
 
-
+# check parameters
 def parametersOK():        
     b = parameters['inspect']
     if b != '0' and b != '1':
@@ -911,14 +897,13 @@ def parametersOK():
     
     return 1
 
-
+# print usage
 def printUsage():
     print version
-    print 'usage: packetWriter.py [options]'
+    print 'usage: packetWrangler.py [options]'
     print '       options (and default values) are:'
     for i in defaults.keys():
         print '            %s=%s' % (i, defaults[i])
-
 
 if __name__ == '__main__':
     for p in sys.argv[1:]:  # parse command line
@@ -934,9 +919,9 @@ if __name__ == '__main__':
     else:
         if parametersOK():
             if parameters['inspect']:
-                printLog('packetWriter starting with inspection mode')
+                printLog('packetWrangler starting with inspection mode')
             else:
-                printLog('packetWriter starting')
+                printLog('packetWrangler starting')
             mainLoop() 
             sys.exit()
     printUsage()
