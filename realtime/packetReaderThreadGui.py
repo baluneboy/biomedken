@@ -4,44 +4,27 @@ import os
 import sys
 import datetime
 from threading import *
-from accelPacket import *
 import wx
 import numpy as np
-from samsd import SimpleQueryAOS, get_config
 from plot_datetix import GraphFrame
 from pylab import NaN
 
+from pims.realtime.accelpacket import *
+from pims.utils.pimsdateutil import unix2dtm
+from pims.database.samsquery import SimpleQueryAOS, _HOST, _SCHEMA, _UNAME, _PASSWD
+
 # input parameters
 defaults = {
-             'host':  'chef',   # host to query
-             'table': '121f05', # table name (i.e. sensor)
-             'config_file': '/home/pims/dev/programs/python/config/mysql.cfg', # config file for queries
+    'host':  'mr-hankey',   # host to query
+    'table': '121f04',      # table name (i.e. sensor)
 }
 parameters = defaults.copy()
 
 def parametersOK():
     """check for reasonableness of parameters"""
-    if os.path.isfile(parameters['config_file']):
-        validator_file = parameters['config_file'].replace('.cfg', '.ini')
-    else:
-        print 'The config_file "%s" does not exist.' % config_file
-        return False
-
-    if os.path.isfile(validator_file):
-        parameters['validator_file'] = validator_file
-    else:
-        print 'The validator_file "%s" does not exist.' % validator_file
-        return False
-
-    host, schema, uname, pword, query_list = get_config( parameters['config_file'], parameters['validator_file'] )
-    query_list[:] = [p for p in query_list if p != 'NONE'] # stupid human trick to ignore 'NONE'
-    parameters['aos_status'] = SimpleQueryAOS(host, schema, uname, pword)
+    parameters['aos_status'] = SimpleQueryAOS(_HOST, _SCHEMA, _UNAME, _PASSWD)
 
     return True # all OK, returned False (above) otherwise
-
-def unix2dtm(u):
-    """convert a unix time u to a datetime object"""
-    return datetime.datetime.utcfromtimestamp(u)
 
 # Status bar constants
 SB_LEFT = 0
@@ -49,21 +32,21 @@ SB_RIGHT = 1
 SB_MSEC = 2000
 
 # Button definitions
-ID_START = wx.NewId()
-ID_STOP =  wx.NewId()
-ID_SHOW = wx.NewId()
+START_ID = wx.NewId()
+STOP_ID = wx.NewId()
+SHOW_ID = wx.NewId()
 
 # Define notification event for thread completion
 EVT_RESULT_ID = wx.NewId()
 
 def EVT_RESULT(win, func):
-    """Define Result Event."""
+    """Result event"""
     win.Connect(-1, -1, EVT_RESULT_ID, func)
 
 class ResultEvent(wx.PyEvent):
-    """simple event to carry arbitrary result data"""
+    """A simple event to carry arbitrary result data."""
     def __init__(self, data):
-        """Init Result Event."""
+        """Initialize result event."""
         wx.PyEvent.__init__(self)
         self.SetEventType(EVT_RESULT_ID)
         self.data = data
@@ -122,7 +105,7 @@ class PacketIterator(object):
             return self.packets[self.index]
 
 class DatabaseTimeIterator(object):
-    """db time-based iterator"""    
+    """A time-based database iterator."""    
     def __init__(self, displayHours=0.5, updateSeconds=5.0, host=None, table=None):
         self.host = host
         self.table = table        
@@ -163,7 +146,7 @@ class DatabaseTimeIterator(object):
         return packets    
 
 class ProcessThread(Thread):
-    """the worker thread to do db fetch and processing"""
+    """Worker thread to get database query results and processing."""
     def __init__(self, notify_window, graph_window):
         """initialize"""
         Thread.__init__(self)
@@ -180,7 +163,7 @@ class ProcessThread(Thread):
         self.start()
 
     def update_AOS(self):
-        """ update LED for AOS/LOS """
+        """update LED for AOS/LOS"""
         # use CallAfter for thread-safe access to wx main window gui
         wx.CallAfter(self._notify_window.update_AOS)
         # FIXME for display window, get rid of TISS time part (but make it so I can get at it when I want to)
@@ -266,10 +249,8 @@ class ProcessThread(Thread):
         # Method for use by main thread to signal an abort
         self._want_abort = 1
 
-# GUI Frame class that spins off the worker thread
 class MainFrame(wx.Frame):
-    """Class MainFrame."""
-    #def __init__(self, parent, id):
+    """GUI Frame class that spins off the worker thread."""
     def __init__(self, *args, **kwargs):
         """Create the MainFrame."""
         parent, id, self.graphWindow = args[0], args[1], args[2]
@@ -287,18 +268,18 @@ class MainFrame(wx.Frame):
         mainSizer.Add( self.AOStext )
         
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-        btnSizer.Add( wx.Button(self, ID_START, 'Start') )
-        btnSizer.Add( wx.Button(self, ID_STOP, 'Stop') )
-        btnSizer.Add( wx.Button(self, ID_SHOW, 'TEST') )
+        btnSizer.Add( wx.Button(self, START_ID, 'Start') )
+        btnSizer.Add( wx.Button(self, STOP_ID, 'Stop') )
+        btnSizer.Add( wx.Button(self, SHOW_ID, 'TEST') )
         mainSizer.Add(btnSizer)
 
         self.text = wx.TextCtrl(self, -1, '', pos=(15,100), size=(1100,800), style=wx.TE_MULTILINE)
         self.text.WriteText('Ready.')        
         mainSizer.Add(self.text)
 
-        self.Bind(wx.EVT_BUTTON, self.onStart, id=ID_START)
-        self.Bind(wx.EVT_BUTTON, self.onStop, id=ID_STOP)
-        self.Bind(wx.EVT_BUTTON, self.onTest, id=ID_SHOW)
+        self.Bind(wx.EVT_BUTTON, self.onStart, id=START_ID)
+        self.Bind(wx.EVT_BUTTON, self.onStop, id=STOP_ID)
+        self.Bind(wx.EVT_BUTTON, self.onTest, id=SHOW_ID)
 
         # Set up event handler for any worker thread results
         EVT_RESULT(self,self.onResult)

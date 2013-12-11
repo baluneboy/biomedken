@@ -1,12 +1,19 @@
 #!/usr/bin/env python
 version = '$Id$'
 
+import os
 import sys
 import time
 import subprocess
 import threading
-    
+
+def get_app_name():
+    """Get application name string."""
+    base = os.path.basename(sys.argv[0])
+    return os.path.splitext(base)[0]
+
 class Command(object):
+    """Run a command in a thread."""
     def __init__(self, cmd, log):
         self.cmd = cmd
         self.log = log
@@ -37,14 +44,7 @@ class Command(object):
 def timeLogRun(command, timeoutSec, log=None):
     """
     Function that returns (returnCode, elapsedSec) from given command string.
-    
     Also has timeout and logging features.
-    
-    Examples
-    --------
-    >>> retCode, elapsedSec = timeLogRun('echo start; date; sleep 2; echo done', 3, log=None)
-    >>> retCode, elapsedSec<3
-    (0, True)
     """
     if not log:
         from pims.files.log import TrashLog
@@ -59,5 +59,4 @@ def timeLogRun(command, timeoutSec, log=None):
     return retCode, elapsedSec
 
 if __name__ == "__main__":
-    import doctest
-    doctest.testmod()    
+    print get_app_name()   

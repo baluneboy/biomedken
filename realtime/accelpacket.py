@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Adapted from following version (with passwords removed):
+# Adapted from following version (except passwords were removed):
 # $Id: accelPacket.py,v 1.41 2004-08-27 19:13:32 pims Exp $
 
 from string import *
@@ -10,26 +10,15 @@ from time import *
 from commands import *
 from syslog import *
 import exceptions
-
-from samsd import get_app_name
-from recipes_configobj import GeneralConfig
-import numpy as np
-from padpro import PadInterval, PadIntervalSet
 import datetime
+import numpy as np
 
-def get_db_login(config_file='/home/pims/dev/programs/python/config/mysql.cfg'):
-    # get db info to query with
-    validator_file = config_file.replace('.cfg','.ini')
-    gc = GeneralConfig(config_file, validator_file)
-    config = gc.config
-    app_name = get_app_name()
-    dconfig = config['apps'][app_name]
-    schema = dconfig['schema']
-    uname = dconfig['uname']
-    pword = dconfig['pword']
-    return schema, uname, pword
+from pims.utils.pimsdateutil import unix2dtm
+from pims.config.conf import get_db_params
+from pims.pad.padpro import PadInterval, PadIntervalSet
 
-SCHEMA, UNAME, PASSWD = get_db_login()
+# Get sensitive authentication credentials for internal MySQL db query
+_SCHEMA, _UNAME, _PASSWD = get_db_params('pimsquery')
 
 class BCDConversionException(exceptions.Exception):
     def __init__(self, args=None):
@@ -131,7 +120,7 @@ def xmlEscape(s):
 # SQL helper routines ---------------------------------------------------------------
 # create a connection (with possible defaults), submit command, return all results
 # try to do all connecting through this function to handle exceptions
-def sqlConnect(command, shost='localhost', suser=UNAME, spasswd=PASSWD, sdb=SCHEMA):
+def sqlConnect(command, shost='localhost', suser=_UNAME, spasswd=_PASSWD, sdb=_SCHEMA):
     sqlRetryTime =30
     repeat = 1
     while repeat:
@@ -168,6 +157,40 @@ def guessPacket(packet, showWarnings=0):
     return accelPacket(packet)
 
 DigitalIOstatusHolder = {} # global dictionary to hold SAMS TSH-ES DigitalIOstatus between packets
+
+#def getCCSDS(hb):
+#    #for b in hb[38:39]:
+#    #    print '%02x ' % ord(b)
+#    sec = struct.unpack('!I', hb[34:38])[0] 
+#    sec = sec + 315964800
+#    msec = ord(hb[38:39])/float(256)
+#    return sec + msec
+#
+#def printHeaderBlob(hb):
+#	hx = ''
+#	start = 0
+#	size = 16
+#	ln = len(hb)
+#	while start < ln:
+#		# print line number
+#		line = '%04x  ' % start
+#		#print hex representation
+#		c = 0
+#		asc = hb[start:min(start+size, ln)]
+#		for b in asc:
+#			if c == 8:
+#				line = line + '  '
+#			line = line + '%02x ' % ord(b)
+#			c = c + 1
+#		line = ljust(line, 58) + '"'
+#		# print ascii representation, replace unprintable characters with spaces
+#		for i in range(len(asc)):
+#			if ord(asc[i])<32 or ord(asc[i]) == 209:
+#				asc = replace(asc, asc[i], ' ')
+#		line = line + asc + '"\n'  
+#		hx = hx + line
+#		start = start + size
+#	return hx
 
 ###############################################################################    
 # class to represent all types of accel data (SAMS2, MAMS, etc)
@@ -257,8 +280,9 @@ class accelPacket:
         else:
             allowAbleGap = self.samples()/self.rate()
         result =  (start >= ostart) and (gap <= allowAbleGap)
-#        if not result:
-#             print 'contiguous:%s ostart:%.4lf oend:%.4lf start:%.4lf gap:%.4lf allowAbleGap:%.4lf' % (result, ostart, oend, start, gap, allowAbleGap) 
+        #print "here", result, gap,allowAbleGap
+        #if not result:
+        #     print 'contiguous:%s ostart:%.4lf oend:%.4lf start:%.4lf gap:%.4lf allowAbleGap:%.4lf' % (result, ostart, oend, start, gap, allowAbleGap) 
         return result
     
     # print a representation of this packet
@@ -306,7 +330,7 @@ class accelPacket:
             self._hex_ = self._hex_ + line
             start = start + size
         return self._hex_
-        
+
 ###############################################################################    
 class oss(accelPacket):
     # packets don't change, so we can cache all the calculated values for reuse
@@ -493,10 +517,15 @@ class oss(accelPacket):
             if not self._temperature_:
                 self.extractPerPacketData()
             begin = 50
+            #print self.time()
             for s in range(16):
                 sstart = begin + s*64
                 dataStatus, rangeStatus, gimbalStatus = struct.unpack('BxBB', self.p[sstart:sstart+4])
+                #print '-------------------------'
+                #print sstart,sstart+4
+                #print dataStatus,rangeStatus,gimbalStatus
                 status = ((dataStatus<<16) + (rangeStatus<<8) + gimbalStatus) * 1.0 # pack and convert to float
+                #print status
                 
                 if rangeStatus & 0x03 == 0: #range A
                     zRange = 2500
@@ -528,7 +557,8 @@ class oss(accelPacket):
                 x_coeff = ((20.0 / 65536.0) * xRange) / 1000000.0
                 y_coeff = ((20.0 / 65536.0) * yRange) / 1000000.0
                 z_coeff = ((20.0 / 65536.0) * zRange) / 1000000.0
-    
+                #print '-------------------------'
+
                 for i in range(10):
                     start = sstart + 4 + i*6
                     stop = start+6
@@ -536,9 +566,11 @@ class oss(accelPacket):
                     x = x & 0xffff
                     y = y & 0xffff
                     z = z & 0xffff
+                    #print start,stop, x,y,z
                     x = (32768.0 - x) * x_coeff
                     y = (32768.0 - y) * y_coeff
                     z = (32768.0 - z) * z_coeff
+                    #print x,y,z
                     self._xyz_.append((x, y, z))
                     self._Ts_.append((self._temperature_, status))
         return self._xyz_
@@ -1002,7 +1034,6 @@ class besttmf(artificial):
                     self._rep_ = self._rep_ + '\n%.7e %.7e %.7e' % tuple(j)
         return self._rep_
   
-   
 ###############################################################################    
 class finaltmf(artificial):
     def __init__(self, packet, showWarnings=0):
@@ -1291,6 +1322,8 @@ class hirap(accelPacket):
                 start = 20+6*i
                 stop = start+6
                 x, y, z = struct.unpack('hhh', self.p[start:stop])
+                #if i < 3:
+                #  print x,y,z
                 self._xyz_.append((x/2048000.0, y/2048000.0, z/2048000.0)) # 16 / 32768 / 1000= 1/2048000
         return self._xyz_
 
@@ -2059,41 +2092,10 @@ class Counter(object):
             self.current += 1
             return self.current - 1
 
-def demoSimplePadInterval():
-    t1 = datetime.datetime(2013, 9, 8, 7, 6, 0, 0)
-    t2 = datetime.datetime(2013, 9, 8, 7, 6, 1, 2100)
-    t3 = datetime.datetime(2013, 9, 8, 7, 6, 1, 4100)
-    t4 = datetime.datetime(2013, 9, 8, 7, 6, 2, 1500)
-    t5 = datetime.datetime(2013, 9, 8, 7, 6, 2, 3510)
-    t6 = datetime.datetime(2013, 9, 8, 7, 6, 3, 0)
-    
-    print t2
-    print t3
-    pi12 = PadInterval(t1, t2, sampleRate=500.0)
-    pi34 = PadInterval(t3, t4, sampleRate=500.0)
-    print pi12.adjacent_to(pi34)
-    
-    print t4
-    print t5
-    pi56 = PadInterval(t5, t6, sampleRate=500.0)
-    print pi34.adjacent_to(pi56)
-    
-    pis = PadIntervalSet()
-    pis.add(pi12)
-    pis.add(pi34)
-    pis.add(pi56)
-    
-    print pis
-    print len(pis)
-
-def dt(u):
-    """ convert unixtime to datetime """
-    return datetime.datetime.utcfromtimestamp(u)
-
 class PacketProcessor(object):
-   
+    """iterate over and process db records containing accel packets"""
     def __init__(self, query_str, host):
-        """ a classy way to iterate over and process db records containing accel packets """
+        """init the packet processor"""
         self.query_str = query_str
         self.host = host
         self.summary = self.processRecords(query_str, host)
@@ -2111,13 +2113,13 @@ class PacketProcessor(object):
         poff = ( ( p.samples() - 1 ) / p.rate() ) - tdelta
         poffstr = 'poff: {0:>9f}'.format( np.around(poff, 4) )
         print poffstr,
-        pi = PadInterval( dt(p.time()), dt(p.endTime()), sampleRate=p.rate() )
+        pi = PadInterval( unix2dtm(p.time()), unix2dtm(p.endTime()), sampleRate=p.rate() )
         pis.add(pi)
         print "intervalSetLen:", len(pis)
         #print p.dump(1)
         #print p.hexDump()
 
-    def processRecords(self, query_str, shost='localhost', suser=UNAME, spasswd=PASSWD, sdb=SCHEMA):
+    def processRecords(self, query_str, shost='localhost', suser=_UNAME, spasswd=_PASSWD, sdb=_SCHEMA):
         sqlRetryTime = 30
         try:
             con = Connection(host=shost, user=suser, passwd=spasswd, db=sdb)
@@ -2153,19 +2155,50 @@ class PacketProcessor(object):
             for row in rows:
                 yield row
 
-###############################################################################
-if __name__ == '__main__':
+def demo_simple_pad_interval():
+    t1 = datetime.datetime(2013, 9, 8, 7, 6, 0, 0)
+    t2 = datetime.datetime(2013, 9, 8, 7, 6, 1, 2100)
+    t3 = datetime.datetime(2013, 9, 8, 7, 6, 1, 4100)
+    t4 = datetime.datetime(2013, 9, 8, 7, 6, 2, 1500)
+    t5 = datetime.datetime(2013, 9, 8, 7, 6, 2, 3510)
+    t6 = datetime.datetime(2013, 9, 8, 7, 6, 3, 0)
+    
+    print t2
+    print t3
+    pi12 = PadInterval(t1, t2, sampleRate=500.0)
+    pi34 = PadInterval(t3, t4, sampleRate=500.0)
+    print pi12.adjacent_to(pi34)
+    
+    print t4
+    print t5
+    pi56 = PadInterval(t5, t6, sampleRate=500.0)
+    print pi34.adjacent_to(pi56)
+    
+    pis = PadIntervalSet()
+    pis.add(pi12)
+    pis.add(pi34)
+    pis.add(pi56)
+    
+    print pis
+    print len(pis)
 
-    # This was quick code, but I managed to rig generator to avoid memory issues (hopefully)
+def demo_packet_processor():
+    # Packet processor was quickly coded, but I managed to rig generator to avoid memory issues (hopefully)
     import sys
     sensor = sys.argv[1]
-    pp = PacketProcessor('select * from ' + sensor + ' order by time', 'localhost')
+    pp = PacketProcessor('select * from ' + sensor + ' order by time limit 20', 'manbearpig')
     print pp.summary
-    raise SystemExit
+
+###############################################################################
+if __name__ == "__main__":
+
+	#demo_simple_pad_interval(); raise SystemExit
+
+	#demo_packet_processor(); raise SystemExit
 
     # SAMS-II test
 #    results = sqlConnect('select * from 121_e01 order by time limit 1', 'parrot.grc.nasa.gov')
-    results = sqlConnect('select * from 121f03 order by time limit 50', 'localhost')
+	results = sqlConnect('select * from 121f03 order by time limit 50', 'manbearpig')
 
     # Hirap test
 #    results = sqlConnect('select * from hirap order by time limit 1', 'vizquel.grc.nasa.gov')
@@ -2187,19 +2220,19 @@ if __name__ == '__main__':
 
     # sams tsh-es test
 #    results = sqlConnect('select * from es05 order by time desc limit 1', 'localhost')
-    
-    for i in results:
-        # i[0] is time, i[1] is the blob, i[2] is the type
-        print 'time from table:', UnixToHumanTime( i[0] )
-        print 'time:', UnixToHumanTime( guessPacket(i[1]).time() )
-        print 'name:', guessPacket(i[1]).name()
-        print 'rate:', guessPacket(i[1]).rate()
-        print 'samples:', guessPacket(i[1]).samples()
-        #print 'measurementsPerSample:', guessPacket(i[1]).measurementsPerSample()
-        
-        print 'at dbTime:%.4f' % i[0], 'is a',
-        print guessPacket(i[1]).dump(1)
-        #print guessPacket(i[1]).hexDump()
-        
-        p = guessPacket(i[1])
-        print 'Verification of Sample Rate:', (p.samples() - 1) / ( p.endTime() - p.time() )
+
+	for i in results:
+		# i[0] is time, i[1] is the blob, i[2] is the type
+		print 'time from table:', UnixToHumanTime( i[0] )
+		print 'time:', UnixToHumanTime( guessPacket(i[1]).time() )
+		print 'name:', guessPacket(i[1]).name()
+		print 'rate:', guessPacket(i[1]).rate()
+		print 'samples:', guessPacket(i[1]).samples()
+		#print 'measurementsPerSample:', guessPacket(i[1]).measurementsPerSample()
+		
+		print 'at dbTime:%.4f' % i[0], 'is a',
+		print guessPacket(i[1]).dump(1)
+		#print guessPacket(i[1]).hexDump()
+		
+		p = guessPacket(i[1])
+		print 'Verification of Sample Rate:', (p.samples() - 1) / ( p.endTime() - p.time() )
