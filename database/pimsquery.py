@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import math
 from time import sleep
 import datetime
 import socket
@@ -37,6 +38,11 @@ def quick_test(host, schema):
     
 #quick_test('manbearpig', 'pims')
 #raise SystemExit
+
+# round a float up at 4th decimal place (db has time to only 4 decimal places of precision)
+def ceil4(input): # the database has time to only 4 decimal places of precision
+    """round a float up at the 4th decimal place"""
+    return math.ceil(input*10000.0)/10000.0
 
 #####################################################################################
 # SQL helper routines ---------------------------------------------------------------
