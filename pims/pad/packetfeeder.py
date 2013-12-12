@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-version = '$Id: packetWrangler.py,v 1.22 2004-11-29 20:00:04 pims Exp $'
-
-# Adapted from Ted Wright's packetWriter.py
+version = '$Id$'
+# Adapted from Ted Wright's packetWriter.py,v 1.22 2004-11-29 20:00:04 pims
 
 import os
 import sys
@@ -16,7 +15,7 @@ from pims.realtime.accelpacket import *
 from commands import *
 from pims.utils.pimsdateutil import unix2dtm
 from pims.kinematics.rotation import rotation_matrix
-from pims.database.pimsquery import ceil4
+from pims.database.pimsquery import ceil4, PadExpect
 
 DEBUGPRINT = False # for testing
 
@@ -28,7 +27,7 @@ minimumDelay = 10
 sleepTime = 20
 
 # Max records in database request
-maxResults = 100
+maxResults = 200
 
 # Max records to process before deleting processed data and/or working on another table for a while
 maxResultsOneTable = 1000
@@ -36,16 +35,15 @@ maxResultsOneTable = 1000
 # Packet counters
 packetsWritten = 0
 packetsDeleted = 0
-totalPacketsWrangled = 0 # global variable for tracking if any progress is being made 
+totalPacketsFed = 0 # global variable for tracking if any progress is being made
 
 # set default command line parameters, times are always measured in seconds
 defaults = { 'ancillaryHost':'kyle', # the name of the computer with the auxiliary databases (or 'None')
              'host':'localhost',        # the name of the computer with the database
              'database':'pims',         # the name of the database to process
              'tables':'ALL',            # the database tables that should be processed (separated by commas)
-             'destination':'yoda:/sdds/pims/pub/pad', # the directory to write files into in scp format (host:/path/to/data)
-             'delete':'0',              # 0=delete processed data, or 1=leave it in the database, or use
-                                        #      databaseName to move it to different database
+             'destination':'/tmp/test', # the directory to write files into in scp format (host:/path/to/data) or local /tmp/test
+             'delete':'0',              # 0=delete processed data, 1=leave in database OR use databaseName to move to that db
              'resume':'1',              # try to pick up where a previous run left off, or do whole database
              'inspect':'0',             # JUST INSPECT FOR UNEXPECTED CHANGES, DO NOT WRITE PAD FILES
              'showWarnings':'1',        # show or supress warning message
@@ -54,7 +52,7 @@ defaults = { 'ancillaryHost':'kyle', # the name of the computer with the auxilia
              'endTime':'0.0',           # last data time to process (0 means no limit)
              'quitWhenDone':'0',        # end this program when all data is processed
              'bigEndian':'0',           # write binary data as big endian (Sun, Mac) or little endian (Intel)
-             'cutoffDelay':'86400',     # maximum amount of time to keep data in the database before processing (24 hours)
+             'cutoffDelay':'5',         # maximum amount of time to keep data in the database before processing (sec)
              'maxFileTime':'600',       # maximum time span for a PAD file (0 means no limit)
              'additionalHeader':'\"\"'} # additional XML to put in header.
                                         #   in order to prevent confusion in the shell and command parser,
@@ -86,24 +84,26 @@ def printDebug(s):
         print s
         sleep(2)
 
+################################################################
 # sample idle function
 # FIXME keeping track of previous total is kludge
 previousTotal = 0
 def sampleIdleFunction():
     """a sample idle function"""
     global previousTotal
-    if previousTotal != totalPacketsWrangled:
-        print "totalPacketsWrangled %d" % totalPacketsWrangled
-    previousTotal = totalPacketsWrangled
+    if previousTotal != totalPacketsFed:
+        print "totalPacketsFed %d" % totalPacketsFed
+    previousTotal = totalPacketsFed
 
 # add sample idle function
 addIdle(sampleIdleFunction)
+################################################################
 
-# class to keep track of what's been wrangled (processed)
-class packetWrangler:
-    """Class to keep track of what has been wrangled (processed)."""
+# class to keep track of what's been fed
+class packetFeeder:
+    """Class to keep track of what has been fed."""
     def __init__(self, showWarnings):
-        """initialize this packet wrangler"""
+        """initialize this packet feeder"""
         self._showWarnings_ = showWarnings
         self.lastPacket = None
         self._file_ = None
@@ -149,7 +149,7 @@ class packetWrangler:
     def movePadFile(self, source):
         """move PAD file"""
         dest = parameters['destination']
-        if dest == '.':
+        if dest == '/tmp/test':
             return
         if source == '':
             t =  UnixToHumanTime(time(), 1)
@@ -314,7 +314,7 @@ class packetWrangler:
 
     # append data to the file, may need to reopen it
     def append(self, packet):
-        global totalPacketsWrangled
+        global totalPacketsFed
         if self._file_ == None:
             newName = 'temp.' + packet.name()
             os.system('rm -rf %s.header' % self._fileName_)
@@ -362,17 +362,17 @@ class packetWrangler:
                 s = s + formatString % tuple(row)
             self._file_.write(s)
         self.lastPacket = packet
-        totalPacketsWrangled = totalPacketsWrangled + 1
+        totalPacketsFed = totalPacketsFed + 1
 
 # class to keep track of unexpected changes
-class packetInspector(packetWrangler):
+class packetInspector(packetFeeder):
     """class to keep track of unexpected changes in header rate info"""
 
     # FIXME we may be able to streamline this more so by making some method
     #       routines do less/nothing; for now, just neutralize things a bit
 
     def __init__(self, showWarnings, padExpect=None):
-        packetWrangler.__init__(self, showWarnings)
+        packetFeeder.__init__(self, showWarnings)
         self.padExpect = padExpect
         print self.padExpect
 
@@ -386,7 +386,7 @@ class packetInspector(packetWrangler):
 
     def append(self, packet):
         """inspect packet for unexpected changes (do not append to file)"""
-        global totalPacketsWrangled
+        global totalPacketsFed
         if self._file_ == None:
             newName = 'temp.' + packet.name()
             os.system('rm -rf %s.header' % self._fileName_)
@@ -427,17 +427,19 @@ class packetInspector(packetWrangler):
                 s = s + formatString % tuple(row)
             #self._file_.write(s) # NOTE THIS IS "NOT-WRITING" JUST INSPECTING
         self.lastPacket = packet
-        totalPacketsWrangled = totalPacketsWrangled + 1
-        
+        totalPacketsFed = totalPacketsFed + 1
+                
         # TODO this is where we track changes
-        hdr = packet.header()
-        expected_values = self.padExpect.values # dictionary of expected values
-        for k,v in expected_values.iteritems():
-            if hdr[k] != v:
-                printLog("sensor (%s) expected (%s) of (%s) does not match packet value of (%s) at packet time of (%s)" % (hdr['seId'], k, v, hdr[k], unixTimeToString(hdr['time'])))
-                #printLog(packet.dump())
-                #{'status': 59822, 'head': False, 'endTime': 1325161782.4123819, 'name': '121f03', 'isSams2Packet': 1, 'rate': 500.0, 'gain': 10.0, 'samples': 74, 'seId': '121f03', 'adjustment': 'temperature+gain+axial-mis-alignment', 'time': 1325161782.266382, 'unit': 'g', 'eeId': '122f02'}
-        sleep(0.1)
+        ##hdr = packet.header()
+        ##expected_values = self.padExpect.values # dictionary of expected values
+        ##for k,v in expected_values.iteritems():
+        ##    if hdr[k] != v:
+        ##        printLog("sensor (%s) expected (%s) of (%s) does not match packet value of (%s) at packet time of (%s)" % (hdr['seId'], k, v, hdr[k], unixTimeToString(hdr['time'])))
+        ##        #printLog(packet.dump())
+        ##        #{'status': 59822, 'head': False, 'endTime': 1325161782.4123819, 'name': '121f03', 'isSams2Packet': 1, 'rate': 500.0, 'gain': 10.0, 'samples': 74, 'seId': '121f03', 'adjustment': 'temperature+gain+axial-mis-alignment', 'time': 1325161782.266382, 'unit': 'g', 'eeId': '122f02'}
+        
+        print totalPacketsFed
+        #sleep(0.1)
 
     # finished "non-writing" for a while, close and name the file if it was in use 
     def end(self):
@@ -514,7 +516,7 @@ def addAncillaryXML(db, entry, dataTime, sensor, pw, dbMatchTime):
     ancillaryXML = ancillaryXML + newLine
     
 # look for valid ancillary data entries for a given sensor and time    
-def  updateAncillaryXML(dataTime, sensor, pw): 
+def updateAncillaryXML(dataTime, sensor, pw): 
     global ancillaryXML
     ancillaryXML = ''
     adKeys = ancillaryData.keys()
@@ -580,9 +582,9 @@ def updateAncillaryDatabases():
     try: 
         for db in ancillaryDatabases:
             ancillaryData[db] = sqlConnect('select * from %s order by time' % db,
-                 shost=parameters['ancillaryHost'], suser='pims', spasswd='pims2000', sdb='pad')
+                 shost=parameters['ancillaryHost'], suser=UNAME, spasswd=PASSWD, sdb='pad')
             ancillaryDataFormat[db] = sqlConnect('show columns from %s' % db,
-                 shost=parameters['ancillaryHost'], suser='pims', spasswd='pims2000', sdb='pad')
+                 shost=parameters['ancillaryHost'], suser=UNAME, spasswd=PASSWD, sdb='pad')
         ancillaryUpdate = 0 # database may have changed, need to rebuild ancillary data
 ##        # dump databases for debugging
 ##        for i in ancillaryData.keys():
@@ -607,35 +609,35 @@ def disposeProcessedData(tableName, lastTime):
         return
 
     # make sure the number of packets to be deleted is not less than the number written
-    deleted = sqlConnect('select time from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime), minTime),shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database'])
+    deleted = sqlConnect('select time from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime), minTime),shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
     
     packetsWrittenCheck = packetsWritten
     packetsWritten = 0
 
     if parameters['delete']=='1': # delete processed packets here
         sqlConnect('delete from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime), minTime),
-            shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database'])
+            shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
     else: # move data to new database instead of deleting
         newTable = parameters['delete']
         # see if table exists
         tb = sqlConnect('show tables',
-            shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database'])
+            shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
         for i in tb:
             if i[0] == newTable:
                 break
         else: # newTable not found, must create it 
             key = '' # check if we need a primary key
             col = sqlConnect('show columns from %s' % tableName,         
-                 shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database'])
+                 shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
             for c in col:
                 if c[0]=='time' and c[3]=='PRI':
                     key = 'PRIMARY KEY'
             sqlConnect('CREATE TABLE %s(time DOUBLE NOT NULL %s, packet BLOB NOT NULL, type INTEGER NOT NULL, header BLOB NOT NULL)' % (newTable, key),
-                 shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database'])
+                 shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
         sqlConnect('insert into %s select * from %s where time <= %.6lf and time > %.6lf' % (newTable,tableName,ceil4(lastTime), minTime),
-            shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database'])
+            shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
         sqlConnect('delete from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime), minTime),
-            shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database'])
+            shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
         
     if packetsWrittenCheck > len(deleted): # we should throw an exception here, but generate a warning instead
         print 'WARNING: more packets were written then are being deleted'
@@ -643,21 +645,21 @@ def disposeProcessedData(tableName, lastTime):
         print 'Wrote %s packets to PAD file, but deleting only %s from database' % (packetsWrittenCheck, len(deleted))
         
         # try to determine where the packet not getting deleted is occuring
-        around = sqlConnect('select time from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime)+5,ceil4(lastTime)-5 ),shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database'])
+        around = sqlConnect('select time from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime)+5,ceil4(lastTime)-5 ),shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
         # print out times within plus/minus 5 seconds of lastTime
         print 'The problem occurred writing and deleting packets in database time <= %.6lf' % ceil4(lastTime)
         print 'The next packet in the database to be processed is at time %.6lf' % around[0] # assumes that around will be after lastTime
   
 # main packet writing loop
 def mainLoop():    
-    pws = {}
+    pfs = {}
     if parameters['resume']: # resume where we left off by reading old state file
         try: 
-            file = open('packetWriterState', 'rb')
-            pws = pickle.load(file)
+            file = open('packetFeederState', 'rb')
+            pfs = pickle.load(file)
             file.close()
         except:
-            pws = {}
+            pfs = {}
 
     if parameters['inspect']: # do initial query to get expected values for comparison
         # do query for expected values
@@ -667,11 +669,12 @@ def mainLoop():
             try:
                 padExpect = PadExpect(sensor=parameters['tables']) # table name is sensor designator
             except:
-                raise Exception('could not do query of expected values for (%s)' % parameters['tables'])
+                #raise Exception('could not do query of expected values for (%s)' % parameters['tables'])
+                padExpect = None
 
     try:
         while 1: # until killed or ctrl-C or no more data (if parameters['quitWhenDone'])
-            lastPacketTotal = totalPacketsWrangled
+            lastPacketTotal = totalPacketsFed
             moreToDo = 0
             timeNow = time()
             cutoffTime = timeNow - max(parameters['cutoffDelay'], minimumDelay)
@@ -682,11 +685,11 @@ def mainLoop():
             tables = []
             
             for table in sqlConnect('show tables',
-                             shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database']):
+                             shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database']):
                 tableName = table[0]
                 columns = []
                 for col in sqlConnect('show columns from %s' % tableName,
-                               shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database']):
+                               shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database']):
                     columns.append(col[0])
                 if ('time' in columns) and ('packet' in columns):
                     tables.append(tableName)
@@ -710,20 +713,20 @@ def mainLoop():
                 
                 preCutoffProgress = 0
                 packetCount = 0
-                if not pws.has_key(tableName):
+                if not pfs.has_key(tableName):
                     if parameters['inspect']:
                         pw = packetInspector(parameters['showWarnings'],padExpect=padExpect)
                     else:
-                        pw = packetWrangler(parameters['showWarnings'])
-                    pws[tableName] = pw
+                        pw = packetFeeder(parameters['showWarnings'])
+                    pfs[tableName] = pw
                 else:
-                    pw = pws[tableName]
+                    pw = pfs[tableName]
                 start = ceil4(max(pw.lastTime(), parameters['startTime'])) # database has only 4 decimals of precision
                 
                 # write all packets before cutoffTime
                 tpResults = sqlConnect('select time,packet from %s where time > %.6f and time < %.6f \
                             order by time limit %d' % (tableName, start, cutoffTime, maxResults),
-                                       shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database'])
+                                       shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
                 packetCount = packetCount + len(tpResults)
                 while len(tpResults) != 0:
                     for result in tpResults:
@@ -744,7 +747,7 @@ def mainLoop():
                         start = ceil4(max(pw.lastTime(), parameters['startTime'])) # database has only 4 decimals of precision
                         tpResults = sqlConnect('select time,packet from %s where time > %.6f and time < %.6f \
                                     order by time limit %d' % (tableName, start, cutoffTime, maxResults),
-                                               shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database'])
+                                               shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
                         packetCount = packetCount + len(tpResults)
                 printDebug('finished before-cutoff packets for %s up to %.6f, moreToDo:%s' % (tableName, pw.lastTime(), moreToDo))
                     
@@ -759,7 +762,7 @@ def mainLoop():
                         
                         tpResults = sqlConnect('select time,packet from %s where time > %.6f and time < %.6f \
                                     order by time limit %d' % (tableName, ceil4(pw.lastTime()), maxTime, maxResults),
-                                        shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database'])
+                                        shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
                         packetCount = packetCount + len(tpResults)
                         while stillContiguous and len(tpResults) != 0 and not idleWait(0):
                             for result in tpResults:
@@ -779,7 +782,7 @@ def mainLoop():
                             elif stillContiguous:
                                 tpResults = sqlConnect('select time,packet from %s where time > %.6f and time < %.6f \
                                             order by time limit %d' % (tableName, ceil4(pw.lastTime()), maxTime, maxResults),
-                                                shost=parameters['host'], suser='pims', spasswd='pims2000', sdb=parameters['database'])
+                                                shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
                                 packetCount = packetCount + len(tpResults)
                             else:
                                 tpResults = []
@@ -788,9 +791,9 @@ def mainLoop():
                 pw.end()
                 disposeProcessedData(tableName, pw.lastTime())
 
-            print "totalPacketsWrangled", totalPacketsWrangled, "moreToDo", moreToDo
+            print "totalPacketsFed", totalPacketsFed, "moreToDo", moreToDo, datetime.datetime.now()
             if not moreToDo:
-                if lastPacketTotal == totalPacketsWrangled and parameters['quitWhenDone']:
+                if lastPacketTotal == totalPacketsFed and parameters['quitWhenDone']:
                     break # quit mainLoop() and exit the program
                 if idleWait(sleepTime):
                     break # quit mainLoop() and exit the program
@@ -803,13 +806,13 @@ def mainLoop():
         if benCount > 0:
             print 'benchmark average: %.6f' % (benTotal/benCount)
         # finalize any open files
-        for k in pws.keys():
-            dataFileName = pws[k].end()
-            if  pws[k]._maybeMove_ != '':
-                pws[k].movePadFile(pws[k]._maybeMove_)
+        for k in pfs.keys():
+            dataFileName = pfs[k].end()
+            if  pfs[k]._maybeMove_ != '':
+                pfs[k].movePadFile(pfs[k]._maybeMove_)
         # keep track of where we left off
-        file = open('packetWriterState', 'wb')
-        pickle.dump(pws, file)
+        file = open('packetFeederState', 'wb')
+        pickle.dump(pfs, file)
         file.close()
 
 # check parameters
@@ -877,7 +880,7 @@ def parametersOK():
     parameters['maxFileTime'] = atof(parameters['maxFileTime'])
 
     b = parameters['destination']
-    if b != '.':
+    if b != '/tmp/test':
         printLog(UnixToHumanTime(time(), 1) + ' testing scp connection...')
         dest = split(b, ':')
         if len(dest) != 2:
@@ -893,18 +896,19 @@ def parametersOK():
 
     if 0 == parameters['resume']:
         # remove any stale resume files
-        getoutput('rm -rf packetWriterState temp.*')
+        getoutput('rm -rf packetFeederState temp.*')
     
     return 1
 
 # print usage
 def printUsage():
     print version
-    print 'usage: packetWrangler.py [options]'
+    print 'usage: packetFeeder.py [options]'
     print '       options (and default values) are:'
     for i in defaults.keys():
         print '            %s=%s' % (i, defaults[i])
 
+# e.g. python packetfeeder.py host=manbearpig tables=121f05 ancillaryHost=kyle startTime=1382551198.0 endTime=1382552398.0
 if __name__ == '__main__':
     for p in sys.argv[1:]:  # parse command line
         pair = split(p, '=', 1)
@@ -919,9 +923,9 @@ if __name__ == '__main__':
     else:
         if parametersOK():
             if parameters['inspect']:
-                printLog('packetWrangler starting with inspection mode')
+                printLog('packetFeeder starting with inspection mode')
             else:
-                printLog('packetWrangler starting')
+                printLog('packetFeeder starting')
             mainLoop() 
             sys.exit()
     printUsage()

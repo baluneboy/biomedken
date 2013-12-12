@@ -18,7 +18,7 @@ from pims.config.conf import get_db_params
 from pims.pad.padpro import PadInterval, PadIntervalSet
 
 # Get sensitive authentication credentials for internal MySQL db query
-_SCHEMA, _UNAME, _PASSWD = get_db_params('pimsquery')
+SCHEMA, UNAME, PASSWD = get_db_params('pimsquery')
 
 class BCDConversionException(exceptions.Exception):
     def __init__(self, args=None):
@@ -120,7 +120,7 @@ def xmlEscape(s):
 # SQL helper routines ---------------------------------------------------------------
 # create a connection (with possible defaults), submit command, return all results
 # try to do all connecting through this function to handle exceptions
-def sqlConnect(command, shost='localhost', suser=_UNAME, spasswd=_PASSWD, sdb=_SCHEMA):
+def sqlConnect(command, shost='localhost', suser=UNAME, spasswd=PASSWD, sdb=SCHEMA):
     sqlRetryTime =30
     repeat = 1
     while repeat:
@@ -2119,7 +2119,7 @@ class PacketProcessor(object):
         #print p.dump(1)
         #print p.hexDump()
 
-    def processRecords(self, query_str, shost='localhost', suser=_UNAME, spasswd=_PASSWD, sdb=_SCHEMA):
+    def processRecords(self, query_str, shost='localhost', suser=UNAME, spasswd=PASSWD, sdb=SCHEMA):
         sqlRetryTime = 30
         try:
             con = Connection(host=shost, user=suser, passwd=spasswd, db=sdb)
