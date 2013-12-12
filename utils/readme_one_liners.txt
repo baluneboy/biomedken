@@ -63,7 +63,7 @@ sed ':a;N;$!ba;s/\n/ /g' file
 
 # 4 Steps to recursively find and replace in svn exported files; do this starting "here" [at dot] and below:
 1. svn export to /tmp/path; cd /tmp/path
-2. for i in $(grep -irl pims2000 .); do sed -i -e 's/pims2000/PPW/g' ${i}; done
+2. for i in $(grep -irl _PASSWD .); do sed -i -e 's/_PASSWD/PPW/g' ${i}; done
 3. for i in $(grep -irl 1sposmas .); do sed -i -e 's/1sposmas/SPW/g' ${i}; done
 4. mv entire directory /tmp/path to place you need to work from
 

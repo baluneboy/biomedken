@@ -149,6 +149,54 @@ def db_insert_handbook(fname, title, regime, category, host=_HANDBOOK_HOST, user
 
     return err_msg
 
+class PadExpect(object):
+    """Class for dictionary of results from pad db query on kyle for expected config values.
+
+    Keyword arguments:
+    database: string name of db to query (default 'pad' schema on kyle)
+    table: string for table name (default 'expected_config')
+    sensor: string for sensor designator (like '121f03')
+    values: dictionary of {'fields':values}
+
+    """
+
+    def __init__ (self, database='pad', table='expected_config', sensor=None):
+        """PadExpect constructor"""
+        self.database = database
+        self.table = table
+        self.sensor = sensor
+        self._excludeFields = ['time','sensor']
+        self._db = connect(host="kyle", user=_UNAME, passwd=_PASSWD, db=database)
+        self._fields = self._query_fields()
+        self._values = self._query_expected_values()
+        self._db.close()
+        self.values = dict(zip(self._fields,self._values))
+
+    def __repr__(self):
+        s  = 'database (%s) shows sensor (%s) should have:' % (self.database, self.sensor)
+        for f,v in self.values.iteritems():
+            s += '\n %s = %s' % (f, v)
+        return s
+    
+    def _query_fields(self):
+        """return expected values as result of db query"""
+        c = self._db.cursor()
+        queryString = "DESCRIBE %s" % self.table
+        c.execute(queryString)
+        fields = []
+        for f in c.fetchall():
+            if f[0] not in self._excludeFields:
+                fields.append(f[0])
+        return fields
+        
+    def _query_expected_values(self):
+        """return expected values as result of db query"""
+        c = self._db.cursor()
+        fieldString = string.join(self._fields,sep=',')
+        queryString = "SELECT %s FROM %s WHERE sensor = '%s' ORDER BY time DESC LIMIT 1" % (fieldString, self.table, self.sensor)
+        c.execute(queryString)
+        expected_values = c.fetchone()
+        return expected_values
 
 def demo():
     err_msg = db_insert_handbook('hb_qs_crew_A_Nice_Enough_Title.pdf', 'A Nice Enough Title', 'quasi-steady', 'crew')

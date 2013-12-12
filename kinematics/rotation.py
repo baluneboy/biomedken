@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import math
+import numpy as np
+
 def rotation_matrix(roll, pitch, yaw, invert=0):
     """convert roll, pitch, yaw into a 3x3 float32 rotation matrix, inverting if requested
     examples:
