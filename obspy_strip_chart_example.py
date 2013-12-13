@@ -31,7 +31,7 @@ from collections import deque
 # The recommended way to use wx with mpl is with the WXAgg
 # backend. 
 import matplotlib
-matplotlib.use('WXAgg')
+#matplotlib.use('WXAgg') # this throws a warning!?
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import \
       FigureCanvasWxAgg as FigCanvas, \
@@ -43,7 +43,7 @@ from obspy import read
 # limit size of otherwise ever-growing data
 MAXLEN = 5000 # this must be longer than longest display width's number samples
 
-class DataGen(object):
+class DataGenSilly(object):
     """ A silly class that generates pseudo-random data for plot display."""
     def __init__(self, init=50):
         self.data = self.init = init
@@ -65,7 +65,7 @@ class DataGen(object):
         else:
             self.data += delta
 
-class DataGenToo(object):
+class DataGenExample(object):
     """Generator for RtTrace using trace split and rt scaling on example slist ascii file."""
     
     def __init__(self, scale_factor=0.1, num_splits=3):
@@ -93,6 +93,58 @@ class DataGenToo(object):
         else:
             #raise StopIteration()
             self.num = -1
+            return 0
+    
+    def read_example_trace_demean(self):
+        """Read first trace of example data file"""
+        st = read('/home/pims/dev/programs/python/pims/sandbox/data/slist_for_example.ascii')
+        st.detrend('demean')
+        data_trace = st[0]
+        return data_trace
+
+    def split_trace(self):
+        """split given trace into a list of three sub-traces"""
+        traces = self.data_trace / self.num_splits
+        return traces
+
+    def assemble_rttrace_register1proc(self):
+        """assemble real time trace and register one process"""
+        rt_trace = RtTrace()
+        return rt_trace, rt_trace.registerRtProcess('scale', factor=self.scale_factor)
+
+    def append_and_autoprocess_packet(self):
+        """append and auto-process packet data into RtTrace"""
+        for tr in self.traces:
+            self.rt_trace.append(tr, gap_overlap_check=True)
+
+class DataGenerator(object):
+    """Generator for RtTrace using trace split and real-time scaling on example slist ascii file."""
+    
+    def __init__(self, scale_factor=0.1, num_splits=3):
+        self.num = -1
+        
+        self.scale_factor = scale_factor
+        self.num_splits = num_splits
+        
+        # read example trace (with demean stream first)
+        self.data_trace = self.read_example_trace_demean()
+        
+        # split given trace into a list of three sub-traces:
+        self.traces = self.split_trace()
+        
+        # assemble real time trace and register rt proc (scale by factor)
+        self.rt_trace, i1 = self.assemble_rttrace_register1proc()
+    
+        # append and auto-process packet data into RtTrace:
+        self.append_and_autoprocess_packet()
+    
+    def next(self):
+        if self.num < len(self.rt_trace) - 1:
+            self.num += 1
+            return self.rt_trace[self.num]
+        else:
+            #raise StopIteration()
+            self.num = -1 # FIXME should we rollover?
             return 0
     
     def read_example_trace_demean(self):
@@ -165,15 +217,15 @@ class BoundControlBox(wx.Panel):
         return self.value
 
 class GraphFrame(wx.Frame):
-    """ The main frame of the application
-    """
+    """ The main frame of the application."""
+    
     title = 'Demo: dynamic matplotlib graph'
     
     def __init__(self):
         wx.Frame.__init__(self, None, -1, self.title)
         
-        #self.datagen = DataGen()
-        self.datagen = DataGenToo(scale_factor=3)
+        #self.datagen = DataGenSilly()
+        self.datagen = DataGenExample(scale_factor=3)
         #self.data = [self.datagen.next()]
         self.data = deque( maxlen=MAXLEN )
         self.data.append( self.datagen.next() )
@@ -185,7 +237,7 @@ class GraphFrame(wx.Frame):
         
         self.redraw_timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.on_redraw_timer, self.redraw_timer)        
-        self.redraw_timer.Start(100)
+        self.redraw_timer.Start(1000) # milliseconds
 
     def create_menu(self):
         self.menubar = wx.MenuBar()
@@ -365,7 +417,6 @@ class GraphFrame(wx.Frame):
         # (to respond to scale modifications, grid change, etc.)
         if not self.paused:
             self.data.append( self.datagen.next() )
-        
         self.draw_plot()
     
     def on_exit(self, event):
