@@ -43,7 +43,8 @@ import pylab
 #import matplotlib.dates as dates
 import matplotlib.dates
 
-from accelPacket import guessPacket, localtime, time, strftime
+#from accelPacket import guessPacket, localtime, time, strftime
+from pims.realtime.accelpacket import guessPacket, localtime, time, strftime
 from collections import deque
 MAXLEN = 5000 # for 2 deque's (time and data)
 
