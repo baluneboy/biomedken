@@ -2,9 +2,11 @@
 version = '$Id$'
 # Adapted from Ted Wright's packetWriter.py,v 1.22 2004-11-29 20:00:04 pims
 
+import wx
 import os
 import sys
-import string 
+import thread
+import string
 import math
 import pickle
 import struct
@@ -12,11 +14,13 @@ import numpy as np
 from time import *
 from io import BytesIO
 from MySQLdb import *
-from pims.realtime.accelpacket import *
 from commands import *
+
+from pims.realtime.accelpacket import *
 from pims.utils.pimsdateutil import unix2dtm
 from pims.kinematics.rotation import rotation_matrix
 from pims.database.pimsquery import ceil4, PadExpect
+from pims.gui.stripchart import GraphFrame
 
 from obspy.realtime import RtTrace
 from obspy import read
@@ -999,9 +1003,69 @@ def printUsage():
     for i in defaults.keys():
         print '            %s=%s' % (i, defaults[i])
 
+def demo_strip_chart():
+    app = wx.PySimpleApp()
+    #app.frame = GraphFrame(DataGenRandom, maxlen=75)
+    #app.frame = GraphFrame(DataGenExample, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=150)
+    app.frame = GraphFrame(PadGenerator, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=250)
+    app.frame.Show()
+    app.MainLoop()
+
+def demo_external_long_running(func, func_when_done, val=30):
+    from time import sleep
+    sleep(2)
+    wx.CallAfter(func, val)
+    sleep(2)
+    wx.CallAfter(func, 2*val)
+    sleep(1)
+    wx.CallAfter(func, 3*val)
+    sleep(3)
+    wx.CallAfter(func_when_done)
+
+class MainFrame(wx.Frame):
+
+    def __init__(self, parent, worker):
+        wx.Frame.__init__(self, parent)
+
+        self.worker = worker
+        self.label = wx.StaticText(self, label="Ready")
+        self.btn = wx.Button(self, label="Start")
+        self.gauge = wx.Gauge(self)
+
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer.Add(self.label, proportion=1, flag=wx.EXPAND)
+        self.sizer.Add(self.btn, proportion=0, flag=wx.EXPAND)
+        self.sizer.Add(self.gauge, proportion=0, flag=wx.EXPAND)
+
+        self.SetSizerAndFit(self.sizer)
+
+        self.Bind(wx.EVT_BUTTON, self.on_button)
+
+    def on_button(self, evt):
+        self.btn.Enable(False)
+        self.gauge.SetValue(0)
+        self.label.SetLabel("Running")
+        thread.start_new_thread( self.worker, (self.gauge.SetValue, self.on_long_run_done) )
+
+    def on_long_run_done(self):
+        self.gauge.SetValue(100)
+        self.label.SetLabel("Done")
+        self.btn.Enable(True)
+
+def demo_wx_call_after(worker):
+    app = wx.PySimpleApp()
+    app.TopWindow = MainFrame(None, worker)
+    app.TopWindow.Show()
+    app.MainLoop()
+
 # e.g. python packetfeeder.py host=manbearpig tables=121f05 ancillaryHost=kyle startTime=1382551198.0 endTime=1382552398.0
 # e.g. ON PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=None startTime=1378742112.0 inspect=1
 if __name__ == '__main__':
+    
+    #demo_strip_chart(); raise SystemExit
+    
+    demo_wx_call_after( demo_external_long_running ); raise SystemExit
+    
     for p in sys.argv[1:]:  # parse command line
         pair = split(p, '=', 1)
         if (2 != len(pair)):
