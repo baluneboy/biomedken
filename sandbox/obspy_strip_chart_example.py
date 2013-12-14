@@ -40,10 +40,9 @@ from matplotlib.backends.backend_wxagg import \
 from obspy.realtime import RtTrace
 from obspy import read
 
-# limit size of otherwise ever-growing data
-MAXLEN = 5000 # this must be longer than longest display width's number samples
+from pims.pad.packetfeeder import PadGenerator
 
-class DataGenSilly(object):
+class DataGenRandom(object):
     """ A silly class that generates pseudo-random data for plot display."""
     def __init__(self, init=50):
         self.data = self.init = init
@@ -117,58 +116,6 @@ class DataGenExample(object):
         for tr in self.traces:
             self.rt_trace.append(tr, gap_overlap_check=True)
 
-class DataGenerator(object):
-    """Generator for RtTrace using trace split and real-time scaling on example slist ascii file."""
-    
-    def __init__(self, scale_factor=0.1, num_splits=3):
-        self.num = -1
-        
-        self.scale_factor = scale_factor
-        self.num_splits = num_splits
-        
-        # read example trace (with demean stream first)
-        self.data_trace = self.read_example_trace_demean()
-        
-        # split given trace into a list of three sub-traces:
-        self.traces = self.split_trace()
-        
-        # assemble real time trace and register rt proc (scale by factor)
-        self.rt_trace, i1 = self.assemble_rttrace_register1proc()
-    
-        # append and auto-process packet data into RtTrace:
-        self.append_and_autoprocess_packet()
-    
-    def next(self):
-        if self.num < len(self.rt_trace) - 1:
-            self.num += 1
-            return self.rt_trace[self.num]
-        else:
-            #raise StopIteration()
-            self.num = -1 # FIXME should we rollover?
-            return 0
-    
-    def read_example_trace_demean(self):
-        """Read first trace of example data file"""
-        st = read('/home/pims/dev/programs/python/pims/sandbox/data/slist_for_example.ascii')
-        st.detrend('demean')
-        data_trace = st[0]
-        return data_trace
-
-    def split_trace(self):
-        """split given trace into a list of three sub-traces"""
-        traces = self.data_trace / self.num_splits
-        return traces
-
-    def assemble_rttrace_register1proc(self):
-        """assemble real time trace and register one process"""
-        rt_trace = RtTrace()
-        return rt_trace, rt_trace.registerRtProcess('scale', factor=self.scale_factor)
-
-    def append_and_autoprocess_packet(self):
-        """append and auto-process packet data into RtTrace"""
-        for tr in self.traces:
-            self.rt_trace.append(tr, gap_overlap_check=True)
-
 class BoundControlBox(wx.Panel):
     """ A static box with a couple of radio buttons and a text
         box. Allows to switch between an automatic mode and a 
@@ -218,16 +165,19 @@ class BoundControlBox(wx.Panel):
 
 class GraphFrame(wx.Frame):
     """ The main frame of the application."""
-    
-    title = 'Demo: dynamic matplotlib graph'
-    
-    def __init__(self):
-        wx.Frame.__init__(self, None, -1, self.title)
+
+    def __init__(self, datagen, datagen_kwargs=None, title=None, maxlen=5000):
+        if datagen_kwargs:
+            self.datagen = datagen(**datagen_kwargs)
+        else:
+            self.datagen = datagen()
+        self.title = title or 'Demo of dynamic matplotlib graph using %s' % self.datagen.__class__.__name__
+        self.maxlen = maxlen
         
-        #self.datagen = DataGenSilly()
-        self.datagen = DataGenExample(scale_factor=3)
-        #self.data = [self.datagen.next()]
-        self.data = deque( maxlen=MAXLEN )
+        wx.Frame.__init__(self, None, -1, self.title)
+
+        # we must limit size of otherwise ever-growing data object
+        self.data = deque( maxlen=self.maxlen )
         self.data.append( self.datagen.next() )
         self.paused = False
         
@@ -237,7 +187,7 @@ class GraphFrame(wx.Frame):
         
         self.redraw_timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.on_redraw_timer, self.redraw_timer)        
-        self.redraw_timer.Start(1000) # milliseconds
+        self.redraw_timer.Start(200) # milliseconds
 
     def create_menu(self):
         self.menubar = wx.MenuBar()
@@ -309,7 +259,7 @@ class GraphFrame(wx.Frame):
         self.fig = Figure((3.0, 3.0), dpi=self.dpi)
 
         self.axes = self.fig.add_subplot(111)
-        self.axes.set_axis_bgcolor('black')
+        self.axes.set_axis_bgcolor('white')
         self.axes.set_title('testing with random data', size=12)
         
         pylab.setp(self.axes.get_xticklabels(), fontsize=8)
@@ -321,7 +271,7 @@ class GraphFrame(wx.Frame):
         self.plot_data = self.axes.plot(
             self.data, 
             linewidth=1,
-            color=(1, 1, 0),
+            color=(1, 0, 0),
             )[0]
 
     def draw_plot(self):
@@ -436,6 +386,8 @@ class GraphFrame(wx.Frame):
 
 if __name__ == '__main__':
     app = wx.PySimpleApp()
-    app.frame = GraphFrame()
+    #app.frame = GraphFrame(DataGenRandom, maxlen=75)
+    #app.frame = GraphFrame(DataGenExample, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=150)
+    app.frame = GraphFrame(PadGenerator, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=250)
     app.frame.Show()
     app.MainLoop()
