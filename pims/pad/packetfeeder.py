@@ -496,25 +496,17 @@ class packetInspector(packetFeeder):
 
 # class to feed packet data hopefully to a good strip chart display
 class PadGenerator(packetInspector):
-    """Generator for RtTrace using trace split and real-time scaling on example slist ascii file."""
-    def __init__(self, show_warnings=1, scale_factor=0.1, num_splits=3):
+    """Generator for RtTrace using real-time scaling."""
+    def __init__(self, show_warnings=1, scale_factor=1000):
         super(PadGenerator, self).__init__(show_warnings)
         self.num = -1 # FIXME is this pythonic for next method control?
-        
         self.scale_factor = scale_factor
-        self.num_splits = num_splits
         
-        # read example trace (with demean stream first)
-        self.data_trace = self.read_example_trace_demean()
-        
-        # split given trace into a list of three sub-traces:
-        self.traces = self.split_trace()
-        
-        # assemble real time trace and register rt proc (scale by factor)
+        # assemble real time trace and register rt process (scale factor)
         self.rt_trace, i1 = self.assemble_rttrace_register1proc()
     
-        # append and auto-process packet data into RtTrace:
-        self.append_and_autoprocess_packet()
+        ## append and auto-process packet data into RtTrace:
+        #self.append_and_autoprocess_packet()
     
     def next(self):
         if self.num < len(self.rt_trace) - 1:
@@ -524,18 +516,6 @@ class PadGenerator(packetInspector):
             #raise StopIteration()
             self.num = -1 # FIXME should we rollover?
             return 0
-    
-    def read_example_trace_demean(self):
-        """Read first trace of example data file"""
-        st = read('/home/pims/dev/programs/python/pims/sandbox/data/slist_for_example.ascii')
-        st.detrend('demean')
-        data_trace = st[0]
-        return data_trace
-
-    def split_trace(self):
-        """split given trace into a list of three sub-traces"""
-        traces = self.data_trace / self.num_splits
-        return traces
 
     def assemble_rttrace_register1proc(self):
         """assemble real time trace and register one process"""
@@ -1064,7 +1044,7 @@ if __name__ == '__main__':
     
     #demo_strip_chart(); raise SystemExit
     
-    demo_wx_call_after( demo_external_long_running ); raise SystemExit
+    #demo_wx_call_after( demo_external_long_running ); raise SystemExit
     
     for p in sys.argv[1:]:  # parse command line
         pair = split(p, '=', 1)

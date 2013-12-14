@@ -403,8 +403,8 @@ def demo_pad_gen():
     from pims.pad.packetfeeder import PadGenerator
     app = wx.PySimpleApp()
     #app.frame = GraphFrame(DataGenRandom, maxlen=75)
-    #app.frame = GraphFrame(DataGenExample, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=150)
-    app.frame = GraphFrame(PadGenerator, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=250)
+    app.frame = GraphFrame(DataGenExample, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=150)
+    #app.frame = GraphFrame(PadGenerator, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=250)
     app.frame.Show()
     app.MainLoop()        
 
