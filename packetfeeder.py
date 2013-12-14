@@ -18,6 +18,9 @@ from pims.utils.pimsdateutil import unix2dtm
 from pims.kinematics.rotation import rotation_matrix
 from pims.database.pimsquery import ceil4, PadExpect
 
+from obspy.realtime import RtTrace
+from obspy import read
+
 # FIXME use OOP on import inspect, DEBUGPRINT, and getFrame function (for QUERY, NORES labels w/wout lineno's)
 import inspect
 DEBUGPRINT = False # for testing
@@ -105,10 +108,11 @@ def sampleIdleFunction():
     global previousTotal
     if previousTotal != totalPacketsFed:
         print "IDLE totalPacketsFed %d" % totalPacketsFed
+        sleep(3)
     previousTotal = totalPacketsFed
 
 # add sample idle function
-#addIdle(sampleIdleFunction)
+addIdle(sampleIdleFunction)
 ################################################################
 
 # class to keep track of what's been fed
@@ -486,6 +490,59 @@ class packetInspector(packetFeeder):
         self.lastPacket = packet
         totalPacketsFed = totalPacketsFed + 1
 
+# class to feed packet data hopefully to a good strip chart display
+class PadGenerator(packetInspector):
+    """Generator for RtTrace using trace split and real-time scaling on example slist ascii file."""
+    def __init__(self, show_warnings=1, scale_factor=0.1, num_splits=3):
+        super(PadGenerator, self).__init__(show_warnings)
+        self.num = -1 # FIXME is this pythonic for next method control?
+        
+        self.scale_factor = scale_factor
+        self.num_splits = num_splits
+        
+        # read example trace (with demean stream first)
+        self.data_trace = self.read_example_trace_demean()
+        
+        # split given trace into a list of three sub-traces:
+        self.traces = self.split_trace()
+        
+        # assemble real time trace and register rt proc (scale by factor)
+        self.rt_trace, i1 = self.assemble_rttrace_register1proc()
+    
+        # append and auto-process packet data into RtTrace:
+        self.append_and_autoprocess_packet()
+    
+    def next(self):
+        if self.num < len(self.rt_trace) - 1:
+            self.num += 1
+            return self.rt_trace[self.num]
+        else:
+            #raise StopIteration()
+            self.num = -1 # FIXME should we rollover?
+            return 0
+    
+    def read_example_trace_demean(self):
+        """Read first trace of example data file"""
+        st = read('/home/pims/dev/programs/python/pims/sandbox/data/slist_for_example.ascii')
+        st.detrend('demean')
+        data_trace = st[0]
+        return data_trace
+
+    def split_trace(self):
+        """split given trace into a list of three sub-traces"""
+        traces = self.data_trace / self.num_splits
+        return traces
+
+    def assemble_rttrace_register1proc(self):
+        """assemble real time trace and register one process"""
+        rt_trace = RtTrace()
+        return rt_trace, rt_trace.registerRtProcess('scale', factor=self.scale_factor)
+
+    def append_and_autoprocess_packet(self):
+        """append and auto-process packet data into RtTrace"""
+        for tr in self.traces:
+            self.rt_trace.append(tr, gap_overlap_check=True)
+
 # return sensor and data coordinate system database entries, if they exist
 def checkCoordinateSystem(dataTime, sensor, dataName):
     if not ancillaryData.has_key('coord_system_db'):
@@ -677,7 +734,7 @@ def disposeProcessedData(tableName, lastTime):
         print 'The problem occurred writing and deleting packets in database time <= %.6lf' % ceil4(lastTime)
         print 'The next packet in the database to be processed is at time %.6lf' % around[0] # assumes that around will be after lastTime
 
-# get time,packet results from db table with set limit
+# get time,packet results from db table with a limit on number of results
 def getTimePacketQueryResults(table, ustart, ustop, lim, tuplabel):
     """get time,packet results from db table with set limit"""
     querystr = 'select time,packet from %s where time > %.6f and time < %.6f order by time limit %d' % (table, ustart, ustop, lim)
@@ -686,287 +743,6 @@ def getTimePacketQueryResults(table, ustart, ustop, lim, tuplabel):
     print 'QUERY%04d %s < time < %s FROM %s LIMIT %d %s' % (tuplabel[0], unix2dtm(ustart), unix2dtm(ustop), table, lim, tuplabel[1])
     tpResults = sqlConnect(querystr, shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
     return tpResults
-
-def FOLD_ME():
-## main packet writing loop
-#def mainLoop():    
-#    pfs = {}
-#    if parameters['resume']: # resume where we left off by reading old state file
-#        try: 
-#            file = open('packetFeederState', 'rb')
-#            pfs = pickle.load(file)
-#            file.close()
-#        except:
-#            pfs = {}
-#
-#    # we do not handle "ALL" tables or comma-separated list of tables
-#    if ('ALL' in parameters['tables']) or (',' in parameters['tables']):
-#        raise Exception('we do not handle "ALL" or comma-separated tables parameter (Ted legacy)')
-#
-#    try:
-#        while 1: # until killed or ctrl-C or no more data (if parameters['quitWhenDone'])
-#            lastPacketTotal = totalPacketsFed
-#            moreToDo = 0
-#            timeNow = time()
-#            cutoffTime = timeNow - max(parameters['cutoffDelay'], minimumDelay)
-#            if parameters['endTime'] > 0.0:
-#                cutoffTime = min(cutoffTime, parameters['endTime'])
-#
-#            # build list of tables to work with
-#            tables = []
-#            for table in sqlConnect('show tables',
-#                             shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database']):
-#                tableName = table[0]
-#                columns = []
-#                for col in sqlConnect('show columns from %s' % tableName,
-#                               shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database']):
-#                    columns.append(col[0])
-#                if ('time' in columns) and ('packet' in columns):
-#                    tables.append(tableName)
-#            if parameters['tables'] != 'ALL':
-#                wanted = split(parameters['tables'], ',')
-#                newTables = []
-#                for w in wanted:
-#                    if w in tables:
-#                        newTables.append(w)
-#                    else:
-#                        t = UnixToHumanTime(time(), 1)
-#                        t = t + ' warning: table %s was not found, ignoring it' % w
-#                        printLog(t)
-#                tables = newTables
-#                
-#            for tableName in tables:
-#                if idleWait(0):
-#                    break # check for shutdown in progress
-#
-#                #########################################################
-#                # initialize packetFeeder of packetInspector class here #
-#                #########################################################              
-#                updateAncillaryDatabases()
-#                preCutoffProgress = 0
-#                packetCount = 0
-#                if not pfs.has_key(tableName):
-#                    if parameters['inspect']:
-#                        pf = packetInspector(parameters['showWarnings'])
-#                    else:
-#                        pf = packetFeeder(parameters['showWarnings'])
-#                    pfs[tableName] = pf
-#                else:
-#                    pf = pfs[tableName]
-#                start = ceil4(max(pf.lastTime(), parameters['startTime'])) # database has only 4 decimals of precision
-#                
-#                # write all packets before cutoffTime
-#                tpResults = getTimePacketQueryResults(tableName, start, cutoffTime, maxResults, (getLine(), 'write all pkts before cutoffTime'))
-#                packetCount = packetCount + len(tpResults)
-#                while len(tpResults) != 0:
-#                    for result in tpResults:
-#                        p = guessPacket(result[1], showWarnings=1)
-#                        if p.type == 'unknown':
-#                            printLog('unknown packet type at time %.4lf' % result[0])
-#                            continue
-#                        printDebug('%7s %s %.4f %s' %(tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
-#                        preCutoffProgress = 1                        
-#                        pf.writePacket(p)
-#                        
-#                    if packetCount >= maxResultsOneTable or len(tpResults) != maxResults or idleWait(0):
-#                        if packetCount >= maxResultsOneTable:
-#                            moreToDo = 1 # go work on another table for a while
-#                        pf.end()
-#                        tpResults = []
-#                    else:
-#                        start = ceil4(max(pf.lastTime(), parameters['startTime'])) # database has only 4 decimals of precision
-#                        tpResults = getTimePacketQueryResults(tableName, start, cutoffTime, maxResults, (getLine(), 'while more tpResults exist, query new start and new cutoffTime'))
-#                        packetCount = packetCount + len(tpResults)
-#
-#                printDebug('finished before-cutoff packets for %s up to %.6f, moreToDo:%s' % (tableName, pf.lastTime(), moreToDo))
-#                    
-#                # write contiguous packets after cutoffTime
-#                if preCutoffProgress and not moreToDo:
-#                    packetCount = 0
-#                    stillContiguous = 1
-#                    maxTime = timeNow-minimumDelay
-#                    if parameters['endTime'] > 0.0:
-#                        maxTime = min(maxTime, parameters['endTime'])
-#                    if parameters['endTime'] == 0.0 or maxTime < parameters['endTime']:
-#                        tpResults = getTimePacketQueryResults(tableName, ceil4(pf.lastTime()), maxTime, maxResults, (getLine(), 'write contiguous pkts after cutoffTime'))
-#                        packetCount = packetCount + len(tpResults)
-#                        while stillContiguous and len(tpResults) != 0 and not idleWait(0):
-#                            for result in tpResults:
-#                                p = guessPacket(result[1])
-#                                if p.type == 'unknown':
-#                                    continue
-#                                printDebug('%7s %s %.4f %s' %(tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
-#                                stillContiguous = p.contiguous(pf.lastPacket)
-#                                if not stillContiguous:
-#                                    break
-#                                pf.writePacket(p, stillContiguous)
-#                            if packetCount >= maxResultsOneTable or len(tpResults) != maxResults:
-#                                if packetCount >= maxResultsOneTable:
-#                                    moreToDo = 1 # go work on another table for a while
-#                                pf.end()
-#                                tpResults = []
-#                            elif stillContiguous:
-#                                tpResults = getTimePacketQueryResults(tableName, ceil4(pf.lastTime()), maxTime, maxResults, (getLine(), 'while still contiguous and more tpResults...'))
-#                                packetCount = packetCount + len(tpResults)
-#                            else:
-#                                tpResults = []
-##                           printDebug('finished after-cutoff contiguous packets for %s up to %.6f' % (tableName, pf.lastTime()))
-#
-#                pf.end()
-#                disposeProcessedData(tableName, pf.lastTime())
-#
-#            if not moreToDo:
-#                print "NORES totalPacketsFed", totalPacketsFed, "moreToDo", moreToDo, datetime.datetime.now(), "(check every ", sleepTime, "sec)"
-#                if lastPacketTotal == totalPacketsFed and parameters['quitWhenDone']:
-#                    break # quit mainLoop() and exit the program
-#                if idleWait(sleepTime):
-#                    break # quit mainLoop() and exit the program
-#            else:
-#                if idleWait(0):
-#                    break # quit mainLoop() and exit the program
-#
-#    finally:
-#        if benCount > 0:
-#            print 'benchmark average: %.6f' % (benTotal/benCount)
-#        # finalize any open files
-#        for k in pfs.keys():
-#            dataFileName = pfs[k].end()
-#            if  pfs[k]._maybeMove_ != '':
-#                pfs[k].movePadFile(pfs[k]._maybeMove_)
-#        # keep track of where we left off
-#        file = open('packetFeederState', 'wb')
-#        pickle.dump(pfs, file)
-#        file.close()
-#
-## one shot of main packet writing loop
-#def oneShot():    
-#    lastPacketTotal = totalPacketsFed
-#    moreToDo = 0
-#    timeNow = time()
-#    cutoffTime = timeNow - max(parameters['cutoffDelay'], minimumDelay)
-#    if parameters['endTime'] > 0.0:
-#        cutoffTime = min(cutoffTime, parameters['endTime'])
-#
-#    # FIXME we only need single table support, but for now go Ted legacy approach...
-#    # build list of tables to work with
-#    tables = []
-#    
-#    for table in sqlConnect('show tables',
-#                     shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database']):
-#        tableName = table[0]
-#        columns = []
-#        for col in sqlConnect('show columns from %s' % tableName,
-#                       shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database']):
-#            columns.append(col[0])
-#        if ('time' in columns) and ('packet' in columns):
-#            tables.append(tableName)
-#    if parameters['tables'] != 'ALL':
-#        wanted = split(parameters['tables'], ',')
-#        newTables = []
-#        for w in wanted:
-#            if w in tables:
-#                newTables.append(w)
-#            else:
-#                t = UnixToHumanTime(time(), 1)
-#                t = t + ' warning: table %s was not found, ignoring it' % w
-#                printLog(t)
-#        tables = newTables
-#        
-#    for tableName in tables:
-#        if idleWait(0):
-#            break # check for shutdown in progress
-#
-#        #######################################################
-#        # initialize packetFeeder of packetInspector class here
-#        #######################################################                
-#        updateAncillaryDatabases()
-#        preCutoffProgress = 0
-#        packetCount = 0
-#        if parameters['inspect']:
-#            pf = packetInspector(parameters['showWarnings'])
-#        else:
-#            pf = packetFeeder(parameters['showWarnings'])
-#
-#        start = ceil4(max(pf.lastTime(), parameters['startTime'])) # database has only 4 decimals of precision
-#        
-#        # write all packets before cutoffTime
-#        tpResults = sqlConnect('select time,packet from %s where time > %.6f and time < %.6f \
-#                    order by time limit %d' % (tableName, start, cutoffTime, maxResults),
-#                               shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
-#        packetCount = packetCount + len(tpResults)
-#        while len(tpResults) != 0:
-#            for result in tpResults:
-#                p = guessPacket(result[1], showWarnings=1)
-#                if p.type == 'unknown':
-#                    printLog('unknown packet type at time %.4lf' % result[0])
-#                    continue
-#                printDebug('%7s %s %.4f %s' %(tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
-#                preCutoffProgress = 1                        
-#                pf.writePacket(p) ### THIS DOES "DATA APPEND"
-#                
-#            if packetCount >= maxResultsOneTable or len(tpResults) != maxResults or idleWait(0):
-#                if packetCount >= maxResultsOneTable:
-#                    moreToDo = 1 # go work on another table for a while
-#                pf.end()
-#                tpResults = []
-#            else:
-#                start = ceil4(max(pf.lastTime(), parameters['startTime'])) # database has only 4 decimals of precision
-#                tpResults = sqlConnect('select time,packet from %s where time > %.6f and time < %.6f \
-#                            order by time limit %d' % (tableName, start, cutoffTime, maxResults),
-#                                       shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
-#                packetCount = packetCount + len(tpResults)
-#        printDebug('finished before-cutoff packets for %s up to %.6f, moreToDo:%s' % (tableName, pf.lastTime(), moreToDo))
-#            
-#        # write contiguous packets after cutoffTime
-#        if preCutoffProgress and not moreToDo:
-#            packetCount = 0
-#            stillContiguous = 1
-#            maxTime = timeNow-minimumDelay
-#            if parameters['endTime'] > 0.0:
-#                maxTime = min(maxTime, parameters['endTime'])
-#            if parameters['endTime'] == 0.0 or maxTime < parameters['endTime']:
-#                
-#                tpResults = sqlConnect('select time,packet from %s where time > %.6f and time < %.6f \
-#                            order by time limit %d' % (tableName, ceil4(pf.lastTime()), maxTime, maxResults),
-#                                shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
-#                packetCount = packetCount + len(tpResults)
-#                while stillContiguous and len(tpResults) != 0 and not idleWait(0):
-#                    for result in tpResults:
-#                        p = guessPacket(result[1])
-#                        if p.type == 'unknown':
-#                            continue
-#                        printDebug('%7s %s %.4f %s' %(tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
-#                        stillContiguous = p.contiguous(pf.lastPacket)
-#                        if not stillContiguous:
-#                            break
-#                        pf.writePacket(p, stillContiguous)
-#                    if packetCount >= maxResultsOneTable or len(tpResults) != maxResults:
-#                        if packetCount >= maxResultsOneTable:
-#                            moreToDo = 1 # go work on another table for a while
-#                        pf.end()
-#                        tpResults = []
-#                    elif stillContiguous:
-#                        tpResults = sqlConnect('select time,packet from %s where time > %.6f and time < %.6f \
-#                                    order by time limit %d' % (tableName, ceil4(pf.lastTime()), maxTime, maxResults),
-#                                        shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
-#                        packetCount = packetCount + len(tpResults)
-#                    else:
-#                        tpResults = []
-##                           printDebug('finished after-cutoff contiguous packets for %s up to %.6f' % (tableName, pf.lastTime()))
-#
-#        pf.end()
-#        disposeProcessedData(tableName, pf.lastTime())
-#
-#    print "\ntotalPacketsFed", totalPacketsFed, "moreToDo", moreToDo, datetime.datetime.now()
-#    if not moreToDo:
-#        if lastPacketTotal == totalPacketsFed and parameters['quitWhenDone']:
-#            raise SystemExit
-#        if idleWait(sleepTime):
-#            raise SystemExit
-#    else:
-#        if idleWait(0):
-#            raise SystemExit
-    pass
 
 # one iteration of mainLoop
 def oneShot(pfs):
@@ -1013,10 +789,13 @@ def oneShot(pfs):
         preCutoffProgress = 0
         packetCount = 0
         if not pfs.has_key(tableName):
-            if parameters['inspect']:
+            if parameters['inspect'] == 2:
+                pf = PadGenerator(parameters['showWarnings'])
+            elif parameters['inspect'] == 1:
                 pf = packetInspector(parameters['showWarnings'])
             else:
                 pf = packetFeeder(parameters['showWarnings'])
+            print pf.__class__.__name__, 'starting...'
             pfs[tableName] = pf
         else:
             pf = pfs[tableName]
@@ -1130,8 +909,8 @@ def mainLoop():
 # check parameters
 def parametersOK():        
     b = parameters['inspect']
-    if b != '0' and b != '1':
-        printLog(' inspect must be 0 or 1')
+    if b != '0' and b != '1' and b != '2':
+        printLog(' inspect must be 0 or 1 (or 2)')
         return 0
     else:
         parameters['inspect'] = atoi(parameters['inspect'])
@@ -1235,13 +1014,6 @@ if __name__ == '__main__':
             parameters[pair[0]] = pair[1]
     else:
         if parametersOK():
-            if parameters['inspect']:
-                printLog('packetInspector starting')
-            else:
-                printLog('packetFeeder starting')
             mainLoop()
-            #while 1:
-            #    oneShot()
-            #    sleep(1)
             sys.exit()
     printUsage()
