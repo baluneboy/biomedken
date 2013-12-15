@@ -22,8 +22,8 @@ from pims.kinematics.rotation import rotation_matrix
 from pims.database.pimsquery import ceil4, PadExpect
 from pims.gui.stripchart import GraphFrame
 
+from obspy import Trace
 from obspy.realtime import RtTrace
-from obspy import read
 
 # FIXME use OOP on import inspect, DEBUGPRINT, and getFrame function (for QUERY, NORES labels w/wout lineno's)
 import inspect
@@ -491,23 +491,22 @@ class packetInspector(packetFeeder):
             for row in atxyzs:
                 s = s + formatString % tuple(row)
             #self._file_.write(s) # NOTE THIS IS "NOT-WRITING" JUST INSPECTING
+            
         self.lastPacket = packet
         totalPacketsFed = totalPacketsFed + 1
 
 # class to feed packet data hopefully to a good strip chart display
 class PadGenerator(packetInspector):
     """Generator for RtTrace using real-time scaling."""
-    def __init__(self, show_warnings=1, scale_factor=1000):
+    def __init__(self, show_warnings=1, max_length=7200, scale_factor=1000):
         super(PadGenerator, self).__init__(show_warnings)
         self.num = -1 # FIXME is this pythonic for next method control?
+        self.max_length = max_length # in seconds for rt_trace
         self.scale_factor = scale_factor
         
-        # assemble real time trace and register rt process (scale factor)
-        self.rt_trace, i1 = self.assemble_rttrace_register1proc()
-    
-        ## append and auto-process packet data into RtTrace:
-        #self.append_and_autoprocess_packet()
-    
+        # initialize real-time trace and register real-time process (scale factor)
+        self.rt_trace = self.init_rttrace_registerproc()
+
     def next(self):
         if self.num < len(self.rt_trace) - 1:
             self.num += 1
@@ -517,15 +516,99 @@ class PadGenerator(packetInspector):
             self.num = -1 # FIXME should we rollover?
             return 0
 
-    def assemble_rttrace_register1proc(self):
-        """assemble real time trace and register one process"""
-        rt_trace = RtTrace()
-        return rt_trace, rt_trace.registerRtProcess('scale', factor=self.scale_factor)
+    def init_rttrace_registerproc(self):
+        """initialize real-time trace and register process for scale-factor"""
+        rt_trace = RtTrace(max_length=self.max_length)
+        rt_trace.registerRtProcess('scale', factor=self.scale_factor)
+        
+        # FIXME we hard-coded for quick testing
+        print 'FIXME we hard-coded rt_trace.stats in init_rttrace_registerproc for quick testing'
+        sleep(2)
+        rt_trace.stats['network'] = 'SAMS'
+        rt_trace.stats['station'] = '121f05'
+        rt_trace.stats['sampling_rate'] = 500.0
+        rt_trace.stats['network'] = 'SAMS'
+        rt_trace.stats['station'] = '121f05'
+        rt_trace.stats['location'] = 'LOCATION'
+        rt_trace.stats['channel'] = 'Xssa'
+        
+        return rt_trace
 
-    def append_and_autoprocess_packet(self):
+    def append_and_autoprocess_packet(self, atxyzs):
         """append and auto-process packet data into RtTrace"""
-        for tr in self.traces:
-            self.rt_trace.append(tr, gap_overlap_check=True)
+        tr = self.as_trace( atxyzs[:,1] )
+        print tr.stats.starttime
+        self.rt_trace.append( tr, gap_overlap_check=True)
+
+    def as_trace(self, x):
+        packet_header = self.buildHeader('Go Browns!')
+        hdr = {}
+        hdr['sampling_rate'] = 500.0
+        hdr['network'] = 'SAMS'
+        hdr['station'] = '121f05'
+        hdr['location'] = 'LOCATION'
+        hdr['channel'] = 'Xssa'
+        return Trace( data=x, header=hdr )
+
+    # append data NOT to the file, NOT REALLY need to reopen it
+    def append(self, packet):
+        """inspect packet for unexpected changes (do not append to file)"""
+        global totalPacketsFed
+        if self._file_ == None:
+            newName = 'temp.' + packet.name()
+            os.system('rm -rf %s.header' % self._fileName_)
+            ok = True #os.system('mv %s %s' % (self._fileName_, newName)) == 0
+            printDebug('append() is NOT REALLY moving %s to %s, success:%s' % (self._fileName_, newName, ok))
+            if not ok: # move failed, maybe file doesn't exist anymore
+                contiguous = packet.contiguous(self.lastPacket)
+                if contiguous:
+                    self._fileSep = '+'
+                else:
+                    self._fileSep = '-'
+                self._fileStart_ = packet.time()
+            self._fileName_ = newName
+            #self._file_ = open(self._fileName_, 'ab') # this is okay, giving zero-length file
+            self._file_ = BytesIO(self._fileName_) # FIXME w/o this or line above we run slow
+
+        txyzs = packet.txyz()
+        packetStart = packet.time()
+        atxyzs = np.array(txyzs, np.float32)
+        if  self._rotateData_ and 4 == len(atxyzs[0]):  # do coordinate system rotation
+            atxyzs[:,1:] = np.dot(atxyzs[:,1:], self._rotationMatrix_ )
+        atxyzs[:,0] = atxyzs[:,0] + np.array(packetStart-self._fileStart_, np.float32) # add offset to times
+
+        aextra = None
+        extra = packet.extraColumns()
+        if extra:
+            aextra = np.array(extra, np.float32)
+
+        if not parameters['ascii']:
+            if parameters['bigEndian']:
+                atxyzs = atxyzs.byteswap() 
+                if extra:
+                    aextra = aextra.byteswap()
+            if extra:
+                atxyzs = concatenate((atxyzs, aextra), 1)
+            #self._file_.write(atxyzs.tostring()) # NOTE THIS IS "NOT-WRITING" JUST INSPECTING
+            #print atxyzs
+        else:
+            s= ''
+            if extra:
+                atxyzs = concatenate((atxyzs, aextra), 1)
+            formatString = '%.4f'
+            for col in atxyzs[0][1:]:
+                formatString = formatString + ' %.7e'
+            formatString = formatString + '\n'
+            for row in atxyzs:
+                s = s + formatString % tuple(row)
+            #self._file_.write(s) # NOTE THIS IS "NOT-WRITING" JUST INSPECTING
+
+        # append and auto-process packet data into RtTrace:
+        self.append_and_autoprocess_packet(atxyzs)
+        
+        # update lastPacket and totalPacketsFed
+        self.lastPacket = packet
+        totalPacketsFed = totalPacketsFed + 1
 
 # return sensor and data coordinate system database entries, if they exist
 def checkCoordinateSystem(dataTime, sensor, dataName):
@@ -731,7 +814,7 @@ def getTimePacketQueryResults(table, ustart, ustop, lim, tuplabel):
 # one iteration of mainLoop
 def oneShot(pfs):
     global moreToDo, lastPacketTotal
-    print 'oneShot', '-' * 37
+    print 'oneShot', '-' * 99
     lastPacketTotal = totalPacketsFed
     moreToDo = 0
     timeNow = time()
@@ -849,7 +932,9 @@ def oneShot(pfs):
 def mainLoop():
     global moreToDo, lastPacketTotal
     pfs = {}
-    if parameters['resume']: # resume where we left off by reading old state file
+    
+    # FIXME we IGNORE packetFeederState file
+    if False: #parameters['resume']: # resume where we left off by reading old state file
         try: 
             file = open('packetFeederState', 'rb')
             pfs = pickle.load(file)
@@ -885,10 +970,12 @@ def mainLoop():
             dataFileName = pfs[k].end()
             if  pfs[k]._maybeMove_ != '':
                 pfs[k].movePadFile(pfs[k]._maybeMove_)
-        # keep track of where we left off
-        file = open('packetFeederState', 'wb')
-        pickle.dump(pfs, file)
-        file.close()
+                
+        # FIXME? DO NOT keep track of where we left off (no need for this part of legacy - right?)
+        if False:
+            file = open('packetFeederState', 'wb')
+            pickle.dump(pfs, file)
+            file.close()
 
 # check parameters
 def parametersOK():        
@@ -1038,6 +1125,21 @@ def demo_wx_call_after(worker):
     app.TopWindow.Show()
     app.MainLoop()
 
+def demo_trace_header():
+    import datetime
+    hdr = {}
+    hdr['sampling_rate'] = 500.0
+    hdr['network'] = 'SAMS'
+    hdr['station'] = '121f05'
+    hdr['location'] = 'LOCATION'
+    hdr['channel'] = 'Xssa'
+    hdr['starttime'] = datetime.datetime.now()
+    traces = []
+    traces.append( Trace( np.array( range(500)), header=hdr ) )
+    hdr['channel'] = 'Yssa'
+    traces.append( Trace( np.array( range(500)), header=hdr ) )
+    for tr in traces: print tr
+
 # e.g. python packetfeeder.py host=manbearpig tables=121f05 ancillaryHost=kyle startTime=1382551198.0 endTime=1382552398.0
 # e.g. ON PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=None startTime=1378742112.0 inspect=1
 if __name__ == '__main__':
@@ -1045,6 +1147,8 @@ if __name__ == '__main__':
     #demo_strip_chart(); raise SystemExit
     
     #demo_wx_call_after( demo_external_long_running ); raise SystemExit
+    
+    #demo_trace_header(); raise SystemExit
     
     for p in sys.argv[1:]:  # parse command line
         pair = split(p, '=', 1)
