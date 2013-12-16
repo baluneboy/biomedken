@@ -501,14 +501,11 @@ class packetInspector(packetFeeder):
 class PadGenerator(packetInspector):
     """Generator for RtTrace using real-time scaling."""
     def __init__(self, show_warnings=1, max_length=7200, scale_factor=1000):
+        """initialize packet-based, real-time trace pad generator with scaling"""
         super(PadGenerator, self).__init__(show_warnings)
-        self.rt_header = None
         self.num = -1 # FIXME is this pythonic for next method control?
         self.max_length = max_length # in seconds for rt_trace
         self.scale_factor = scale_factor
-        
-        # initialize real-time trace and register real-time process (scale factor)
-        self.rt_trace = self.init_rttrace_registerproc()
 
     def next(self):
         if self.num < len(self.rt_trace) - 1:
@@ -519,39 +516,33 @@ class PadGenerator(packetInspector):
             self.num = -1 # FIXME should we rollover?
             return 0
 
-    def init_rttrace_registerproc(self):
-        """initialize real-time trace and register process for scale-factor"""
+    def init_realtime_trace_registerproc(self, hdr, ax):
+        """initialize real-time traces and register process for scale-factor"""
+        # set max_length during init to avoid memory issue
         rt_trace = RtTrace(max_length=self.max_length)
+        
+        # data nominally in g, but most likely mg or ug preferred
         rt_trace.registerRtProcess('scale', factor=self.scale_factor)
-        
-        # FIXME we hard-coded for quick testing
-        print 'FIXME we hard-coded rt_trace.stats in init_rttrace_registerproc for quick testing'
-        sleep(2)
-        rt_trace.stats['network'] = 'SAMS'
-        rt_trace.stats['station'] = '121f05'
-        rt_trace.stats['sampling_rate'] = 500.0
-        rt_trace.stats['network'] = 'SAMS'
-        rt_trace.stats['station'] = '121f05'
-        rt_trace.stats['location'] = 'LOCATION'
-        rt_trace.stats['channel'] = 'Xssa'
-        
+
+        # use Ted's legacy XML header info to our advantage for real-time trace
+        rt_trace.stats['network'] = hdr['System']
+        rt_trace.stats['station'] = hdr['SensorID']
+        rt_trace.stats['sampling_rate'] = hdr['SampleRate']
+        rt_trace.stats['location'] = hdr['SensorCoordinateSystem']['comment']
+        rt_trace.stats['channel'] = ax
+
         return rt_trace
 
-    def append_and_autoprocess_packet(self, atxyzs):
+    def append_process_packet_data(self, atxyzs, start):
         """append and auto-process packet data into RtTrace"""
-        tr = self.as_trace( atxyzs[:,1] )
-        print tr.stats.starttime
-        self.rt_trace.append( tr, gap_overlap_check=True)
+        # FIXME should we use merge here somewhere (NaN fill?)
+        for i, ax in enumerate(['x', 'y', 'z']):
+            tr = self.as_trace( atxyzs[:, i+1] )
+            tr.stats.starttime = start
+            self.rt_trace[ax].append( tr, gap_overlap_check=False) # FIXME this should be True, right?
 
-    def as_trace(self, x):
-        packet_header = self.buildHeader('Go Browns!')
-        hdr = {}
-        hdr['sampling_rate'] = 500.0
-        hdr['network'] = 'SAMS'
-        hdr['station'] = '121f05'
-        hdr['location'] = 'LOCATION'
-        hdr['channel'] = 'Xssa'
-        return Trace( data=x, header=hdr )
+    def as_trace(self, data):
+        return Trace( data=data, header=self.rt_trace['x'].stats )
 
     # get header subfields
     def get_subfields(self, h, field, Lsubs):
@@ -566,23 +557,34 @@ class PadGenerator(packetInspector):
     def get_first_header(self):
         """get first header (only first)"""
         dHeader = {}
-        h = xml_parse( self.buildHeader('LEGACY') )
-        L = ['SampleRate','CutoffFreq','DataQualityMeasure','SensorID','TimeZero','ISSConfiguration']
+        h = xml_parse( self.buildHeader('NOFILE') )
+        
+        # get XML root node localName (like "sams2_accel") and split for system
+        dHeader['System'] = h.documentElement.localName.split('_')[0].upper()
+        
+        # get a few basic fields
+        L = ['SampleRate', 'CutoffFreq', 'DataQualityMeasure', 'SensorID', 'TimeZero', 'ISSConfiguration']
         for i in L:
             dHeader[i] = str(h.documentElement.getElementsByTagName(i)[0].childNodes[0].nodeValue)
         dHeader['SampleRate'] = float(dHeader['SampleRate'])
         dHeader['CutoffFreq'] = float(dHeader['CutoffFreq'])
+        
+        # get fields that have sub-fields
         Lcoord = ['x','y','z','r','p','w','name','time','comment']
         dHeader['SensorCoordinateSystem'] = self.get_subfields(h,'SensorCoordinateSystem',Lcoord)
         dHeader['DataCoordinateSystem'] = self.get_subfields(h,'DataCoordinateSystem',Lcoord)
         dHeader['GData'] = self.get_subfields(h,'GData',['format','file'])
-        return dHeader
+        
+        # initialize real-time trace and register real-time process (scale factor)
+        self.rt_trace = {}
+        for ax in ['x', 'y', 'z']:
+            self.rt_trace[ax] = self.init_realtime_trace_registerproc(dHeader, ax)
 
-    # compare packet header info to first header
+    # primative comparison of packet header info to first, lead header counterparts
     def is_header_same(self, p):
         """compare packet header info to first header"""
-        if self.rt_header['SensorID'] == p.name():
-            if self.rt_header['SampleRate'] == p.rate():
+        if self.rt_trace['x'].stats['station'] == p.name():              # like "121f05" or maybe "hirap"
+            if self.rt_trace['x'].stats['sampling_rate'] == p.rate():    # a float like say 500.0
                 return True
         return False
         
@@ -641,13 +643,14 @@ class PadGenerator(packetInspector):
 
         # for very first packet, get header info
         if totalPacketsFed == 0:
-            self.rt_header = self.get_first_header()
+            self.get_first_header()
 
         # append and auto-process packet data into RtTrace:
         if self.is_header_same(packet):
-            self.append_and_autoprocess_packet(atxyzs)
+            self.append_process_packet_data(atxyzs, packetStart)
         else:
             print 'DO NOT APPEND PACKET BECAUSE SENSOR AND RATE DO NOT MATCH!'
+            raise SystemExit
         
         # update lastPacket and totalPacketsFed
         self.lastPacket = packet
