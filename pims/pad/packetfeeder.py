@@ -16,6 +16,7 @@ from time import *
 from io import BytesIO
 from MySQLdb import *
 from commands import *
+from xml.dom.minidom import parseString as xml_parse
 
 from pims.realtime.accelpacket import *
 from pims.utils.pimsdateutil import unix2dtm
@@ -552,39 +553,39 @@ class PadGenerator(packetInspector):
         hdr['channel'] = 'Xssa'
         return Trace( data=x, header=hdr )
 
-    # extract packet specific header info
-    def get_packet_specific_header_info(self):
-        pat = '\<(?P<name>\w*)\>(?P<value>.*)\<.*'
-        xml = self._headerPacket_.xmlHeader()
+    # get header subfields
+    def get_subfields(self, h, field, Lsubs):
+        """get sub fields using xml parser"""
+        d = {}	
+        for k in Lsubs:
+            theElement = h.documentElement.getElementsByTagName(field)[0]
+            d[k] = str(theElement.getAttribute(k))
+        return d
 
     # get first header
     def get_first_header(self):
         """get first header (only first)"""
-        header = '<%s>\n' % self._headerPacket_.type
-        header = header + self._headerPacket_.xmlHeader() # extract packet specific header info
-        if parameters['ascii']:
-            format = 'ascii'
-        else:
-            if parameters['bigEndian']:
-                format = 'binary 32 bit IEEE float big endian'
-            else:
-                format = 'binary 32 bit IEEE float little endian'
-        header = header + '\t<GData format="%s" file="%s"/>\n' % (format, 'nofilename')
-        # insert additionalDQM() if necessary
-        aXML = ancillaryXML
-        if self._headerPacket_.additionalDQM() != '':
-            dqmStart = find(aXML, '<DataQualityMeasure>')
-            if dqmStart == -1:
-                aXML = aXML + '\t<DataQualityMeasure>%s</DataQualityMeasure>\n' % xmlEscape(self._headerPacket_.additionalDQM())
-            else:
-                dqmInsert = dqmStart + len('<DataQualityMeasure>')
-                aXML = aXML[:dqmInsert] + xmlEscape(self._headerPacket_.additionalDQM()) + ', ' + aXML[dqmInsert:] 
-        header = header + aXML
-        if parameters['additionalHeader'] != '\"\"':
-            header = header + parameters['additionalHeader']
-        header = header + '</%s>\n' % self._headerPacket_.type
-        return header
+        dHeader = {}
+        h = xml_parse( self.buildHeader('LEGACY') )
+        L = ['SampleRate','CutoffFreq','DataQualityMeasure','SensorID','TimeZero','ISSConfiguration']
+        for i in L:
+            dHeader[i] = str(h.documentElement.getElementsByTagName(i)[0].childNodes[0].nodeValue)
+        dHeader['SampleRate'] = float(dHeader['SampleRate'])
+        dHeader['CutoffFreq'] = float(dHeader['CutoffFreq'])
+        Lcoord = ['x','y','z','r','p','w','name','time','comment']
+        dHeader['SensorCoordinateSystem'] = self.get_subfields(h,'SensorCoordinateSystem',Lcoord)
+        dHeader['DataCoordinateSystem'] = self.get_subfields(h,'DataCoordinateSystem',Lcoord)
+        dHeader['GData'] = self.get_subfields(h,'GData',['format','file'])
+        return dHeader
 
+    # compare packet header info to first header
+    def is_header_same(self, p):
+        """compare packet header info to first header"""
+        if self.rt_header['SensorID'] == p.name():
+            if self.rt_header['SampleRate'] == p.rate():
+                return True
+        return False
+        
     # append data NOT to the file, NOT REALLY need to reopen it
     def append(self, packet):
         """inspect packet for unexpected changes (do not append to file)"""
@@ -643,7 +644,10 @@ class PadGenerator(packetInspector):
             self.rt_header = self.get_first_header()
 
         # append and auto-process packet data into RtTrace:
-        self.append_and_autoprocess_packet(atxyzs)
+        if self.is_header_same(packet):
+            self.append_and_autoprocess_packet(atxyzs)
+        else:
+            print 'DO NOT APPEND PACKET BECAUSE SENSOR AND RATE DO NOT MATCH!'
         
         # update lastPacket and totalPacketsFed
         self.lastPacket = packet
@@ -1167,11 +1171,11 @@ def demo_wx_call_after(worker):
 def demo_trace_header():
     import datetime
     hdr = {}
-    hdr['sampling_rate'] = 500.0
     hdr['network'] = 'SAMS'
     hdr['station'] = '121f05'
     hdr['location'] = 'LOCATION'
     hdr['channel'] = 'Xssa'
+    hdr['sampling_rate'] = 500.0
     hdr['starttime'] = datetime.datetime.now()
     traces = []
     traces.append( Trace( np.array( range(500)), header=hdr ) )
