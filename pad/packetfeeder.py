@@ -4,6 +4,7 @@ version = '$Id$'
 
 import wx
 import os
+import re
 import sys
 import thread
 import string
@@ -111,7 +112,7 @@ def sampleIdleFunction():
     """a sample idle function"""
     global previousTotal
     if previousTotal != totalPacketsFed:
-        print "IDLE totalPacketsFed %d" % totalPacketsFed
+        print "IDLER%04d totalPacketsFed %d" % (getLine(), totalPacketsFed)
         sleep(3)
     previousTotal = totalPacketsFed
 
@@ -500,6 +501,7 @@ class PadGenerator(packetInspector):
     """Generator for RtTrace using real-time scaling."""
     def __init__(self, show_warnings=1, max_length=7200, scale_factor=1000):
         super(PadGenerator, self).__init__(show_warnings)
+        self.rt_header = None
         self.num = -1 # FIXME is this pythonic for next method control?
         self.max_length = max_length # in seconds for rt_trace
         self.scale_factor = scale_factor
@@ -549,6 +551,39 @@ class PadGenerator(packetInspector):
         hdr['location'] = 'LOCATION'
         hdr['channel'] = 'Xssa'
         return Trace( data=x, header=hdr )
+
+    # extract packet specific header info
+    def get_packet_specific_header_info(self):
+        pat = '\<(?P<name>\w*)\>(?P<value>.*)\<.*'
+        xml = self._headerPacket_.xmlHeader()
+
+    # get first header
+    def get_first_header(self):
+        """get first header (only first)"""
+        header = '<%s>\n' % self._headerPacket_.type
+        header = header + self._headerPacket_.xmlHeader() # extract packet specific header info
+        if parameters['ascii']:
+            format = 'ascii'
+        else:
+            if parameters['bigEndian']:
+                format = 'binary 32 bit IEEE float big endian'
+            else:
+                format = 'binary 32 bit IEEE float little endian'
+        header = header + '\t<GData format="%s" file="%s"/>\n' % (format, 'nofilename')
+        # insert additionalDQM() if necessary
+        aXML = ancillaryXML
+        if self._headerPacket_.additionalDQM() != '':
+            dqmStart = find(aXML, '<DataQualityMeasure>')
+            if dqmStart == -1:
+                aXML = aXML + '\t<DataQualityMeasure>%s</DataQualityMeasure>\n' % xmlEscape(self._headerPacket_.additionalDQM())
+            else:
+                dqmInsert = dqmStart + len('<DataQualityMeasure>')
+                aXML = aXML[:dqmInsert] + xmlEscape(self._headerPacket_.additionalDQM()) + ', ' + aXML[dqmInsert:] 
+        header = header + aXML
+        if parameters['additionalHeader'] != '\"\"':
+            header = header + parameters['additionalHeader']
+        header = header + '</%s>\n' % self._headerPacket_.type
+        return header
 
     # append data NOT to the file, NOT REALLY need to reopen it
     def append(self, packet):
@@ -602,6 +637,10 @@ class PadGenerator(packetInspector):
             for row in atxyzs:
                 s = s + formatString % tuple(row)
             #self._file_.write(s) # NOTE THIS IS "NOT-WRITING" JUST INSPECTING
+
+        # for very first packet, get header info
+        if totalPacketsFed == 0:
+            self.rt_header = self.get_first_header()
 
         # append and auto-process packet data into RtTrace:
         self.append_and_autoprocess_packet(atxyzs)
@@ -953,7 +992,7 @@ def mainLoop():
             oneShot(pfs)
             
             if not moreToDo:
-                print "NORES totalPacketsFed", totalPacketsFed, "moreToDo", moreToDo, datetime.datetime.now(), "(check every ", sleepTime, "sec)"
+                print "NORES%04d totalPacketsFed" % getLine(), totalPacketsFed, "moreToDo", moreToDo, datetime.datetime.now(), "(check every ", sleepTime, "sec)"
                 if lastPacketTotal == totalPacketsFed and parameters['quitWhenDone']:
                     break # quit mainLoop() and exit the program
                 if idleWait(sleepTime):
@@ -971,7 +1010,7 @@ def mainLoop():
             if  pfs[k]._maybeMove_ != '':
                 pfs[k].movePadFile(pfs[k]._maybeMove_)
                 
-        # FIXME? DO NOT keep track of where we left off (no need for this part of legacy - right?)
+        # FIXME we IGNORE packetFeederState file
         if False:
             file = open('packetFeederState', 'wb')
             pickle.dump(pfs, file)
