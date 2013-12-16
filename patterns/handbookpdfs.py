@@ -216,9 +216,11 @@ def is_unique_handbook_pdf_match(fname):
         return False
     
 if __name__ == "__main__":
-    demo_hbfpat(); raise SystemExit
+    #demo_hbfpat(); raise SystemExit
     print is_unique_handbook_pdf_match('/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf')
     #/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf
     print is_unique_handbook_pdf_match('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf')
     #/tmp/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf
     print is_unique_handbook_pdf_match('/tmp/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf')
+    #/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_vehicle_Progress_53P_Reboosts/1quantify_2013_12_11_16_20_00_ossbtmf_gvt3_progress53p_reboost.pdf
+    print is_unique_handbook_pdf_match('/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_vehicle_Progress_53P_Reboosts/1quantify_2013_12_11_16_20_00_ossbtmf_gvt3_progress53p_reboost.pdf')

@@ -29,3 +29,30 @@ PROCESS  : ERROR   : Database problem hb_vib_vehicle_Big_Bang.pdf already exists
 PROCESS  : ERROR   : db_insert error db_insert err_msg is Database problem hb_vib_vehicle_Big_Bang.pdf already exists in one of the records
 process_build err_msg is finalize_entry err_msg is db_insert err_msg is Database problem hb_vib_vehicle_Big_Bang.pdf already exists in one of the records
 
+========================================================
+obspy header info
+========================================================
+
+network = system (sams, mams, etc.)
+station = sensor (121f05, 0bbd, etc.)
+location = SensorCoordinateSystem's comment field
+channel = X,Y,Z for SSA (or A,B,C for sensor)
+
+Agency.Deployment.Station.Location (Channel)
+
+CHANNEL CHAR 1
+F (unknown description)		fs >= 1000 and fs < 5000
+C (unknown description)		fs >= 250 and fs < 1000
+E (Extremely Short Period)	fs >= 80 and fs < 250
+S (Short Period)			fs >= 10 and fs < 80
+
+CHANNEL CHAR 2
+N (Accelerometer)
+
+CHANNEL CHAR 3
+A B C (SSA's X, Y, Z)
+1 2 3 (sensor's X, Y, Z)
+
+NASA.ISS.SAMS.05.CNA for SAMS, SE-05,  500 sps, X-axis
+NASA.ISS.SAME.03.CNB for SAMS, ES-06,  500 sps, Y-axis
+NASA.ISS.MAMS.HI.FNC for MAMS, HiRAP, 1000 sps, Z-axis
