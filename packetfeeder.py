@@ -12,10 +12,11 @@ import math
 import pickle
 import struct
 import numpy as np
-from time import *
+import logging
+from time import * # FIXME
 from io import BytesIO
-from MySQLdb import *
-from commands import *
+from MySQLdb import * # FIXME
+from commands import * # FIXME
 from xml.dom.minidom import parseString as xml_parse
 
 from pims.realtime.accelpacket import *
@@ -70,6 +71,7 @@ defaults = { 'ancillaryHost':'kyle', # the name of the computer with the auxilia
              'resume':'1',              # try to pick up where a previous run left off, or do whole database
              'inspect':'0',             # JUST INSPECT FOR UNEXPECTED CHANGES, DO NOT WRITE PAD FILES
              'showWarnings':'1',        # show or supress warning message
+             'logLevel':'debug',        # log level (DEBUG, INFO, WARNING, ERROR, or CRITICAL)
              'ascii':'0',               # write data in ASCII or binary
              'startTime':'0.0',         # first data time to process (0 means anything back to 1970)
              'endTime':'0.0',           # last data time to process (0 means no limit)
@@ -105,6 +107,7 @@ def printDebug(s):
     global DEBUGPRINT
     if DEBUGPRINT:
         print s
+        log.debug(s)
 
 ################################################################
 # sample idle function
@@ -114,8 +117,8 @@ def sampleIdleFunction():
     """a sample idle function"""
     global previousTotal
     if previousTotal != totalPacketsFed:
-        print "%04d IDLER totalPacketsFed %d" % (getLine(), totalPacketsFed)
-        sleep(3)
+        log.debug("%04d IDLER totalPacketsFed %d" % (getLine(), totalPacketsFed))
+        sleep(2)
     previousTotal = totalPacketsFed
 
 # add sample idle function
@@ -145,7 +148,7 @@ class packetFeeder(object):
     # DEFUNCT create the PIMS directory tree for pad files (locally)
     def buildDirTree(self, filename):
         """DEFUNCT # create the PIMS directory tree for pad files (locally)"""
-        printDebug("%04d buildDirTree() input: %s" % (getLine(), filename) )
+        log.debug("%04d buildDirTree() input: %s" % (getLine(), filename) )
         s = split(filename, '-')
         if len(s) == 1:
             s = split(filename, '+')
@@ -279,7 +282,7 @@ class packetFeeder(object):
             ostart = self.lastPacket.time()
             oend = self.lastPacket.endTime()
             start = packet.time()
-            printDebug('%04d writePacket() start: %0.10f end: %0.10f samples: %s packetGap: %0.10f  sampleGap: %0.10f' % (getLine(), start, packet.endTime(), packet.samples(), start-ostart, start-oend))
+            log.debug('%04d writePacket() start: %0.10f end: %0.10f samples: %s packetGap: %0.10f  sampleGap: %0.10f' % (getLine(), start, packet.endTime(), packet.samples(), start-ostart, start-oend))
 
 #        print 'writePacket ' + `contiguous`
         updateAncillaryData(packet.time(), packet.name(), self)
@@ -304,7 +307,7 @@ class packetFeeder(object):
                 newName = UnixToHumanTime(self._fileStart_) + self._fileSep_ + \
                       UnixToHumanTime(self.lastPacket.endTime()) + '.' + self.lastPacket.name()
                 ok = os.system('mv %s %s' % (self._fileName_, newName)) == 0
-                printDebug('%04d end() is moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
+                log.debug('%04d end() is moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
                 headFile = open(newName + '.header', 'wb')
                 headFile.write(self.buildHeader(newName))  
                 headFile.close()
@@ -333,7 +336,7 @@ class packetFeeder(object):
         self._fileName_ = 'temp.' + packet.name()
         self._file_ = open(self._fileName_, 'ab')
         self._fileStart_ = packet.time()
-        printDebug('%04d begin() is starting %s' % (getLine(), self._fileName_))
+        log.debug('%04d begin() is NOT REALLY starting %s' % (getLine(), self._fileName_))
 
     # append data to the file, may need to reopen it
     def append(self, packet):
@@ -342,7 +345,7 @@ class packetFeeder(object):
             newName = 'temp.' + packet.name()
             os.system('rm -rf %s.header' % self._fileName_)
             ok = os.system('mv %s %s' % (self._fileName_, newName)) == 0
-            printDebug('%04d append() is moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
+            log.debug('%04d append() is moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
             if not ok: # move failed, maybe file doesn't exist anymore
                 contiguous = packet.contiguous(self.lastPacket)
                 if contiguous:
@@ -411,7 +414,7 @@ class packetInspector(packetFeeder):
                 newName = UnixToHumanTime(self._fileStart_) + self._fileSep_ + \
                       UnixToHumanTime(self.lastPacket.endTime()) + '.' + self.lastPacket.name()
                 ok = True #os.system('mv %s %s' % (self._fileName_, newName)) == 0
-                printDebug('%04d end() is moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
+                log.debug('%04d end() is moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
                 #headFile = open(newName + '.header', 'wb')
                 #headFile.write(self.buildHeader(newName))  
                 #headFile.close()
@@ -440,7 +443,7 @@ class packetInspector(packetFeeder):
         self._fileName_ = 'temp.' + packet.name()
         #self._file_ = open(self._fileName_, 'ab')
         self._fileStart_ = packet.time()
-        printDebug('%04d begin() is starting %s' % (getLine(), self._fileName_))
+        log.debug('%04d begin() is NOT REALLY starting %s' % (getLine(), self._fileName_))
 
     # append data NOT to the file, NOT REALLY need to reopen it
     def append(self, packet):
@@ -450,7 +453,7 @@ class packetInspector(packetFeeder):
             newName = 'temp.' + packet.name()
             os.system('rm -rf %s.header' % self._fileName_)
             ok = True #os.system('mv %s %s' % (self._fileName_, newName)) == 0
-            printDebug('%04d append() is NOT REALLY moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
+            log.debug('%04d append() is NOT REALLY moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
             if not ok: # move failed, maybe file doesn't exist anymore
                 contiguous = packet.contiguous(self.lastPacket)
                 if contiguous:
@@ -509,12 +512,15 @@ class PadGenerator(packetInspector):
         self.scale_factor = scale_factor
 
     def next(self):
-        if self.num < len(self.rt_trace) - 1:
-            self.num += 1
-            return self.rt_trace[self.num]
+        if hasattr(self, 'rt_trace'):
+            if self.num < len(self.rt_trace['x']) - 1:
+                self.num += 1
+                return self.rt_trace['x'][self.num]
+            else:
+                #raise StopIteration()
+                self.num = -1 # FIXME should we rollover?
+                return 0
         else:
-            #raise StopIteration()
-            self.num = -1 # FIXME should we rollover?
             return 0
 
     def init_realtime_trace_registerproc(self, hdr, ax):
@@ -597,7 +603,7 @@ class PadGenerator(packetInspector):
             newName = 'temp.' + packet.name()
             #os.system('rm -rf %s.header' % self._fileName_)
             ok = True #os.system('mv %s %s' % (self._fileName_, newName)) == 0
-            printDebug('%04d append() is NOT REALLY moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
+            log.debug('%04d append() is NOT REALLY moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
             if not ok: # move failed, maybe file doesn't exist anymore
                 contiguous = packet.contiguous(self.lastPacket)
                 if contiguous:
@@ -650,8 +656,9 @@ class PadGenerator(packetInspector):
         if self.is_header_same(packet):
             self.append_process_packet_data(atxyzs, packetStart)
         else:
-            print 'DO NOT APPEND PACKET BECAUSE SENSOR AND RATE DO NOT MATCH!'
-            raise SystemExit
+            msg = 'DO NOT APPEND PACKET BECAUSE SENSOR AND RATE DO NOT MATCH!'
+            log.error(msg)
+            raise Exception(msg)
         
         # update lastPacket and totalPacketsFed
         self.lastPacket = packet
@@ -854,14 +861,14 @@ def getTimePacketQueryResults(table, ustart, ustop, lim, tuplabel):
     querystr = 'select time,packet from %s where time > %.6f and time < %.6f order by time limit %d' % (table, ustart, ustop, lim)
     #print querystr
     #print 'select time,packet from %s where time > "%s" and time < "%s" order by time limit %d' % (table, unix2dtm(ustart), unix2dtm(ustop), lim)
-    print '%04d QUERY %s < time < %s FROM %s LIMIT %d %s' % (tuplabel[0], unix2dtm(ustart), unix2dtm(ustop), table, lim, tuplabel[1])
+    log.info('%04d QUERY %s < time < %s FROM %s LIMIT %d %s' % (tuplabel[0], unix2dtm(ustart), unix2dtm(ustop), table, lim, tuplabel[1]))
     tpResults = sqlConnect(querystr, shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
     return tpResults
 
 # one iteration of mainLoop
 def oneShot(pfs):
-    global moreToDo, lastPacketTotal
-    print '%04d ONESH inspect=%s' % (getLine(), parameters['inspect']), '-' * 99
+    global moreToDo, lastPacketTotal, log
+    log.debug('%04d ONESH inspect=%s %s' % (getLine(), parameters['inspect'], '-' * 99))
     lastPacketTotal = totalPacketsFed
     moreToDo = 0
     timeNow = time()
@@ -909,7 +916,7 @@ def oneShot(pfs):
                 pf = packetInspector(parameters['showWarnings'])
             else:
                 pf = packetFeeder(parameters['showWarnings'])
-            print pf.__class__.__name__, 'starting...'
+            log.info('%s starting...' % pf.__class__.__name__)
             pfs[tableName] = pf
         else:
             pf = pfs[tableName]
@@ -924,7 +931,7 @@ def oneShot(pfs):
                 if p.type == 'unknown':
                     printLog('unknown packet type at time %.4lf' % result[0])
                     continue
-                printDebug('%04d oneShot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(getLine(), tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
+                log.debug('%04d oneShot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(getLine(), tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
                 preCutoffProgress = 1                        
                 pf.writePacket(p)
                 
@@ -938,7 +945,7 @@ def oneShot(pfs):
                 tpResults = getTimePacketQueryResults(tableName, start, cutoffTime, maxResults, (getLine(), 'while more tpResults exist, query new start and new cutoffTime'))
                 packetCount = packetCount + len(tpResults)
 
-        printDebug('%04d oneShot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (getLine(), tableName, pf.lastTime(), moreToDo))
+        log.debug('%04d oneShot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (getLine(), tableName, pf.lastTime(), moreToDo))
             
         # write contiguous packets after cutoffTime
         if preCutoffProgress and not moreToDo:
@@ -955,7 +962,7 @@ def oneShot(pfs):
                         p = guessPacket(result[1])
                         if p.type == 'unknown':
                             continue
-                        printDebug('%04d oneShot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(getLine(), tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
+                        log.debug('%04d oneShot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(getLine(), tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
                         stillContiguous = p.contiguous(pf.lastPacket)
                         if not stillContiguous:
                             break
@@ -971,29 +978,21 @@ def oneShot(pfs):
                     else:
                         tpResults = []
 
-        printDebug('%04d oneShot() finished AFTER-cutoff CONTIGUOUS packets for %s up to %.6f, moreToDo:%s' % (getLine(), tableName, pf.lastTime(), moreToDo))
+        log.debug('%04d oneShot() finished AFTER-cutoff CONTIGUOUS packets for %s up to %.6f, moreToDo:%s' % (getLine(), tableName, pf.lastTime(), moreToDo))
 
         pf.end()
         disposeProcessedData(tableName, pf.lastTime())
 
 # main packet writing loop
 def mainLoop():
-    global moreToDo, lastPacketTotal
+    global moreToDo, lastPacketTotal, log
     pfs = {}
-    
-    # FIXME we IGNORE packetFeederState file
-    if False: #parameters['resume']: # resume where we left off by reading old state file
-        try: 
-            file = open('packetFeederState', 'rb')
-            pfs = pickle.load(file)
-            file.close()
-        except:
-            pfs = {}
 
     # we do not handle "ALL" tables or comma-separated list of tables
     if ('ALL' in parameters['tables']) or (',' in parameters['tables']):
-        raise Exception('we do not handle "ALL" or comma-separated tables parameter (Ted legacy)')
-
+        msg = 'we do not handle "ALL" or comma-separated for tables parameter (Ted legacy not supported)'
+        log.error(msg)
+        raise Exception(msg)
     try:
         while 1: # until killed or ctrl-C or no more data (if parameters['quitWhenDone'])
             
@@ -1001,7 +1000,7 @@ def mainLoop():
             oneShot(pfs)
             
             if not moreToDo:
-                print "%04d NORES totalPacketsFed" % getLine(), totalPacketsFed, "moreToDo", moreToDo, datetime.datetime.now(), "(check every ", sleepTime, "sec)"
+                log.info("%04d NORES totalPacketsFed=%d moreToDo=%d now=%s checkEverySec=%d" % (getLine(), totalPacketsFed, moreToDo, datetime.datetime.now(), sleepTime))
                 if lastPacketTotal == totalPacketsFed and parameters['quitWhenDone']:
                     break # quit mainLoop() and exit the program
                 if idleWait(sleepTime):
@@ -1026,7 +1025,8 @@ def mainLoop():
             file.close()
 
 # check parameters
-def parametersOK():        
+def parametersOK():
+    global log
     b = parameters['inspect']
     if b != '0' and b != '1' and b != '2':
         printLog(' inspect must be 0 or 1 (or 2)')
@@ -1048,6 +1048,22 @@ def parametersOK():
     else:
         parameters['showWarnings'] = atoi(parameters['showWarnings'])
         
+    b = parameters['logLevel'].upper()
+    if b != 'DEBUG' and b != 'INFO' and b != 'WARNING' and b != 'ERROR' and b != 'CRITICAL' :
+        printLog(' logLevel must be DEBUG or INFO or WARNING or ERROR or CRITICAL')
+        return 0
+    else:
+        logFormatter = logging.Formatter("%(asctime)s %(threadName)-12.12s %(levelname)-5.5s %(message)s")
+        log = logging.getLogger('pims.pad.packetfeeder')
+        log.setLevel( getattr(logging, b) )
+        fileHandler = logging.FileHandler("{0}/{1}.log".format('/tmp', 'pims_pad_packetfeeder'))
+        fileHandler.setFormatter(logFormatter)
+        log.addHandler(fileHandler)
+        consoleHandler = logging.StreamHandler()
+        consoleHandler.setFormatter(logFormatter)
+        log.addHandler(consoleHandler)
+        log.info('Logging started.')
+
     b = parameters['ascii']
     if b != '0' and b != '1':
         printLog(' ascii must be 0 or 1')
@@ -1119,10 +1135,11 @@ def printUsage():
         print '            %s=%s' % (i, defaults[i])
 
 def demo_strip_chart():
+    from pims.gui.stripchart import DataGenExample
     app = wx.PySimpleApp()
     #app.frame = GraphFrame(DataGenRandom, maxlen=75)
-    #app.frame = GraphFrame(DataGenExample, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=150)
-    app.frame = GraphFrame(PadGenerator, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=250)
+    #app.frame = GraphFrame(DataGenExample, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=600)
+    app.frame = GraphFrame(PadGenerator, datagen_kwargs={'scale_factor':0.01}, maxlen=250)
     app.frame.Show()
     app.MainLoop()
 
@@ -1192,7 +1209,7 @@ def demo_trace_header():
 # e.g. ON PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=None startTime=1378742112.0 inspect=1
 if __name__ == '__main__':
     
-    #demo_strip_chart(); raise SystemExit
+    demo_strip_chart(); raise SystemExit
     
     #demo_wx_call_after( demo_external_long_running ); raise SystemExit
     
