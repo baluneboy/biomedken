@@ -29,7 +29,9 @@ from obspy.realtime import RtTrace
 
 # FIXME use OOP on import inspect, DEBUGPRINT, and getFrame function (for QUERY, NORES labels w/wout lineno's)
 import inspect
-DEBUGPRINT = False # for testing
+
+DEBUGPRINT = True # for testing
+
 def getLine():
     callerframerecord = inspect.stack()[1]    # 0 represents this line
                                               # 1 represents line at caller
@@ -103,7 +105,6 @@ def printDebug(s):
     global DEBUGPRINT
     if DEBUGPRINT:
         print s
-        sleep(2)
 
 ################################################################
 # sample idle function
@@ -113,7 +114,7 @@ def sampleIdleFunction():
     """a sample idle function"""
     global previousTotal
     if previousTotal != totalPacketsFed:
-        print "IDLER%04d totalPacketsFed %d" % (getLine(), totalPacketsFed)
+        print "%04d IDLER totalPacketsFed %d" % (getLine(), totalPacketsFed)
         sleep(3)
     previousTotal = totalPacketsFed
 
@@ -144,7 +145,7 @@ class packetFeeder(object):
     # DEFUNCT create the PIMS directory tree for pad files (locally)
     def buildDirTree(self, filename):
         """DEFUNCT # create the PIMS directory tree for pad files (locally)"""
-        printDebug("buildDirTree input: %s" % filename)
+        printDebug("%04d buildDirTree() input: %s" % (getLine(), filename) )
         s = split(filename, '-')
         if len(s) == 1:
             s = split(filename, '+')
@@ -278,7 +279,7 @@ class packetFeeder(object):
             ostart = self.lastPacket.time()
             oend = self.lastPacket.endTime()
             start = packet.time()
-            printDebug('start: %0.10f end: %0.10f samples: %s packetGap: %0.10f  sampleGap: %0.10f' % (start, packet.endTime(), packet.samples(), start-ostart, start-oend))
+            printDebug('%04d writePacket() start: %0.10f end: %0.10f samples: %s packetGap: %0.10f  sampleGap: %0.10f' % (getLine(), start, packet.endTime(), packet.samples(), start-ostart, start-oend))
 
 #        print 'writePacket ' + `contiguous`
         updateAncillaryData(packet.time(), packet.name(), self)
@@ -303,7 +304,7 @@ class packetFeeder(object):
                 newName = UnixToHumanTime(self._fileStart_) + self._fileSep_ + \
                       UnixToHumanTime(self.lastPacket.endTime()) + '.' + self.lastPacket.name()
                 ok = os.system('mv %s %s' % (self._fileName_, newName)) == 0
-                printDebug('end() is moving %s to %s, success:%s' % (self._fileName_, newName, ok))
+                printDebug('%04d end() is moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
                 headFile = open(newName + '.header', 'wb')
                 headFile.write(self.buildHeader(newName))  
                 headFile.close()
@@ -332,7 +333,7 @@ class packetFeeder(object):
         self._fileName_ = 'temp.' + packet.name()
         self._file_ = open(self._fileName_, 'ab')
         self._fileStart_ = packet.time()
-        printDebug('begin() is starting %s' % self._fileName_)
+        printDebug('%04d begin() is starting %s' % (getLine(), self._fileName_))
 
     # append data to the file, may need to reopen it
     def append(self, packet):
@@ -341,7 +342,7 @@ class packetFeeder(object):
             newName = 'temp.' + packet.name()
             os.system('rm -rf %s.header' % self._fileName_)
             ok = os.system('mv %s %s' % (self._fileName_, newName)) == 0
-            printDebug('append() is moving %s to %s, success:%s' % (self._fileName_, newName, ok))
+            printDebug('%04d append() is moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
             if not ok: # move failed, maybe file doesn't exist anymore
                 contiguous = packet.contiguous(self.lastPacket)
                 if contiguous:
@@ -410,7 +411,7 @@ class packetInspector(packetFeeder):
                 newName = UnixToHumanTime(self._fileStart_) + self._fileSep_ + \
                       UnixToHumanTime(self.lastPacket.endTime()) + '.' + self.lastPacket.name()
                 ok = True #os.system('mv %s %s' % (self._fileName_, newName)) == 0
-                printDebug('end() is moving %s to %s, success:%s' % (self._fileName_, newName, ok))
+                printDebug('%04d end() is moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
                 #headFile = open(newName + '.header', 'wb')
                 #headFile.write(self.buildHeader(newName))  
                 #headFile.close()
@@ -439,7 +440,7 @@ class packetInspector(packetFeeder):
         self._fileName_ = 'temp.' + packet.name()
         #self._file_ = open(self._fileName_, 'ab')
         self._fileStart_ = packet.time()
-        printDebug('begin() is starting %s' % self._fileName_)
+        printDebug('%04d begin() is starting %s' % (getLine(), self._fileName_))
 
     # append data NOT to the file, NOT REALLY need to reopen it
     def append(self, packet):
@@ -449,7 +450,7 @@ class packetInspector(packetFeeder):
             newName = 'temp.' + packet.name()
             os.system('rm -rf %s.header' % self._fileName_)
             ok = True #os.system('mv %s %s' % (self._fileName_, newName)) == 0
-            printDebug('append() is NOT REALLY moving %s to %s, success:%s' % (self._fileName_, newName, ok))
+            printDebug('%04d append() is NOT REALLY moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
             if not ok: # move failed, maybe file doesn't exist anymore
                 contiguous = packet.contiguous(self.lastPacket)
                 if contiguous:
@@ -594,9 +595,9 @@ class PadGenerator(packetInspector):
         global totalPacketsFed
         if self._file_ == None:
             newName = 'temp.' + packet.name()
-            os.system('rm -rf %s.header' % self._fileName_)
+            #os.system('rm -rf %s.header' % self._fileName_)
             ok = True #os.system('mv %s %s' % (self._fileName_, newName)) == 0
-            printDebug('append() is NOT REALLY moving %s to %s, success:%s' % (self._fileName_, newName, ok))
+            printDebug('%04d append() is NOT REALLY moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
             if not ok: # move failed, maybe file doesn't exist anymore
                 contiguous = packet.contiguous(self.lastPacket)
                 if contiguous:
@@ -853,14 +854,14 @@ def getTimePacketQueryResults(table, ustart, ustop, lim, tuplabel):
     querystr = 'select time,packet from %s where time > %.6f and time < %.6f order by time limit %d' % (table, ustart, ustop, lim)
     #print querystr
     #print 'select time,packet from %s where time > "%s" and time < "%s" order by time limit %d' % (table, unix2dtm(ustart), unix2dtm(ustop), lim)
-    print 'QUERY%04d %s < time < %s FROM %s LIMIT %d %s' % (tuplabel[0], unix2dtm(ustart), unix2dtm(ustop), table, lim, tuplabel[1])
+    print '%04d QUERY %s < time < %s FROM %s LIMIT %d %s' % (tuplabel[0], unix2dtm(ustart), unix2dtm(ustop), table, lim, tuplabel[1])
     tpResults = sqlConnect(querystr, shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
     return tpResults
 
 # one iteration of mainLoop
 def oneShot(pfs):
     global moreToDo, lastPacketTotal
-    print 'oneShot', '-' * 99
+    print '%04d ONESH inspect=%s' % (getLine(), parameters['inspect']), '-' * 99
     lastPacketTotal = totalPacketsFed
     moreToDo = 0
     timeNow = time()
@@ -923,7 +924,7 @@ def oneShot(pfs):
                 if p.type == 'unknown':
                     printLog('unknown packet type at time %.4lf' % result[0])
                     continue
-                printDebug('%7s %s %.4f %s' %(tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
+                printDebug('%04d oneShot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(getLine(), tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
                 preCutoffProgress = 1                        
                 pf.writePacket(p)
                 
@@ -937,7 +938,7 @@ def oneShot(pfs):
                 tpResults = getTimePacketQueryResults(tableName, start, cutoffTime, maxResults, (getLine(), 'while more tpResults exist, query new start and new cutoffTime'))
                 packetCount = packetCount + len(tpResults)
 
-        printDebug('finished before-cutoff packets for %s up to %.6f, moreToDo:%s' % (tableName, pf.lastTime(), moreToDo))
+        printDebug('%04d oneShot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (getLine(), tableName, pf.lastTime(), moreToDo))
             
         # write contiguous packets after cutoffTime
         if preCutoffProgress and not moreToDo:
@@ -954,7 +955,7 @@ def oneShot(pfs):
                         p = guessPacket(result[1])
                         if p.type == 'unknown':
                             continue
-                        printDebug('%7s %s %.4f %s' %(tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
+                        printDebug('%04d oneShot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(getLine(), tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
                         stillContiguous = p.contiguous(pf.lastPacket)
                         if not stillContiguous:
                             break
@@ -969,7 +970,8 @@ def oneShot(pfs):
                         packetCount = packetCount + len(tpResults)
                     else:
                         tpResults = []
-#                           printDebug('finished after-cutoff contiguous packets for %s up to %.6f' % (tableName, pf.lastTime()))
+
+        printDebug('%04d oneShot() finished AFTER-cutoff CONTIGUOUS packets for %s up to %.6f, moreToDo:%s' % (getLine(), tableName, pf.lastTime(), moreToDo))
 
         pf.end()
         disposeProcessedData(tableName, pf.lastTime())
@@ -999,7 +1001,7 @@ def mainLoop():
             oneShot(pfs)
             
             if not moreToDo:
-                print "NORES%04d totalPacketsFed" % getLine(), totalPacketsFed, "moreToDo", moreToDo, datetime.datetime.now(), "(check every ", sleepTime, "sec)"
+                print "%04d NORES totalPacketsFed" % getLine(), totalPacketsFed, "moreToDo", moreToDo, datetime.datetime.now(), "(check every ", sleepTime, "sec)"
                 if lastPacketTotal == totalPacketsFed and parameters['quitWhenDone']:
                     break # quit mainLoop() and exit the program
                 if idleWait(sleepTime):
