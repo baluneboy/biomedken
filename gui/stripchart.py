@@ -182,7 +182,7 @@ class GraphFrame(wx.Frame):
 
         # we must limit size of otherwise ever-growing data object
         self.data = deque( maxlen=self.maxlen )
-        self.data.append( self.datagen.next() )
+        self.data.append( self.datagen.next )
         self.paused = True
         
         self.create_menu()

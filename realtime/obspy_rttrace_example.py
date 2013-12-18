@@ -245,6 +245,55 @@ def cheap_demo_specgram():
     ani = animation.FuncAnimation(fig, cds.animate, init_func=cds.initialize, interval=100, blit=True) # interval in msec
     plt.show()    
 
+def dt2utc(dt, decimals=3):
+    """convert datetime object to UTCDateTime with decimals precision"""
+    if decimals > 6:
+        raise ValueError('decimals must be integer in range: 0 <= decimals < 7')
+    microsec = int( 1e6 * np.around(dt.microsecond / 1e6, decimals=decimals) )
+    return UTCDateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, microsec)
+
+def utc2utc(utc, decimals=3):
+    """convert UTCDateTime to UTCDateTime with decimals precision"""
+    if decimals > 6:
+        raise ValueError('decimals must be integer in range: 0 <= decimals < 7')
+    microsec = int( 1e6 * np.around(utc.microsecond / 1e6, decimals=decimals) )
+    return UTCDateTime(utc.year, utc.month, utc.day, utc.hour, utc.minute, utc.second, microsec)
+
+def demo_simple_append():
+    import datetime
+    from obspy.core.utcdatetime import UTCDateTime
+    from obspy import read
+
+    #dt = datetime.datetime(2009, 5, 24, 8, 28, 12, 123555)
+    #print dt
+    #for dec in range(7):
+    #    print 'decimals=', dec, dt2utc(dt, decimals=dec)
+    #raise SystemExit
+
+    rt_trace = RtTrace()
+    #rt_trace.registerRtProcess('integrate')
+    
+    data_trace = read('/path/to/II.TLY.BHZ.SAC')[0]
+    #print data_trace
+    ##print data_trace.stats
+    #print "   dt:" + str(1.0 / data_trace.stats['sampling_rate'])
+    #print " npts:" + str(data_trace.stats['npts'])
+    #print "start:" + str(data_trace.stats['starttime'])
+    #print "  end:" + str(data_trace.stats['endtime'])
+    
+    # Custom: append packet data to RtTrace
+    rt_trace.append(data_trace, gap_overlap_check=False, verbose=True)
+    print rt_trace
+    
+    print np.around(rt_trace.stats.delta, decimals=3)
+
+    # tweak times (if contig)    
+    data_trace.stats.starttime = utc2utc(rt_trace.stats.endtime) + np.around(rt_trace.stats.delta, decimals=3)
+
+    rt_trace.append(data_trace, gap_overlap_check=False, verbose=True)
+    print rt_trace
+
 if __name__ == '__main__':
     main()
     #cheap_demo_specgram()
+    #demo_simple_append(); raise SystemExit
