@@ -79,6 +79,9 @@ defaults = { 'ancillaryHost':'kyle', # the name of the computer with the auxilia
              'bigEndian':'0',           # write binary data as big endian (Sun, Mac) or little endian (Intel)
              'cutoffDelay':'5',         # maximum amount of time to keep data in the database before processing (sec)
              'maxFileTime':'600',       # maximum time span for a PAD file (0 means no limit)
+             'maxsec_rttrace':'5',    # max length of real-time trace in seconds
+             'scale_factor':'1000',     # scale factor to apply to accelpacket data (1000 for mg)
+             'plot_span':None,
              'additionalHeader':'\"\"'} # additional XML to put in header.
                                         #   in order to prevent confusion in the shell and command parser,
                                         #   represent XML with: ' ' replaced by '#', tab by '~', CR by '~~'
@@ -504,12 +507,23 @@ class packetInspector(packetFeeder):
 # class to feed packet data hopefully to a good strip chart display
 class PadGenerator(packetInspector):
     """Generator for RtTrace using real-time scaling."""
-    def __init__(self, show_warnings=1, max_length=7200, scale_factor=1000):
+    #def __init__(self, show_warnings=1, maxsec_rttrace=7200, scale_factor=1000, pf_params={}):
+    def __init__(self, *args, **kwargs):
         """initialize packet-based, real-time trace pad generator with scaling"""
-        super(PadGenerator, self).__init__(show_warnings)
+        super(PadGenerator, self).__init__(kwargs['showWarnings'])
         self.num = -1 # FIXME is this pythonic for next method control?
-        self.max_length = max_length # in seconds for rt_trace
-        self.scale_factor = scale_factor
+        self.maxsec_rttrace = kwargs['maxsec_rttrace'] # in seconds for rt_trace
+        self.scale_factor = kwargs['scale_factor']
+
+    def __str__(self):
+        #s = ''
+        #for k,v in self.__dict__.iteritems():
+        #    s += '%25s: %s\n' % (k, str(v))
+        #return s
+        if self.lastPacket:
+            return 'lastPacket.endTime()=%s' % unix2dtm( self.lastPacket.endTime() )
+        else:
+            return 'HEY...lastPacket is %s' % str(self.lastPacket)
 
     def next(self):
         if hasattr(self, 'rt_trace'):
@@ -525,8 +539,8 @@ class PadGenerator(packetInspector):
 
     def init_realtime_trace_registerproc(self, hdr, ax):
         """initialize real-time traces and register process for scale-factor"""
-        # set max_length during init to avoid memory issue
-        rt_trace = RtTrace(max_length=self.max_length)
+        # set max length (in sec) for real-time trace during init to avoid memory issue
+        rt_trace = RtTrace(max_length=self.maxsec_rttrace)
         
         # data nominally in g, but most likely mg or ug preferred
         rt_trace.registerRtProcess('scale', factor=self.scale_factor)
@@ -540,13 +554,19 @@ class PadGenerator(packetInspector):
 
         return rt_trace
 
-    def append_process_packet_data(self, atxyzs, start):
+    def append_process_packet_data(self, atxyzs, start, contig):
         """append and auto-process packet data into RtTrace"""
-        # FIXME should we use merge here somewhere (NaN fill?)
-        for i, ax in enumerate(['x', 'y', 'z']):
-            tr = self.as_trace( atxyzs[:, i+1] )
-            tr.stats.starttime = start
-            self.rt_trace[ax].append( tr, gap_overlap_check=False) # FIXME this should be True, right?
+        # FIXME should we use MERGE method here or somewhere (NaN fill?)
+        if contig:
+            log.debug( 'RTAPPEND:..lastPacket.endTime()=%s' % unix2dtm(self.lastPacket.endTime()) )
+            log.debug( 'RTAPPEND:thisPacket.startTime()=%s, delta=%0.6f' % (unix2dtm(start), start-self.lastPacket.endTime()))
+            for i, ax in enumerate(['x', 'y', 'z']):
+                tr = self.as_trace( atxyzs[:, i+1] )
+                tr.stats.starttime = self.lastPacket.endTime() + self.rt_trace[ax].stats.delta
+                self.rt_trace[ax].append( tr, gap_overlap_check=False, verbose=True) # FIXME this should be True, right?
+        else:
+            log.warning('unhandled case when non-contiguous, although rt_trace with good merge might work?')
+        log.debug( "%s" % str(self.rt_trace['x']))
 
     def as_trace(self, data):
         return Trace( data=data, header=self.rt_trace['x'].stats )
@@ -594,11 +614,24 @@ class PadGenerator(packetInspector):
             if self.rt_trace['x'].stats['sampling_rate'] == p.rate():    # a float like say 500.0
                 return True
         return False
-        
-    # append data NOT to the file, NOT REALLY need to reopen it
+
+    # formatted string of bool; True if this packet is contiguous with last packet"""
+    def show_contig(self, lastp, thisp):
+        """formatted string of bool; True if this packet is contiguous with last packet"""
+        if not lastp:
+            bln = 'XXXXX'
+        else:
+            bln = thisp.contiguous(lastp)
+        return "contig={0:<5s}".format( str(bln) )
+    
+    # append data, per-axis each to rt_trace
     def append(self, packet):
-        """inspect packet for unexpected changes (do not append to file)"""
+        """append data, per-axis each to rt_trace"""
         global totalPacketsFed
+        
+        log.debug( '%04d %s BEFOR append() %s' % (getLine(), str(self), self.show_contig(self.lastPacket, packet)) )
+        
+        # FIXME what happens if we get rid of this thru the BytesIO part?
         if self._file_ == None:
             newName = 'temp.' + packet.name()
             #os.system('rm -rf %s.header' % self._fileName_)
@@ -654,15 +687,15 @@ class PadGenerator(packetInspector):
 
         # append and auto-process packet data into RtTrace:
         if self.is_header_same(packet):
-            self.append_process_packet_data(atxyzs, packetStart)
+            self.append_process_packet_data(atxyzs, packetStart, packet.contiguous(self.lastPacket))
         else:
-            msg = 'DO NOT APPEND PACKET BECAUSE SENSOR AND RATE DO NOT MATCH!'
-            log.error(msg)
-            raise Exception(msg)
+            log.warning( 'DO NOT APPEND PACKET because we got False from is_header_same (near line %d)' % getLine() )
         
         # update lastPacket and totalPacketsFed
         self.lastPacket = packet
         totalPacketsFed = totalPacketsFed + 1
+        
+        log.debug( '%04d %s AFTER append() %s' % (getLine(), str(self), self.show_contig(self.lastPacket, packet)) )
 
 # return sensor and data coordinate system database entries, if they exist
 def checkCoordinateSystem(dataTime, sensor, dataName):
@@ -898,7 +931,11 @@ def oneShot(pfs):
                 t = t + ' warning: table %s was not found, ignoring it' % w
                 printLog(t)
         tables = newTables
-        
+    else:
+        msg = 'This program does NOT handle "ALL" or comma-delimited for tables parameter (Ted legacy NOT supported).'
+        log.error(msg)
+        raise Exception(msg)
+    
     for tableName in tables:
         if idleWait(0):
             break # check for shutdown in progress
@@ -911,7 +948,11 @@ def oneShot(pfs):
         packetCount = 0
         if not pfs.has_key(tableName):
             if parameters['inspect'] == 2:
-                pf = PadGenerator(parameters['showWarnings'])
+                pf = PadGenerator(
+                    showWarnings=parameters['showWarnings'],
+                    maxsec_rttrace=parameters['maxsec_rttrace'],
+                    scale_factor=parameters['scale_factor'],
+                    )
             elif parameters['inspect'] == 1:
                 pf = packetInspector(parameters['showWarnings'])
             else:
@@ -983,10 +1024,25 @@ def oneShot(pfs):
         pf.end()
         disposeProcessedData(tableName, pf.lastTime())
 
+# get parameters needed for strip chart display
+def getStripChartParams():
+    """get parameters needed for strip chart display"""
+    # gather some globals   
+    extra_params = {}
+    extra_params['minimumDelay'] = minimumDelay
+    extra_params['sleepTime'] = sleepTime
+    extra_params['maxResults'] = maxResults
+    extra_params['maxResultsOneTable'] = maxResultsOneTable
+    pf_params = dict( parameters.items() + extra_params.items() )
+    return pf_params
+
 # main packet writing loop
 def mainLoop():
     global moreToDo, lastPacketTotal, log
     pfs = {}
+
+    ##pf_params = getStripChartParams()
+    ##demo_strip_chart( pf_params );
 
     # we do not handle "ALL" tables or comma-separated list of tables
     if ('ALL' in parameters['tables']) or (',' in parameters['tables']):
@@ -1084,7 +1140,20 @@ def parametersOK():
         return 0
     else:
         parameters['bigEndian'] = atoi(parameters['bigEndian'])
-        
+
+    try:
+        parameters['maxsec_rttrace'] = int(parameters['maxsec_rttrace'])
+    except:
+        printLog(' could not convert maxsec_trace (%s) to INTEGER VALUE' % parameters['maxsec_rttrace'])
+        return 0
+  
+    b = int(parameters['scale_factor'])
+    if b != 1000 and b != 1000*1000:
+        printLog(' scale_factor MUST be 1000 (for mg) or 1000000 (for ug)')
+        return 0
+    else:
+        parameters['scale_factor'] = b
+  
     b = parameters['delete']
     if b != '0' and b != '1': # delete must be specifying a database name for moving data
         # make sure there is only one table specified
@@ -1134,12 +1203,35 @@ def printUsage():
     for i in defaults.keys():
         print '            %s=%s' % (i, defaults[i])
 
-def demo_strip_chart():
+# Here's example list of pf_params that go into demo_strip_chart:
+# additionalHeader ""
+# ascii 0
+# tables 121f05
+# ancillaryHost kyle
+# showWarnings 1
+# quitWhenDone 0
+# destination .
+# maxFileTime 600.0
+# logLevel debug
+# bigEndian 0
+# sleepTime 20
+# resume 1
+# inspect 2
+# maxResults 500
+# host manbearpig
+# startTime 1382551998.0
+# maxResultsOneTable 1000
+# database pims
+# cutoffDelay 5.0
+# minimumDelay 10
+# endTime 1382552398.0
+# delete 0
+def demo_strip_chart(pf_params):
     from pims.gui.stripchart import DataGenExample
     app = wx.PySimpleApp()
     #app.frame = GraphFrame(DataGenRandom, maxlen=75)
     #app.frame = GraphFrame(DataGenExample, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=600)
-    app.frame = GraphFrame(PadGenerator, datagen_kwargs={'scale_factor':0.01}, maxlen=250)
+    app.frame = GraphFrame(PadGenerator, datagen_kwargs={'scale_factor':1000, 'pf_params':pf_params}, maxlen=120)
     app.frame.Show()
     app.MainLoop()
 
@@ -1209,7 +1301,7 @@ def demo_trace_header():
 # e.g. ON PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=None startTime=1378742112.0 inspect=1
 if __name__ == '__main__':
     
-    demo_strip_chart(); raise SystemExit
+    #demo_strip_chart(); raise SystemExit
     
     #demo_wx_call_after( demo_external_long_running ); raise SystemExit
     
