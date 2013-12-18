@@ -19,6 +19,7 @@ from MySQLdb import * # FIXME
 from commands import * # FIXME
 from xml.dom.minidom import parseString as xml_parse
 
+from pims.realtime import rt_params
 from pims.realtime.accelpacket import *
 from pims.utils.pimsdateutil import unix2dtm
 from pims.kinematics.rotation import rotation_matrix
@@ -79,12 +80,11 @@ defaults = { 'ancillaryHost':'kyle', # the name of the computer with the auxilia
              'bigEndian':'0',           # write binary data as big endian (Sun, Mac) or little endian (Intel)
              'cutoffDelay':'5',         # maximum amount of time to keep data in the database before processing (sec)
              'maxFileTime':'600',       # maximum time span for a PAD file (0 means no limit)
-             'maxsec_rttrace':'5',    # max length of real-time trace in seconds
              'scale_factor':'1000',     # scale factor to apply to accelpacket data (1000 for mg)
-             'plot_span':None,
              'additionalHeader':'\"\"'} # additional XML to put in header.
                                         #   in order to prevent confusion in the shell and command parser,
                                         #   represent XML with: ' ' replaced by '#', tab by '~', CR by '~~'
+
 parameters = defaults.copy()
 def setParameters(newParameters):
     global parameters
@@ -1142,7 +1142,7 @@ def parametersOK():
         parameters['bigEndian'] = atoi(parameters['bigEndian'])
 
     try:
-        parameters['maxsec_rttrace'] = int(parameters['maxsec_rttrace'])
+        parameters['maxsec_rttrace'] = int( rt_params['time.extra_intervals'] * rt_params['time.analysis_interval'] + rt_params['time.plot_span'] )
     except:
         printLog(' could not convert maxsec_trace (%s) to INTEGER VALUE' % parameters['maxsec_rttrace'])
         return 0
