@@ -28,6 +28,15 @@ _BATCHROADMAPS_PATTERN = _BATCHPATH_PATTERN + (
     "\.pdf\Z"                                                            # pdf extension to finish
     )
 
+#/misc/yoda/tmp/ike/offline/batch/results/year2013/month11/day26/hirap/pcsa/2013_11_26_16_00_hirap_spgs+roadmaps.mat
+_BATCHPCSAPATH_PATTERN = "(?P<ymdpath>%s/tmp/ike/offline/batch/results/year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2}))/.*/pcsa" % _YODA
+_BATCHPCSAMAT_PATTERN = _BATCHPCSAPATH_PATTERN + (
+    "/\d{4}_(\d{2}_){4}.*_.*\+roadmaps"                                  # underscore-delimited dtm part of fname, then
+    "\.mat\Z"                                                            # pdf extension to finish
+    )
+
+"""(?P<ymdpath>/misc/yoda/tmp/ike/offline/batch/results/year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2}))/.*/pcsa/\d{4}_(\d{2}_){4}.*_.*\+roadmaps\.mat"""
+
 def match_pattern_demo(fname, pat):
     """Check for match."""
     import re

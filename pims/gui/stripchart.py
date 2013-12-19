@@ -170,19 +170,17 @@ class BoundControlBox(wx.Panel):
 class GraphFrame(wx.Frame):
     """ The main frame of the application."""
 
-    def __init__(self, datagen, datagen_kwargs=None, title=None, maxlen=5000):
-        if datagen_kwargs:
-            self.datagen = datagen(**datagen_kwargs)
-        else:
-            self.datagen = datagen()
-        self.title = title or 'Demo of dynamic matplotlib graph using %s' % self.datagen.__class__.__name__
-        self.maxlen = maxlen
+    #def __init__(self, datagen, datagen_kwargs=None, title=None, maxlen=5000):
+    def __init__(self, datagen, **kwargs):
+        self.datagen = datagen
+        self.title = 'Dynamic matplotlib graph using %s' % self.datagen.__class__.__name__
+        self.maxlen = kwargs['maxlen']
         
         wx.Frame.__init__(self, None, -1, self.title)
 
         # we must limit size of otherwise ever-growing data object
         self.data = deque( maxlen=self.maxlen )
-        self.data.append( self.datagen.next )
+        self.data.append( self.datagen.next() )
         self.paused = True
         
         self.create_menu()
@@ -404,7 +402,7 @@ def demo_pad_gen():
     app = wx.PySimpleApp()
     #app.frame = GraphFrame(DataGenRandom, maxlen=75)
     #app.frame = GraphFrame(DataGenExample, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=150)
-    app.frame = GraphFrame(PadGenerator, datagen_kwargs={'scale_factor':1000}, maxlen=2000)
+    app.frame = GraphFrame(PadGenerator, datagen_kwargs={'showWarnings':1,'scale_factor':1000, 'maxsec_rttrace':5000}, maxlen=5000)
     app.frame.Show()
     app.MainLoop()        
 

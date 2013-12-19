@@ -71,7 +71,7 @@ defaults = { 'ancillaryHost':'kyle', # the name of the computer with the auxilia
              'delete':'0',              # 0=delete processed data, 1=leave in database OR use databaseName to move to that db
              'resume':'1',              # try to pick up where a previous run left off, or do whole database
              'inspect':'0',             # JUST INSPECT FOR UNEXPECTED CHANGES, DO NOT WRITE PAD FILES
-             'showWarnings':'1',        # show or supress warning message
+             'show_warnings':'1',        # show or supress warning message
              'logLevel':'debug',        # log level (DEBUG, INFO, WARNING, ERROR, or CRITICAL)
              'ascii':'0',               # write data in ASCII or binary
              'startTime':'0.0',         # first data time to process (0 means anything back to 1970)
@@ -129,11 +129,11 @@ addIdle(sampleIdleFunction)
 ################################################################
 
 # class to keep track of what's been fed
-class packetFeeder(object):
+class PacketFeeder(object):
     """Class to keep track of what has been fed."""
-    def __init__(self, showWarnings):
+    def __init__(self, show_warnings):
         """initialize this packet feeder"""
-        self._showWarnings_ = showWarnings
+        self._showWarnings_ = show_warnings
         self.lastPacket = None
         self._file_ = None
         self._fileName_ = None
@@ -147,6 +147,7 @@ class packetFeeder(object):
         self._header_ = None
         self._dataDirName_ = "error" # should be replace by packet's dataDirName() function
         self._maybeMove_ = '' # indicator that a file has been generated and should eventually be moved
+        log.debug('%s has been initialized.' % self.__class__.__name__)
     
     # DEFUNCT create the PIMS directory tree for pad files (locally)
     def buildDirTree(self, filename):
@@ -394,7 +395,7 @@ class packetFeeder(object):
         totalPacketsFed = totalPacketsFed + 1
 
 # class to keep track of unexpected changes
-class packetInspector(packetFeeder):
+class PacketInspector(PacketFeeder):
     """class to keep track of unexpected changes in header rate info"""
     # FIXME we may be able to streamline this more so by making some method
     #       routines do less/nothing; for now, just neutralize things a bit
@@ -505,14 +506,13 @@ class packetInspector(packetFeeder):
         totalPacketsFed = totalPacketsFed + 1
 
 # class to feed packet data hopefully to a good strip chart display
-class PadGenerator(packetInspector):
+class PadGenerator(PacketInspector):
     """Generator for RtTrace using real-time scaling."""
     #def __init__(self, show_warnings=1, maxsec_rttrace=7200, scale_factor=1000, pf_params={}):
     def __init__(self, *args, **kwargs):
-        """initialize packet-based, real-time trace pad generator with scaling"""
-        super(PadGenerator, self).__init__(kwargs['showWarnings'])
-        self.num = -1 # FIXME is this pythonic for next method control?
-        self.maxsec_rttrace = kwargs['maxsec_rttrace'] # in seconds for rt_trace
+        """initialize packet-based, real-time trace PAD generator with scaling"""
+        super(PadGenerator, self).__init__(kwargs['show_warnings'])
+        self.maxsec_rttrace = kwargs['maxsec_rttrace'] # in seconds for EACH (x,y,z) rt_trace
         self.scale_factor = kwargs['scale_factor']
 
     def __str__(self):
@@ -526,14 +526,9 @@ class PadGenerator(packetInspector):
             return 'HEY...lastPacket is %s' % str(self.lastPacket)
 
     def next(self):
-        if hasattr(self, 'rt_trace'):
-            if self.num < len(self.rt_trace['x']) - 1:
-                self.num += 1
-                return self.rt_trace['x'][self.num]
-            else:
-                #raise StopIteration()
-                self.num = -1 # FIXME should we rollover?
-                return 0
+        #log.debug('next called at %s' % datetime.datetime.now())
+        if self.lastPacket:
+            return self.rt_trace['x'][self.num]
         else:
             return 0
 
@@ -941,7 +936,7 @@ def oneShot(pfs):
             break # check for shutdown in progress
 
         #########################################################
-        # initialize packetFeeder of packetInspector class here #
+        # initialize PacketFeeder of PacketInspector class here #
         #########################################################              
         updateAncillaryDatabases()
         preCutoffProgress = 0
@@ -949,14 +944,14 @@ def oneShot(pfs):
         if not pfs.has_key(tableName):
             if parameters['inspect'] == 2:
                 pf = PadGenerator(
-                    showWarnings=parameters['showWarnings'],
+                    show_warnings=parameters['show_warnings'],
                     maxsec_rttrace=parameters['maxsec_rttrace'],
                     scale_factor=parameters['scale_factor'],
                     )
             elif parameters['inspect'] == 1:
-                pf = packetInspector(parameters['showWarnings'])
+                pf = PacketInspector(parameters['show_warnings'])
             else:
-                pf = packetFeeder(parameters['showWarnings'])
+                pf = PacketFeeder(parameters['show_warnings'])
             log.info('%s starting...' % pf.__class__.__name__)
             pfs[tableName] = pf
         else:
@@ -968,7 +963,7 @@ def oneShot(pfs):
         packetCount = packetCount + len(tpResults)
         while len(tpResults) != 0:
             for result in tpResults:
-                p = guessPacket(result[1], showWarnings=1)
+                p = guessPacket(result[1], show_warnings=1)
                 if p.type == 'unknown':
                     printLog('unknown packet type at time %.4lf' % result[0])
                     continue
@@ -1097,12 +1092,12 @@ def parametersOK():
     else:
         parameters['resume'] = atoi(parameters['resume'])
 
-    b = parameters['showWarnings']
+    b = parameters['show_warnings']
     if b != '0' and b != '1':
-        printLog(' showWarnings must be 0 or 1')
+        printLog(' show_warnings must be 0 or 1')
         return 0
     else:
-        parameters['showWarnings'] = atoi(parameters['showWarnings'])
+        parameters['show_warnings'] = atoi(parameters['show_warnings'])
         
     b = parameters['logLevel'].upper()
     if b != 'DEBUG' and b != 'INFO' and b != 'WARNING' and b != 'ERROR' and b != 'CRITICAL' :
@@ -1198,40 +1193,18 @@ def parametersOK():
 # print usage
 def printUsage():
     print version
-    print 'usage: packetFeeder.py [options]'
+    print 'usage: PacketFeeder.py [options]'
     print '       options (and default values) are:'
     for i in defaults.keys():
         print '            %s=%s' % (i, defaults[i])
 
-# Here's example list of pf_params that go into demo_strip_chart:
-# additionalHeader ""
-# ascii 0
-# tables 121f05
-# ancillaryHost kyle
-# showWarnings 1
-# quitWhenDone 0
-# destination .
-# maxFileTime 600.0
-# logLevel debug
-# bigEndian 0
-# sleepTime 20
-# resume 1
-# inspect 2
-# maxResults 500
-# host manbearpig
-# startTime 1382551998.0
-# maxResultsOneTable 1000
-# database pims
-# cutoffDelay 5.0
-# minimumDelay 10
-# endTime 1382552398.0
-# delete 0
-def demo_strip_chart(pf_params):
-    from pims.gui.stripchart import DataGenExample
+def demo_strip_chart(datagen, **kwargs):
     app = wx.PySimpleApp()
     #app.frame = GraphFrame(DataGenRandom, maxlen=75)
     #app.frame = GraphFrame(DataGenExample, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=600)
-    app.frame = GraphFrame(PadGenerator, datagen_kwargs={'scale_factor':1000, 'pf_params':pf_params}, maxlen=120)
+    #app.frame = GraphFrame(PadGenerator, datagen_kwargs={'show_warnings':1,'scale_factor':1000, 'maxsec_rttrace':5000}, maxlen=5000)
+    #app.frame = GraphFrame(PadGenerator, show_warnings=1, scale_factor=1000, maxsec_rttrace=5000)
+    app.frame = GraphFrame(datagen, **kwargs)
     app.frame.Show()
     app.MainLoop()
 
@@ -1299,14 +1272,7 @@ def demo_trace_header():
 
 # e.g. python packetfeeder.py host=manbearpig tables=121f05 ancillaryHost=kyle startTime=1382551198.0 endTime=1382552398.0
 # e.g. ON PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=None startTime=1378742112.0 inspect=1
-if __name__ == '__main__':
-    
-    #demo_strip_chart(); raise SystemExit
-    
-    #demo_wx_call_after( demo_external_long_running ); raise SystemExit
-    
-    #demo_trace_header(); raise SystemExit
-    
+if __name__ == '__main__': 
     for p in sys.argv[1:]:  # parse command line
         pair = split(p, '=', 1)
         if (2 != len(pair)):
@@ -1319,6 +1285,16 @@ if __name__ == '__main__':
             parameters[pair[0]] = pair[1]
     else:
         if parametersOK():
+
+            from pims.gui.stripchart import DataGenExample
+            datagen = DataGenExample(scale_factor=0.01, num_splits=5)
+            demo_strip_chart(datagen, maxlen=600, title='untitled')
+            raise SystemExit
+
+            #demo_wx_call_after( demo_external_long_running ); raise SystemExit
+            #demo_trace_header(); raise SystemExit
+            
             mainLoop()
             sys.exit()
+            
     printUsage()
