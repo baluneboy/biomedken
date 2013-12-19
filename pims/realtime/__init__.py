@@ -1,3 +1,6 @@
+#############################
+# SEE realtime/rtsetup.py too
+#############################
 """
 This is an object-orient real-time plotting library for PIMS.
 

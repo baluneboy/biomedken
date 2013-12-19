@@ -19,7 +19,7 @@ from MySQLdb import * # FIXME
 from commands import * # FIXME
 from xml.dom.minidom import parseString as xml_parse
 
-from pims.realtime import rt_params
+from pims.realtime import rt_params # snap_path, time group, verbose group
 from pims.realtime.accelpacket import *
 from pims.utils.pimsdateutil import unix2dtm
 from pims.kinematics.rotation import rotation_matrix
@@ -72,7 +72,7 @@ defaults = { 'ancillaryHost':'kyle', # the name of the computer with the auxilia
              'resume':'1',              # try to pick up where a previous run left off, or do whole database
              'inspect':'0',             # JUST INSPECT FOR UNEXPECTED CHANGES, DO NOT WRITE PAD FILES
              'show_warnings':'1',        # show or supress warning message
-             'logLevel':'debug',        # log level (DEBUG, INFO, WARNING, ERROR, or CRITICAL)
+             'logLevel':rt_params['verbose.level'], # log level (DEBUG, INFO, WARNING, ERROR, or CRITICAL)
              'ascii':'0',               # write data in ASCII or binary
              'startTime':'0.0',         # first data time to process (0 means anything back to 1970)
              'endTime':'0.0',           # last data time to process (0 means no limit)
@@ -508,12 +508,11 @@ class PacketInspector(PacketFeeder):
 # class to feed packet data hopefully to a good strip chart display
 class PadGenerator(PacketInspector):
     """Generator for RtTrace using real-time scaling."""
-    #def __init__(self, show_warnings=1, maxsec_rttrace=7200, scale_factor=1000, pf_params={}):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, show_warnings=1, maxsec_rttrace=7200, scale_factor=1000, pf_params={}):
         """initialize packet-based, real-time trace PAD generator with scaling"""
-        super(PadGenerator, self).__init__(kwargs['show_warnings'])
-        self.maxsec_rttrace = kwargs['maxsec_rttrace'] # in seconds for EACH (x,y,z) rt_trace
-        self.scale_factor = kwargs['scale_factor']
+        super(PadGenerator, self).__init__(show_warnings)
+        self.maxsec_rttrace = maxsec_rttrace # in seconds for EACH (x,y,z) rt_trace
+        self.scale_factor = scale_factor
 
     def __str__(self):
         #s = ''
@@ -1037,7 +1036,7 @@ def mainLoop():
     pfs = {}
 
     ##pf_params = getStripChartParams()
-    ##demo_strip_chart( pf_params );
+    ##run_strip_chart( pf_params );
 
     # we do not handle "ALL" tables or comma-separated list of tables
     if ('ALL' in parameters['tables']) or (',' in parameters['tables']):
@@ -1137,6 +1136,14 @@ def parametersOK():
         parameters['bigEndian'] = atoi(parameters['bigEndian'])
 
     try:
+        parameters['plot_span'] = int( rt_params['time.plot_span'] )
+        parameters['analysis_interval'] = int( rt_params['time.analysis_interval'] )
+        parameters['extra_intervals'] = int( rt_params['time.extra_intervals'] )        
+    except:
+        printLog(' could not convert rt_params: (plot_span, analysis_interval, & extra_intervals) to INTEGER VALUES' )
+        return 0
+
+    try:
         parameters['maxsec_rttrace'] = int( rt_params['time.extra_intervals'] * rt_params['time.analysis_interval'] + rt_params['time.plot_span'] )
     except:
         printLog(' could not convert maxsec_trace (%s) to INTEGER VALUE' % parameters['maxsec_rttrace'])
@@ -1198,13 +1205,9 @@ def printUsage():
     for i in defaults.keys():
         print '            %s=%s' % (i, defaults[i])
 
-def demo_strip_chart(datagen, **kwargs):
+def run_strip_chart(datagen, analysis_interval, plot_span, extra_intervals, title, maxpts):
     app = wx.PySimpleApp()
-    #app.frame = GraphFrame(DataGenRandom, maxlen=75)
-    #app.frame = GraphFrame(DataGenExample, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=600)
-    #app.frame = GraphFrame(PadGenerator, datagen_kwargs={'show_warnings':1,'scale_factor':1000, 'maxsec_rttrace':5000}, maxlen=5000)
-    #app.frame = GraphFrame(PadGenerator, show_warnings=1, scale_factor=1000, maxsec_rttrace=5000)
-    app.frame = GraphFrame(datagen, **kwargs)
+    app.frame = GraphFrame(datagen, analysis_interval, plot_span, extra_intervals, title, maxpts)
     app.frame.Show()
     app.MainLoop()
 
@@ -1286,9 +1289,18 @@ if __name__ == '__main__':
     else:
         if parametersOK():
 
-            from pims.gui.stripchart import DataGenExample
-            datagen = DataGenExample(scale_factor=0.01, num_splits=5)
-            demo_strip_chart(datagen, maxlen=600, title='untitled')
+            #from pims.gui.stripchart import DataGenExample
+            #datagen = DataGenExample(scale_factor=0.01, num_splits=5)
+            datagen = PadGenerator(parameters['show_warnings'],
+                                   parameters['maxsec_rttrace'],
+                                   parameters['scale_factor'])
+            parameters['maxpts'] = 600
+            parameters['title'] = 'untitled'
+            run_strip_chart(datagen,    parameters['analysis_interval'],
+                                        parameters['plot_span'],
+                                        parameters['extra_intervals'],
+                                        parameters['title'],
+                                        parameters['maxpts'])
             raise SystemExit
 
             #demo_wx_call_after( demo_external_long_running ); raise SystemExit

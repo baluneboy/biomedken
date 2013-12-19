@@ -168,18 +168,29 @@ class BoundControlBox(wx.Panel):
         return self.value
 
 class GraphFrame(wx.Frame):
-    """ The main frame of the application."""
+    """ The main frame of the strip chart application.
+    
+    datagen is data generator (using its next method)
+    analysis_interval in seconds
+    plot_span in seconds
+    extra_intervals is an integer
+    title string
+    maxpts is integer max length of ultimate data array ()
 
-    #def __init__(self, datagen, datagen_kwargs=None, title=None, maxlen=5000):
-    def __init__(self, datagen, **kwargs):
+    """
+
+    def __init__(self, datagen, analysis_interval, plot_span, extra_intervals, title, maxpts):
         self.datagen = datagen
-        self.title = 'Dynamic matplotlib graph using %s' % self.datagen.__class__.__name__
-        self.maxlen = kwargs['maxlen']
+        self.analysis_interval = analysis_interval
+        self.plot_span = plot_span
+        self.extra_intervals = extra_intervals
+        self.title = '%s using %s' % (title, self.datagen.__class__.__name__)
+        self.maxpts = maxpts
         
         wx.Frame.__init__(self, None, -1, self.title)
 
         # we must limit size of otherwise ever-growing data object
-        self.data = deque( maxlen=self.maxlen )
+        self.data = deque( maxlen=self.maxpts )
         self.data.append( self.datagen.next() )
         self.paused = True
         
@@ -400,9 +411,9 @@ class GraphFrame(wx.Frame):
 def demo_pad_gen():
     from pims.pad.packetfeeder import PadGenerator
     app = wx.PySimpleApp()
-    #app.frame = GraphFrame(DataGenRandom, maxlen=75)
-    #app.frame = GraphFrame(DataGenExample, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxlen=150)
-    app.frame = GraphFrame(PadGenerator, datagen_kwargs={'showWarnings':1,'scale_factor':1000, 'maxsec_rttrace':5000}, maxlen=5000)
+    #app.frame = GraphFrame(DataGenRandom, maxpts=75)
+    #app.frame = GraphFrame(DataGenExample, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxpts=150)
+    app.frame = GraphFrame(PadGenerator, datagen_kwargs={'showWarnings':1,'scale_factor':1000, 'maxsec_rttrace':5000}, maxpts=5000)
     app.frame.Show()
     app.MainLoop()        
 
