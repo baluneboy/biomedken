@@ -209,7 +209,7 @@ validate_mathtext_default = ValidateInStrings(
     'default', "rm cal it tt sf bf default bb frak circled scr regular".split())
 
 validate_verbose = ValidateInStrings('verbose',[
-    'silent', 'helpful', 'debug', 'debug-annoying',
+    'debug', 'info', 'warning', 'error', 'critical'
     ])
 
 validate_cairo_format = ValidateInStrings('cairo_format',
@@ -334,7 +334,7 @@ default_params = {
     'snap_path'          : ['/tmp', validate_path_exists], # FIXME
 
     # verbosity setting
-    'verbose.level'     : ['debug', validate_verbose],
+    'verbose.level'     : ['debug', validate_verbose], # debug, info, warning, error, or critical
     'verbose.fileo'     : ['sys.stdout', str],
 
     # line props
