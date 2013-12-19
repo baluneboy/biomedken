@@ -17,7 +17,7 @@ defaults = {'padPath':'/misc/yoda/pub/pad',# the original PAD directory path
             'outputPath':'/misc/yoda/www/plots/batch/padtimes/padtimes.csv',# the destination path
             'sensorList':'all',# sensor directories to check
             'startDate': None, # Start date to process (None to resume based on csv last date);  or set manually to like '2001-05-03' 
-            'stopDate': None,  # Will stop when no year directory is found (None for "weekAgo"); or set manually to like '2029-01-01'
+            'stopDate': None,  # Will stop when no year directory is found (None for "two days ago"); or set manually to like '2029-01-01'
             'fileMode':'a'}    # use 'w' for write to start from scratch and not just append
 
 parameters = defaults.copy()
@@ -53,9 +53,9 @@ def getCsvFileStopDate(csvFile):
     s = tail(csvFile, numLines=1).split(',')[0]
     return datetime.datetime.strptime(s,'%Y-%m-%d').date()
 
-def getWeekAgoDate():
+def getDaysAgoDate(da=2):
     """get date from week ago"""
-    return datetime.date.today()-datetime.timedelta(7)
+    return datetime.date.today()-datetime.timedelta(days=da)
 
 def parametersOK():
     b = parameters['padPath']
@@ -74,18 +74,18 @@ def parametersOK():
         else:
             myStartDate = datetime.datetime.strptime(parameters['startDate'],'%Y-%m-%d').date()
 
-    weekAgoDate = getWeekAgoDate()
+    daysAgoDate = getDaysAgoDate(da=2)
     if parameters['stopDate'] is None:
-        myStopDate = weekAgoDate
+        myStopDate = daysAgoDate
     else:
         myStopDate = datetime.datetime.strptime(parameters['stopDate'],'%Y-%m-%d').date()
         
     if myStopDate<myStartDate:
         print ' stopDate=%s IS BEFORE...\nstartDate=%s\n---SO DO NOTHING---' % (myStopDate, myStartDate)
         return 0
-    elif myStopDate>weekAgoDate:
-        print ' stopDate=%s IS LESS THAN A WEEK AGO...\n  weekAgo=%s\n---SO CLAMP STOP AT WEEK AGO---' % (myStopDate, weekAgoDate)
-        myStopDate = weekAgoDate
+    elif myStopDate>daysAgoDate:
+        print ' stopDate=%s IS LESS THAN A WEEK AGO...\n  weekAgo=%s\n---SO CLAMP STOP AT WEEK AGO---' % (myStopDate, daysAgoDate)
+        myStopDate = daysAgoDate
         return 0
 
     parameters['startDate'] = myStartDate.strftime('%Y-%m-%d')
