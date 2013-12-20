@@ -29,10 +29,7 @@ from pims.gui.stripchart import GraphFrame
 from obspy import Trace
 from obspy.realtime import RtTrace
 
-# FIXME use OOP on import inspect, DEBUGPRINT, and getFrame function (for QUERY, NORES labels w/wout lineno's)
 import inspect
-
-DEBUGPRINT = True # for testing
 
 def getLine():
     callerframerecord = inspect.stack()[1]    # 0 represents this line
@@ -103,14 +100,6 @@ def benchmark(startTime):
     global benCount, benTotal
     benCount = benCount + 1
     benTotal = benTotal + (time() - startTime)
-
-# debug printer
-def printDebug(s):
-    """print some debug info"""
-    global DEBUGPRINT
-    if DEBUGPRINT:
-        print s
-        log.debug(s)
 
 ################################################################
 # sample idle function
@@ -1131,25 +1120,10 @@ def oneShot(pfs):
         pf.end()
         disposeProcessedData(tableName, pf.lastTime())
 
-# get parameters needed for strip chart display
-def getStripChartParams():
-    """get parameters needed for strip chart display"""
-    # gather some globals   
-    extra_params = {}
-    extra_params['minimumDelay'] = minimumDelay
-    extra_params['sleepTime'] = sleepTime
-    extra_params['maxResults'] = maxResults
-    extra_params['maxResultsOneTable'] = maxResultsOneTable
-    pf_params = dict( parameters.items() + extra_params.items() )
-    return pf_params
-
 # main packet writing loop
 def mainLoop():
     global moreToDo, lastPacketTotal, log
     pfs = {}
-
-    ##pf_params = getStripChartParams()
-    ##run_strip_chart( pf_params );
 
     # we do not handle "ALL" tables or comma-separated list of tables
     if ('ALL' in parameters['tables']) or (',' in parameters['tables']):
@@ -1410,19 +1384,11 @@ def launch_strip_chart(get_datagen, analysis_interval, plot_span, extra_interval
     app.frame.Show()
     app.MainLoop()
 
-def recurse(limit):
-    local_variable = '.' * limit
-    if limit <= 0:
-        for frame, filename, line_num, func, source_code, source_index in inspect.stack():
-            print '%s[%d]\n  -> %s' % (filename, line_num, source_code[source_index].strip())
-            print inspect.getargvalues(frame)
-            print
-        return
-    recurse(limit - 1)
-    return
-
 # e.g. python packetfeeder.py host=manbearpig tables=121f05 ancillaryHost=kyle startTime=1382551198.0 endTime=1382552398.0
 # e.g. ON PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=None startTime=1378742112.0 inspect=1
+
+# 25pkts e.g. PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=localhost startTime=1378742399.5 inspect=1
+
 if __name__ == '__main__': 
     for p in sys.argv[1:]:  # parse command line
         pair = split(p, '=', 1)
@@ -1436,21 +1402,21 @@ if __name__ == '__main__':
             parameters[pair[0]] = pair[1]
     else:
         if parametersOK():
-            
-            recurse(2)
-            
-            # launch strip chart
-            launch_strip_chart(get_padgen, # get_examplegen
-                               parameters['analysis_interval'],
-                               parameters['plot_span'],
-                               parameters['extra_intervals'],
-                               'untitled',
-                               85)
-            raise SystemExit
+                        
+            ## launch strip chart
+            #launch_strip_chart(get_padgen, # get_examplegen
+            #                   parameters['analysis_interval'],
+            #                   parameters['plot_span'],
+            #                   parameters['extra_intervals'],
+            #                   'untitled',
+            #                   85)
+            #raise SystemExit
 
+            ## some demos to look at
             #demo_wx_call_after( demo_external_long_running ); raise SystemExit
             #demo_trace_header(); raise SystemExit
             
+            # mainLoop and exit just like packetWriter.py
             mainLoop()
             sys.exit()
             
