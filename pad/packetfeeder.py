@@ -1410,6 +1410,17 @@ def launch_strip_chart(get_datagen, analysis_interval, plot_span, extra_interval
     app.frame.Show()
     app.MainLoop()
 
+def recurse(limit):
+    local_variable = '.' * limit
+    if limit <= 0:
+        for frame, filename, line_num, func, source_code, source_index in inspect.stack():
+            print '%s[%d]\n  -> %s' % (filename, line_num, source_code[source_index].strip())
+            print inspect.getargvalues(frame)
+            print
+        return
+    recurse(limit - 1)
+    return
+
 # e.g. python packetfeeder.py host=manbearpig tables=121f05 ancillaryHost=kyle startTime=1382551198.0 endTime=1382552398.0
 # e.g. ON PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=None startTime=1378742112.0 inspect=1
 if __name__ == '__main__': 
@@ -1425,6 +1436,8 @@ if __name__ == '__main__':
             parameters[pair[0]] = pair[1]
     else:
         if parametersOK():
+            
+            recurse(2)
             
             # launch strip chart
             launch_strip_chart(get_padgen, # get_examplegen
