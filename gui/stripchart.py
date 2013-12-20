@@ -89,9 +89,13 @@ class DataGenExample(object):
         # append and auto-process packet data into RtTrace:
         self.append_and_autoprocess_packet()
     
-    def next(self):
+    def next(self, step_callback=None):
         if self.num < len(self.rt_trace) - 1:
             self.num += 1
+            if step_callback:
+                current_info_tuple = ('0000-00-00 00:00:00.000', '0000-00-00 00:00:00.000', '%6d' % self.num)
+                cumulative_info_tuple = ('%6d' % len(self.rt_trace), '0000-00-00 00:00:00.000', '0000-00-00 00:00:00.000')
+                step_callback(current_info_tuple, cumulative_info_tuple)
             return self.rt_trace[self.num]
         else:
             #raise StopIteration()
@@ -167,6 +171,37 @@ class BoundControlBox(wx.Panel):
     def manual_value(self):
         return self.value
 
+class BeginEndSamplesBox(wx.Panel):
+    """ An info box with begin, end, and number of samples text."""
+    def __init__(self, parent, ID, label):
+        wx.Panel.__init__(self, parent, ID)
+        
+        box = wx.StaticBox(self, -1, label)
+        sizer = wx.StaticBoxSizer(box, wx.VERTICAL)
+
+        self.begin_time_text = wx.StaticText(self, -1, '0000-00-00 00:00:00.000')
+        self.end_time_text = wx.StaticText(self, -1, '0000-00-00 00:00:00.000')
+        self.samples_text = wx.StaticText(self, -1, '000000')
+       
+        sizer.Add(self.begin_time_text, 0, wx.ALL, 10)
+        sizer.Add(self.end_time_text, 0, wx.ALL, 10)
+        sizer.Add(self.samples_text, 0, wx.ALL, 10)
+        
+        self.SetSizer(sizer)
+        #sizer.Fit(self)
+    
+    def on_update_manual_text(self, event):
+        self.manual_text.Enable(self.radio_manual.GetValue())
+    
+    def on_text_enter(self, event):
+        self.value = self.manual_text.GetValue()
+    
+    def is_auto(self):
+        return self.radio_auto.GetValue()
+        
+    def manual_value(self):
+        return self.value
+
 class GraphFrame(wx.Frame):
     """ The main frame of the strip chart application.
     
@@ -189,15 +224,15 @@ class GraphFrame(wx.Frame):
         
         wx.Frame.__init__(self, None, -1, self.title)
 
-        # we must limit size of otherwise ever-growing data object
-        self.data = deque( maxlen=self.maxpts )
-        self.data.append( self.datagen.next() )
-        self.paused = True
-        
         self.create_menu()
         self.create_status_bar()
         self.create_main_panel()
-        
+
+        # we must limit size of otherwise ever-growing data object
+        self.data = deque( maxlen=self.maxpts )
+        self.data.append( self.datagen.next(self.step_callback) )
+        self.paused = True
+       
         # Set up a timer to update the date/time (every few seconds)
         self.timer = wx.PyTimer(self.notify)
         self.timer.Start(SB_MSEC)
@@ -207,6 +242,15 @@ class GraphFrame(wx.Frame):
         self.Bind(wx.EVT_TIMER, self.on_redraw_timer, self.redraw_timer)        
         self.redraw_timer.Start(200) # milliseconds
 
+    def update_info(self, info_control, info_tuple):
+        info_control.begin_time_text.SetLabel(info_tuple[0])
+        info_control.end_time_text.SetLabel(info_tuple[1])
+        info_control.samples_text.SetLabel(info_tuple[2])
+
+    def step_callback(self, current_info_tuple, cumulative_info_tuple):
+        self.update_info(self.current_info, current_info_tuple)
+        self.update_info(self.cumulative_info, cumulative_info_tuple)
+        
     def create_menu(self):
         self.menubar = wx.MenuBar()
         
@@ -230,6 +274,12 @@ class GraphFrame(wx.Frame):
         self.xmax_control = BoundControlBox(self.panel, -1, "X max", 50)
         self.ymin_control = BoundControlBox(self.panel, -1, "Y min", 0)
         self.ymax_control = BoundControlBox(self.panel, -1, "Y max", 100)
+        self.current_info = BeginEndSamplesBox(self.panel, -1, "Current")
+        self.cumulative_info = BeginEndSamplesBox(self.panel, -1, "Cumulative")        
+
+        self.step_button = wx.Button(self.panel, -1, "Step")
+        self.Bind(wx.EVT_BUTTON, self.on_step_button, self.step_button)
+        self.Bind(wx.EVT_UPDATE_UI, self.on_update_step_button, self.step_button)
         
         self.pause_button = wx.Button(self.panel, -1, "Pause")
         self.Bind(wx.EVT_BUTTON, self.on_pause_button, self.pause_button)
@@ -244,8 +294,10 @@ class GraphFrame(wx.Frame):
         self.cb_xlab.SetValue(True)
         
         self.hbox1 = wx.BoxSizer(wx.HORIZONTAL)
-        self.hbox1.Add(self.pause_button, border=5, flag=wx.ALL | wx.ALIGN_CENTER_VERTICAL)
+        self.hbox1.Add(self.step_button, border=5, flag=wx.ALL | wx.ALIGN_CENTER_VERTICAL)
         self.hbox1.AddSpacer(20)
+        self.hbox1.Add(self.pause_button, border=5, flag=wx.ALL | wx.ALIGN_CENTER_VERTICAL)
+        self.hbox1.AddSpacer(20)        
         self.hbox1.Add(self.cb_grid, border=5, flag=wx.ALL | wx.ALIGN_CENTER_VERTICAL)
         self.hbox1.AddSpacer(10)
         self.hbox1.Add(self.cb_xlab, border=5, flag=wx.ALL | wx.ALIGN_CENTER_VERTICAL)
@@ -256,6 +308,10 @@ class GraphFrame(wx.Frame):
         self.hbox2.AddSpacer(24)
         self.hbox2.Add(self.ymin_control, border=5, flag=wx.ALL)
         self.hbox2.Add(self.ymax_control, border=5, flag=wx.ALL)
+        self.hbox2.AddSpacer(30)
+        self.hbox2.Add(self.current_info, border=5, flag=wx.ALL)
+        self.hbox2.AddSpacer(24)
+        self.hbox2.Add(self.cumulative_info, border=5, flag=wx.ALL)        
         
         self.vbox = wx.BoxSizer(wx.VERTICAL)
         self.vbox.Add(self.canvas, 1, flag=wx.LEFT | wx.TOP | wx.GROW)        
@@ -293,7 +349,7 @@ class GraphFrame(wx.Frame):
         # to the plotted line series
         #
         self.plot_data = self.axes.plot(
-            self.data, 
+            np.nan, 
             linewidth=1,
             color=(1, 0, 0),
             )[0]
@@ -357,6 +413,17 @@ class GraphFrame(wx.Frame):
         
         self.canvas.draw()
     
+    def on_step_button(self, event):
+        if self.paused:
+            self.data.append( self.datagen.next(self.step_callback) )
+            self.draw_plot()
+    
+    def on_update_step_button(self, event):
+        if self.paused:
+            self.step_button.Enable()
+        else:
+            self.step_button.Disable()
+    
     def on_pause_button(self, event):
         self.paused = not self.paused
     
@@ -390,7 +457,7 @@ class GraphFrame(wx.Frame):
         # if paused do not add data, but still redraw the plot
         # (to respond to scale modifications, grid change, etc.)
         if not self.paused:
-            self.data.append( self.datagen.next() )
+            self.data.append( self.datagen.next(self.step_callback) )
         self.draw_plot()
     
     def on_exit(self, event):
@@ -411,9 +478,15 @@ class GraphFrame(wx.Frame):
 def demo_pad_gen():
     from pims.pad.packetfeeder import PadGenerator
     app = wx.PySimpleApp()
-    #app.frame = GraphFrame(DataGenRandom, maxpts=75)
-    #app.frame = GraphFrame(DataGenExample, datagen_kwargs={'scale_factor':0.01, 'num_splits':5}, maxpts=150)
-    app.frame = GraphFrame(PadGenerator, datagen_kwargs={'showWarnings':1,'scale_factor':1000, 'maxsec_rttrace':5000}, maxpts=5000)
+
+    app.frame = GraphFrame(DataGenExample(),
+                           1,
+                           120,
+                           2,
+                           'title',
+                           200) # maxlen for data deque used in stripchart
+    #app.frame = GraphFrame(PadGenerator, datagen_kwargs={'showWarnings':1,'scale_factor':1000, 'maxsec_rttrace':5000}, maxpts=5000)
+
     app.frame.Show()
     app.MainLoop()        
 
