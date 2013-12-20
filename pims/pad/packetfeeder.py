@@ -30,8 +30,9 @@ from obspy import Trace
 from obspy.realtime import RtTrace
 
 import inspect
+from pprint import pprint
 
-def getLine():
+def get_line():
     callerframerecord = inspect.stack()[1]    # 0 represents this line
                                               # 1 represents line at caller
     frame = callerframerecord[0]
@@ -43,24 +44,24 @@ def getLine():
 
 # Absolute minimum time to leave data alone for it to settle and to allow other
 # tasks to get access to it in the database (even if contiguous data is present after this)
-minimumDelay = 10
+MIN_DELAY = 10
 
-# Wake up and process database every "sleepTime" seconds (this value is 30 *minutes* in packetWriter)
-sleepTime = 20
+# Wake up and process database every "SLEEP_TIME" seconds (this value is 30 *minutes* in packetWriter)
+SLEEP_TIME = 20
 
 # Max records in database request
-maxResults = 500
+MAX_RESULTS = 5
 
 # Max records to process before deleting processed data and/or working on another table for a while
-maxResultsOneTable = 1000 # max sensor packet rate is like 14 pps (nominal is 8 pps)
+MAX_RESULTS_PER_TABLE = 10 # max sensor packet rate is like 14 pps (nominal is 8 pps)
 
 # Packet counters
-packetsWritten = 0
-packetsDeleted = 0
-totalPacketsFed = 0 # global variable for tracking if any progress is being made
+PACKETS_WRITTEN = 0
+PACKETS_DELETED = 0
+TOTAL_PACKETS_FED = 0 # global variable for tracking if any progress is being made
 
-# set default command line parameters, times are always measured in seconds
-defaults = { 'ancillaryHost':'kyle', # the name of the computer with the auxiliary databases (or 'None')
+# set default command line PARAMS, times are always measured in seconds
+DEFAULTS = { 'ancillaryHost':'kyle', # the name of the computer with the auxiliary databases (or 'None')
              'host':'localhost',        # the name of the computer with the database
              'database':'pims',         # the name of the database to process
              'tables':'ALL',            # the database tables that should be processed (separated by commas)
@@ -82,39 +83,39 @@ defaults = { 'ancillaryHost':'kyle', # the name of the computer with the auxilia
                                         #   in order to prevent confusion in the shell and command parser,
                                         #   represent XML with: ' ' replaced by '#', tab by '~', CR by '~~'
 
-parameters = defaults.copy()
+PARAMS = DEFAULTS.copy()
 def setParameters(newParameters):
-    global parameters
-    parameters = newParameters.copy()
+    global PARAMS
+    PARAMS = newParameters.copy()
     
-ancillaryData = {}
-ancillaryDataFormat = {}
-ancillaryXML = ''
-ancillaryUpdate = 0 # next time ancillaryXML should by updated
-ancillaryDatabases = ['bias', 'coord_system_db', 'data_coord_system', 'dqm', 'iss_config', 'scale']
+ANC_DATA = {}
+ANC_DATA_FORMAT = {}
+ANC_XML = ''
+ANC_UPDATE = 0 # next time ANC_XML should by updated
+ANC_DATABASES = ['bias', 'coord_system_db', 'data_coord_system', 'dqm', 'iss_config', 'scale']
 
 # simple timing based benchmark routine
-benTotal = 0
-benCount = 0
+BENCH_TOTAL = 0
+BENCH_COUNT = 0
 def benchmark(startTime):
-    global benCount, benTotal
-    benCount = benCount + 1
-    benTotal = benTotal + (time() - startTime)
+    global BENCH_COUNT, BENCH_TOTAL
+    BENCH_COUNT = BENCH_COUNT + 1
+    BENCH_TOTAL = BENCH_TOTAL + (time() - startTime)
 
 ################################################################
 # sample idle function
 # FIXME keeping track of previous total is kludge WHY/HOW?
-previousTotal = 0
-def sampleIdleFunction():
+PREV_IDLE_TOTAL = 0
+def sample_idle_fun():
     """a sample idle function"""
-    global previousTotal
-    if previousTotal != totalPacketsFed:
-        log.debug("%04d IDLER totalPacketsFed %d" % (getLine(), totalPacketsFed))
+    global PREV_IDLE_TOTAL
+    if PREV_IDLE_TOTAL != TOTAL_PACKETS_FED:
+        log.debug("%04d IDLER TOTAL_PACKETS_FED %d" % (get_line(), TOTAL_PACKETS_FED))
         sleep(2)
-    previousTotal = totalPacketsFed
+    PREV_IDLE_TOTAL = TOTAL_PACKETS_FED
 
-# add sample idle function
-addIdle(sampleIdleFunction)
+# add sample idle function (NOTE: addIdle comes from pims.realtime.accelpacket)
+addIdle(sample_idle_fun)
 ################################################################
 
 # class to keep track of what's been fed
@@ -141,7 +142,7 @@ class PacketFeeder(object):
     # DEFUNCT create the PIMS directory tree for pad files (locally)
     def buildDirTree(self, filename):
         """DEFUNCT # create the PIMS directory tree for pad files (locally)"""
-        log.debug("%04d buildDirTree() input: %s" % (getLine(), filename) )
+        log.debug("%04d buildDirTree() input: %s" % (get_line(), filename) )
         s = split(filename, '-')
         if len(s) == 1:
             s = split(filename, '+')
@@ -167,7 +168,7 @@ class PacketFeeder(object):
     # move PAD file
     def movePadFile(self, source):
         """move PAD file"""
-        dest = parameters['destination']
+        dest = PARAMS['destination']
         if dest == '.':
             return
         if source == '':
@@ -207,16 +208,16 @@ class PacketFeeder(object):
         header = '<?xml version="1.0" encoding="US-ASCII"?>\n'
         header = header + '<%s>\n' % self._headerPacket_.type
         header = header + self._headerPacket_.xmlHeader() # extract packet specific header info
-        if parameters['ascii']:
+        if PARAMS['ascii']:
             format = 'ascii'
         else:
-            if parameters['bigEndian']:
+            if PARAMS['bigEndian']:
                 format = 'binary 32 bit IEEE float big endian'
             else:
                 format = 'binary 32 bit IEEE float little endian'
         header = header + '\t<GData format="%s" file="%s"/>\n' % (format, dataFileName)
         # insert additionalDQM() if necessary
-        aXML = ancillaryXML
+        aXML = ANC_XML
         if self._headerPacket_.additionalDQM() != '':
             dqmStart = find(aXML, '<DataQualityMeasure>')
             if dqmStart == -1:
@@ -225,8 +226,8 @@ class PacketFeeder(object):
                 dqmInsert = dqmStart + len('<DataQualityMeasure>')
                 aXML = aXML[:dqmInsert] + xmlEscape(self._headerPacket_.additionalDQM()) + ', ' + aXML[dqmInsert:] 
         header = header + aXML
-        if parameters['additionalHeader'] != '\"\"':
-            header = header + parameters['additionalHeader']
+        if PARAMS['additionalHeader'] != '\"\"':
+            header = header + PARAMS['additionalHeader']
         header = header + '</%s>\n' % self._headerPacket_.type
         return header
     
@@ -243,7 +244,7 @@ class PacketFeeder(object):
             self._rotationMatrix_ = np.identity(3).astype(np.float32)
             success = 1
         else:                
-            sensorEntry, dataEntry = checkCoordinateSystem(dataTime, sensor, dataName)
+            sensorEntry, dataEntry = check_coord_sys(dataTime, sensor, dataName)
             if sensorEntry and dataEntry:
                 self._rotateData_ = 1
                 # use inverse matrix to get to ref system
@@ -267,24 +268,24 @@ class PacketFeeder(object):
     # DEFUNCT do whatever it takes to write the packet to disk
     def writePacket(self, packet, contiguous = -1):
         """DEFUNCT do whatever it takes to write the packet to disk"""
-        global packetsWritten
-        packetsWritten += 1
-        #print "packetsWritten", packetsWritten
+        global PACKETS_WRITTEN
+        PACKETS_WRITTEN += 1
+        #print "PACKETS_WRITTEN", PACKETS_WRITTEN
         #sleep(1)
         if self.lastPacket:
             ostart = self.lastPacket.time()
             oend = self.lastPacket.endTime()
             start = packet.time()
-            log.debug('%04d writePacket() start: %0.10f end: %0.10f samples: %s packetGap: %0.10f  sampleGap: %0.10f' % (getLine(), start, packet.endTime(), packet.samples(), start-ostart, start-oend))
+            log.debug('%04d writePacket() start: %0.10f end: %0.10f samples: %s packetGap: %0.10f  sampleGap: %0.10f' % (get_line(), start, packet.endTime(), packet.samples(), start-ostart, start-oend))
 
 #        print 'writePacket ' + `contiguous`
-        updateAncillaryData(packet.time(), packet.name(), self)
+        update_anc_data(packet.time(), packet.name(), self)
         if contiguous == -1:
             contiguous = packet.contiguous(self.lastPacket)
         if self._forceNewFile_:
             self.begin(packet, 0)
             self._forceNewFile_ = 0
-        elif not contiguous or ((parameters['maxFileTime'] > 0) and (packet.time() > (self._fileStart_ + parameters['maxFileTime']))):
+        elif not contiguous or ((PARAMS['maxFileTime'] > 0) and (packet.time() > (self._fileStart_ + PARAMS['maxFileTime']))):
             self.begin(packet, contiguous)
 #        bStartTime = time() # benchmark this
         self.append(packet)
@@ -300,7 +301,7 @@ class PacketFeeder(object):
                 newName = UnixToHumanTime(self._fileStart_) + self._fileSep_ + \
                       UnixToHumanTime(self.lastPacket.endTime()) + '.' + self.lastPacket.name()
                 ok = os.system('mv %s %s' % (self._fileName_, newName)) == 0
-                log.debug('%04d end() is moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
+                log.debug('%04d end() is moving %s to %s, success:%s' % (get_line(), self._fileName_, newName, ok))
                 headFile = open(newName + '.header', 'wb')
                 headFile.write(self.buildHeader(newName))  
                 headFile.close()
@@ -329,16 +330,16 @@ class PacketFeeder(object):
         self._fileName_ = 'temp.' + packet.name()
         self._file_ = open(self._fileName_, 'ab')
         self._fileStart_ = packet.time()
-        log.debug('%04d begin() is NOT REALLY starting %s' % (getLine(), self._fileName_))
+        log.debug('%04d begin() is NOT REALLY starting %s' % (get_line(), self._fileName_))
 
     # append data to the file, may need to reopen it
     def append(self, packet):
-        global totalPacketsFed
+        global TOTAL_PACKETS_FED
         if self._file_ == None:
             newName = 'temp.' + packet.name()
             os.system('rm -rf %s.header' % self._fileName_)
             ok = os.system('mv %s %s' % (self._fileName_, newName)) == 0
-            log.debug('%04d append() is moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
+            log.debug('%04d append() is moving %s to %s, success:%s' % (get_line(), self._fileName_, newName, ok))
             if not ok: # move failed, maybe file doesn't exist anymore
                 contiguous = packet.contiguous(self.lastPacket)
                 if contiguous:
@@ -361,8 +362,8 @@ class PacketFeeder(object):
         if extra:
             aextra = np.array(extra, np.float32)
 
-        if not parameters['ascii']:
-            if parameters['bigEndian']:
+        if not PARAMS['ascii']:
+            if PARAMS['bigEndian']:
                 atxyzs = atxyzs.byteswap() 
                 if extra:
                     aextra = aextra.byteswap()
@@ -381,7 +382,7 @@ class PacketFeeder(object):
                 s = s + formatString % tuple(row)
             self._file_.write(s)
         self.lastPacket = packet
-        totalPacketsFed = totalPacketsFed + 1
+        TOTAL_PACKETS_FED = TOTAL_PACKETS_FED + 1
 
 # class to keep track of unexpected changes
 class PacketInspector(PacketFeeder):
@@ -407,7 +408,7 @@ class PacketInspector(PacketFeeder):
                 newName = UnixToHumanTime(self._fileStart_) + self._fileSep_ + \
                       UnixToHumanTime(self.lastPacket.endTime()) + '.' + self.lastPacket.name()
                 ok = True #os.system('mv %s %s' % (self._fileName_, newName)) == 0
-                log.debug('%04d end() is moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
+                log.debug('%04d end() is moving %s to %s, success:%s' % (get_line(), self._fileName_, newName, ok))
                 #headFile = open(newName + '.header', 'wb')
                 #headFile.write(self.buildHeader(newName))  
                 #headFile.close()
@@ -436,17 +437,17 @@ class PacketInspector(PacketFeeder):
         self._fileName_ = 'temp.' + packet.name()
         #self._file_ = open(self._fileName_, 'ab')
         self._fileStart_ = packet.time()
-        log.debug('%04d begin() is NOT REALLY starting %s' % (getLine(), self._fileName_))
+        log.debug('%04d begin() is NOT REALLY starting %s' % (get_line(), self._fileName_))
 
     # append data NOT to the file, NOT REALLY need to reopen it
     def append(self, packet):
         """inspect packet for unexpected changes (do not append to file)"""
-        global totalPacketsFed
+        global TOTAL_PACKETS_FED
         if self._file_ == None:
             newName = 'temp.' + packet.name()
             os.system('rm -rf %s.header' % self._fileName_)
             ok = True #os.system('mv %s %s' % (self._fileName_, newName)) == 0
-            log.debug('%04d append() is NOT REALLY moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
+            log.debug('%04d append() is NOT REALLY moving %s to %s, success:%s' % (get_line(), self._fileName_, newName, ok))
             if not ok: # move failed, maybe file doesn't exist anymore
                 contiguous = packet.contiguous(self.lastPacket)
                 if contiguous:
@@ -470,8 +471,8 @@ class PacketInspector(PacketFeeder):
         if extra:
             aextra = np.array(extra, np.float32)
 
-        if not parameters['ascii']:
-            if parameters['bigEndian']:
+        if not PARAMS['ascii']:
+            if PARAMS['bigEndian']:
                 atxyzs = atxyzs.byteswap() 
                 if extra:
                     aextra = aextra.byteswap()
@@ -492,7 +493,7 @@ class PacketInspector(PacketFeeder):
             #self._file_.write(s) # NOTE THIS IS "NOT-WRITING" JUST INSPECTING
             
         self.lastPacket = packet
-        totalPacketsFed = totalPacketsFed + 1
+        TOTAL_PACKETS_FED = TOTAL_PACKETS_FED + 1
 
 # class to feed packet data hopefully to a good strip chart display
 class PadGenerator(PacketInspector):
@@ -504,7 +505,7 @@ class PadGenerator(PacketInspector):
         self.scale_factor = scale_factor
         
         # set totalPacketFed to zero initially
-        self.totalPacketsFed = 0
+        self.TOTAL_PACKETS_FED = 0
 
     def __str__(self):
         #s = ''
@@ -515,30 +516,30 @@ class PadGenerator(PacketInspector):
             return 'lastPacket.endTime()=%s' % unix2dtm( self.lastPacket.endTime() )
         else:
             return 'HEY...lastPacket is %s' % str(self.lastPacket)
- 
-    # oneShot classied up
+
+    # one_shot classied up
     def next(self):
-        log.debug('%04d ONESH inspect=%s %s' % (getLine(), parameters['inspect'], '-' * 99))
-        self.lastPacketTotal = self.totalPacketsFed
+        log.debug('%04d ONESH inspect=%s %s' % (get_line(), PARAMS['inspect'], '-' * 99))
+        self.lastPacketTotal = self.TOTAL_PACKETS_FED
         self.moreToDo = 0
         timeNow = time()
-        cutoffTime = timeNow - max(parameters['cutoffDelay'], minimumDelay)
-        if parameters['endTime'] > 0.0:
-            cutoffTime = min(cutoffTime, parameters['endTime'])
+        cutoffTime = timeNow - max(PARAMS['cutoffDelay'], MIN_DELAY)
+        if PARAMS['endTime'] > 0.0:
+            cutoffTime = min(cutoffTime, PARAMS['endTime'])
     
         # verify host has table we want
         tables = []
         for table in sqlConnect('show tables',
-                         shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database']):
+                         shost=PARAMS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMS['database']):
             tableName = table[0]
             columns = []
             for col in sqlConnect('show columns from %s' % tableName,
-                           shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database']):
+                           shost=PARAMS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMS['database']):
                 columns.append(col[0])
             if ('time' in columns) and ('packet' in columns):
                 tables.append(tableName)
-        if parameters['tables'] != 'ALL':
-            wanted = split(parameters['tables'], ',')
+        if PARAMS['tables'] != 'ALL':
+            wanted = split(PARAMS['tables'], ',')
             newTables = []
             for w in wanted:
                 if w in tables:
@@ -554,7 +555,7 @@ class PadGenerator(PacketInspector):
             raise Exception(msg)
         # here's where we check for one and only one table of interest on host
         if len(tables) != 1:
-            msg = 'did not find exactly one table for %s on host %s' % (parameters['tables'], parameters['host'])
+            msg = 'did not find exactly one table for %s on host %s' % (PARAMS['tables'], PARAMS['host'])
             self.log.error(msg)
             raise Exception(msg)
         
@@ -567,13 +568,13 @@ class PadGenerator(PacketInspector):
         ############################################
         # get key info for processing packets here #
         ############################################
-        updateAncillaryDatabases()
+        update_anc_databases()
         preCutoffProgress = 0
         packetCount = 0
-        start = ceil4(max(self.lastTime(), parameters['startTime'])) # database has only 4 decimals of precision
+        start = ceil4(max(self.lastTime(), PARAMS['startTime'])) # database has only 4 decimals of precision
         
         # write all packets before cutoffTime
-        tpResults = getTimePacketQueryResults(tableName, start, cutoffTime, maxResults, (getLine(), 'write all pkts before cutoffTime'))
+        tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'write all pkts before cutoffTime'))
         packetCount = packetCount + len(tpResults)
         while len(tpResults) != 0:
             for result in tpResults:
@@ -581,57 +582,57 @@ class PadGenerator(PacketInspector):
                 if p.type == 'unknown':
                     printLog('unknown packet type at time %.4lf' % result[0])
                     continue
-                log.debug('%04d oneShot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(getLine(), tableName, p.type, result[0], p.contiguous(self.lastPacket)))
+                log.debug('%04d one_shot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(get_line(), tableName, p.type, result[0], p.contiguous(self.lastPacket)))
                 preCutoffProgress = 1                        
                 self.writePacket(p)
                 
-            if packetCount >= maxResultsOneTable or len(tpResults) != maxResults or idleWait(0):
-                if packetCount >= maxResultsOneTable:
+            if packetCount >= MAX_RESULTS_PER_TABLE or len(tpResults) != MAX_RESULTS or idleWait(0):
+                if packetCount >= MAX_RESULTS_PER_TABLE:
                     self.moreToDo = 1 # go work on another table for a while
                 self.end()
                 tpResults = []
             else:
-                start = ceil4(max(self.lastTime(), parameters['startTime'])) # database has only 4 decimals of precision
-                tpResults = getTimePacketQueryResults(tableName, start, cutoffTime, maxResults, (getLine(), 'while more tpResults exist, query new start and new cutoffTime'))
+                start = ceil4(max(self.lastTime(), PARAMS['startTime'])) # database has only 4 decimals of precision
+                tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'while more tpResults exist, query new start and new cutoffTime'))
                 packetCount = packetCount + len(tpResults)
 
-        log.debug('%04d oneShot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (getLine(), tableName, self.lastTime(), self.moreToDo))
+        log.debug('%04d one_shot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (get_line(), tableName, self.lastTime(), self.moreToDo))
             
         # write contiguous packets after cutoffTime
         if preCutoffProgress and not self.moreToDo:
             packetCount = 0
             stillContiguous = 1
-            maxTime = timeNow-minimumDelay
-            if parameters['endTime'] > 0.0:
-                maxTime = min(maxTime, parameters['endTime'])
-            if parameters['endTime'] == 0.0 or maxTime < parameters['endTime']:
-                tpResults = getTimePacketQueryResults(tableName, ceil4(self.lastTime()), maxTime, maxResults, (getLine(), 'write contiguous pkts after cutoffTime'))
+            maxTime = timeNow-MIN_DELAY
+            if PARAMS['endTime'] > 0.0:
+                maxTime = min(maxTime, PARAMS['endTime'])
+            if PARAMS['endTime'] == 0.0 or maxTime < PARAMS['endTime']:
+                tpResults = get_tp_query_results(tableName, ceil4(self.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'write contiguous pkts after cutoffTime'))
                 packetCount = packetCount + len(tpResults)
                 while stillContiguous and len(tpResults) != 0 and not idleWait(0):
                     for result in tpResults:
                         p = guessPacket(result[1])
                         if p.type == 'unknown':
                             continue
-                        log.debug('%04d oneShot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(getLine(), tableName, p.type, result[0], p.contiguous(self.lastPacket)))
+                        log.debug('%04d one_shot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(get_line(), tableName, p.type, result[0], p.contiguous(self.lastPacket)))
                         stillContiguous = p.contiguous(self.lastPacket)
                         if not stillContiguous:
                             break
                         self.writePacket(p, stillContiguous)
-                    if packetCount >= maxResultsOneTable or len(tpResults) != maxResults:
-                        if packetCount >= maxResultsOneTable:
+                    if packetCount >= MAX_RESULTS_PER_TABLE or len(tpResults) != MAX_RESULTS:
+                        if packetCount >= MAX_RESULTS_PER_TABLE:
                             self.moreToDo = 1 # go work on another table for a while
                         self.end()
                         tpResults = []
                     elif stillContiguous:
-                        tpResults = getTimePacketQueryResults(tableName, ceil4(self.lastTime()), maxTime, maxResults, (getLine(), 'while still contiguous and more tpResults...'))
+                        tpResults = get_tp_query_results(tableName, ceil4(self.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'while still contiguous and more tpResults...'))
                         packetCount = packetCount + len(tpResults)
                     else:
                         tpResults = []
 
-        log.debug('%04d oneShot() finished AFTER-cutoff CONTIGUOUS packets for %s up to %.6f, moreToDo:%s' % (getLine(), tableName, self.lastTime(), self.moreToDo))
+        log.debug('%04d one_shot() finished AFTER-cutoff CONTIGUOUS packets for %s up to %.6f, moreToDo:%s' % (get_line(), tableName, self.lastTime(), self.moreToDo))
 
         self.end()
-        disposeProcessedData(tableName, self.lastTime())
+        dispose_processed_data(tableName, self.lastTime())
 
     def init_realtime_trace_registerproc(self, hdr, ax):
         """initialize real-time traces and register process for scale-factor"""
@@ -723,16 +724,16 @@ class PadGenerator(PacketInspector):
     # append data, per-axis each to rt_trace
     def append(self, packet):
         """append data, per-axis each to rt_trace"""
-        global totalPacketsFed
+        global TOTAL_PACKETS_FED
         
-        log.debug( '%04d %s BEFOR append() %s' % (getLine(), str(self), self.show_contig(self.lastPacket, packet)) )
+        log.debug( '%04d %s BEFOR append() %s' % (get_line(), str(self), self.show_contig(self.lastPacket, packet)) )
         
         # FIXME what happens if we get rid of this thru the BytesIO part?
         if self._file_ == None:
             newName = 'temp.' + packet.name()
             #os.system('rm -rf %s.header' % self._fileName_)
             ok = True #os.system('mv %s %s' % (self._fileName_, newName)) == 0
-            log.debug('%04d append() is NOT REALLY moving %s to %s, success:%s' % (getLine(), self._fileName_, newName, ok))
+            log.debug('%04d append() is NOT REALLY moving %s to %s, success:%s' % (get_line(), self._fileName_, newName, ok))
             if not ok: # move failed, maybe file doesn't exist anymore
                 contiguous = packet.contiguous(self.lastPacket)
                 if contiguous:
@@ -756,8 +757,8 @@ class PadGenerator(PacketInspector):
         if extra:
             aextra = np.array(extra, np.float32)
 
-        if not parameters['ascii']:
-            if parameters['bigEndian']:
+        if not PARAMS['ascii']:
+            if PARAMS['bigEndian']:
                 atxyzs = atxyzs.byteswap() 
                 if extra:
                     aextra = aextra.byteswap()
@@ -778,29 +779,29 @@ class PadGenerator(PacketInspector):
             #self._file_.write(s) # NOTE THIS IS "NOT-WRITING" JUST INSPECTING
 
         # for very first packet, get header info
-        if totalPacketsFed == 0:
+        if TOTAL_PACKETS_FED == 0:
             self.get_first_header()
 
         # append and auto-process packet data into RtTrace:
         if self.is_header_same(packet):
             self.append_process_packet_data(atxyzs, packetStart, packet.contiguous(self.lastPacket))
         else:
-            log.warning( 'DO NOT APPEND PACKET because we got False from is_header_same (near line %d)' % getLine() )
+            log.warning( 'DO NOT APPEND PACKET because we got False from is_header_same (near line %d)' % get_line() )
         
-        # update lastPacket and totalPacketsFed
+        # update lastPacket and TOTAL_PACKETS_FED
         self.lastPacket = packet
-        totalPacketsFed = totalPacketsFed + 1
+        TOTAL_PACKETS_FED = TOTAL_PACKETS_FED + 1
         
-        log.debug( '%04d %s AFTER append() %s' % (getLine(), str(self), self.show_contig(self.lastPacket, packet)) )
+        log.debug( '%04d %s AFTER append() %s' % (get_line(), str(self), self.show_contig(self.lastPacket, packet)) )
 
 # return sensor and data coordinate system database entries, if they exist
-def checkCoordinateSystem(dataTime, sensor, dataName):
-    if not ancillaryData.has_key('coord_system_db'):
+def check_coord_sys(dataTime, sensor, dataName):
+    if not ANC_DATA.has_key('coord_system_db'):
         t =  UnixToHumanTime(time(), 1)
         t = t + ' warning: data coordinate system "%s" requested, but "coord_system_db" was not found' % dataName
         printLog(t)
         return (0, 0) # coordinate system database doesn't exit
-    csdb = ancillaryData['coord_system_db']
+    csdb = ANC_DATA['coord_system_db']
     sensorEntry = None
     dataEntry = None
     for i in csdb:
@@ -821,8 +822,8 @@ def checkCoordinateSystem(dataTime, sensor, dataName):
         return (0, 0) # didn't find coordinate systems entries for both sensor and data
     
 # format an ancillary data entry in XML       
-def addAncillaryXML(db, entry, dataTime, sensor, pf, dbMatchTime): 
-    global ancillaryXML
+def add_anc_xml(db, entry, dataTime, sensor, pf, dbMatchTime): 
+    global ANC_XML
     newLine = ''
     if db == 'bias':
         newLine = '\t<BiasCoeff x="%s" y="%s" z="%s"/>\n' % entry
@@ -841,23 +842,23 @@ def addAncillaryXML(db, entry, dataTime, sensor, pf, dbMatchTime):
         if pf.setDataCoordSystem(dataName, dataTime, sensor): 
             newLine = '\t<DataCoordinateSystem name="%s" ' % string.strip(entry[0])
             # lookup data coord system info
-            sensorEntry, dataEntry = checkCoordinateSystem(dataTime, sensor, dataName)
+            sensorEntry, dataEntry = check_coord_sys(dataTime, sensor, dataName)
             newLine = newLine + 'r="%s" p="%s" w="%s" x="%s" y="%s" z="%s" ' % dataEntry[2:-1]
             newLine = newLine + 'comment="%s" ' % xmlEscape(dataEntry[-1])
             newLine = newLine + 'time="%s"/>\n' % UnixToHumanTime(dataEntry[0])
         else: # coord system lookup failed, use sensor coordinates
             newLine = '\t<DataCoordinateSystem name="sensor"/>\n' 
-    ancillaryXML = ancillaryXML + newLine
+    ANC_XML = ANC_XML + newLine
     
 # look for valid ancillary data entries for a given sensor and time    
-def updateAncillaryXML(dataTime, sensor, pf): 
-    global ancillaryXML
-    ancillaryXML = ''
-    adKeys = ancillaryData.keys()
+def update_anc_xml(dataTime, sensor, pf): 
+    global ANC_XML
+    ANC_XML = ''
+    adKeys = ANC_DATA.keys()
     adKeys.sort() # always process databases in the same order
     for i in adKeys:
-        ad = ancillaryData[i]
-        format = ancillaryDataFormat[i]
+        ad = ANC_DATA[i]
+        format = ANC_DATA_FORMAT[i]
         maxTime = 0
         for j in ad:
             colName = string.lower(format[1][0])
@@ -874,55 +875,55 @@ def updateAncillaryXML(dataTime, sensor, pf):
                 else:
                     break
         if maxTime != 0: # we have a good entry
-            addAncillaryXML(i, entry, dataTime, sensor, pf, maxTime)
+            add_anc_xml(i, entry, dataTime, sensor, pf, maxTime)
 
 # rebuild all ancillary data for this sensor, if the time is right
-def updateAncillaryData(dataTime, sensor, pf):
-    global ancillaryUpdate, ancillaryXML
-    if dataTime < ancillaryUpdate:
+def update_anc_data(dataTime, sensor, pf):
+    global ANC_UPDATE, ANC_XML
+    if dataTime < ANC_UPDATE:
         return
     else:
-        oldAncillaryXML = ancillaryXML
+        oldAncillaryXML = ANC_XML
         sensor = string.lower(sensor)
-        updateAncillaryXML(dataTime, sensor, pf) # update headers
-        if oldAncillaryXML != ancillaryXML:
+        update_anc_xml(dataTime, sensor, pf) # update headers
+        if oldAncillaryXML != ANC_XML:
             pf._forceNewFile_ = 1
-            # must end old pad file with oldAncillaryXML before using new ancillaryXML
-            saveXML = ancillaryXML
-            ancillaryXML = oldAncillaryXML
+            # must end old pad file with oldAncillaryXML before using new ANC_XML
+            saveXML = ANC_XML
+            ANC_XML = oldAncillaryXML
             pf.end()
-            ancillaryXML = saveXML
+            ANC_XML = saveXML
         # find next scheduled ancillary change 
         maxUpdate = time()
         newUpdate = maxUpdate
-        for i in ancillaryData.keys():
-            ad = ancillaryData[i]
+        for i in ANC_DATA.keys():
+            ad = ANC_DATA[i]
             for j in ad:
                 if j[0] > dataTime and j[0] < newUpdate:
                     newUpdate = j[0]
                     break
         if newUpdate != maxUpdate:
-            ancillaryUpdate = newUpdate
+            ANC_UPDATE = newUpdate
         else: # no need to check for any more updates
-            ancillaryUpdate = time() + 10000000 # don't update at all until database changes
-##        print 'next ancillary data update after %s scheduled for %s' % (dataTime, ancillaryUpdate)
+            ANC_UPDATE = time() + 10000000 # don't update at all until database changes
+##        print 'next ancillary data update after %s scheduled for %s' % (dataTime, ANC_UPDATE)
 
 # retrieve the ancillary databases
-def updateAncillaryDatabases():
-    global ancillaryUpdate, ancillaryData
-    if parameters['ancillaryHost'] == 'None':
-        ancillaryUpdate = time() + 10000000 # don't update at all
+def update_anc_databases():
+    global ANC_UPDATE, ANC_DATA
+    if PARAMS['ancillaryHost'] == 'None':
+        ANC_UPDATE = time() + 10000000 # don't update at all
         return
     try: 
-        for db in ancillaryDatabases:
-            ancillaryData[db] = sqlConnect('select * from %s order by time' % db,
-                 shost=parameters['ancillaryHost'], suser=UNAME, spasswd=PASSWD, sdb='pad')
-            ancillaryDataFormat[db] = sqlConnect('show columns from %s' % db,
-                 shost=parameters['ancillaryHost'], suser=UNAME, spasswd=PASSWD, sdb='pad')
-        ancillaryUpdate = 0 # database may have changed, need to rebuild ancillary data
+        for db in ANC_DATABASES:
+            ANC_DATA[db] = sqlConnect('select * from %s order by time' % db,
+                 shost=PARAMS['ancillaryHost'], suser=UNAME, spasswd=PASSWD, sdb='pad')
+            ANC_DATA_FORMAT[db] = sqlConnect('show columns from %s' % db,
+                 shost=PARAMS['ancillaryHost'], suser=UNAME, spasswd=PASSWD, sdb='pad')
+        ANC_UPDATE = 0 # database may have changed, need to rebuild ancillary data
 ##        # dump databases for debugging
-##        for i in ancillaryData.keys():
-##            ad = ancillaryData[i]
+##        for i in ANC_DATA.keys():
+##            ad = ANC_DATA[i]
 ##            print '%s:' % i
 ##            for j in ad:
 ##                print j
@@ -933,45 +934,45 @@ def updateAncillaryDatabases():
         sys.exit()
 
 # dispose of processed data
-def disposeProcessedData(tableName, lastTime):
-    global packetsWritten
-    if parameters['startTime'] > 0.0:
-        minTime = parameters['startTime']
+def dispose_processed_data(tableName, lastTime):
+    global PACKETS_WRITTEN
+    if PARAMS['startTime'] > 0.0:
+        minTime = PARAMS['startTime']
     else:
         minTime = -10000000.0 # should be negative infinity
-    if parameters['delete']=='0':
+    if PARAMS['delete']=='0':
         return
 
     # make sure the number of packets to be deleted is not less than the number written
-    deleted = sqlConnect('select time from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime), minTime),shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
+    deleted = sqlConnect('select time from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime), minTime),shost=PARAMS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMS['database'])
     
-    packetsWrittenCheck = packetsWritten
-    packetsWritten = 0
+    packetsWrittenCheck = PACKETS_WRITTEN
+    PACKETS_WRITTEN = 0
 
-    if parameters['delete']=='1': # delete processed packets here
+    if PARAMS['delete']=='1': # delete processed packets here
         sqlConnect('delete from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime), minTime),
-            shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
+            shost=PARAMS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMS['database'])
     else: # move data to new database instead of deleting
-        newTable = parameters['delete']
+        newTable = PARAMS['delete']
         # see if table exists
         tb = sqlConnect('show tables',
-            shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
+            shost=PARAMS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMS['database'])
         for i in tb:
             if i[0] == newTable:
                 break
         else: # newTable not found, must create it 
             key = '' # check if we need a primary key
             col = sqlConnect('show columns from %s' % tableName,         
-                 shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
+                 shost=PARAMS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMS['database'])
             for c in col:
                 if c[0]=='time' and c[3]=='PRI':
                     key = 'PRIMARY KEY'
             sqlConnect('CREATE TABLE %s(time DOUBLE NOT NULL %s, packet BLOB NOT NULL, type INTEGER NOT NULL, header BLOB NOT NULL)' % (newTable, key),
-                 shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
+                 shost=PARAMS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMS['database'])
         sqlConnect('insert into %s select * from %s where time <= %.6lf and time > %.6lf' % (newTable,tableName,ceil4(lastTime), minTime),
-            shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
+            shost=PARAMS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMS['database'])
         sqlConnect('delete from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime), minTime),
-            shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
+            shost=PARAMS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMS['database'])
         
     if packetsWrittenCheck > len(deleted): # we should throw an exception here, but generate a warning instead
         print 'WARNING: more packets were written then are being deleted'
@@ -979,45 +980,46 @@ def disposeProcessedData(tableName, lastTime):
         print 'Wrote %s packets to PAD file, but deleting only %s from database' % (packetsWrittenCheck, len(deleted))
         
         # try to determine where the packet not getting deleted is occuring
-        around = sqlConnect('select time from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime)+5,ceil4(lastTime)-5 ),shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
+        around = sqlConnect('select time from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime)+5,ceil4(lastTime)-5 ),shost=PARAMS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMS['database'])
         # print out times within plus/minus 5 seconds of lastTime
         print 'The problem occurred writing and deleting packets in database time <= %.6lf' % ceil4(lastTime)
         print 'The next packet in the database to be processed is at time %.6lf' % around[0] # assumes that around will be after lastTime
 
 # get time,packet results from db table with a limit on number of results
-def getTimePacketQueryResults(table, ustart, ustop, lim, tuplabel):
+def get_tp_query_results(table, ustart, ustop, lim, tuplabel):
     """get time,packet results from db table with set limit"""
     querystr = 'select time,packet from %s where time > %.6f and time < %.6f order by time limit %d' % (table, ustart, ustop, lim)
     #print querystr
     #print 'select time,packet from %s where time > "%s" and time < "%s" order by time limit %d' % (table, unix2dtm(ustart), unix2dtm(ustop), lim)
     log.info('%04d QUERY %s < time < %s FROM %s LIMIT %d %s' % (tuplabel[0], unix2dtm(ustart), unix2dtm(ustop), table, lim, tuplabel[1]))
-    tpResults = sqlConnect(querystr, shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database'])
+    tpResults = sqlConnect(querystr, shost=PARAMS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMS['database'])
     return tpResults
 
-# one iteration of mainLoop
-def oneShot(pfs):
+# one iteration of main_loop
+def one_shot(pfs):
     global moreToDo, lastPacketTotal, log
-    log.debug('%04d ONESH inspect=%s %s' % (getLine(), parameters['inspect'], '-' * 99))
-    lastPacketTotal = totalPacketsFed
+    log.debug('%04d PACKETS_WRITTEN = %04d, TOTAL_PACKETS_FED = %04d @ top of one_shot' % (get_line(), PACKETS_WRITTEN, TOTAL_PACKETS_FED))
+    log.debug('%04d ONESH inspect=%s %s' % (get_line(), PARAMS['inspect'], '-' * 99))
+    lastPacketTotal = TOTAL_PACKETS_FED
     moreToDo = 0
     timeNow = time()
-    cutoffTime = timeNow - max(parameters['cutoffDelay'], minimumDelay)
-    if parameters['endTime'] > 0.0:
-        cutoffTime = min(cutoffTime, parameters['endTime'])
+    cutoffTime = timeNow - max(PARAMS['cutoffDelay'], MIN_DELAY)
+    if PARAMS['endTime'] > 0.0:
+        cutoffTime = min(cutoffTime, PARAMS['endTime'])
 
     # build list of tables to work with
     tables = []
     for table in sqlConnect('show tables',
-                     shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database']):
+                     shost=PARAMS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMS['database']):
         tableName = table[0]
         columns = []
         for col in sqlConnect('show columns from %s' % tableName,
-                       shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database']):
+                       shost=PARAMS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMS['database']):
             columns.append(col[0])
         if ('time' in columns) and ('packet' in columns):
             tables.append(tableName)
-    if parameters['tables'] != 'ALL':
-        wanted = split(parameters['tables'], ',')
+    if PARAMS['tables'] != 'ALL':
+        wanted = split(PARAMS['tables'], ',')
         newTables = []
         for w in wanted:
             if w in tables:
@@ -1039,28 +1041,28 @@ def oneShot(pfs):
         #########################################################
         # initialize PadGenerator or PacketInspector class here #
         #########################################################              
-        updateAncillaryDatabases()
+        update_anc_databases()
         preCutoffProgress = 0
         packetCount = 0
         if not pfs.has_key(tableName):
-            if parameters['inspect'] == 2:
+            if PARAMS['inspect'] == 2:
                 pf = PadGenerator(
-                    show_warnings=parameters['show_warnings'],
-                    maxsec_rttrace=parameters['maxsec_rttrace'],
-                    scale_factor=parameters['scale_factor'],
+                    show_warnings=PARAMS['show_warnings'],
+                    maxsec_rttrace=PARAMS['maxsec_rttrace'],
+                    scale_factor=PARAMS['scale_factor'],
                     )
-            elif parameters['inspect'] == 1:
-                pf = PacketInspector(parameters['show_warnings'])
+            elif PARAMS['inspect'] == 1:
+                pf = PacketInspector(PARAMS['show_warnings'])
             else:
-                pf = PacketFeeder(parameters['show_warnings'])
+                pf = PacketFeeder(PARAMS['show_warnings'])
             log.info('%s starting...' % pf.__class__.__name__)
             pfs[tableName] = pf
         else:
             pf = pfs[tableName]
-        start = ceil4(max(pf.lastTime(), parameters['startTime'])) # database has only 4 decimals of precision
+        start = ceil4(max(pf.lastTime(), PARAMS['startTime'])) # database has only 4 decimals of precision
         
         # write all packets before cutoffTime
-        tpResults = getTimePacketQueryResults(tableName, start, cutoffTime, maxResults, (getLine(), 'write all pkts before cutoffTime'))
+        tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'write all pkts before cutoffTime'))
         packetCount = packetCount + len(tpResults)
         while len(tpResults) != 0:
             for result in tpResults:
@@ -1068,87 +1070,89 @@ def oneShot(pfs):
                 if p.type == 'unknown':
                     printLog('unknown packet type at time %.4lf' % result[0])
                     continue
-                log.debug('%04d oneShot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(getLine(), tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
+                log.debug('%04d one_shot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(get_line(), tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
                 preCutoffProgress = 1                        
                 pf.writePacket(p)
                 
-            if packetCount >= maxResultsOneTable or len(tpResults) != maxResults or idleWait(0):
-                if packetCount >= maxResultsOneTable:
+            if packetCount >= MAX_RESULTS_PER_TABLE or len(tpResults) != MAX_RESULTS or idleWait(0):
+                if packetCount >= MAX_RESULTS_PER_TABLE:
                     moreToDo = 1 # go work on another table for a while
                 pf.end()
                 tpResults = []
             else:
-                start = ceil4(max(pf.lastTime(), parameters['startTime'])) # database has only 4 decimals of precision
-                tpResults = getTimePacketQueryResults(tableName, start, cutoffTime, maxResults, (getLine(), 'while more tpResults exist, query new start and new cutoffTime'))
+                start = ceil4(max(pf.lastTime(), PARAMS['startTime'])) # database has only 4 decimals of precision
+                tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'while more tpResults exist, query new start and new cutoffTime'))
                 packetCount = packetCount + len(tpResults)
 
-        log.debug('%04d oneShot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (getLine(), tableName, pf.lastTime(), moreToDo))
+        log.debug('%04d one_shot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (get_line(), tableName, pf.lastTime(), moreToDo))
             
         # write contiguous packets after cutoffTime
         if preCutoffProgress and not moreToDo:
             packetCount = 0
             stillContiguous = 1
-            maxTime = timeNow-minimumDelay
-            if parameters['endTime'] > 0.0:
-                maxTime = min(maxTime, parameters['endTime'])
-            if parameters['endTime'] == 0.0 or maxTime < parameters['endTime']:
-                tpResults = getTimePacketQueryResults(tableName, ceil4(pf.lastTime()), maxTime, maxResults, (getLine(), 'write contiguous pkts after cutoffTime'))
+            maxTime = timeNow-MIN_DELAY
+            if PARAMS['endTime'] > 0.0:
+                maxTime = min(maxTime, PARAMS['endTime'])
+            if PARAMS['endTime'] == 0.0 or maxTime < PARAMS['endTime']:
+                tpResults = get_tp_query_results(tableName, ceil4(pf.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'write contiguous pkts after cutoffTime'))
                 packetCount = packetCount + len(tpResults)
                 while stillContiguous and len(tpResults) != 0 and not idleWait(0):
                     for result in tpResults:
                         p = guessPacket(result[1])
                         if p.type == 'unknown':
                             continue
-                        log.debug('%04d oneShot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(getLine(), tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
+                        log.debug('%04d one_shot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(get_line(), tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
                         stillContiguous = p.contiguous(pf.lastPacket)
                         if not stillContiguous:
                             break
                         pf.writePacket(p, stillContiguous)
-                    if packetCount >= maxResultsOneTable or len(tpResults) != maxResults:
-                        if packetCount >= maxResultsOneTable:
+                    if packetCount >= MAX_RESULTS_PER_TABLE or len(tpResults) != MAX_RESULTS:
+                        if packetCount >= MAX_RESULTS_PER_TABLE:
                             moreToDo = 1 # go work on another table for a while
                         pf.end()
                         tpResults = []
                     elif stillContiguous:
-                        tpResults = getTimePacketQueryResults(tableName, ceil4(pf.lastTime()), maxTime, maxResults, (getLine(), 'while still contiguous and more tpResults...'))
+                        tpResults = get_tp_query_results(tableName, ceil4(pf.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'while still contiguous and more tpResults...'))
                         packetCount = packetCount + len(tpResults)
                     else:
                         tpResults = []
 
-        log.debug('%04d oneShot() finished AFTER-cutoff CONTIGUOUS packets for %s up to %.6f, moreToDo:%s' % (getLine(), tableName, pf.lastTime(), moreToDo))
+        log.debug('%04d one_shot() finished AFTER-cutoff CONTIGUOUS packets for %s up to %.6f, moreToDo:%s' % (get_line(), tableName, pf.lastTime(), moreToDo))
 
         pf.end()
-        disposeProcessedData(tableName, pf.lastTime())
+        dispose_processed_data(tableName, pf.lastTime())
+
+    log.debug('%04d PACKETS_WRITTEN = %04d, TOTAL_PACKETS_FED = %04d @ bottom of one_shot' % (get_line(), PACKETS_WRITTEN, TOTAL_PACKETS_FED))
 
 # main packet writing loop
-def mainLoop():
+def main_loop():
     global moreToDo, lastPacketTotal, log
     pfs = {}
 
     # we do not handle "ALL" tables or comma-separated list of tables
-    if ('ALL' in parameters['tables']) or (',' in parameters['tables']):
+    if ('ALL' in PARAMS['tables']) or (',' in PARAMS['tables']):
         msg = 'we do not handle "ALL" or comma-separated for tables parameter (Ted legacy not supported)'
         log.error(msg)
         raise Exception(msg)
     try:
-        while 1: # until killed or ctrl-C or no more data (if parameters['quitWhenDone'])
+        while 1: # until killed or ctrl-C or no more data (if PARAMS['quitWhenDone'])
             
             # perform one iteration of main loop (get/process packets)
-            oneShot(pfs)
+            one_shot(pfs)
             
             if not moreToDo:
-                log.info("%04d NORES totalPacketsFed=%d moreToDo=%d now=%s checkEverySec=%d" % (getLine(), totalPacketsFed, moreToDo, datetime.datetime.now(), sleepTime))
-                if lastPacketTotal == totalPacketsFed and parameters['quitWhenDone']:
-                    break # quit mainLoop() and exit the program
-                if idleWait(sleepTime):
-                    break # quit mainLoop() and exit the program
+                log.info("%04d NORES TOTAL_PACKETS_FED=%d moreToDo=%d now=%s checkEverySec=%d" % (get_line(), TOTAL_PACKETS_FED, moreToDo, datetime.datetime.now(), SLEEP_TIME))
+                if lastPacketTotal == TOTAL_PACKETS_FED and PARAMS['quitWhenDone']:
+                    break # quit main_loop() and exit the program
+                if idleWait(SLEEP_TIME):
+                    break # quit main_loop() and exit the program
             else:
                 if idleWait(0):
-                    break # quit mainLoop() and exit the program
+                    break # quit main_loop() and exit the program
 
     finally:
-        if benCount > 0:
-            print 'benchmark average: %.6f' % (benTotal/benCount)
+        if BENCH_COUNT > 0:
+            print 'benchmark average: %.6f' % (BENCH_TOTAL/BENCH_COUNT)
         # finalize any open files
         for k in pfs.keys():
             dataFileName = pfs[k].end()
@@ -1161,31 +1165,31 @@ def mainLoop():
             pickle.dump(pfs, file)
             file.close()
 
-# check parameters
-def parametersOK():
+# check PARAMS
+def params_ok():
     global log
-    b = parameters['inspect']
+    b = PARAMS['inspect']
     if b != '0' and b != '1' and b != '2':
         printLog(' inspect must be 0 or 1 (or 2)')
         return 0
     else:
-        parameters['inspect'] = atoi(parameters['inspect'])
+        PARAMS['inspect'] = atoi(PARAMS['inspect'])
 
-    b = parameters['resume']
+    b = PARAMS['resume']
     if b != '0' and b != '1':
         printLog(' resume must be 0 or 1')
         return 0
     else:
-        parameters['resume'] = atoi(parameters['resume'])
+        PARAMS['resume'] = atoi(PARAMS['resume'])
 
-    b = parameters['show_warnings']
+    b = PARAMS['show_warnings']
     if b != '0' and b != '1':
         printLog(' show_warnings must be 0 or 1')
         return 0
     else:
-        parameters['show_warnings'] = atoi(parameters['show_warnings'])
+        PARAMS['show_warnings'] = atoi(PARAMS['show_warnings'])
         
-    b = parameters['logLevel'].upper()
+    b = PARAMS['logLevel'].upper()
     if b != 'DEBUG' and b != 'INFO' and b != 'WARNING' and b != 'ERROR' and b != 'CRITICAL' :
         printLog(' logLevel must be DEBUG or INFO or WARNING or ERROR or CRITICAL')
         return 0
@@ -1201,69 +1205,69 @@ def parametersOK():
         log.addHandler(consoleHandler)
         log.info('Logging started.')
 
-    b = parameters['ascii']
+    b = PARAMS['ascii']
     if b != '0' and b != '1':
         printLog(' ascii must be 0 or 1')
         return 0
     else:
-        parameters['ascii'] = atoi(parameters['ascii'])
+        PARAMS['ascii'] = atoi(PARAMS['ascii'])
         
-    b = parameters['quitWhenDone']
+    b = PARAMS['quitWhenDone']
     if b != '0' and b != '1':
         printLog(' quitWhenDone must be 0 or 1')
         return 0
     else:
-        parameters['quitWhenDone'] = atoi(parameters['quitWhenDone'])
+        PARAMS['quitWhenDone'] = atoi(PARAMS['quitWhenDone'])
         
-    b = parameters['bigEndian']
+    b = PARAMS['bigEndian']
     if b != '0' and b != '1':
         printLog(' bigEndian must be 0 or 1')
         return 0
     else:
-        parameters['bigEndian'] = atoi(parameters['bigEndian'])
+        PARAMS['bigEndian'] = atoi(PARAMS['bigEndian'])
 
     try:
-        parameters['plot_span'] = int( rt_params['time.plot_span'] )
-        parameters['analysis_interval'] = int( rt_params['time.analysis_interval'] )
-        parameters['extra_intervals'] = int( rt_params['time.extra_intervals'] )        
+        PARAMS['plot_span'] = int( rt_params['time.plot_span'] )
+        PARAMS['analysis_interval'] = int( rt_params['time.analysis_interval'] )
+        PARAMS['extra_intervals'] = int( rt_params['time.extra_intervals'] )        
     except:
         printLog(' could not convert rt_params: (plot_span, analysis_interval, & extra_intervals) to INTEGER VALUES' )
         return 0
 
     try:
-        parameters['maxsec_rttrace'] = int( rt_params['time.extra_intervals'] * rt_params['time.analysis_interval'] + rt_params['time.plot_span'] )
+        PARAMS['maxsec_rttrace'] = int( rt_params['time.extra_intervals'] * rt_params['time.analysis_interval'] + rt_params['time.plot_span'] )
     except:
-        printLog(' could not convert maxsec_trace (%s) to INTEGER VALUE' % parameters['maxsec_rttrace'])
+        printLog(' could not convert maxsec_trace (%s) to INTEGER VALUE' % PARAMS['maxsec_rttrace'])
         return 0
   
-    b = int(parameters['scale_factor'])
+    b = int(PARAMS['scale_factor'])
     if b != 1000 and b != 1000*1000:
         printLog(' scale_factor MUST be 1000 (for mg) or 1000000 (for ug)')
         return 0
     else:
-        parameters['scale_factor'] = b
+        PARAMS['scale_factor'] = b
   
-    b = parameters['delete']
+    b = PARAMS['delete']
     if b != '0' and b != '1': # delete must be specifying a database name for moving data
         # make sure there is only one table specified
-        if parameters['tables']=='ALL' or len(split(parameters['delete'], ',')) != 1:
+        if PARAMS['tables']=='ALL' or len(split(PARAMS['delete'], ',')) != 1:
             printLog(' you must specify only 1 table with "tables=" if you')
             printLog(' set "delete=" to a table name for moving data instead of deleting')
             return 0
 
-    b = parameters['additionalHeader']
+    b = PARAMS['additionalHeader']
     if b != '\"\"':
         b = string.replace(b, '#', ' ')      # replace hash marks with spaces
         b = string.replace(b, '~~', chr(10)) # replace double tilde with carriage returns
         b = string.replace(b, '~', chr(9))   # replace single tilde with tab
-        parameters['additionalHeader'] = b
+        PARAMS['additionalHeader'] = b
 
-    parameters['startTime'] = atof(parameters['startTime'])
-    parameters['endTime'] = atof(parameters['endTime'])
-    parameters['cutoffDelay'] = atof(parameters['cutoffDelay'])
-    parameters['maxFileTime'] = atof(parameters['maxFileTime'])
+    PARAMS['startTime'] = atof(PARAMS['startTime'])
+    PARAMS['endTime'] = atof(PARAMS['endTime'])
+    PARAMS['cutoffDelay'] = atof(PARAMS['cutoffDelay'])
+    PARAMS['maxFileTime'] = atof(PARAMS['maxFileTime'])
 
-    b = parameters['destination']
+    b = PARAMS['destination']
     if b != '.':
         printLog(UnixToHumanTime(time(), 1) + ' testing scp connection...')
         dest = split(b, ':')
@@ -1278,19 +1282,19 @@ def parametersOK():
             sys.exit()
         printLog(' scp OK')
 
-    if 0 == parameters['resume']:
+    if 0 == PARAMS['resume']:
         # remove any stale resume files
         getoutput('rm -rf packetFeederState temp.*')
     
     return 1
 
 # print usage
-def printUsage():
+def print_usage():
     print version
     print 'usage: PacketFeeder.py [options]'
     print '       options (and default values) are:'
-    for i in defaults.keys():
-        print '            %s=%s' % (i, defaults[i])
+    for i in DEFAULTS.keys():
+        print '            %s=%s' % (i, DEFAULTS[i])
 
 def demo_external_long_running(func, func_when_done, val=30):
     from time import sleep
@@ -1361,13 +1365,13 @@ def get_examplegen():
 
 def get_padgen():
     """intialize/get PAD datagen"""
-    return PadGenerator(parameters['show_warnings'],
-                           parameters['maxsec_rttrace'],
-                           parameters['scale_factor'])
+    return PadGenerator(PARAMS['show_warnings'],
+                           PARAMS['maxsec_rttrace'],
+                           PARAMS['scale_factor'])
 
 def launch_strip_chart(get_datagen, analysis_interval, plot_span, extra_intervals, title, maxpts):
     """launch the strip chart gui"""
-    # preamble (packetfeeder.py mainLoop code before first oneShot)
+    # preamble (packetfeeder.py main_loop code before first one_shot)
     global moreToDo, lastPacketTotal, log
     
     # initialize and get "datagen" object, whose next method gets most recent data
@@ -1395,19 +1399,25 @@ if __name__ == '__main__':
         if (2 != len(pair)):
             print 'bad parameter: %s' % p
             break
-        if not parameters.has_key(pair[0]):
+        if not PARAMS.has_key(pair[0]):
             print 'bad parameter: %s' % pair[0]
             break
         else:
-            parameters[pair[0]] = pair[1]
+            PARAMS[pair[0]] = pair[1]
     else:
-        if parametersOK():
-                        
+        if params_ok():
+
+            pg = PadGenerator()
+            for x in range(2):
+                pg.next()
+                log.debug( '%04d done with pg.next() #%d and TOTAL_PACKETS_FED = %d' % (get_line(), x+1, TOTAL_PACKETS_FED) )
+            raise SystemExit
+
             ## launch strip chart
             #launch_strip_chart(get_padgen, # get_examplegen
-            #                   parameters['analysis_interval'],
-            #                   parameters['plot_span'],
-            #                   parameters['extra_intervals'],
+            #                   PARAMS['analysis_interval'],
+            #                   PARAMS['plot_span'],
+            #                   PARAMS['extra_intervals'],
             #                   'untitled',
             #                   85)
             #raise SystemExit
@@ -1416,8 +1426,8 @@ if __name__ == '__main__':
             #demo_wx_call_after( demo_external_long_running ); raise SystemExit
             #demo_trace_header(); raise SystemExit
             
-            # mainLoop and exit just like packetWriter.py
-            mainLoop()
+            # main_loop and exit just like packetWriter.py
+            main_loop()
             sys.exit()
             
-    printUsage()
+    print_usage()
