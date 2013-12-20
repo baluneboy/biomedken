@@ -508,11 +508,14 @@ class PacketInspector(PacketFeeder):
 # class to feed packet data hopefully to a good strip chart display
 class PadGenerator(PacketInspector):
     """Generator for RtTrace using real-time scaling."""
-    def __init__(self, show_warnings=1, maxsec_rttrace=7200, scale_factor=1000, pf_params={}):
+    def __init__(self, show_warnings=1, maxsec_rttrace=7200, scale_factor=1000):
         """initialize packet-based, real-time trace PAD generator with scaling"""
         super(PadGenerator, self).__init__(show_warnings)
         self.maxsec_rttrace = maxsec_rttrace # in seconds for EACH (x,y,z) rt_trace
         self.scale_factor = scale_factor
+        
+        # set totalPacketFed to zero initially
+        self.totalPacketsFed = 0
 
     def __str__(self):
         #s = ''
@@ -523,13 +526,123 @@ class PadGenerator(PacketInspector):
             return 'lastPacket.endTime()=%s' % unix2dtm( self.lastPacket.endTime() )
         else:
             return 'HEY...lastPacket is %s' % str(self.lastPacket)
-
+ 
+    # oneShot classied up
     def next(self):
-        #log.debug('next called at %s' % datetime.datetime.now())
-        if self.lastPacket:
-            return self.rt_trace['x'][self.num]
+        log.debug('%04d ONESH inspect=%s %s' % (getLine(), parameters['inspect'], '-' * 99))
+        self.lastPacketTotal = self.totalPacketsFed
+        self.moreToDo = 0
+        timeNow = time()
+        cutoffTime = timeNow - max(parameters['cutoffDelay'], minimumDelay)
+        if parameters['endTime'] > 0.0:
+            cutoffTime = min(cutoffTime, parameters['endTime'])
+    
+        # verify host has table we want
+        tables = []
+        for table in sqlConnect('show tables',
+                         shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database']):
+            tableName = table[0]
+            columns = []
+            for col in sqlConnect('show columns from %s' % tableName,
+                           shost=parameters['host'], suser=UNAME, spasswd=PASSWD, sdb=parameters['database']):
+                columns.append(col[0])
+            if ('time' in columns) and ('packet' in columns):
+                tables.append(tableName)
+        if parameters['tables'] != 'ALL':
+            wanted = split(parameters['tables'], ',')
+            newTables = []
+            for w in wanted:
+                if w in tables:
+                    newTables.append(w)
+                else:
+                    t = UnixToHumanTime(time(), 1)
+                    t = t + ' warning: table %s was not found, ignoring it' % w
+                    printLog(t)
+            tables = newTables
         else:
-            return 0
+            msg = 'This program does NOT handle "ALL" or comma-delimited for tables parameter (Ted legacy NOT supported).'
+            log.error(msg)
+            raise Exception(msg)
+        # here's where we check for one and only one table of interest on host
+        if len(tables) != 1:
+            msg = 'did not find exactly one table for %s on host %s' % (parameters['tables'], parameters['host'])
+            self.log.error(msg)
+            raise Exception(msg)
+        
+        tableName = tables[0]
+        if idleWait(0):
+            msg = 'idleWait(0) returned True, this is where packetWriter.py would itself exit.'
+            self.log.error(msg)
+            raise Exception(msg)
+
+        ############################################
+        # get key info for processing packets here #
+        ############################################
+        updateAncillaryDatabases()
+        preCutoffProgress = 0
+        packetCount = 0
+        start = ceil4(max(self.lastTime(), parameters['startTime'])) # database has only 4 decimals of precision
+        
+        # write all packets before cutoffTime
+        tpResults = getTimePacketQueryResults(tableName, start, cutoffTime, maxResults, (getLine(), 'write all pkts before cutoffTime'))
+        packetCount = packetCount + len(tpResults)
+        while len(tpResults) != 0:
+            for result in tpResults:
+                p = guessPacket(result[1], showWarnings=1)
+                if p.type == 'unknown':
+                    printLog('unknown packet type at time %.4lf' % result[0])
+                    continue
+                log.debug('%04d oneShot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(getLine(), tableName, p.type, result[0], p.contiguous(self.lastPacket)))
+                preCutoffProgress = 1                        
+                self.writePacket(p)
+                
+            if packetCount >= maxResultsOneTable or len(tpResults) != maxResults or idleWait(0):
+                if packetCount >= maxResultsOneTable:
+                    self.moreToDo = 1 # go work on another table for a while
+                self.end()
+                tpResults = []
+            else:
+                start = ceil4(max(self.lastTime(), parameters['startTime'])) # database has only 4 decimals of precision
+                tpResults = getTimePacketQueryResults(tableName, start, cutoffTime, maxResults, (getLine(), 'while more tpResults exist, query new start and new cutoffTime'))
+                packetCount = packetCount + len(tpResults)
+
+        log.debug('%04d oneShot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (getLine(), tableName, self.lastTime(), self.moreToDo))
+            
+        # write contiguous packets after cutoffTime
+        if preCutoffProgress and not self.moreToDo:
+            packetCount = 0
+            stillContiguous = 1
+            maxTime = timeNow-minimumDelay
+            if parameters['endTime'] > 0.0:
+                maxTime = min(maxTime, parameters['endTime'])
+            if parameters['endTime'] == 0.0 or maxTime < parameters['endTime']:
+                tpResults = getTimePacketQueryResults(tableName, ceil4(self.lastTime()), maxTime, maxResults, (getLine(), 'write contiguous pkts after cutoffTime'))
+                packetCount = packetCount + len(tpResults)
+                while stillContiguous and len(tpResults) != 0 and not idleWait(0):
+                    for result in tpResults:
+                        p = guessPacket(result[1])
+                        if p.type == 'unknown':
+                            continue
+                        log.debug('%04d oneShot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(getLine(), tableName, p.type, result[0], p.contiguous(self.lastPacket)))
+                        stillContiguous = p.contiguous(self.lastPacket)
+                        if not stillContiguous:
+                            break
+                        self.writePacket(p, stillContiguous)
+                    if packetCount >= maxResultsOneTable or len(tpResults) != maxResults:
+                        if packetCount >= maxResultsOneTable:
+                            self.moreToDo = 1 # go work on another table for a while
+                        self.end()
+                        tpResults = []
+                    elif stillContiguous:
+                        tpResults = getTimePacketQueryResults(tableName, ceil4(self.lastTime()), maxTime, maxResults, (getLine(), 'while still contiguous and more tpResults...'))
+                        packetCount = packetCount + len(tpResults)
+                    else:
+                        tpResults = []
+
+        log.debug('%04d oneShot() finished AFTER-cutoff CONTIGUOUS packets for %s up to %.6f, moreToDo:%s' % (getLine(), tableName, self.lastTime(), self.moreToDo))
+
+        self.end()
+        disposeProcessedData(tableName, self.lastTime())
 
     def init_realtime_trace_registerproc(self, hdr, ax):
         """initialize real-time traces and register process for scale-factor"""
@@ -935,7 +1048,7 @@ def oneShot(pfs):
             break # check for shutdown in progress
 
         #########################################################
-        # initialize PacketFeeder of PacketInspector class here #
+        # initialize PadGenerator or PacketInspector class here #
         #########################################################              
         updateAncillaryDatabases()
         preCutoffProgress = 0
@@ -962,7 +1075,7 @@ def oneShot(pfs):
         packetCount = packetCount + len(tpResults)
         while len(tpResults) != 0:
             for result in tpResults:
-                p = guessPacket(result[1], show_warnings=1)
+                p = guessPacket(result[1], showWarnings=1)
                 if p.type == 'unknown':
                     printLog('unknown packet type at time %.4lf' % result[0])
                     continue
@@ -1205,12 +1318,6 @@ def printUsage():
     for i in defaults.keys():
         print '            %s=%s' % (i, defaults[i])
 
-def run_strip_chart(datagen, analysis_interval, plot_span, extra_intervals, title, maxpts):
-    app = wx.PySimpleApp()
-    app.frame = GraphFrame(datagen, analysis_interval, plot_span, extra_intervals, title, maxpts)
-    app.frame.Show()
-    app.MainLoop()
-
 def demo_external_long_running(func, func_when_done, val=30):
     from time import sleep
     sleep(2)
@@ -1273,6 +1380,36 @@ def demo_trace_header():
     traces.append( Trace( np.array( range(500)), header=hdr ) )
     for tr in traces: print tr
 
+def get_examplegen():
+    """intialize/get example datagen"""
+    from pims.gui.stripchart import DataGenExample
+    return DataGenExample(scale_factor=0.01, num_splits=5)
+
+def get_padgen():
+    """intialize/get PAD datagen"""
+    return PadGenerator(parameters['show_warnings'],
+                           parameters['maxsec_rttrace'],
+                           parameters['scale_factor'])
+
+def launch_strip_chart(get_datagen, analysis_interval, plot_span, extra_intervals, title, maxpts):
+    """launch the strip chart gui"""
+    # preamble (packetfeeder.py mainLoop code before first oneShot)
+    global moreToDo, lastPacketTotal, log
+    
+    # initialize and get "datagen" object, whose next method gets most recent data
+    datagen = get_datagen()
+
+    # launch strip chart
+    app = wx.PySimpleApp()
+    app.frame = GraphFrame(datagen,
+                           analysis_interval,
+                           plot_span,
+                           extra_intervals,
+                           title,
+                           maxpts) # maxlen for data deque used in stripchart
+    app.frame.Show()
+    app.MainLoop()
+
 # e.g. python packetfeeder.py host=manbearpig tables=121f05 ancillaryHost=kyle startTime=1382551198.0 endTime=1382552398.0
 # e.g. ON PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=None startTime=1378742112.0 inspect=1
 if __name__ == '__main__': 
@@ -1288,19 +1425,14 @@ if __name__ == '__main__':
             parameters[pair[0]] = pair[1]
     else:
         if parametersOK():
-
-            #from pims.gui.stripchart import DataGenExample
-            #datagen = DataGenExample(scale_factor=0.01, num_splits=5)
-            datagen = PadGenerator(parameters['show_warnings'],
-                                   parameters['maxsec_rttrace'],
-                                   parameters['scale_factor'])
-            parameters['maxpts'] = 600
-            parameters['title'] = 'untitled'
-            run_strip_chart(datagen,    parameters['analysis_interval'],
-                                        parameters['plot_span'],
-                                        parameters['extra_intervals'],
-                                        parameters['title'],
-                                        parameters['maxpts'])
+            
+            # launch strip chart
+            launch_strip_chart(get_padgen, # get_examplegen
+                               parameters['analysis_interval'],
+                               parameters['plot_span'],
+                               parameters['extra_intervals'],
+                               'untitled',
+                               85)
             raise SystemExit
 
             #demo_wx_call_after( demo_external_long_running ); raise SystemExit
