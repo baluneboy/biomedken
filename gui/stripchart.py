@@ -37,6 +37,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import \
       FigureCanvasWxAgg as FigCanvas, \
       NavigationToolbar2WxAgg as NavigationToolbar
+from pims.gui.gridsimple_demo import SimpleGrid
 
 from obspy.realtime import RtTrace
 from obspy import read
@@ -214,17 +215,21 @@ class GraphFrame(wx.Frame):
 
     """
 
-    def __init__(self, datagen, analysis_interval, plot_span, extra_intervals, title, maxpts):
+    def __init__(self, datagen, analysis_interval, plot_span, extra_intervals, title, maxpts, log=None):
         self.datagen = datagen
         self.analysis_interval = analysis_interval
         self.plot_span = plot_span
         self.extra_intervals = extra_intervals
         self.title = '%s using %s' % (title, self.datagen.__class__.__name__)
         self.maxpts = maxpts
+        if not log:
+            log = self.get_simple_log()
+        self.log = log
         
         wx.Frame.__init__(self, None, -1, self.title)
 
-        self.create_menu()
+        #self.create_menu() # on close, this causes LIBDBUSMENU-GLIB-WARNING Trying to remove a child that doesn't believe we're it's parent.
+        
         self.create_status_bar()
         self.create_main_panel()
 
@@ -241,6 +246,23 @@ class GraphFrame(wx.Frame):
         self.redraw_timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.on_redraw_timer, self.redraw_timer)        
         self.redraw_timer.Start(200) # milliseconds
+        
+        self.Maximize()
+
+    def get_simple_log(self):
+        import logging
+        logFormatter = logging.Formatter("%(asctime)s %(threadName)-12.12s %(levelname)-5.5s %(message)s")
+        log = logging.getLogger('pims.gui.stripchart')
+        #log.setLevel( getattr(logging, level.upper()) )
+        log.setLevel('DEBUG')
+        fileHandler = logging.FileHandler("{0}/{1}.log".format('/tmp', 'simple_log'))
+        fileHandler.setFormatter(logFormatter)
+        log.addHandler(fileHandler)
+        consoleHandler = logging.StreamHandler()
+        consoleHandler.setFormatter(logFormatter)
+        log.addHandler(consoleHandler)
+        log.info('Logging started.')
+        return log
 
     def update_info(self, info_control, info_tuple):
         info_control.begin_time_text.SetLabel(info_tuple[0])
@@ -269,6 +291,8 @@ class GraphFrame(wx.Frame):
 
         self.init_plot()
         self.canvas = FigCanvas(self.panel, -1, self.fig)
+
+        self.grid = SimpleGrid(self.panel, self.log)
 
         self.xmin_control = BoundControlBox(self.panel, -1, "X min", 0)
         self.xmax_control = BoundControlBox(self.panel, -1, "X max", 50)
@@ -311,7 +335,8 @@ class GraphFrame(wx.Frame):
         self.hbox2.AddSpacer(30)
         self.hbox2.Add(self.current_info, border=5, flag=wx.ALL)
         self.hbox2.AddSpacer(24)
-        self.hbox2.Add(self.cumulative_info, border=5, flag=wx.ALL)        
+        self.hbox2.Add(self.cumulative_info, border=5, flag=wx.ALL)
+        self.hbox2.Add(self.grid, border=9, flag=wx.ALL)
         
         self.vbox = wx.BoxSizer(wx.VERTICAL)
         self.vbox.Add(self.canvas, 1, flag=wx.LEFT | wx.TOP | wx.GROW)        
@@ -335,15 +360,19 @@ class GraphFrame(wx.Frame):
         self.SetStatusText(t, SB_RIGHT)
 
     def init_plot(self):
+        """initialize the plot"""        
         self.dpi = 100
         self.fig = Figure((3.0, 3.0), dpi=self.dpi)
 
+        rect = self.fig.patch
+        rect.set_facecolor('white') # works with plt.show(), but not plt.savefig
+
         self.axes = self.fig.add_subplot(111)
         self.axes.set_axis_bgcolor('white')
-        self.axes.set_title('testing with random data', size=12)
+        self.axes.set_title('testing with random data', size=18)
         
-        pylab.setp(self.axes.get_xticklabels(), fontsize=8)
-        pylab.setp(self.axes.get_yticklabels(), fontsize=8)
+        pylab.setp(self.axes.get_xticklabels(), fontsize=16)
+        pylab.setp(self.axes.get_yticklabels(), fontsize=16)
 
         # plot the data as a line series, and save the reference 
         # to the plotted line series
@@ -353,6 +382,9 @@ class GraphFrame(wx.Frame):
             linewidth=1,
             color=(1, 0, 0),
             )[0]
+        
+        # to save fig with same facecolor as rt plot, use:
+        #fig.savefig('whatever.png', facecolor=fig.get_facecolor(), edgecolor='none')
 
     def draw_plot(self):
         """ Redraws the plot
