@@ -544,6 +544,23 @@ class RoadmapsOutputGrid(TallyOutputGrid):
                     self.runMatlabRoadmap(sensor, dtm, 'configure_roadmap_spectrogram', "''")
                 self.runIkeRepairRoadmap(dtm)
 
+class StripChartInputGrid(CheapPadHoursInputGrid):
+    
+    def __init__(self, parent, log, pattern=None):
+        super(StripChartInputGrid, self).__init__(parent, log, pattern=pattern)
+
+    def get_default_values(self):
+        """Gather columns_labels, row_labels, and rows for input grid defaults."""
+        self.column_labels = [ 'value']
+        self.rows = [
+        #    row_label          default_value1
+        #--------------------------------------------------
+            ('start',           '2013-10-22',           parser.parse),
+            ('stop',            '2013-11-01',           parser.parse),
+            ('update_sec',      '600',                  int),
+        ]
+        self.row_labels = [ t[0] for t in self.rows ]
+
 if __name__ == '__main__':
     # SEE ROADMAPS TALLY GRID FOR F02, F04, AND HIRAP FOR 15-OCT-2013 THRU 18-NOV-2013
     from pims.utils.gridworkers import demo2 as roadmaps, demo1 as pads

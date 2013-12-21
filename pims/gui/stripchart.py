@@ -28,6 +28,7 @@ import numpy as np
 import pylab
 from collections import deque
 import datetime
+from wx.lib.pubsub import Publisher
 
 # The recommended way to use wx with mpl is with the WXAgg
 # backend. 
@@ -37,7 +38,9 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import \
       FigureCanvasWxAgg as FigCanvas, \
       NavigationToolbar2WxAgg as NavigationToolbar
-from pims.gui.gridsimple_demo import SimpleGrid
+
+from pims.gui.iogrids import InputPanel
+from pims.gui.tally_grid import StripChartInputGrid  
 
 from obspy.realtime import RtTrace
 from obspy import read
@@ -45,7 +48,7 @@ from obspy import read
 # Status bar constants
 SB_LEFT = 0
 SB_RIGHT = 1
-SB_MSEC = 2000
+SB_MSEC = 2000 # update lower-right time every 2000ms
 
 class DataGenRandom(object):
     """ A silly class that generates pseudo-random data for plot display."""
@@ -214,8 +217,8 @@ class GraphFrame(wx.Frame):
     maxpts is integer max length of ultimate data array ()
 
     """
-
     def __init__(self, datagen, analysis_interval, plot_span, extra_intervals, title, maxpts, log=None):
+        
         self.datagen = datagen
         self.analysis_interval = analysis_interval
         self.plot_span = plot_span
@@ -231,7 +234,7 @@ class GraphFrame(wx.Frame):
         #self.create_menu() # on close, this causes LIBDBUSMENU-GLIB-WARNING Trying to remove a child that doesn't believe we're it's parent.
         
         self.create_status_bar()
-        self.create_main_panel()
+        self.create_panels()
 
         # we must limit size of otherwise ever-growing data object
         self.data = deque( maxlen=self.maxpts )
@@ -286,46 +289,66 @@ class GraphFrame(wx.Frame):
         self.menubar.Append(menu_file, "&File")
         self.SetMenuBar(self.menubar)
 
-    def create_main_panel(self):
-        self.panel = wx.Panel(self)
+    def create_panels(self):
+        """layout panels"""
+        
+        self.input_panel = InputPanel(self, self.log, StripChartInputGrid, None)
+        self.input_panel.run_btn.Hide()
+        
+        self.output_panel = wx.Panel(self)
+        self.output_panel.Hide()
+        
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer.Add(self.input_panel, 1, wx.EXPAND)
+        self.sizer.Add(self.output_panel, 1, wx.EXPAND)
+        self.SetSizer(self.sizer)        
 
+        Publisher().subscribe(self.switch_panels, "switch")
+        
         self.init_plot()
-        self.canvas = FigCanvas(self.panel, -1, self.fig)
+        self.canvas = FigCanvas(self.output_panel, -1, self.fig)
 
-        self.grid = SimpleGrid(self.panel, self.log)
+        #self.grid = SimpleGrid(self.output_panel, self.log)
 
-        self.xmin_control = BoundControlBox(self.panel, -1, "X min", 0)
-        self.xmax_control = BoundControlBox(self.panel, -1, "X max", 50)
-        self.ymin_control = BoundControlBox(self.panel, -1, "Y min", 0)
-        self.ymax_control = BoundControlBox(self.panel, -1, "Y max", 100)
-        self.current_info = BeginEndSamplesBox(self.panel, -1, "Current")
-        self.cumulative_info = BeginEndSamplesBox(self.panel, -1, "Cumulative")        
+        self.xmin_control = BoundControlBox(self.output_panel, -1, "X min", 0)
+        self.xmax_control = BoundControlBox(self.output_panel, -1, "X max", 50)
+        self.ymin_control = BoundControlBox(self.output_panel, -1, "Y min", 0)
+        self.ymax_control = BoundControlBox(self.output_panel, -1, "Y max", 100)
+        self.current_info = BeginEndSamplesBox(self.output_panel, -1, "Current")
+        self.cumulative_info = BeginEndSamplesBox(self.output_panel, -1, "Cumulative")        
 
-        self.step_button = wx.Button(self.panel, -1, "Step")
+        self.step_button = wx.Button(self.output_panel, -1, "Step")
         self.Bind(wx.EVT_BUTTON, self.on_step_button, self.step_button)
         self.Bind(wx.EVT_UPDATE_UI, self.on_update_step_button, self.step_button)
         
-        self.pause_button = wx.Button(self.panel, -1, "Pause")
+        self.pause_button = wx.Button(self.output_panel, -1, "Pause")
         self.Bind(wx.EVT_BUTTON, self.on_pause_button, self.pause_button)
         self.Bind(wx.EVT_UPDATE_UI, self.on_update_pause_button, self.pause_button)
         
-        self.cb_grid = wx.CheckBox(self.panel, -1, "Show Grid", style=wx.ALIGN_RIGHT)
+        self.cb_grid = wx.CheckBox(self.output_panel, -1, "Show Grid", style=wx.ALIGN_RIGHT)
         self.Bind(wx.EVT_CHECKBOX, self.on_cb_grid, self.cb_grid)
         self.cb_grid.SetValue(True)
         
-        self.cb_xlab = wx.CheckBox(self.panel, -1, "Show X labels", style=wx.ALIGN_RIGHT)
+        self.cb_xlab = wx.CheckBox(self.output_panel, -1, "Show X labels", style=wx.ALIGN_RIGHT)
         self.Bind(wx.EVT_CHECKBOX, self.on_cb_xlab, self.cb_xlab)        
         self.cb_xlab.SetValue(True)
+
+        self.switch_btn = wx.Button(self.output_panel, -1, "Show Inputs")
+        self.switch_btn.Bind(wx.EVT_BUTTON, self.switchback)        
         
+        # hbox1 for buttons and checkbox controls    
         self.hbox1 = wx.BoxSizer(wx.HORIZONTAL)
+        self.hbox1.Add(self.switch_btn, border=5, flag=wx.ALL | wx.ALIGN_CENTER_VERTICAL)
+        self.hbox1.AddSpacer(10)
         self.hbox1.Add(self.step_button, border=5, flag=wx.ALL | wx.ALIGN_CENTER_VERTICAL)
-        self.hbox1.AddSpacer(20)
+        self.hbox1.AddSpacer(10)
         self.hbox1.Add(self.pause_button, border=5, flag=wx.ALL | wx.ALIGN_CENTER_VERTICAL)
-        self.hbox1.AddSpacer(20)        
+        self.hbox1.AddSpacer(10)        
         self.hbox1.Add(self.cb_grid, border=5, flag=wx.ALL | wx.ALIGN_CENTER_VERTICAL)
         self.hbox1.AddSpacer(10)
         self.hbox1.Add(self.cb_xlab, border=5, flag=wx.ALL | wx.ALIGN_CENTER_VERTICAL)
         
+        # hbox2 for xy min/max controls, and current/cumulative info
         self.hbox2 = wx.BoxSizer(wx.HORIZONTAL)
         self.hbox2.Add(self.xmin_control, border=5, flag=wx.ALL)
         self.hbox2.Add(self.xmax_control, border=5, flag=wx.ALL)
@@ -336,16 +359,38 @@ class GraphFrame(wx.Frame):
         self.hbox2.Add(self.current_info, border=5, flag=wx.ALL)
         self.hbox2.AddSpacer(24)
         self.hbox2.Add(self.cumulative_info, border=5, flag=wx.ALL)
-        self.hbox2.Add(self.grid, border=9, flag=wx.ALL)
         
         self.vbox = wx.BoxSizer(wx.VERTICAL)
-        self.vbox.Add(self.canvas, 1, flag=wx.LEFT | wx.TOP | wx.GROW)        
-        self.vbox.Add(self.hbox1, 0, flag=wx.ALIGN_LEFT | wx.TOP)
-        self.vbox.Add(self.hbox2, 0, flag=wx.ALIGN_LEFT | wx.TOP)
+        self.vbox.Add(self.hbox1,  0, flag=wx.ALIGN_LEFT | wx.TOP)
+        self.vbox.Add(self.hbox2,  0, flag=wx.ALIGN_LEFT | wx.TOP)
+        self.vbox.Add(self.canvas, 5, flag=wx.LEFT | wx.TOP | wx.GROW)        
         
-        self.panel.SetSizer(self.vbox)
+        self.output_panel.SetSizer(self.vbox)
         self.vbox.Fit(self)
     
+    def switchback(self, event):
+        """Callback for panel switch button."""
+        Publisher.sendMessage("switch", "message")
+    
+    def on_switch_panels(self, event):
+        """"""
+        id = event.GetId()
+        self.switch_panels(id)
+        
+    def switch_panels(self, msg=None):
+        """switch panels"""
+        if self.input_panel.IsShown():
+            self.SetTitle("Output Panel")
+            self.input_panel.Hide()
+            self.output_panel.Show()
+            self.sizer.Layout()
+        else:
+            self.SetTitle("Input Panel")
+            self.input_panel.Show()
+            self.output_panel.Hide()
+        self.Fit()
+        self.Layout()
+
     def create_status_bar(self):
         self.statusbar = self.CreateStatusBar(2, 0)        
         self.statusbar.SetStatusWidths([-1, 300])
@@ -524,3 +569,32 @@ def demo_pad_gen():
 
 if __name__ == '__main__':
     demo_pad_gen()
+#
+#-----------------------------------
+#FIRST PACKET
+#-----------------------------------
+#SAMS2, 121f05, X-axis
+#JPM1F5, ER4, Drawer 2
+#sample_rate 500 (Hz > sps)
+#
+#-----------------------------------
+#THIS PACKET 0279
+#-----------------------------------
+#BEGINS: 2013-09-09T15:20:15.672885Z
+#ENDS:   2013-09-09T15:20:15.818885Z
+#74 samples
+#packetGap: 0.1480000019
+#sampleGap: 0.0020000935
+#
+#-----------------------------------
+#CUMULATIVE REAL-TIME TRACE
+#-----------------------------------
+#BEGINS: 2013-09-09T15:20:15.672885Z
+#ENDS:   2013-09-09T15:20:15.818885Z
+#74 samples
+#
+#-----------------------------------
+#MISC
+#-----------------------------------
+#TOTAL_PACKETS_FED
+#NEXT_COUNT
