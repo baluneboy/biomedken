@@ -112,3 +112,6 @@ mkfifo pipe && (cat pipe | grep yoda &) && df -h | tee pipe | awk 'NR>1{exit};1'
 
 # check packetWriters
 for H in $TSCCOMPUTERS; do ssh ${H} pgrep -fl packetWriter; done
+
+# a line in crontab to check mem usage
+#*/15 * * * *  top -b -n1 -c -p $(pgrep -d',' -f packetReaderThreadGui) >> /tmp/top.txt
