@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
+# TODO use this along with text in readme_ken.txt as upgrade to "pads" and "roadmaps" tally_grid.py
 import wx
 import os
 import sys
 import logging
 from gridsimple_demo import SimpleGrid
 import wx.lib.agw.flatnotebook as fnb
-from pims.gui.stripchart import GraphFrame, DataGenExample
 
 class MyFlatNotebook(fnb.FlatNotebook):
 
@@ -58,20 +58,12 @@ class FlatNotebookDemo(wx.Frame):
         
         # Add some pages to the first notebook
         self.Freeze()
-        
-        graph_frame = GraphFrame(DataGenExample(),
-                                                    1,
-                                                    120,
-                                                    2,
-                                                    'title',
-                                                    200) # maxlen for data deque used in stripchart        
-        self.book.AddPage(graph_frame, "Book 1, Page 1 is GraphFrame")
-
-        text = wx.TextCtrl(self.book, -1, "First Book Page 2\n", style=wx.TE_MULTILINE|wx.TE_READONLY)
-        self.book.AddPage(text,  "Second Book Page 2")
 
         grid = SimpleGrid(self.book, self.log)
         self.book.AddPage(grid, "1st book Page 3 Grid FTW")
+        
+        text = wx.TextCtrl(self.book, -1, "First Book Page 2\n", style=wx.TE_MULTILINE|wx.TE_READONLY)
+        self.book.AddPage(text,  "Second Book Page 2")
 
         self.Thaw()         
 
@@ -79,27 +71,26 @@ class FlatNotebookDemo(wx.Frame):
         bookStyle |= fnb.FNB_ALLOW_FOREIGN_DND 
         self.secondBook = MyFlatNotebook(self, wx.ID_ANY, agwStyle=bookStyle, log=self.log)
 
-        # stupid grid
-        mainSizer.Add(self.book, 6, wx.EXPAND)
+        mainSizer.Add(self.book, 1, wx.EXPAND)
 
         # Add spacer between the books
         spacer = wx.Panel(self, -1)
         spacer.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_3DFACE))
         mainSizer.Add(spacer, 0, wx.ALL | wx.EXPAND)
 
-        mainSizer.Add(self.secondBook, 2, wx.EXPAND)
+        mainSizer.Add(self.secondBook, 1, wx.EXPAND)
 
         # Add some pages to the second notebook
         self.Freeze()
 
+        grid = SimpleGrid(self.secondBook, self.log)
+        self.secondBook.AddPage(grid, "2nd book Page 3 Grid FTW")
+        
         text = wx.TextCtrl(self.secondBook, -1, "Second Book Page 1\n", style=wx.TE_MULTILINE|wx.TE_READONLY)  
         self.secondBook.AddPage(text, "Second Book Page 1")
 
         text = wx.TextCtrl(self.secondBook, -1, "Second Book Page 2\n", style=wx.TE_MULTILINE|wx.TE_READONLY)
         self.secondBook.AddPage(text,  "Second Book Page 2")
-
-        grid = SimpleGrid(self.secondBook, self.log)
-        self.secondBook.AddPage(grid, "2nd book Page 3 Grid FTW")
 
         self.Thaw() 
 
