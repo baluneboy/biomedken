@@ -331,7 +331,7 @@ class ValidateTimeInterval(object):
 default_params = {
 
     # path(s)
-    'snap_path'          : ['/tmp', validate_path_exists], # FIXME
+    'paths.snap_path'          : ['/tmp', validate_path_exists], # FIXME
 
     # verbosity setting
     'verbose.level'     : ['debug', validate_verbose], # debug, info, warning, error, or critical
@@ -353,7 +353,7 @@ default_params = {
     # figure props
     # figure size in inches: width by height
     'figure.figsize'    : [ [8.0,6.0], ValidateNseqFloat(2)],
-    'figure.dpi'        : [ 80, validate_float],   # DPI
+    'figure.dpi'        : [100, validate_float],   # DPI
     'figure.facecolor'  : [ '0.75', validate_color], # facecolor; scalar gray
     'figure.edgecolor'  : [ 'w', validate_color],  # edgecolor; white
 
@@ -365,12 +365,15 @@ default_params = {
     'figure.subplot.wspace' : [0.2, ValidateInterval(0, 1, closedmin=True, closedmax=False)],
     'figure.subplot.hspace' : [0.2, ValidateInterval(0, 1, closedmin=True, closedmax=False)],
 
-    # FIXME set these for testing for now:
+    # FIXME these were probably set for debug and testing, but you change to what you like:
     # ------------------------------------
     # time props (units are seconds)
     'time.analysis_interval'    : [   1, ValidateTimeInterval(  1,   61, closedmin=True, closedmax=False)],
     'time.plot_span'            : [   4, ValidateTimeInterval(  4, 7201, closedmin=True, closedmax=False)],
     'time.extra_intervals'      : [   1, validate_int],
+    
+    # data/buffer props
+    'data.maxlen'               : [ 222, validate_int], # max pts; limit otherwise ever-growing data deque
 
 }
 
