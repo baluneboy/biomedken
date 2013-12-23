@@ -20,7 +20,7 @@
 # Last modified: 31.07.2008 (by Eli)
 
 import os
-import pprint
+import logging
 import random
 import sys
 import wx
@@ -39,8 +39,9 @@ from matplotlib.backends.backend_wxagg import \
       FigureCanvasWxAgg as FigCanvas, \
       NavigationToolbar2WxAgg as NavigationToolbar
 
-from pims.gui.iogrids import InputPanel
-from pims.gui.tally_grid import StripChartInputGrid  
+from pims.realtime import rt_params as RTPARAMS
+from pims.gui.iogrids import StripChartInputPanel
+from pims.gui.tally_grid import StripChartInputGrid
 
 from obspy.realtime import RtTrace
 from obspy import read
@@ -214,30 +215,30 @@ class GraphFrame(wx.Frame):
     plot_span in seconds
     extra_intervals is an integer
     title string
-    maxpts is integer max length of ultimate data array ()
+    maxlen is integer max length of ultimate data array ()
 
     """
-    def __init__(self, datagen, analysis_interval, plot_span, extra_intervals, title, maxpts, log=None):
+    def __init__(self, datagen, title, log=None):
         
         self.datagen = datagen
-        self.analysis_interval = analysis_interval
-        self.plot_span = plot_span
-        self.extra_intervals = extra_intervals
         self.title = '%s using %s' % (title, self.datagen.__class__.__name__)
-        self.maxpts = maxpts
+        
         if not log:
             log = self.get_simple_log()
         self.log = log
         
         wx.Frame.__init__(self, None, -1, self.title)
-
+        
         #self.create_menu() # on close, this causes LIBDBUSMENU-GLIB-WARNING Trying to remove a child that doesn't believe we're it's parent.
         
         self.create_status_bar()
         self.create_panels()
 
+        # get initial values for plot_span, analysis_interval, extra_intervals, maxlen, and level (for log)
+        self.get_inputs()
+
         # we must limit size of otherwise ever-growing data object
-        self.data = deque( maxlen=self.maxpts )
+        self.data = deque( maxlen=self.maxlen )
         self.data.append( self.datagen.next(self.step_callback) )
         self.paused = True
        
@@ -253,7 +254,6 @@ class GraphFrame(wx.Frame):
         self.Maximize()
 
     def get_simple_log(self):
-        import logging
         logFormatter = logging.Formatter("%(asctime)s %(threadName)-12.12s %(levelname)-5.5s %(message)s")
         log = logging.getLogger('pims.gui.stripchart')
         #log.setLevel( getattr(logging, level.upper()) )
@@ -289,10 +289,15 @@ class GraphFrame(wx.Frame):
         self.menubar.Append(menu_file, "&File")
         self.SetMenuBar(self.menubar)
 
+    def get_inputs(self):
+        """get values from input panel grid"""
+        inputs = self.input_panel.grid.get_inputs()
+        for k, v in inputs.iteritems():
+            setattr(self, k, v)
+            
     def create_panels(self):
         """layout panels"""
-        
-        self.input_panel = InputPanel(self, self.log, StripChartInputGrid, None)
+        self.input_panel = StripChartInputPanel(self, self.log, StripChartInputGrid)
         self.input_panel.run_btn.Hide()
         
         self.output_panel = wx.Panel(self)
@@ -308,10 +313,9 @@ class GraphFrame(wx.Frame):
         self.init_plot()
         self.canvas = FigCanvas(self.output_panel, -1, self.fig)
 
-        #self.grid = SimpleGrid(self.output_panel, self.log)
-
+        self.get_inputs()
         self.xmin_control = BoundControlBox(self.output_panel, -1, "X min", 0)
-        self.xmax_control = BoundControlBox(self.output_panel, -1, "X max", 50)
+        self.xmax_control = BoundControlBox(self.output_panel, -1, "X max", self.plot_span)
         self.ymin_control = BoundControlBox(self.output_panel, -1, "Y min", 0)
         self.ymax_control = BoundControlBox(self.output_panel, -1, "Y max", 100)
         self.current_info = BeginEndSamplesBox(self.output_panel, -1, "Current")
@@ -380,6 +384,8 @@ class GraphFrame(wx.Frame):
     def switch_panels(self, msg=None):
         """switch panels"""
         if self.input_panel.IsShown():
+            self.get_inputs()
+            
             self.SetTitle("Output Panel")
             self.input_panel.Hide()
             self.output_panel.Show()
@@ -405,8 +411,9 @@ class GraphFrame(wx.Frame):
         self.SetStatusText(t, SB_RIGHT)
 
     def init_plot(self):
-        """initialize the plot"""        
-        self.dpi = 100
+        """initialize the plot"""
+        
+        self.dpi = RTPARAMS['figure.dpi']
         self.fig = Figure((3.0, 3.0), dpi=self.dpi)
 
         rect = self.fig.patch
@@ -439,12 +446,12 @@ class GraphFrame(wx.Frame):
         # xmax.
         #
         if self.xmax_control.is_auto():
-            xmax = len(self.data) if len(self.data) > 50 else 50
+            xmax = len(self.data) if len(self.data) > self.plot_span else self.plot_span
         else:
             xmax = int(self.xmax_control.manual_value())
             
         if self.xmin_control.is_auto():            
-            xmin = xmax - 50
+            xmin = xmax - self.plot_span
         else:
             xmin = int(self.xmin_control.manual_value())
 
@@ -554,18 +561,12 @@ class GraphFrame(wx.Frame):
 
 def demo_pad_gen():
     from pims.pad.packetfeeder import PadGenerator
+
     app = wx.PySimpleApp()
-
-    app.frame = GraphFrame(DataGenExample(),
-                           1,
-                           120,
-                           2,
-                           'title',
-                           200) # maxlen for data deque used in stripchart
-    #app.frame = GraphFrame(PadGenerator, datagen_kwargs={'showWarnings':1,'scale_factor':1000, 'maxsec_rttrace':5000}, maxpts=5000)
-
+    app.frame = GraphFrame(DataGenExample(), 'title')
     app.frame.Show()
     app.MainLoop()        
+
 
 if __name__ == '__main__':
     demo_pad_gen()

@@ -56,3 +56,8 @@ A B C (SSA's X, Y, Z)
 NASA.ISS.SAMS.05.CNA for SAMS, SE-05,  500 sps, X-axis
 NASA.ISS.SAME.03.CNB for SAMS, ES-06,  500 sps, Y-axis
 NASA.ISS.MAMS.HI.FNC for MAMS, HiRAP, 1000 sps, Z-axis
+
+See sandbox/flatbook_demo.py for starter kit on upgrade to "pads" & "roadmaps" tally_grid workers.  The big deal will
+be if (1) PADs gets populated first, (2) then roadmaps after that, (3) then some form of link between the 2 grids so
+that processing cells in PADs may have resample hooked to it, but also the ability to highlight PAD cells that have some
+hours, but where no roadmaps exist, then there's good way to process those cells (in PADs) to create the missing roadmaps FTW!

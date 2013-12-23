@@ -44,6 +44,10 @@ class InputPanel(wx.Panel):
         
     def switchback(self, event):
         """Callback for panel switch button."""
+        ## get inputs from input grid
+        #inputs = self.grid.get_inputs()
+
+        # now switch to outputs
         Publisher.sendMessage("switch", "message")
 
     def run(self):
@@ -73,6 +77,41 @@ class InputPanel(wx.Panel):
         #self.frame.statusbar.Destroy()
         self.frame.Destroy()
         sys.exit(0)
+
+class StripChartInputPanel(InputPanel):
+       
+    def __init__(self, frame, log, input_grid):
+        """Constructor"""
+        wx.Panel.__init__(self, frame)
+        self.frame = frame
+
+        self.grid = input_grid(self, log)
+        self.grid.CreateGrid( len(self.grid.row_labels), len(self.grid.column_labels) )
+        
+        self.grid.set_row_labels()
+        self.grid.set_column_labels()
+        self.grid.set_default_cell_values()  
+        
+        #self.grid_worker = grid_worker
+        
+        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        self.switch_btn = wx.Button(self, label="Show Outputs")
+        self.switch_btn.Bind(wx.EVT_BUTTON, self.switchback)
+        
+        self.run_btn = wx.Button(self, label="Run")
+        self.run_btn.Bind(wx.EVT_BUTTON, self.on_run)
+        
+        self.close_btn = wx.Button(self, label="Close")
+        self.close_btn.Bind(wx.EVT_BUTTON, self.on_close)
+        
+        self.btn_sizer.Add(self.switch_btn, 0, wx.ALL|wx.LEFT, 5)
+        self.btn_sizer.Add(self.run_btn, 0, wx.ALL|wx.LEFT, 4)
+        self.btn_sizer.Add(self.close_btn,0, wx.ALL|wx.LEFT, 4)
+        self.main_sizer.Add(self.btn_sizer)
+        self.main_sizer.Add(self.grid, 0, wx.EXPAND)
+        self.SetSizer(self.main_sizer)    
 
 class OutputPanel(wx.Panel):
     """The output panel."""
