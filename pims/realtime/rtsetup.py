@@ -327,6 +327,12 @@ class ValidateTimeInterval(object):
             raise RuntimeError('Value must be < %d; found "%d"'%(self.vmax, s))
         return s
 
+# FIXME these were probably set for debug and testing, but you change to what you like:
+ANIN =  1 # seconds for analysis_interval
+PLTS = 25 # seconds for plot_span
+EXTR =  5 # count for extra_intervals
+MAXT = int( EXTR * ANIN + PLTS ) # seconds max for real-time trace
+
 # a map from key -> value, converter
 default_params = {
 
@@ -365,15 +371,15 @@ default_params = {
     'figure.subplot.wspace' : [0.2, ValidateInterval(0, 1, closedmin=True, closedmax=False)],
     'figure.subplot.hspace' : [0.2, ValidateInterval(0, 1, closedmin=True, closedmax=False)],
 
-    # FIXME these were probably set for debug and testing, but you change to what you like:
-    # ------------------------------------
     # time props (units are seconds)
-    'time.analysis_interval'    : [   1, ValidateTimeInterval(  1,   61, closedmin=True, closedmax=False)],
-    'time.plot_span'            : [   4, ValidateTimeInterval(  4, 7201, closedmin=True, closedmax=False)],
-    'time.extra_intervals'      : [   1, validate_int],
+    'time.analysis_interval'    : [ANIN, ValidateTimeInterval(  1,   61, closedmin=True, closedmax=False)],
+    'time.plot_span'            : [PLTS, ValidateTimeInterval(  4, 7201, closedmin=True, closedmax=False)],
+    'time.extra_intervals'      : [EXTR, validate_int],
+    'time.maxsec_trace'         : [MAXT, validate_int],
     
     # data/buffer props
     'data.maxlen'               : [ 222, validate_int], # max pts; limit otherwise ever-growing data deque
+    'data.scale_factor'         : [1000, validate_int],
 
 }
 
