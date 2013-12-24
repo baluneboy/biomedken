@@ -42,6 +42,7 @@ from matplotlib.backends.backend_wxagg import \
 from pims.realtime import rt_params as RTPARAMS
 from pims.gui.iogrids import StripChartInputPanel
 from pims.gui.tally_grid import StripChartInputGrid
+from pims.files.log import SimpleLog
 
 from obspy.realtime import RtTrace
 from obspy import read
@@ -49,7 +50,8 @@ from obspy import read
 # Status bar constants
 SB_LEFT = 0
 SB_RIGHT = 1
-SB_MSEC = 2000 # update lower-right time every 2000ms
+SB_MSEC = 5000 # update lower-right time ~every several seconds
+REDRAW_MSEC = 10000 # redraw timer every 10 seconds
 
 class DataGenRandom(object):
     """ A silly class that generates pseudo-random data for plot display."""
@@ -208,23 +210,17 @@ class BeginEndSamplesBox(wx.Panel):
         return self.value
 
 class GraphFrame(wx.Frame):
-    """ The main frame of the strip chart application.
+    """ The main frame (window) of the strip chart application.
     
-    datagen is data generator (using its next method)
-    analysis_interval in seconds
-    plot_span in seconds
-    extra_intervals is an integer
+    datagen is data generator (let's use its next method)
     title string
-    maxlen is integer max length of ultimate data array ()
-
+    log to keep track of things
+    
     """
-    def __init__(self, datagen, title, log=None):
+    def __init__(self, datagen, title, log):
         
         self.datagen = datagen
         self.title = '%s using %s' % (title, self.datagen.__class__.__name__)
-        
-        if not log:
-            log = self.get_simple_log()
         self.log = log
         
         wx.Frame.__init__(self, None, -1, self.title)
@@ -234,11 +230,14 @@ class GraphFrame(wx.Frame):
         self.create_status_bar()
         self.create_panels()
 
-        # get initial values for plot_span, analysis_interval, extra_intervals, maxlen, and level (for log)
+        # get initial values for plot_span, analysis_interval, extra_intervals, maxlen, etc.
         self.get_inputs()
 
         # we must limit size of otherwise ever-growing data object
         self.data = deque( maxlen=self.maxlen )
+        
+        # this is first call "prime the pump" of data generator via next method
+        self.paused = False
         self.data.append( self.datagen.next(self.step_callback) )
         self.paused = True
        
@@ -249,23 +248,20 @@ class GraphFrame(wx.Frame):
         
         self.redraw_timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.on_redraw_timer, self.redraw_timer)        
-        self.redraw_timer.Start(200) # milliseconds
+        self.redraw_timer.Start(REDRAW_MSEC) # milliseconds
         
-        self.Maximize()
+        #self.Maximize()
+        
+        self.log.debug('GraphFrame was initialized')
 
-    def get_simple_log(self):
-        logFormatter = logging.Formatter("%(asctime)s %(threadName)-12.12s %(levelname)-5.5s %(message)s")
-        log = logging.getLogger('pims.gui.stripchart')
-        #log.setLevel( getattr(logging, level.upper()) )
-        log.setLevel('DEBUG')
-        fileHandler = logging.FileHandler("{0}/{1}.log".format('/tmp', 'simple_log'))
-        fileHandler.setFormatter(logFormatter)
-        log.addHandler(fileHandler)
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setFormatter(logFormatter)
-        log.addHandler(consoleHandler)
-        log.info('Logging started.')
-        return log
+    def get_inputs(self):
+        """get values from input panel grid"""
+        # get inputs in dict form from input grid
+        inputs = self.input_panel.grid.get_inputs()
+        
+        # set attributes of this graph frame using inputs dict
+        for k, v in inputs.iteritems():
+            setattr(self, k, v)
 
     def update_info(self, info_control, info_tuple):
         info_control.begin_time_text.SetLabel(info_tuple[0])
@@ -275,7 +271,7 @@ class GraphFrame(wx.Frame):
     def step_callback(self, current_info_tuple, cumulative_info_tuple):
         self.update_info(self.current_info, current_info_tuple)
         self.update_info(self.cumulative_info, cumulative_info_tuple)
-        
+
     def create_menu(self):
         self.menubar = wx.MenuBar()
         
@@ -289,12 +285,6 @@ class GraphFrame(wx.Frame):
         self.menubar.Append(menu_file, "&File")
         self.SetMenuBar(self.menubar)
 
-    def get_inputs(self):
-        """get values from input panel grid"""
-        inputs = self.input_panel.grid.get_inputs()
-        for k, v in inputs.iteritems():
-            setattr(self, k, v)
-            
     def create_panels(self):
         """layout panels"""
         self.input_panel = StripChartInputPanel(self, self.log, StripChartInputGrid)
@@ -414,17 +404,17 @@ class GraphFrame(wx.Frame):
         """initialize the plot"""
         
         self.dpi = RTPARAMS['figure.dpi']
-        self.fig = Figure((3.0, 3.0), dpi=self.dpi)
+        self.fig = Figure(RTPARAMS['figure.figsize'], dpi=self.dpi)
 
         rect = self.fig.patch
         rect.set_facecolor('white') # works with plt.show(), but not plt.savefig
 
         self.axes = self.fig.add_subplot(111)
         self.axes.set_axis_bgcolor('white')
-        self.axes.set_title('testing with random data', size=18)
+        self.axes.set_title('testing with random data', size=16)
         
-        pylab.setp(self.axes.get_xticklabels(), fontsize=16)
-        pylab.setp(self.axes.get_yticklabels(), fontsize=16)
+        pylab.setp(self.axes.get_xticklabels(), fontsize=14)
+        pylab.setp(self.axes.get_yticklabels(), fontsize=14)
 
         # plot the data as a line series, and save the reference 
         # to the plotted line series
@@ -437,6 +427,8 @@ class GraphFrame(wx.Frame):
         
         # to save fig with same facecolor as rt plot, use:
         #fig.savefig('whatever.png', facecolor=fig.get_facecolor(), edgecolor='none')
+        
+        self.log.debug('GraphFrame.init_plot() is complete')
 
     def draw_plot(self):
         """ Redraws the plot
@@ -445,6 +437,7 @@ class GraphFrame(wx.Frame):
         # sliding window effect. therefore, xmin is assigned after
         # xmax.
         #
+        self.log.debug('start redrawing plot')
         if self.xmax_control.is_auto():
             xmax = len(self.data) if len(self.data) > self.plot_span else self.plot_span
         else:
@@ -496,6 +489,7 @@ class GraphFrame(wx.Frame):
         self.plot_data.set_ydata(np.array(self.data))
         
         self.canvas.draw()
+        self.log.debug('done redrawing plot')
     
     def on_step_button(self, event):
         if self.paused:
@@ -561,12 +555,13 @@ class GraphFrame(wx.Frame):
 
 def demo_pad_gen():
     from pims.pad.packetfeeder import PadGenerator
-
     app = wx.PySimpleApp()
-    app.frame = GraphFrame(DataGenExample(), 'title')
+    log = SimpleLog('pims.gui.stripchart.demo_pad_gen', log_level='DEBUG').log
+    log.info('Logging started.')
+    #app.frame = GraphFrame(DataGenExample(), 'title', log)
+    app.frame = GraphFrame(PadGenerator(), 'title', log)
     app.frame.Show()
     app.MainLoop()        
-
 
 if __name__ == '__main__':
     demo_pad_gen()

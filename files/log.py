@@ -2,6 +2,25 @@ import datetime
 import logging
 #import logging.handlers
 
+class SimpleLog(object):
+    """a simple log object"""
+    
+    def __init__(self, log_basename, log_path='/tmp', log_level='DEBUG'):
+        logFormatter = logging.Formatter("%(asctime)s %(threadName)-12.12s %(levelname)-5.5s %(message)s")
+        log = logging.getLogger('pims.files.log')
+        log.setLevel( getattr(logging, log_level.upper()) )
+        fileHandler = logging.FileHandler("{0}/{1}.log".format(log_path, log_basename))
+        fileHandler.setFormatter(logFormatter)
+        log.addHandler(fileHandler)
+        consoleHandler = logging.StreamHandler()
+        consoleHandler.setFormatter(logFormatter)
+        log.addHandler(consoleHandler)
+        self.log = log
+
+#log = SimpleLog('trash').log
+#log.info('trashlog starting')
+#raise SystemExit
+
 def init_log(log_file):
     
     # Basic config

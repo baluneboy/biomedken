@@ -202,9 +202,12 @@ class RtParams(OrderedDict):
 
     def __str__(self):
         """show the dict [TWSS]"""
+        keys = self.keys()
+        maxlen = max(len(x) for x in keys)  # find max length
+        fmt = '{0:<%ds} : {1:s}\n' % maxlen        
         s = ''
-        for k in self.keys():
-            s += '{0:<25s}: {1:s}\n'.format( k, str(self[k]) )
+        for k in keys:
+            s += fmt.format( k, str(self[k]) )
         return s
 
     def __setitem__(self, key, val):
