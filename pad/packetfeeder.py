@@ -15,6 +15,7 @@ import string
 import math
 import pickle
 import struct
+import socket
 import numpy as np
 import logging
 import warnings
@@ -31,6 +32,7 @@ from pims.utils.pimsdateutil import unix2dtm
 from pims.kinematics.rotation import rotation_matrix
 from pims.database.pimsquery import ceil4, PadExpect
 from pims.gui.stripchart import GraphFrame
+from pims.lib.tools import varname
 
 from obspy import Trace
 from obspy.realtime import RtTrace
@@ -65,26 +67,32 @@ PACKETS_WRITTEN = 0
 PACKETS_DELETED = 0
 TOTAL_PACKETS_FED = 0 # global variable for tracking if any progress is being made
 
-# set default command line PARAMETERS, times are always measured in seconds
-DEFAULTS = { 'ancillaryHost':'kyle',    # the name of the computer with the auxiliary databases (or 'None')
-             'host':'localhost',        # the name of the computer with the database
-             'database':'pims',         # the name of the database to process
-             'tables':'121f05',         # the database table that should be processed (NOT "ALL" & NOT separated by commas)
-             'destination':'.',         # the directory to write files into in scp format (host:/path/to/data) or local .
-             'delete':'0',              # 0=delete processed data, 1=leave in database OR use databaseName to move to that db
-             'resume':'0',              # try to pick up where a previous run left off, or do whole database
-             'inspect':'2',             # JUST INSPECT FOR UNEXPECTED CHANGES, DO NOT WRITE PAD FILES
-             'showWarnings':'1',        # show or supress warning message
-             'ascii':'0',               # write data in ASCII or binary
-             'startTime':'0.0',         # first data time to process (0 means anything back to 1970)
-             'endTime':'0.0',           # last data time to process (0 means no limit)
-             'quitWhenDone':'0',        # end this program when all data is processed
-             'bigEndian':'0',           # write binary data as big endian (Sun, Mac) or little endian (Intel)
-             'cutoffDelay':'3',         # maximum amount of time to keep data in the database before processing (sec)
-             'maxFileTime':'600',       # maximum time span for a PAD file (0 means no limit)
-             'additionalHeader':'\"\"'} # additional XML to put in header.
-                                        #   in order to prevent confusion in the shell and command parser,
-                                        #   represent XML with: ' ' replaced by '#', tab by '~', CR by '~~'
+DEFAULTS_LIST = [
+    'ancillaryHost',       # the name of the computer with the auxiliary databases (or 'None')
+    'host',                # the name of the computer with the database
+    'database',            # the name of the database to process
+    'tables',              # the database table that should be processed (NOT "ALL" & NOT separated by commas)
+    'destination',         # the directory to write files into in scp format (host:/path/to/data) or local .
+    'delete',              # 0=delete processed data, 1=leave in database OR use databaseName to move to that db
+    'resume',              # try to pick up where a previous run left off, or do whole database
+    'inspect',             # JUST INSPECT FOR UNEXPECTED CHANGES, DO NOT WRITE PAD FILES
+    'showWarnings',        # show or supress warning message
+    'ascii',               # write data in ASCII or binary
+    'startTime',           # first data time to process (0 means anything back to 1970, negative for "good" start)
+    'endTime',             # last data time to process (0 means no limit)
+    'quitWhenDone',        # end this program when all data is processed
+    'bigEndian',           # write binary data as big endian (Sun, Mac) or little endian (Intel)
+    'cutoffDelay',         # maximum amount of time to keep data in the database before processing (sec)
+    'maxFileTime',         # maximum time span for a PAD file (0 means no limit)
+    'additionalHeader' ]   # additional XML to put in header.
+                           #   in order to prevent confusion in the shell and command parser,
+                           #   represent XML with: ' ' replaced by '#', tab by '~', CR by '~~'
+
+# For easy (legacy sake) populate DEFAULTS as strings
+# times are always measured in seconds
+DEFAULTS = {}
+for var in DEFAULTS_LIST:
+    DEFAULTS[var] = str( rt_params['pw.' + var] )
 
 PARAMETERS = DEFAULTS.copy()
 def setParameters(newParameters):
@@ -114,7 +122,7 @@ def sample_idle_fun():
     global PREV_IDLE_TOTAL
     if PREV_IDLE_TOTAL != TOTAL_PACKETS_FED:
         log.debug("%04d IDLER TOTAL_PACKETS_FED %d" % (get_line(), TOTAL_PACKETS_FED))
-        sleep(1)
+        sleep(0.5)
     PREV_IDLE_TOTAL = TOTAL_PACKETS_FED
 
 # add sample idle function (NOTE: addIdle comes from pims.realtime.accelpacket)
@@ -1172,6 +1180,22 @@ def main_loop():
             pickle.dump(pfs, file)
             file.close()
 
+# convert startTime from string to unixtime float
+def atof_unixstart(s):
+    global _HOSTNAME
+    f = atof(s)
+    if f >= 0.0:
+        return f
+    
+    # negative value for startTime signals "good" startTime
+    _HOSTNAME = socket.gethostname()
+    if _HOSTNAME == 'park':
+        return 1378741399.5 # for debug and testing
+    else:
+        # timeNow minus plot_buffer, which is rt_params['time.maxsec_trace']
+        timeNow = time()
+        return timeNow - rt_params['time.maxsec_trace']
+
 def custom_warn(message, category, filename, lineno, file=None, line=None):
     log.warning(warnings.formatwarning(message, category, filename, lineno).replace('\n',' '))
 
@@ -1185,6 +1209,7 @@ def parameters_ok():
         print " rt_params['verbose.level'] must be debug or info or warning or error or critical"
         return 0
     else:
+        rt_params['verbose.level'] = b
         log = SimpleLog('pims_pad_packetfeeder', log_level=b).log
         log.info('Logging started.')
         
@@ -1196,62 +1221,72 @@ def parameters_ok():
         log.error(' inspect must be 0 or 1 (or 2)')
         return 0
     else:
-        PARAMETERS['inspect'] = atoi(PARAMETERS['inspect'])
+        PARAMETERS['inspect'] = rt_params['pw.inspect'] =  atoi(b)
 
     b = PARAMETERS['resume']
     if b != '0' and b != '1':
         log.error(' resume must be 0 or 1')
         return 0
     else:
-        PARAMETERS['resume'] = atoi(PARAMETERS['resume'])
+        PARAMETERS['resume'] = rt_params['pw.resume'] = atoi(b)
 
     b = PARAMETERS['showWarnings']
     if b != '0' and b != '1':
         log.error(' showWarnings must be 0 or 1')
         return 0
     else:
-        PARAMETERS['showWarnings'] = atoi(PARAMETERS['showWarnings'])
+        PARAMETERS['showWarnings'] = rt_params['pw.showWarnings'] = atoi(b)
 
     b = PARAMETERS['ascii']
     if b != '0' and b != '1':
         log.error(' ascii must be 0 or 1')
         return 0
     else:
-        PARAMETERS['ascii'] = atoi(PARAMETERS['ascii'])
+        PARAMETERS['ascii'] = rt_params['pw.ascii'] = atoi(b)
         
     b = PARAMETERS['quitWhenDone']
     if b != '0' and b != '1':
         log.error(' quitWhenDone must be 0 or 1')
         return 0
     else:
-        PARAMETERS['quitWhenDone'] = atoi(PARAMETERS['quitWhenDone'])
+        PARAMETERS['quitWhenDone'] = rt_params['pw.quitWhenDone'] = atoi(b)
         
     b = PARAMETERS['bigEndian']
     if b != '0' and b != '1':
         log.error(' bigEndian must be 0 or 1')
         return 0
     else:
-        PARAMETERS['bigEndian'] = atoi(PARAMETERS['bigEndian'])
+        PARAMETERS['bigEndian'] = rt_params['pw.bigEndian'] = atoi(b)
 
     b = PARAMETERS['delete']
-    if b != '0' and b != '1': # delete must be specifying a database name for moving data
-        # make sure there is only one table specified
-        if PARAMETERS['tables']=='ALL' or len(split(PARAMETERS['delete'], ',')) != 1:
-            log.error(' you must specify only 1 table with "tables=" if you')
-            log.error(' set "delete=" to a table name for moving data instead of deleting')
-            return 0
+    if b != '0' and b != '1':
+        log.error(' delete must be 0 or 1')
+        return 0
+    else:
+        PARAMETERS['delete'] = rt_params['pw.delete'] = b
+    
+    b = PARAMETERS['tables']
+    if PARAMETERS['tables']=='ALL' or len(split(PARAMETERS['tables'], ',')) != 1:
+        log.error(' you must specify only 1 table with "tables="')
+        return 0
+    else:
+        PARAMETERS['tables'] = rt_params['pw.tables'] = b        
 
     b = PARAMETERS['additionalHeader']
     if b != '\"\"':
         b = string.replace(b, '#', ' ')      # replace hash marks with spaces
         b = string.replace(b, '~~', chr(10)) # replace double tilde with carriage returns
         b = string.replace(b, '~', chr(9))   # replace single tilde with tab
-        PARAMETERS['additionalHeader'] = b
+        PARAMETERS['additionalHeader'] = rt_params['pw.additionalHeader'] = b
 
-    PARAMETERS['startTime'] = atof(PARAMETERS['startTime'])
-    PARAMETERS['endTime'] = atof(PARAMETERS['endTime'])
-    PARAMETERS['cutoffDelay'] = atof(PARAMETERS['cutoffDelay'])
-    PARAMETERS['maxFileTime'] = atof(PARAMETERS['maxFileTime'])
+    PARAMETERS['startTime'] = rt_params['pw.startTime'] = atof_unixstart(PARAMETERS['startTime'])
+    PARAMETERS['endTime'] = rt_params['pw.endTime'] = atof(PARAMETERS['endTime'])
+    PARAMETERS['cutoffDelay'] = rt_params['pw.cutoffDelay'] = atof(PARAMETERS['cutoffDelay'])
+    PARAMETERS['maxFileTime'] = rt_params['pw.maxFileTime'] = atof(PARAMETERS['maxFileTime'])
+
+    rt_params['pw.ancillaryHost'] = PARAMETERS['ancillaryHost']
+    rt_params['pw.host'] = PARAMETERS['host']
+    rt_params['pw.database'] = PARAMETERS['database']
 
     b = PARAMETERS['destination']
     if b != '.':
@@ -1267,6 +1302,8 @@ def parameters_ok():
             log.error(' host: %s, directory: %s, error: %s' % (host,directory,r))
             sys.exit()
         log.info(' scp OK')
+        
+    PARAMETERS['destination'] = rt_params['pw.destination'] = b
 
     if 0 == PARAMETERS['resume']:
         # remove any stale resume files
@@ -1398,17 +1435,33 @@ def dict_as_str(d):
     fmt = '{0:<%ds} : {1:s}\n' % maxlen
     for k in keys:
         s += fmt.format( k, str(d[k]) )
+    s += '=' * 78 + '\n'
     return s
 
 def demo_strip():
+
+    #for var in DEFAULTS_LIST:
+    #    if PARAMETERS[var] == rt_params['pw.' + var]:
+    #        print 'OK  ', var
+    #    else:
+    #        print 'BAD ', var
+    #raise SystemExit
+
+    #print '--- PARAMETERS %s\n' % ('-' * 55), dict_as_str(PARAMETERS)
+    #print '--- rt_params %s\n' % ('-' * 55), dict_as_str(rt_params)
+    #raise SystemExit
+
+    #for k, v in zip(rt_params.keys(), rt_params.values()):
+    #    print k, "%s" % v
+    #raise SystemExit
+
     datagen = PadGenerator()
-    print dict_as_str(PARAMETERS)
-    print rt_params
     app = wx.PySimpleApp()
-    app.frame = GraphFrame(datagen, 'title', log)
+    app.frame = GraphFrame(datagen, 'title', log, rt_params) # rt_params come from global namespace here
     app.frame.Show()
     app.MainLoop()
-    
+
+# ~/dev/programs/python/packet/packetWriter.py tables=121f05 host=localhost ancillaryHost=localhost destination=. delete=0 cutoffDelay=0    
 # e.g. python packetfeeder.py host=manbearpig tables=121f05 ancillaryHost=kyle startTime=1382551198.0 endTime=1382552398.0
 # e.g. ON PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=None startTime=1378742112.0 inspect=1
 # 25pkts e.g. PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=localhost startTime=1378742399.5 inspect=1

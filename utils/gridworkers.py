@@ -169,8 +169,8 @@ def demo2():
     app.MainLoop()
 
 if __name__ == "__main__":
-    
-    demo1()
+
+    demo2()
     raise SystemExit
 
     #d1 = parser.parse('2013-10-18').date()

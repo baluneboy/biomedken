@@ -3,6 +3,8 @@
 Some hopefully useful classes and functions.
 """
 from collections import MutableMapping
+import inspect
+import re
 
 class TransformedDict(MutableMapping):
     """
@@ -37,6 +39,14 @@ class LowerKeysTransformedDict(TransformedDict):
     """Transform keys to lowercase."""
     def __keytransform__(self, key):
         return key.lower()
+
+# one way to return variable name
+def varname(p):
+    """one way to return variable name"""
+    for line in inspect.getframeinfo(inspect.currentframe().f_back)[3]:
+          m = re.search(r'\bvarname\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)', line)
+          if m:
+            return m.group(1)
 
 def demo():
     d = LowerKeysTransformedDict( [ ('Test', 1), ('camelCase', 'dogma') ] )

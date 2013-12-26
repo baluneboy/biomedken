@@ -545,43 +545,43 @@ class RoadmapsOutputGrid(TallyOutputGrid):
                 self.runIkeRepairRoadmap(dtm)
 
 class StripChartInputGrid(CheapPadHoursInputGrid):
-    """use pims.realtime rt_params as going-in defaults for strip chart input grid"""
+    """2-columns: (1) PARAMETERS (like packetWriter.py), and (2) rt_params (plot_span, etc.)"""
     
-    from pims.realtime import rt_params
+    #from pims.realtime import rt_params
     
-    def __init__(self, parent, log):
+    def __init__(self, parent, log, rt_params):
+        self.rt_params = rt_params
         super(StripChartInputGrid, self).__init__(parent, log, pattern=None)
-
+        #for k, v in zip(rt_params.keys(), rt_params.values()):
+        #    print k, "%s" % v
+        #raise SystemExit
+        self.SetDefaultRowSize(20)
+        self.SetRowLabelSize(200)
+        self.SetRowLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTER)
+        self.EnableEditing(False)
+        
     def get_default_values(self):
         """Gather columns_labels, row_labels, and rows for input grid defaults."""
         self.column_labels = [ 'value']
         self.rows = []
         self.row_labels = []
-        params = [
-            ('data.maxlen', int),
-            ('time.analysis_interval', int),
-            ('time.extra_intervals', int),
-            ('time.plot_span', int),
-            ('verbose.level', lambda x: x.upper()),
-        ]
-        for tup in params:
-            value = self.rt_params[tup[0]]
-            label, converter = tup[0].split('.')[1], tup[1]
-            self.rows.append( (label, value, converter) )
+        for label, value in zip(self.rt_params.keys(), self.rt_params.values()):
+            self.rows.append( (label, value, str))
             self.row_labels.append(label)
 
-def demo_stripchart2():
-    from pims.realtime import rt_params as RTPARAMS
-    log = sys.stdout
-    input_grid =  StripChartInputGrid
-    grid_worker = RoadmapsGridWorker
-    output_grid = RoadmapsOutputGrid
-
-    # launch app
-    app = wx.App(False)
-    frame = MainFrame(log, input_grid, grid_worker, output_grid)
-    frame.Show()
-    app.MainLoop()
+#def demo_stripchart2():
+#    from pims.realtime import rt_params as RTPARAMS
+#    from pims.utils.gridworkers import RoadmapsGridWorker
+#    log = sys.stdout
+#    input_grid =  StripChartInputGrid
+#    grid_worker = RoadmapsGridWorker
+#    output_grid = RoadmapsOutputGrid
+#
+#    # launch app
+#    app = wx.App(False)
+#    frame = MainFrame(log, input_grid, grid_worker, output_grid)
+#    frame.Show()
+#    app.MainLoop()
 
 if __name__ == '__main__':
     # SEE ROADMAPS TALLY GRID FOR F02, F04, AND HIRAP FOR 15-OCT-2013 THRU 18-NOV-2013
