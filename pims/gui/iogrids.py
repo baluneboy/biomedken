@@ -80,12 +80,13 @@ class InputPanel(wx.Panel):
 
 class StripChartInputPanel(InputPanel):
        
-    def __init__(self, frame, log, input_grid):
+    def __init__(self, frame, log, input_grid, rt_params):
         """Constructor"""
         wx.Panel.__init__(self, frame)
         self.frame = frame
+        self.rt_params = rt_params
 
-        self.grid = input_grid(self, log)
+        self.grid = input_grid(self, log, self.rt_params)
         self.grid.CreateGrid( len(self.grid.row_labels), len(self.grid.column_labels) )
         
         self.grid.set_row_labels()
@@ -244,7 +245,7 @@ class MainFrame(wx.Frame):
         
         # FIXME this does not change update_sec with input_grid value's changes
         # Set up a timer to update the date/time (every few seconds)
-        self.update_sec = self.input_panel.grid.get_inputs()['update_sec']
+        self.update_sec = 10 #self.input_panel.grid.get_inputs()['update_sec']
         self.timer = wx.PyTimer(self.notify)
         self.timer.Start( int(self.update_sec * 1000) )
         self.notify() # call it once right away

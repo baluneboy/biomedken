@@ -237,6 +237,8 @@ def get_rt_params():
     for key in rt:
         if not rt[key][1](rt[key][0]) == rt[key][0]:
             print "%s: %s != %s"%(key, rt[key][1](rt[key][0]), rt[key][0])
+        #if rt[key][1](rt[key][0]) == rt[key][0]:
+            print "%s: %s = %s"%(key, rt[key][1](rt[key][0]), rt[key][0])        
     return RtParams([ (key, default) for key, (default, converter) in default_params.iteritems() ])
 
 # this is global instance we want out of here

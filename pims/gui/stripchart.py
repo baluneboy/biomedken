@@ -39,7 +39,7 @@ from matplotlib.backends.backend_wxagg import \
       FigureCanvasWxAgg as FigCanvas, \
       NavigationToolbar2WxAgg as NavigationToolbar
 
-from pims.realtime import rt_params as RTPARAMS
+#from pims.realtime import rt_params as RTPARAMS
 from pims.gui.iogrids import StripChartInputPanel
 from pims.gui.tally_grid import StripChartInputGrid
 from pims.files.log import SimpleLog
@@ -154,7 +154,10 @@ class BoundControlBox(wx.Panel):
             style=wx.TE_PROCESS_ENTER)
         
         self.Bind(wx.EVT_UPDATE_UI, self.on_update_manual_text, self.manual_text)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_enter, self.manual_text)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_enter, self.manual_text) # FIXME bind change (not just ENTER)?
+
+        # set manual values during initialize here
+        self.radio_manual.SetValue(True)
         
         manual_box = wx.BoxSizer(wx.HORIZONTAL)
         manual_box.Add(self.radio_manual, flag=wx.ALIGN_CENTER_VERTICAL)
@@ -217,11 +220,12 @@ class GraphFrame(wx.Frame):
     log to keep track of things
     
     """
-    def __init__(self, datagen, title, log):
+    def __init__(self, datagen, title, log, rt_params):
         
         self.datagen = datagen
         self.title = '%s using %s' % (title, self.datagen.__class__.__name__)
         self.log = log
+        self.rt_params = rt_params
         
         wx.Frame.__init__(self, None, -1, self.title)
         
@@ -230,11 +234,11 @@ class GraphFrame(wx.Frame):
         self.create_status_bar()
         self.create_panels()
 
-        # get initial values for plot_span, analysis_interval, extra_intervals, maxlen, etc.
-        self.get_inputs()
+        ## get initial values for plot_span, analysis_interval, extra_intervals, maxlen, etc.
+        #self.get_inputs()
 
         # we must limit size of otherwise ever-growing data object
-        self.data = deque( maxlen=self.maxlen )
+        self.data = deque( maxlen=self.rt_params['data.maxlen'] )
         
         # this is first call "prime the pump" of data generator via next method
         self.paused = False
@@ -246,11 +250,14 @@ class GraphFrame(wx.Frame):
         self.timer.Start(SB_MSEC)
         self.notify() # call it once right away
         
+        # Set up redraw timer
         self.redraw_timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.on_redraw_timer, self.redraw_timer)        
         self.redraw_timer.Start(REDRAW_MSEC) # milliseconds
         
-        #self.Maximize()
+        # Do initial redraw
+        self.draw_plot()
+        self.Maximize()
         
         self.log.debug('GraphFrame was initialized')
 
@@ -261,7 +268,9 @@ class GraphFrame(wx.Frame):
         
         # set attributes of this graph frame using inputs dict
         for k, v in inputs.iteritems():
-            setattr(self, k, v)
+            key = k.replace('.', '_')
+            setattr(self, key, v)
+            #print key, getattr(self, key)
 
     def update_info(self, info_control, info_tuple):
         info_control.begin_time_text.SetLabel(info_tuple[0])
@@ -287,7 +296,8 @@ class GraphFrame(wx.Frame):
 
     def create_panels(self):
         """layout panels"""
-        self.input_panel = StripChartInputPanel(self, self.log, StripChartInputGrid)
+        self.input_panel = StripChartInputPanel(self, self.log, StripChartInputGrid, self.rt_params)
+        self.input_panel.grid
         self.input_panel.run_btn.Hide()
         
         self.output_panel = wx.Panel(self)
@@ -305,9 +315,9 @@ class GraphFrame(wx.Frame):
 
         self.get_inputs()
         self.xmin_control = BoundControlBox(self.output_panel, -1, "X min", 0)
-        self.xmax_control = BoundControlBox(self.output_panel, -1, "X max", self.plot_span)
+        self.xmax_control = BoundControlBox(self.output_panel, -1, "X max", 120) #self.rt_params['time.plot_span'])
         self.ymin_control = BoundControlBox(self.output_panel, -1, "Y min", 0)
-        self.ymax_control = BoundControlBox(self.output_panel, -1, "Y max", 100)
+        self.ymax_control = BoundControlBox(self.output_panel, -1, "Y max", 9000)
         self.current_info = BeginEndSamplesBox(self.output_panel, -1, "Current")
         self.cumulative_info = BeginEndSamplesBox(self.output_panel, -1, "Cumulative")        
 
@@ -403,8 +413,8 @@ class GraphFrame(wx.Frame):
     def init_plot(self):
         """initialize the plot"""
         
-        self.dpi = RTPARAMS['figure.dpi']
-        self.fig = Figure(RTPARAMS['figure.figsize'], dpi=self.dpi)
+        self.dpi = self.rt_params['figure.dpi']
+        self.fig = Figure(self.rt_params['figure.figsize'], dpi=self.dpi)
 
         rect = self.fig.patch
         rect.set_facecolor('white') # works with plt.show(), but not plt.savefig
@@ -439,12 +449,13 @@ class GraphFrame(wx.Frame):
         #
         self.log.debug('start redrawing plot')
         if self.xmax_control.is_auto():
-            xmax = len(self.data) if len(self.data) > self.plot_span else self.plot_span
+            print "len(self.data)", len(self.data)
+            xmax = len(self.data) if len(self.data) > self.rt_params['time.plot_span'] else self.rt_params['time.plot_span']
         else:
             xmax = int(self.xmax_control.manual_value())
             
         if self.xmin_control.is_auto():            
-            xmin = xmax - self.plot_span
+            xmin = xmax - self.rt_params['time.plot_span']
         else:
             xmin = int(self.xmin_control.manual_value())
 
@@ -490,6 +501,11 @@ class GraphFrame(wx.Frame):
         
         self.canvas.draw()
         self.log.debug('done redrawing plot')
+
+        MINDLEN, MAXDLEN = 50, 90
+        if len(self.data) >= MINDLEN and len(self.data) < MAXDLEN:
+            #self.fig.savefig('/tmp/whatever%04d.png' % len(self.data), facecolor=self.fig.get_facecolor(), edgecolor='none')
+            self.save_screenshot('/tmp/whatever%04d.png' % len(self.data))
     
     def on_step_button(self, event):
         if self.paused:
@@ -553,17 +569,69 @@ class GraphFrame(wx.Frame):
     def on_flash_status_off(self, event):
         self.statusbar.SetStatusText('')
 
-def demo_pad_gen():
+    def save_screenshot(self, fileName):
+        """ Takes a screenshot of the screen at give pos & size (rect). """
+        print 'Taking screenshot...'
+        rect = self.GetRect()
+        # see http://aspn.activestate.com/ASPN/Mail/Message/wxpython-users/3575899
+        # created by Andrea Gavana
+ 
+        # adjust widths for Linux (figured out by John Torres 
+        # http://article.gmane.org/gmane.comp.python.wxpython/67327)
+        if sys.platform == 'linux2':
+            client_x, client_y = self.ClientToScreen((0, 0))
+            border_width = client_x - rect.x
+            title_bar_height = client_y - rect.y
+            rect.width += (border_width * 2)
+            rect.height += title_bar_height + border_width
+ 
+        #Create a DC for the whole screen area
+        dcScreen = wx.ScreenDC()
+ 
+        #Create a Bitmap that will hold the screenshot image later on
+        #Note that the Bitmap must have a size big enough to hold the screenshot
+        #-1 means using the current default colour depth
+        bmp = wx.EmptyBitmap(rect.width, rect.height)
+ 
+        #Create a memory DC that will be used for actually taking the screenshot
+        memDC = wx.MemoryDC()
+ 
+        #Tell the memory DC to use our Bitmap
+        #all drawing action on the memory DC will go to the Bitmap now
+        memDC.SelectObject(bmp)
+ 
+        #Blit (in this case copy) the actual screen on the memory DC
+        #and thus the Bitmap
+        memDC.Blit( 0, #Copy to this X coordinate
+                    0, #Copy to this Y coordinate
+                    rect.width, #Copy this width
+                    rect.height, #Copy this height
+                    dcScreen, #From where do we copy?
+                    rect.x, #What's the X offset in the original DC?
+                    rect.y  #What's the Y offset in the original DC?
+                    )
+ 
+        #Select the Bitmap out of the memory DC by selecting a new
+        #uninitialized Bitmap
+        memDC.SelectObject(wx.NullBitmap)
+ 
+        img = bmp.ConvertToImage()
+        #fileName = "/tmp/myImage.png"
+        img.SaveFile(fileName, wx.BITMAP_TYPE_PNG)
+        #print '...saving as png!'
+
+def demo_pad_gen(db_params, rt_params):
     from pims.pad.packetfeeder import PadGenerator
     app = wx.PySimpleApp()
     log = SimpleLog('pims.gui.stripchart.demo_pad_gen', log_level='DEBUG').log
     log.info('Logging started.')
     #app.frame = GraphFrame(DataGenExample(), 'title', log)
-    app.frame = GraphFrame(PadGenerator(), 'title', log)
+    app.frame = GraphFrame(PadGenerator(), 'title', log, db_params, rt_params)
     app.frame.Show()
     app.MainLoop()        
 
 if __name__ == '__main__':
+    
     demo_pad_gen()
 #
 #-----------------------------------

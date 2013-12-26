@@ -209,7 +209,7 @@ validate_mathtext_default = ValidateInStrings(
     'default', "rm cal it tt sf bf default bb frak circled scr regular".split())
 
 validate_verbose = ValidateInStrings('verbose',[
-    'debug', 'info', 'warning', 'error', 'critical'
+    'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
     ])
 
 validate_cairo_format = ValidateInStrings('cairo_format',
@@ -327,10 +327,13 @@ class ValidateTimeInterval(object):
             raise RuntimeError('Value must be < %d; found "%d"'%(self.vmax, s))
         return s
 
+#################################################################################################
+# FIXME get at least key values below from XLS spreadsheet immune to Excel auto-format weirdness
+
 # FIXME these were probably set for debug and testing, but you change to what you like:
-ANIN =  1 # seconds for analysis_interval
-PLTS = 25 # seconds for plot_span
-EXTR =  5 # count for extra_intervals
+ANIN =   1 # seconds for analysis_interval
+PLTS = 600 # seconds for plot_span
+EXTR =  10 # count for extra_intervals
 MAXT = int( EXTR * ANIN + PLTS ) # seconds max for real-time trace
 
 # a map from key -> value, converter
@@ -340,7 +343,7 @@ default_params = {
     'paths.snap_path'          : ['/tmp', validate_path_exists], # FIXME
 
     # verbosity setting
-    'verbose.level'     : ['debug', validate_verbose], # debug, info, warning, error, or critical
+    'verbose.level'     : ['DEBUG', validate_verbose], # debug, info, warning, error, or critical
     'verbose.fileo'     : ['sys.stdout', str],
 
     # line props
@@ -380,6 +383,28 @@ default_params = {
     # data/buffer props
     'data.maxlen'               : [ 222, validate_int], # max pts; limit otherwise ever-growing data deque
     'data.scale_factor'         : [1000, validate_int],
+        
+    # legacy packetWriter.py parameters
+    'pw.ancillaryHost'          : ['kyle',            str], # the name of the computer with the auxiliary databases (or 'None')
+    'pw.host'                   : ['localhost',       str], # the name of the computer with the database
+    'pw.database'               : ['pims',            str], # the name of the database to process
+    'pw.tables'                 : ['121f05',          str], # the database table that should be processed (NOT "ALL" & NOT separated by commas)
+    'pw.destination'            : ['.',               str], # the directory to write files into in scp format (host:/path/to/data) or local .
+    'pw.delete'                 : ['0',               str], # 0=delete processed data, 1=leave in database OR use databaseName to move to that db
+    'pw.resume'                 : [0,        validate_int], # try to pick up where a previous run left off, or do whole database
+    'pw.inspect'                : [2 ,       validate_int], # JUST INSPECT FOR UNEXPECTED CHANGES, DO NOT WRITE PAD FILES
+    'pw.showWarnings'           : [1,        validate_int], # show or supress warning message
+    'pw.ascii'                  : [0,        validate_int], # write data in ASCII or binary
+    'pw.startTime'              : [-1.0,   validate_float], # first data time to process (0 means anything back to 1970, negative for "good" start)
+    'pw.endTime'                : [0.0,    validate_float], # last data time to process (0 means no limit)
+    'pw.quitWhenDone'           : [0,        validate_int], # end this program when all data is processed
+    'pw.bigEndian'              : [0,        validate_int], # write binary data as big endian (Sun, Mac) or little endian (Intel)
+    'pw.cutoffDelay'            : [0.0,    validate_float], # maximum amount of time to keep data in the database before processing (sec)
+    'pw.maxFileTime'            : [600.0,  validate_float], # maximum time span for a PAD file (0 means no limit)
+    'pw.additionalHeader'       : ['\"\"',            str], # additional XML to put in header.
+                                                            #   in order to prevent confusion in the shell and command parser,
+                                                            #   represent XML with: ' ' replaced by '#', tab by '~', CR by '~~'    
+    
 
 }
 
