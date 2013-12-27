@@ -55,13 +55,13 @@ def get_line():
 MIN_DELAY = 2
 
 # Wake up and process database every "SLEEP_TIME" seconds (this value is 30 *minutes* in packetWriter)
-SLEEP_TIME = 5 # 20
+SLEEP_TIME = 4
 
 # Max records in database request
-MAX_RESULTS = 200 # 100 # max sensor packet rate is like 14 pps (nominal is 8 pps)
+MAX_RESULTS = 100 # nominal is 200; max sensor packet rate is like 14 pps (nominal is 8 pps)
 
 # Max records to process before deleting processed data and/or working on another table for a while
-MAX_RESULTS_PER_TABLE = MAX_RESULTS
+MAX_RESULTS_PER_TABLE = 5 * 60 * 8 # use M * S/M * P/S; 4800 for 10-minute plot (for 8 pps & 5-minute plot, use 2400)
 
 # Packet counters
 PACKETS_WRITTEN = 0
@@ -89,8 +89,7 @@ DEFAULTS_LIST = [
                            #   in order to prevent confusion in the shell and command parser,
                            #   represent XML with: ' ' replaced by '#', tab by '~', CR by '~~'
 
-# For easy (legacy sake) populate DEFAULTS as strings
-# times are always measured in seconds
+# For convenience (legacy sake) populate DEFAULTS as strings (times in seconds)
 DEFAULTS = {}
 for var in DEFAULTS_LIST:
     DEFAULTS[var] = str( rt_params['pw.' + var] )
@@ -118,7 +117,7 @@ def sample_idle_fun():
     global PREV_IDLE_TOTAL
     if PREV_IDLE_TOTAL != TOTAL_PACKETS_FED:
         log.debug("%04d IDLER TOTAL_PACKETS_FED %d" % (get_line(), TOTAL_PACKETS_FED))
-        sleep(0.5)
+        sleep(0.1)
     PREV_IDLE_TOTAL = TOTAL_PACKETS_FED
 
 # add sample idle function (NOTE: addIdle comes from pims.realtime.accelpacket)
@@ -510,8 +509,13 @@ class PadGenerator(PacketInspector):
     def __init__(self, showWarnings=1, maxsec_rttrace=7200, scale_factor=1000):
         """initialize packet-based, real-time trace PAD generator with scaling"""
         super(PadGenerator, self).__init__(showWarnings)
+        self.show_warnings = showWarnings
         self.maxsec_rttrace = maxsec_rttrace # in seconds for EACH (x,y,z) rt_trace
         self.scale_factor = scale_factor
+        if showWarnings:
+            self.warnfiltstr = 'always'
+        else:
+            self.warnfiltstr = 'ignore'
 
     def __str__(self):
         #s = ''
@@ -525,6 +529,7 @@ class PadGenerator(PacketInspector):
 
     # one_shot as class method
     def next(self, step_callback=None):
+        global MAX_RESULTS, MAX_RESULTS_PER_TABLE
         #BENCH_NEXT_METHOD.start()
         log.debug('%04d ONESH inspect=%s %s' % (get_line(), PARAMETERS['inspect'], '-' * 99))
         self.lastPacketTotal = TOTAL_PACKETS_FED
@@ -648,6 +653,9 @@ class PadGenerator(PacketInspector):
         
         #log.debug('%04d %s' % (get_line(), BENCH_NEXT_METHOD))
         
+        # Only the initial "next" uses MAX_RESULTS_PER_TABLE, thereafter we use MAX_RESULTS
+        MAX_RESULTS_PER_TABLE = MAX_RESULTS
+        
         return TOTAL_PACKETS_FED
 
     def init_realtime_trace_registerproc(self, hdr, ax):
@@ -676,9 +684,9 @@ class PadGenerator(PacketInspector):
             for i, ax in enumerate(['x', 'y', 'z']):
                 tr = self.as_trace( atxyzs[:, i+1] )
                 tr.stats.starttime = self.lastPacket.endTime() + self.rt_trace[ax].stats.delta
-                self.rt_trace[ax].append( tr, gap_overlap_check=False, verbose=True) # FIXME this should be True, right?
+                self.rt_trace[ax].append( tr, gap_overlap_check=False, verbose=self.show_warnings) # FIXME should this be True (throws error) or pre-nudge?
         else:
-            log.warning('unhandled case when non-contiguous, although rt_trace with good merge might work?')
+            log.warning('%04d unhandled case when non-contiguous, although rt_trace with good merge might work%s' % (get_line(), '?'*40))
         log.debug( "%s" % str(self.rt_trace['x']))
 
     def as_trace(self, data):
@@ -714,6 +722,15 @@ class PadGenerator(PacketInspector):
         dHeader['SensorCoordinateSystem'] = self.get_subfields(h,'SensorCoordinateSystem',Lcoord)
         dHeader['DataCoordinateSystem'] = self.get_subfields(h,'DataCoordinateSystem',Lcoord)
         dHeader['GData'] = self.get_subfields(h,'GData',['format','file'])
+        
+        # use first header as self.header_string
+        self.header_string = '%s, %s (%g Hz, %g sps), at %s in %s Coordinates' % (
+            dHeader['System'],
+            dHeader['SensorID'],
+            dHeader['CutoffFreq'],
+            dHeader['SampleRate'],
+            dHeader['SensorCoordinateSystem']['comment'],
+            dHeader['DataCoordinateSystem']['name'])
         
         # initialize real-time trace and register real-time process (scale factor)
         self.rt_trace = {}
@@ -800,7 +817,9 @@ class PadGenerator(PacketInspector):
 
         # append and auto-process packet data into RtTrace:
         if self.is_header_same(packet):
-            self.append_process_packet_data(atxyzs, packetStart, packet.contiguous(self.lastPacket))
+            with warnings.catch_warnings(): #self.warnfiltstr
+                warnings.filterwarnings(self.warnfiltstr, 'RtTrace.*|Gap of.*|Overlap of.*')
+                self.append_process_packet_data(atxyzs, packetStart, packet.contiguous(self.lastPacket))
         else:
             log.warning( 'DO NOT APPEND PACKET because we got False from is_header_same (near line %d)' % get_line() )
         
@@ -1215,7 +1234,7 @@ def parameters_ok():
         log.info('Logging started.')
         
     warnings.showwarning = custom_warn
-    warnings.warn("Stray warnings are being redirected into log.")
+    warnings.warn("Stray warnings are being put into log via custom_warn function.")
 
     b = PARAMETERS['inspect']
     if b != '0' and b != '1' and b != '2':
@@ -1236,7 +1255,7 @@ def parameters_ok():
         log.error(' showWarnings must be 0 or 1')
         return 0
     else:
-        PARAMETERS['showWarnings'] = rt_params['pw.showWarnings'] = atoi(b)
+        rt_params['pw.showWarnings'] = PARAMETERS['showWarnings'] = atoi(b)
 
     b = PARAMETERS['ascii']
     if b != '0' and b != '1':
@@ -1456,7 +1475,8 @@ def demo_strip():
     #    print k, "%s" % v
     #raise SystemExit
 
-    datagen = PadGenerator()
+    showWarnings = rt_params['pw.showWarnings']
+    datagen = PadGenerator(showWarnings=showWarnings)
     app = wx.PySimpleApp()
     app.frame = GraphFrame(datagen, 'title', log, rt_params) # rt_params is from global namespace
     app.frame.Show()
