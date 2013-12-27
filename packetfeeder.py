@@ -33,6 +33,7 @@ from pims.kinematics.rotation import rotation_matrix
 from pims.database.pimsquery import ceil4, PadExpect
 from pims.gui.stripchart import GraphFrame
 from pims.lib.tools import varname
+from pims.utils.benchmark import Benchmark
 
 from obspy import Trace
 from obspy.realtime import RtTrace
@@ -54,10 +55,10 @@ def get_line():
 MIN_DELAY = 2
 
 # Wake up and process database every "SLEEP_TIME" seconds (this value is 30 *minutes* in packetWriter)
-SLEEP_TIME = 20
+SLEEP_TIME = 5 # 20
 
 # Max records in database request
-MAX_RESULTS = 100 # max sensor packet rate is like 14 pps (nominal is 8 pps)
+MAX_RESULTS = 200 # 100 # max sensor packet rate is like 14 pps (nominal is 8 pps)
 
 # Max records to process before deleting processed data and/or working on another table for a while
 MAX_RESULTS_PER_TABLE = MAX_RESULTS
@@ -105,13 +106,8 @@ ANC_XML = ''
 ANC_UPDATE = 0 # next time ANC_XML should by updated
 ANC_DATABASES = ['bias', 'coord_system_db', 'data_coord_system', 'dqm', 'iss_config', 'scale']
 
-# simple timing based benchmark routine
-BENCH_TOTAL = 0
-BENCH_COUNT = 0
-def benchmark(startTime):
-    global BENCH_COUNT, BENCH_TOTAL
-    BENCH_COUNT = BENCH_COUNT + 1
-    BENCH_TOTAL = BENCH_TOTAL + (time() - startTime)
+#BENCH_NEXT_METHOD = Benchmark('next method') # this should avg about 3s
+#BENCH_APPEND_METHOD = Benchmark('append method') # this should avg just under 11ms
 
 ################################################################
 # sample idle function
@@ -298,9 +294,11 @@ class PacketFeeder(object):
             self._forceNewFile_ = 0
         elif not contiguous or ((PARAMETERS['maxFileTime'] > 0) and (packet.time() > (self._fileStart_ + PARAMETERS['maxFileTime']))):
             self.begin(packet, contiguous)
-#        bStartTime = time() # benchmark this
+
+        #BENCH_APPEND_METHOD.start()
         self.append(packet)
-#        benchmark(bStartTime)
+        #log.debug('%04d %s' % (get_line(), BENCH_APPEND_METHOD))
+
 
     # finished writing for a while, close and name the file if it was in use 
     def end(self):
@@ -527,6 +525,7 @@ class PadGenerator(PacketInspector):
 
     # one_shot as class method
     def next(self, step_callback=None):
+        #BENCH_NEXT_METHOD.start()
         log.debug('%04d ONESH inspect=%s %s' % (get_line(), PARAMETERS['inspect'], '-' * 99))
         self.lastPacketTotal = TOTAL_PACKETS_FED
         self.moreToDo = 0
@@ -646,6 +645,8 @@ class PadGenerator(PacketInspector):
             current_info_tuple = ('%s' % unix2dtm(self.lastPacket.time()), '%s' % unix2dtm(self.lastPacket.endTime()), '%d' % self.moreToDo)
             cumulative_info_tuple = ('%s' % unix2dtm(self.lastPacket.time()), '%s' % unix2dtm(self.lastPacket.endTime()), '%d' % TOTAL_PACKETS_FED)
             step_callback(current_info_tuple, cumulative_info_tuple)
+        
+        #log.debug('%04d %s' % (get_line(), BENCH_NEXT_METHOD))
         
         return TOTAL_PACKETS_FED
 
@@ -1457,7 +1458,7 @@ def demo_strip():
 
     datagen = PadGenerator()
     app = wx.PySimpleApp()
-    app.frame = GraphFrame(datagen, 'title', log, rt_params) # rt_params come from global namespace here
+    app.frame = GraphFrame(datagen, 'title', log, rt_params) # rt_params is from global namespace
     app.frame.Show()
     app.MainLoop()
 
