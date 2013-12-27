@@ -447,7 +447,6 @@ class GraphFrame(wx.Frame):
         # sliding window effect. therefore, xmin is assigned after
         # xmax.
         #
-        self.log.debug('start redrawing plot')
         if self.xmax_control.is_auto():
             print "len(self.data)", len(self.data)
             xmax = len(self.data) if len(self.data) > self.rt_params['time.plot_span'] else self.rt_params['time.plot_span']
@@ -500,12 +499,14 @@ class GraphFrame(wx.Frame):
         self.plot_data.set_ydata(np.array(self.data))
         
         self.canvas.draw()
-        self.log.debug('done redrawing plot')
 
-        MINDLEN, MAXDLEN = 50, 90
-        if len(self.data) >= MINDLEN and len(self.data) < MAXDLEN:
-            #self.fig.savefig('/tmp/whatever%04d.png' % len(self.data), facecolor=self.fig.get_facecolor(), edgecolor='none')
-            self.save_screenshot('/tmp/whatever%04d.png' % len(self.data))
+        ## it takes bout 50ms to redraw plot
+        #self.log.debug('done redrawing plot')
+
+        #MINDLEN, MAXDLEN = 50, 90
+        #if len(self.data) >= MINDLEN and len(self.data) < MAXDLEN:
+        #    #self.fig.savefig('/tmp/whatever%04d.png' % len(self.data), facecolor=self.fig.get_facecolor(), edgecolor='none')
+        #    self.save_screenshot('/tmp/whatever%04d.png' % len(self.data))
     
     def on_step_button(self, event):
         if self.paused:
