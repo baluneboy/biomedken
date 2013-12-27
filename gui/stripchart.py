@@ -43,15 +43,17 @@ from matplotlib.backends.backend_wxagg import \
 from pims.gui.iogrids import StripChartInputPanel
 from pims.gui.tally_grid import StripChartInputGrid
 from pims.files.log import SimpleLog
+from pims.utils.benchmark import Benchmark
 
 from obspy.realtime import RtTrace
 from obspy import read
 
-# Status bar constants
+# Status bar and other global vars
 SB_LEFT = 0
 SB_RIGHT = 1
-SB_MSEC = 5000 # update lower-right time ~every several seconds
-REDRAW_MSEC = 10000 # redraw timer every 10 seconds
+REDRAW_MSEC = 5000 # redraw timer every 5 to 10 seconds or so
+SB_MSEC = int( 2 * REDRAW_MSEC ) #  lower-right time ~every several seconds
+BENCH_STEP = Benchmark('step') # datagen next method ("step") should avg about 3s
 
 class DataGenRandom(object):
     """ A silly class that generates pseudo-random data for plot display."""
@@ -95,6 +97,7 @@ class DataGenExample(object):
     
         # append and auto-process packet data into RtTrace:
         self.append_and_autoprocess_packet()
+        self.header_string = 'example header string'
     
     def next(self, step_callback=None):
         if self.num < len(self.rt_trace) - 1:
@@ -149,7 +152,7 @@ class BoundControlBox(wx.Panel):
         self.radio_manual = wx.RadioButton(self, -1,
             label="Manual")
         self.manual_text = wx.TextCtrl(self, -1, 
-            size=(35,-1),
+            size=(50,-1),
             value=str(initval),
             style=wx.TE_PROCESS_ENTER)
         
@@ -240,10 +243,13 @@ class GraphFrame(wx.Frame):
         # we must limit size of otherwise ever-growing data object
         self.data = deque( maxlen=self.rt_params['data.maxlen'] )
         
-        # this is first call "prime the pump" of data generator via next method
+        # this is first call to "prime the pump" of data generator via next method
         self.paused = False
         self.data.append( self.datagen.next(self.step_callback) )
         self.paused = True
+       
+        # after first "next" call, we can set plot title using datagen's header_string
+        self.set_plot_title(self.datagen.header_string)
        
         # Set up a timer to update the date/time (every few seconds)
         self.timer = wx.PyTimer(self.notify)
@@ -259,7 +265,7 @@ class GraphFrame(wx.Frame):
         self.draw_plot()
         self.Maximize()
         
-        self.log.debug('GraphFrame was initialized')
+        self.log.debug('GraphFrame was initialized.')
 
     def get_inputs(self):
         """get values from input panel grid"""
@@ -410,9 +416,12 @@ class GraphFrame(wx.Frame):
         t = self.getTimeString() + ' (update every ' + str(int(SB_MSEC/1000.0)) + 's)'
         self.SetStatusText(t, SB_RIGHT)
 
+    def set_plot_title(self, title):
+        """use datagen header_string to set plot title"""
+        self.axes.set_title(title, size=16)
+
     def init_plot(self):
         """initialize the plot"""
-        
         self.dpi = self.rt_params['figure.dpi']
         self.fig = Figure(self.rt_params['figure.figsize'], dpi=self.dpi)
 
@@ -421,7 +430,7 @@ class GraphFrame(wx.Frame):
 
         self.axes = self.fig.add_subplot(111)
         self.axes.set_axis_bgcolor('white')
-        self.axes.set_title('testing with random data', size=16)
+        self.set_plot_title('init_plot (no first header yet)')
         
         pylab.setp(self.axes.get_xticklabels(), fontsize=14)
         pylab.setp(self.axes.get_yticklabels(), fontsize=14)
@@ -437,8 +446,8 @@ class GraphFrame(wx.Frame):
         
         # to save fig with same facecolor as rt plot, use:
         #fig.savefig('whatever.png', facecolor=fig.get_facecolor(), edgecolor='none')
-        
-        self.log.debug('GraphFrame.init_plot() is complete')
+
+        self.log.debug('GraphFrame.init_plot() is complete.')
 
     def draw_plot(self):
         """ Redraws the plot
@@ -448,7 +457,6 @@ class GraphFrame(wx.Frame):
         # xmax.
         #
         if self.xmax_control.is_auto():
-            print "len(self.data)", len(self.data)
             xmax = len(self.data) if len(self.data) > self.rt_params['time.plot_span'] else self.rt_params['time.plot_span']
         else:
             xmax = int(self.xmax_control.manual_value())
@@ -552,7 +560,9 @@ class GraphFrame(wx.Frame):
         # if paused do not add data, but still redraw the plot
         # (to respond to scale modifications, grid change, etc.)
         if not self.paused:
+            BENCH_STEP.start()
             self.data.append( self.datagen.next(self.step_callback) )
+            self.flash_status_message(str(BENCH_STEP), 2000)
         self.draw_plot()
     
     def on_exit(self, event):
@@ -621,13 +631,15 @@ class GraphFrame(wx.Frame):
         img.SaveFile(fileName, wx.BITMAP_TYPE_PNG)
         #print '...saving as png!'
 
-def demo_pad_gen(db_params, rt_params):
+def demo_pad_gen():
     from pims.pad.packetfeeder import PadGenerator
+    from pims.realtime import rt_params
+    
     app = wx.PySimpleApp()
     log = SimpleLog('pims.gui.stripchart.demo_pad_gen', log_level='DEBUG').log
     log.info('Logging started.')
-    #app.frame = GraphFrame(DataGenExample(), 'title', log)
-    app.frame = GraphFrame(PadGenerator(), 'title', log, db_params, rt_params)
+    app.frame = GraphFrame(DataGenExample(), 'title', log, rt_params)
+    #app.frame = GraphFrame(PadGenerator(), 'title', log, rt_params)
     app.frame.Show()
     app.MainLoop()        
 
