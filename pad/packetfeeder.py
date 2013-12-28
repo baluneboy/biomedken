@@ -1221,6 +1221,8 @@ def custom_warn(message, category, filename, lineno, file=None, line=None):
 
 # check PARAMETERS
 def parameters_ok():
+    """check PARAMETERS and possibly change rt_params"""
+# FIXME scrub this for better approach with testing to verify end items
     global log
     
     # Start log; refer to rt_params for log verbose level

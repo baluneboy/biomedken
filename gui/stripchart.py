@@ -45,6 +45,7 @@ from pims.gui.tally_grid import StripChartInputGrid
 from pims.files.log import SimpleLog
 from pims.utils.benchmark import Benchmark
 
+from obspy.core.utcdatetime import UTCDateTime
 from obspy.realtime import RtTrace
 from obspy import read
 
@@ -54,6 +55,16 @@ SB_RIGHT = 1
 REDRAW_MSEC = 5000 # redraw timer every 5 to 10 seconds or so
 SB_MSEC = int( 2 * REDRAW_MSEC ) #  lower-right time ~every several seconds
 BENCH_STEP = Benchmark('step') # datagen next method ("step") should avg about 3s
+
+class PimsRtTrace(RtTrace):
+    
+    def absolute_times(self):
+        return self.times() + float(self.stats.starttime)
+    
+    def slice_after(self, min_time):
+        t = self.absolute_times()
+        idx = np.where(t >= min_time)
+        return t[idx], self[idx]
 
 class DataGenRandom(object):
     """ A silly class that generates pseudo-random data for plot display."""
@@ -126,13 +137,31 @@ class DataGenExample(object):
 
     def assemble_rttrace_register1proc(self):
         """assemble real time trace and register one process"""
-        rt_trace = RtTrace()
+        #rt_trace = RtTrace()
+        rt_trace = PimsRtTrace()
         return rt_trace, rt_trace.registerRtProcess('scale', factor=self.scale_factor)
 
     def append_and_autoprocess_packet(self):
         """append and auto-process packet data into RtTrace"""
         for tr in self.traces:
             self.rt_trace.append(tr, gap_overlap_check=True)
+
+class DataGenBetterExample(DataGenExample):
+
+    def next(self, step_callback=None):
+        if self.num < len(self.rt_trace) - 1:
+            self.num += 1
+            min_time = self.rt_trace.absolute_times()[self.num]
+            t, a = self.rt_trace.slice_after(min_time)
+            if step_callback:
+                current_info_tuple = (str(UTCDateTime(t[0])), str(UTCDateTime(t[-1])), '%d' % len(a))
+                cumulative_info_tuple = ('%d' % len(self.rt_trace), str(UTCDateTime(t[-1])), str(UTCDateTime(t[-1])))
+                step_callback(current_info_tuple, cumulative_info_tuple)
+            return t, a
+        else:
+            #raise StopIteration()
+            self.num = -1
+            return [], []
 
 class BoundControlBox(wx.Panel):
     """ A static box with a couple of radio buttons and a text
@@ -643,10 +672,24 @@ def demo_pad_gen():
     app.frame.Show()
     app.MainLoop()        
 
+def demo_callback(curr_info, cum_info):
+    print curr_info, cum_info
+    
+def demo_datagen_with_time_arr():
+    dg = DataGenBetterExample(scale_factor=0.1, num_splits=4)
+    for i in range(1000):
+        if i < 3 or i > 746:
+            cb = demo_callback
+        else:
+            cb = None
+        t, a = dg.next(step_callback=cb)
+
 if __name__ == '__main__':
     
+    #demo_datagen_with_time_arr()
     demo_pad_gen()
-#
+    
+
 #-----------------------------------
 #FIRST PACKET
 #-----------------------------------
