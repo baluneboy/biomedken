@@ -343,7 +343,7 @@ default_params = {
     'paths.snap_path'          : ['/tmp', validate_path_exists], # FIXME
 
     # verbosity setting
-    'verbose.level'     : ['DEBUG', validate_verbose], # debug, info, warning, error, or critical
+    'verbose.level'     : ['INFO', validate_verbose], # debug, info, warning, error, or critical
     'verbose.fileo'     : ['sys.stdout', str],
 
     # line props
