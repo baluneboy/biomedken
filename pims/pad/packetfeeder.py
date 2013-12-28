@@ -34,9 +34,10 @@ from pims.database.pimsquery import ceil4, PadExpect
 from pims.gui.stripchart import GraphFrame
 from pims.lib.tools import varname
 from pims.utils.benchmark import Benchmark
+from pims.gui.stripchart import PimsRtTrace
 
 from obspy import Trace
-from obspy.realtime import RtTrace
+#from obspy.realtime import RtTrace
 
 import inspect
 
@@ -502,10 +503,10 @@ class PacketInspector(PacketFeeder):
             
         self.lastPacket = packet
         TOTAL_PACKETS_FED = TOTAL_PACKETS_FED + 1
-
+    
 # class to feed packet data hopefully to a good strip chart display
 class PadGenerator(PacketInspector):
-    """Generator for RtTrace using real-time scaling."""
+    """Generator for PimsRtTrace using real-time scaling."""
     def __init__(self, showWarnings=1, maxsec_rttrace=7200, scale_factor=1000):
         """initialize packet-based, real-time trace PAD generator with scaling"""
         super(PadGenerator, self).__init__(showWarnings)
@@ -661,7 +662,7 @@ class PadGenerator(PacketInspector):
     def init_realtime_trace_registerproc(self, hdr, ax):
         """initialize real-time traces and register process for scale-factor"""
         # set max length (in sec) for real-time trace during init to avoid memory issue
-        rt_trace = RtTrace(max_length=self.maxsec_rttrace)
+        rt_trace = PimsRtTrace(max_length=self.maxsec_rttrace)
         
         # data nominally in g, but most likely mg or ug preferred
         rt_trace.registerRtProcess('scale', factor=self.scale_factor)
@@ -676,7 +677,7 @@ class PadGenerator(PacketInspector):
         return rt_trace
 
     def append_process_packet_data(self, atxyzs, start, contig):
-        """append and auto-process packet data into RtTrace"""
+        """append and auto-process packet data into PimsRtTrace"""
         # FIXME should we use MERGE method here or somewhere (NaN fill?)
         if contig:
             log.debug( 'RTAPPEND:..lastPacket.endTime()=%s' % unix2dtm(self.lastPacket.endTime()) )
@@ -815,10 +816,10 @@ class PadGenerator(PacketInspector):
         if TOTAL_PACKETS_FED == 0:
             self.get_first_header()
 
-        # append and auto-process packet data into RtTrace:
+        # append and auto-process packet data into PimsRtTrace:
         if self.is_header_same(packet):
             with warnings.catch_warnings(): #self.warnfiltstr
-                warnings.filterwarnings(self.warnfiltstr, 'RtTrace.*|Gap of.*|Overlap of.*')
+                warnings.filterwarnings(self.warnfiltstr, '.*RtTrace.*|Gap of.*|Overlap of.*')
                 self.append_process_packet_data(atxyzs, packetStart, packet.contiguous(self.lastPacket))
         else:
             log.warning( 'DO NOT APPEND PACKET because we got False from is_header_same (near line %d)' % get_line() )
@@ -1411,8 +1412,8 @@ def get_examplegen():
 def get_padgen():
     """intialize/get PAD datagen"""
     return PadGenerator(PARAMETERS['showWarnings'],
-                           PARAMETERS['maxsec_rttrace'],
-                           PARAMETERS['scale_factor'])
+                        PARAMETERS['maxsec_rttrace'],
+                        PARAMETERS['scale_factor'])
 
 def launch_strip_chart(get_datagen, analysis_interval, plot_span, extra_intervals, title, maxpts):
     """launch the strip chart gui"""
