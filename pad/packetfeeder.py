@@ -687,7 +687,7 @@ class PadGenerator(PacketInspector):
                 tr.stats.starttime = self.lastPacket.endTime() + self.rt_trace[ax].stats.delta
                 self.rt_trace[ax].append( tr, gap_overlap_check=False, verbose=self.show_warnings) # FIXME should this be True (throws error) or pre-nudge?
         else:
-            log.warning('%04d unhandled case when non-contiguous, although rt_trace with good merge might work%s' % (get_line(), '?'*40))
+            log.warning('%04d DROPPED A PACKET; unhandled case when non-contiguous, although rt_trace with good merge might work%s' % (get_line(), '?'*40))
         log.debug( "%s" % str(self.rt_trace['x']))
 
     def as_trace(self, data):

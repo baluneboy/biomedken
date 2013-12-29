@@ -61,3 +61,25 @@ See sandbox/flatbook_demo.py for starter kit on upgrade to "pads" & "roadmaps" t
 be if (1) PADs gets populated first, (2) then roadmaps after that, (3) then some form of link between the 2 grids so
 that processing cells in PADs may have resample hooked to it, but also the ability to highlight PAD cells that have some
 hours, but where no roadmaps exist, then there's good way to process those cells (in PADs) to create the missing roadmaps FTW!
+
+
+#######################################################
+In gui/stripchart.py we may be able to gain efficiency
+see bernie post at: http://stackoverflow.com/questions/9627686/plotting-dates-on-the-x-axis-with-pythons-matplotlib
+
+# *** You can do this more simply using plot() instead of plot_date().
+#
+import datetime as dt
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+
+# First, convert your strings to instances of Python datetime.date:
+dates = ['01/02/1991','01/03/1991','01/04/1991']
+x = [dt.datetime.strptime(d,'%m/%d/%Y').date() for d in dates]
+y = range(len(x))
+
+# Then plot:
+plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
+plt.gca().xaxis.set_major_locator(mdates.DayLocator())
+plt.plot(x,y)
+plt.gcf().autofmt_xdate()

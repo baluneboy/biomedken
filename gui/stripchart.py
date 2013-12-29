@@ -181,6 +181,8 @@ class DataGenBetterExample(object):
     def next(self, step_callback=None):
         if self.num < len(self.rt_trace) - 1:
             self.num += 1
+            self.rt_trace['y'].filter('lowpass', freq=2.0, zerophase=True)
+            self.rt_trace['z'].filter('highpass', freq=2.0, zerophase=True)
             min_time = self.rt_trace['x'].absolute_times()[self.num]
             t, x = self.rt_trace['x'].slice_after(min_time)
             y = self.rt_trace['y'].slice_after(min_time)[1]
@@ -580,7 +582,7 @@ class GraphFrame(wx.Frame):
         t, x = self.datagen.rt_trace['x'].slice_after(0)
         t, y = self.datagen.rt_trace['y'].slice_after(0)
         t, z = self.datagen.rt_trace['z'].slice_after(0)
-        
+
         # when xmin is on auto, it "follows" xmax to produce a 
         # sliding window effect. therefore, xmin is assigned after
         # xmax.
