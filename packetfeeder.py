@@ -36,6 +36,7 @@ from pims.lib.tools import varname
 from pims.utils.benchmark import Benchmark
 from pims.gui.stripchart import PimsRtTrace
 
+from obspy.core.utcdatetime import UTCDateTime
 from obspy import Trace
 #from obspy.realtime import RtTrace
 
@@ -99,7 +100,7 @@ PARAMETERS = DEFAULTS.copy()
 def setParameters(newParameters):
     global PARAMETERS
     PARAMETERS = newParameters.copy()
-    
+
 ANC_DATA = {}
 ANC_DATA_FORMAT = {}
 ANC_XML = ''
@@ -145,7 +146,7 @@ class PacketFeeder(object):
         self._dataDirName_ = "error" # should be replace by packet's dataDirName() function
         self._maybeMove_ = '' # indicator that a file has been generated and should eventually be moved
         log.debug('%s has been initialized.' % self.__class__.__name__)
-    
+
     # DEFUNCT create the PIMS directory tree for pad files (locally)
     def buildDirTree(self, filename):
         """DEFUNCT # create the PIMS directory tree for pad files (locally)"""
@@ -171,7 +172,7 @@ class PacketFeeder(object):
             print_log(t)
             return '%s' % (y)
         return '%s' % (y)
-        
+
     # move PAD file
     def movePadFile(self, source):
         """move PAD file"""
@@ -198,9 +199,9 @@ class PacketFeeder(object):
             else:
                 retry = 0
         r = getoutput('rm -rf %s*' % (localPath))
-        # getoutput('beep -f 4000 -l 50') 
+        # getoutput('beep -f 4000 -l 50')
         self._maybeMove_ = ''
-        
+
     # return time of last packet (or zero)
     def lastTime(self):
         """return time of last packet (or zero)"""
@@ -231,26 +232,26 @@ class PacketFeeder(object):
                 aXML = aXML + '\t<DataQualityMeasure>%s</DataQualityMeasure>\n' % xmlEscape(self._headerPacket_.additionalDQM())
             else:
                 dqmInsert = dqmStart + len('<DataQualityMeasure>')
-                aXML = aXML[:dqmInsert] + xmlEscape(self._headerPacket_.additionalDQM()) + ', ' + aXML[dqmInsert:] 
+                aXML = aXML[:dqmInsert] + xmlEscape(self._headerPacket_.additionalDQM()) + ', ' + aXML[dqmInsert:]
         header = header + aXML
         if PARAMETERS['additionalHeader'] != '\"\"':
             header = header + PARAMETERS['additionalHeader']
         header = header + '</%s>\n' % self._headerPacket_.type
         return header
-    
+
     # set the coordinate system we want the data to be in
     def setDataCoordSystem(self, dataName, dataTime, sensor = ''):
         """set the coordinate system we want the data to be in"""
         # sensor name is passed in because we might not have received any
         # real packets yet to determine sensor name for coord. transformation
-        if dataName == self._dataCoordSystem_: 
+        if dataName == self._dataCoordSystem_:
             return 1 # no change
         if dataName == 'sensor' or dataName == sensor:
             self._rotateData_ = 0
             #self._rotationMatrix_ = identity(3).astype(Float32)
             self._rotationMatrix_ = np.identity(3).astype(np.float32)
             success = 1
-        else:                
+        else:
             sensorEntry, dataEntry = check_coord_sys(dataTime, sensor, dataName)
             if sensorEntry and dataEntry:
                 self._rotateData_ = 1
@@ -268,7 +269,7 @@ class PacketFeeder(object):
                 #self._rotationMatrix_ = identity(3).astype(Float32)
                 self._rotationMatrix_ = np.identity(3).astype(np.float32)
                 success = 0
-        self._forceNewFile_ = 1 
+        self._forceNewFile_ = 1
         self._dataCoordSystem_ = dataName
         return success
 
@@ -283,7 +284,7 @@ class PacketFeeder(object):
             ostart = self.lastPacket.time()
             oend = self.lastPacket.endTime()
             start = packet.time()
-            log.debug('%04d writePacket() start: %0.10f end: %0.10f samples: %s packetGap: %0.10f  sampleGap: %0.10f' % (get_line(), start, packet.endTime(), packet.samples(), start-ostart, start-oend))
+            log.debug('%04d writePacket() start: %s end: %s samples: %s packetGap: %0.9f  sampleGap: %0.9f' % (get_line(), unix2dtm(start), unix2dtm(packet.endTime()), packet.samples(), start-ostart, start-oend))
 
 #        print 'writePacket ' + `contiguous`
         update_anc_data(packet.time(), packet.name(), self)
@@ -300,7 +301,7 @@ class PacketFeeder(object):
         #log.debug('%04d %s' % (get_line(), BENCH_APPEND_METHOD))
 
 
-    # finished writing for a while, close and name the file if it was in use 
+    # finished writing for a while, close and name the file if it was in use
     def end(self):
         """finished writing for a while, close and name the file if it was in use"""
         if self._file_ != None:
@@ -312,7 +313,7 @@ class PacketFeeder(object):
                 ok = os.system('mv %s %s' % (self._fileName_, newName)) == 0
                 log.debug('%04d end() is moving %s to %s, success:%s' % (get_line(), self._fileName_, newName, ok))
                 headFile = open(newName + '.header', 'wb')
-                headFile.write(self.buildHeader(newName))  
+                headFile.write(self.buildHeader(newName))
                 headFile.close()
                 self._fileName_ = newName
                 self._dataDirName_ = self.lastPacket.dataDirName()
@@ -333,7 +334,7 @@ class PacketFeeder(object):
             #print 'change starting with packet: ', packet.dump() # show interesting packet headers for now
             if self._showWarnings_ and self.lastPacket:
                 if packet.time() < self.lastPacket.endTime()- 0.00005:
-                    t = UnixToHumanTime(time(), 1)  
+                    t = UnixToHumanTime(time(), 1)
                     t = t + ' overlappingPacket\nprev: ' + self.lastPacket.dump() + '\nnext: ' + packet.dump()
                     print_log(t)
         self._fileName_ = 'temp.' + packet.name()
@@ -373,7 +374,7 @@ class PacketFeeder(object):
 
         if not PARAMETERS['ascii']:
             if PARAMETERS['bigEndian']:
-                atxyzs = atxyzs.byteswap() 
+                atxyzs = atxyzs.byteswap()
                 if extra:
                     aextra = aextra.byteswap()
             if extra:
@@ -400,14 +401,14 @@ class PacketInspector(PacketFeeder):
     #       routines do less/nothing; for now, just neutralize things a bit
 
     def buildDirTree(self, filename):
-        """do nothing for inheritance sake"""        
+        """do nothing for inheritance sake"""
         pass
 
     def movePadFile(self, source):
         """do nothing for inheritance sake"""
         pass
 
-    # finished "non-writing" for a while, close and name the file if it was in use 
+    # finished "non-writing" for a while, close and name the file if it was in use
     def end(self):
         """finished non-writing for a while, NOT REALLY close and name the file if it was in use"""
         if self._file_ != None:
@@ -419,7 +420,7 @@ class PacketInspector(PacketFeeder):
                 ok = True #os.system('mv %s %s' % (self._fileName_, newName)) == 0
                 log.debug('%04d end() is moving %s to %s, success:%s' % (get_line(), self._fileName_, newName, ok))
                 #headFile = open(newName + '.header', 'wb')
-                #headFile.write(self.buildHeader(newName))  
+                #headFile.write(self.buildHeader(newName))
                 #headFile.close()
                 self._fileName_ = newName
                 self._dataDirName_ = self.lastPacket.dataDirName()
@@ -440,7 +441,7 @@ class PacketInspector(PacketFeeder):
             #print 'change starting with packet: ', packet.dump() # show interesting packet headers for now
             if self._showWarnings_ and self.lastPacket:
                 if packet.time() < self.lastPacket.endTime()- 0.00005:
-                    t = UnixToHumanTime(time(), 1)  
+                    t = UnixToHumanTime(time(), 1)
                     t = t + ' overlappingPacket\nprev: ' + self.lastPacket.dump() + '\nnext: ' + packet.dump()
                     print_log(t)
         self._fileName_ = 'temp.' + packet.name()
@@ -482,7 +483,7 @@ class PacketInspector(PacketFeeder):
 
         if not PARAMETERS['ascii']:
             if PARAMETERS['bigEndian']:
-                atxyzs = atxyzs.byteswap() 
+                atxyzs = atxyzs.byteswap()
                 if extra:
                     aextra = aextra.byteswap()
             if extra:
@@ -500,19 +501,22 @@ class PacketInspector(PacketFeeder):
             for row in atxyzs:
                 s = s + formatString % tuple(row)
             #self._file_.write(s) # NOTE THIS IS "NOT-WRITING" JUST INSPECTING
-            
+
         self.lastPacket = packet
         TOTAL_PACKETS_FED = TOTAL_PACKETS_FED + 1
-    
+
 # class to feed packet data hopefully to a good strip chart display
 class PadGenerator(PacketInspector):
     """Generator for PimsRtTrace using real-time scaling."""
-    def __init__(self, showWarnings=1, maxsec_rttrace=7200, scale_factor=1000):
+    def __init__(self, showWarnings=1, maxsec_rttrace=7200, scale_factor=1000, analysis_interval=10.0):
         """initialize packet-based, real-time trace PAD generator with scaling"""
         super(PadGenerator, self).__init__(showWarnings)
         self.show_warnings = showWarnings
         self.maxsec_rttrace = maxsec_rttrace # in seconds for EACH (x,y,z) rt_trace
         self.scale_factor = scale_factor
+        self.analysis_interval = analysis_interval
+        self.analysis_samples = None
+        self.starttime = None
         if showWarnings:
             self.warnfiltstr = 'always'
         else:
@@ -532,6 +536,7 @@ class PadGenerator(PacketInspector):
     def next(self, step_callback=None):
         global MAX_RESULTS, MAX_RESULTS_PER_TABLE
         #BENCH_NEXT_METHOD.start()
+        self.step_callback = step_callback
         log.debug('%04d ONESH inspect=%s %s' % (get_line(), PARAMETERS['inspect'], '-' * 99))
         self.lastPacketTotal = TOTAL_PACKETS_FED
         self.moreToDo = 0
@@ -539,7 +544,7 @@ class PadGenerator(PacketInspector):
         cutoffTime = timeNow - max(PARAMETERS['cutoffDelay'], MIN_DELAY)
         if PARAMETERS['endTime'] > 0.0:
             cutoffTime = min(cutoffTime, PARAMETERS['endTime'])
-    
+
         # verify host has table we want
         tables = []
         for table in sqlConnect('show tables',
@@ -571,7 +576,7 @@ class PadGenerator(PacketInspector):
             msg = 'did not find exactly one table for %s on host %s' % (PARAMETERS['tables'], PARAMETERS['host'])
             log.error(msg)
             raise Exception(msg)
-        
+
         tableName = tables[0]
         if idleWait(0):
             msg = 'idleWait(0) returned True, this is where packetWriter.py would itself exit.'
@@ -585,7 +590,7 @@ class PadGenerator(PacketInspector):
         preCutoffProgress = 0
         packetCount = 0
         start = ceil4(max(self.lastTime(), PARAMETERS['startTime'])) # database has only 4 decimals of precision
-        
+
         # write all packets before cutoffTime
         tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'write all pkts before cutoffTime'))
         packetCount = packetCount + len(tpResults)
@@ -596,9 +601,9 @@ class PadGenerator(PacketInspector):
                     log.warning('unknown packet type at time %.4lf' % result[0])
                     continue
                 log.debug('%04d one_shot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(get_line(), tableName, p.type, result[0], p.contiguous(self.lastPacket)))
-                preCutoffProgress = 1                        
+                preCutoffProgress = 1
                 self.writePacket(p)
-                
+
             if packetCount >= MAX_RESULTS_PER_TABLE or len(tpResults) != MAX_RESULTS or idleWait(0):
                 if packetCount >= MAX_RESULTS_PER_TABLE:
                     self.moreToDo = 1 # go work on another table for a while
@@ -610,7 +615,7 @@ class PadGenerator(PacketInspector):
                 packetCount = packetCount + len(tpResults)
 
         log.debug('%04d one_shot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (get_line(), tableName, self.lastTime(), self.moreToDo))
-            
+
         # write contiguous packets after cutoffTime
         if preCutoffProgress and not self.moreToDo:
             packetCount = 0
@@ -647,24 +652,19 @@ class PadGenerator(PacketInspector):
         self.end()
         dispose_processed_data(tableName, self.lastTime())
 
-        if step_callback:
-            current_info_tuple = ('%s' % unix2dtm(self.lastPacket.time()), '%s' % unix2dtm(self.lastPacket.endTime()), '%d' % self.moreToDo)
-            cumulative_info_tuple = ('%s' % unix2dtm(self.lastPacket.time()), '%s' % unix2dtm(self.lastPacket.endTime()), '%d' % TOTAL_PACKETS_FED)
-            step_callback(current_info_tuple, cumulative_info_tuple)
-        
         #log.debug('%04d %s' % (get_line(), BENCH_NEXT_METHOD))
-        
+
         # Only the initial "next" uses MAX_RESULTS_PER_TABLE, thereafter we use MAX_RESULTS
         MAX_RESULTS_PER_TABLE = MAX_RESULTS
         
         return TOTAL_PACKETS_FED
 
-    def init_realtime_trace_registerproc(self, hdr, ax):
+    def init_realtime_trace_registerproc(self, hdr, ax): #, packetStart, analysis_interval):
         """initialize real-time traces and register process for scale-factor"""
         # set max length (in sec) for real-time trace during init to avoid memory issue
         rt_trace = PimsRtTrace(max_length=self.maxsec_rttrace)
-        
-        # data nominally in g, but most likely mg or ug preferred
+
+        # data nominally in g, but most likely mg or ug is preferred
         rt_trace.registerRtProcess('scale', factor=self.scale_factor)
 
         # use Ted's legacy XML header info to our advantage for real-time trace
@@ -676,54 +676,90 @@ class PadGenerator(PacketInspector):
 
         return rt_trace
 
+    #def as_trace(self, data):
+    #    return Trace( data=data, header=self.rt_trace['x'].stats )
+
     def append_process_packet_data(self, atxyzs, start, contig):
         """append and auto-process packet data into PimsRtTrace"""
         # FIXME should we use MERGE method here or somewhere (NaN fill?)
         if contig:
-            log.debug( 'RTAPPEND:..lastPacket.endTime()=%s' % unix2dtm(self.lastPacket.endTime()) )
-            log.debug( 'RTAPPEND:thisPacket.startTime()=%s, delta=%0.6f' % (unix2dtm(start), start-self.lastPacket.endTime()))
+            log.debug( '%04d RTAPPEND:..lastPacket.endTime()=%s' % (get_line(), unix2dtm(self.lastPacket.endTime())) )
+            log.debug( '%04d RTAPPEND:thisPacket.startTime()=%s, delta=%0.6f' % (get_line(), unix2dtm(start), start-self.lastPacket.endTime()))
             for i, ax in enumerate(['x', 'y', 'z']):
-                tr = self.as_trace( atxyzs[:, i+1] )
-                tr.stats.starttime = self.lastPacket.endTime() + self.rt_trace[ax].stats.delta
-                self.rt_trace[ax].append( tr, gap_overlap_check=False, verbose=self.show_warnings) # FIXME should this be True (throws error) or pre-nudge?
+                tr = Trace( data=atxyzs[:, i+1], header=self.rt_trace['x'].stats )
+                tr.stats.starttime = start
+                self.rt_trace[ax].append( tr, gap_overlap_check=False, verbose=self.show_warnings ) # FIXME should this be True (throws error) or pre-nudge?
         else:
             log.warning('%04d DROPPED A PACKET; unhandled case when non-contiguous, although rt_trace with good merge might work%s' % (get_line(), '?'*40))
-        log.debug( "%s" % str(self.rt_trace['x']))
 
-    def as_trace(self, data):
-        return Trace( data=data, header=self.rt_trace['x'].stats )
+        # if enough pts, then slice and slide right for the data object attached to plot; otherwise, do nothing        
+        npts = self.rt_trace['x'].stats.npts 
+        if npts == 0 or (npts % self.analysis_samples):
+            log.debug( "%04d %s NON-DIVISIBLE" % (get_line(), str(self.rt_trace['x'])) )
+        else:
+            log.debug( "%04d %s IS DIVISIBLE" % (get_line(), str(self.rt_trace['x'])) )
+            endtime = self.starttime + self.analysis_interval
+            slice_range = {'starttime':UTCDateTime(self.starttime), 'endtime':UTCDateTime(endtime)}
+            traces = {}
+            traces['x'] = self.rt_trace['x'].slice(**slice_range)
+            slice_len = traces['x'].stats.npts
+            cumulative_info_tuple = (str(self.starttime), str(endtime), '%d' % len(traces['x']))
+            #if self.analysis_samples - 1 <= slice_len <= self.analysis_samples + 1:
+            if (slice_len / self.analysis_samples) > 0.90:
+                # now get y and z
+                for ax in ['y', 'z']:
+                    traces[ax] = self.rt_trace[ax].slice(**slice_range)
+                t = traces['x'].absolute_times()
+                #traces['y'].filter('lowpass', freq=2.0, zerophase=True)
+                #traces['z'].filter('highpass', freq=2.0, zerophase=True)
+        
+                # get info and data to pass to step callback routine
+                current_info_tuple = (str(slice_range['starttime']), str(slice_range['endtime']), '%d' % len(t))
+                flash_msg = None
+                    
+                # slide to right by analysis_interval
+                self.starttime = endtime
+            else:
+                msg = '%04d how did we get DIVISIBLE, but bad slice_len here?' % get_line()
+                log.error(msg)
+                raise Exception(msg)
+        
+            if self.step_callback:
+                step_data = (current_info_tuple, cumulative_info_tuple, t, traces, flash_msg)            
+                self.step_callback(step_data)        
+
 
     # get header subfields
     def get_subfields(self, h, field, Lsubs):
         """get sub fields using xml parser"""
-        d = {}	
+        d = {}
         for k in Lsubs:
             theElement = h.documentElement.getElementsByTagName(field)[0]
             d[k] = str(theElement.getAttribute(k))
         return d
 
     # get first header
-    def get_first_header(self):
+    def get_first_header(self): #, packetStart, analysis_interval):
         """get first header (only first)"""
         dHeader = {}
         h = xml_parse( self.buildHeader('NOFILE') )
-        
+
         # get XML root node localName (like "sams2_accel") and split for system
         dHeader['System'] = h.documentElement.localName.split('_')[0].upper()
-        
+
         # get a few basic fields
         L = ['SampleRate', 'CutoffFreq', 'DataQualityMeasure', 'SensorID', 'TimeZero', 'ISSConfiguration']
         for i in L:
             dHeader[i] = str(h.documentElement.getElementsByTagName(i)[0].childNodes[0].nodeValue)
         dHeader['SampleRate'] = float(dHeader['SampleRate'])
         dHeader['CutoffFreq'] = float(dHeader['CutoffFreq'])
-        
+
         # get fields that have sub-fields
         Lcoord = ['x','y','z','r','p','w','name','time','comment']
         dHeader['SensorCoordinateSystem'] = self.get_subfields(h,'SensorCoordinateSystem',Lcoord)
         dHeader['DataCoordinateSystem'] = self.get_subfields(h,'DataCoordinateSystem',Lcoord)
         dHeader['GData'] = self.get_subfields(h,'GData',['format','file'])
-        
+
         # use first header as self.header_string
         self.header_string = '%s, %s (%g Hz, %g sps), at %s in %s Coordinates' % (
             dHeader['System'],
@@ -732,11 +768,15 @@ class PadGenerator(PacketInspector):
             dHeader['SampleRate'],
             dHeader['SensorCoordinateSystem']['comment'],
             dHeader['DataCoordinateSystem']['name'])
-        
+
         # initialize real-time trace and register real-time process (scale factor)
         self.rt_trace = {}
         for ax in ['x', 'y', 'z']:
-            self.rt_trace[ax] = self.init_realtime_trace_registerproc(dHeader, ax)
+            self.rt_trace[ax] = self.init_realtime_trace_registerproc(dHeader, ax) #, packetStart, analysis_interval)
+
+        self.analysis_samples = np.ceil( self.rt_trace['x'].stats.sampling_rate * self.analysis_interval )
+
+        log.debug('%04d got first header and initialized PimsRtTraces for x, y, and z' % get_line())
 
     # primative comparison of packet header info to first, lead header counterparts
     def is_header_same(self, p):
@@ -754,14 +794,14 @@ class PadGenerator(PacketInspector):
         else:
             bln = thisp.contiguous(lastp)
         return "contig={0:<5s}".format( str(bln) )
-    
+
     # append data, per-axis each to rt_trace
     def append(self, packet):
         """append data, per-axis each to rt_trace"""
         global TOTAL_PACKETS_FED
-        
+
         log.debug( '%04d %s BEFOR append() %s' % (get_line(), str(self), self.show_contig(self.lastPacket, packet)) )
-        
+
         # FIXME what happens if we get rid of this thru the BytesIO part?
         if self._file_ == None:
             newName = 'temp.' + packet.name()
@@ -793,7 +833,7 @@ class PadGenerator(PacketInspector):
 
         if not PARAMETERS['ascii']:
             if PARAMETERS['bigEndian']:
-                atxyzs = atxyzs.byteswap() 
+                atxyzs = atxyzs.byteswap()
                 if extra:
                     aextra = aextra.byteswap()
             if extra:
@@ -814,7 +854,8 @@ class PadGenerator(PacketInspector):
 
         # for very first packet, get header info
         if TOTAL_PACKETS_FED == 0:
-            self.get_first_header()
+            self.get_first_header() #packetStart, self.analysis_interval)
+            self.starttime = packetStart
 
         # append and auto-process packet data into PimsRtTrace:
         if self.is_header_same(packet):
@@ -823,11 +864,11 @@ class PadGenerator(PacketInspector):
                 self.append_process_packet_data(atxyzs, packetStart, packet.contiguous(self.lastPacket))
         else:
             log.warning( 'DO NOT APPEND PACKET because we got False from is_header_same (near line %d)' % get_line() )
-        
+
         # update lastPacket and TOTAL_PACKETS_FED
         self.lastPacket = packet
         TOTAL_PACKETS_FED = TOTAL_PACKETS_FED + 1
-        
+
         log.debug( '%04d %s AFTER append() %s' % (get_line(), str(self), self.show_contig(self.lastPacket, packet)) )
 
 # return sensor and data coordinate system database entries, if they exist
@@ -850,15 +891,15 @@ def check_coord_sys(dataTime, sensor, dataName):
             dataEntry = i
     if sensorEntry and dataEntry:
         return (sensorEntry, dataEntry)
-    else: 
+    else:
         t = UnixToHumanTime(time(), 1)
         t = t + ' warning: data coordinate system "%s" requested, but "coord_system_db"\n' % dataName
         t = t + '  did not have entries for %s and %s before time %.4f' % (sensor, dataName, dataTime)
         print_log(t)
         return (0, 0) # didn't find coordinate systems entries for both sensor and data
-    
-# format an ancillary data entry in XML       
-def add_anc_xml(db, entry, dataTime, sensor, pf, dbMatchTime): 
+
+# format an ancillary data entry in XML
+def add_anc_xml(db, entry, dataTime, sensor, pf, dbMatchTime):
     global ANC_XML
     newLine = ''
     if db == 'bias':
@@ -875,7 +916,7 @@ def add_anc_xml(db, entry, dataTime, sensor, pf, dbMatchTime):
         newLine = newLine + 'time="%s"/>\n' % UnixToHumanTime(dbMatchTime)
     elif db == 'data_coord_system':
         dataName = string.lower(string.strip(entry[0]))
-        if pf.setDataCoordSystem(dataName, dataTime, sensor): 
+        if pf.setDataCoordSystem(dataName, dataTime, sensor):
             newLine = '\t<DataCoordinateSystem name="%s" ' % string.strip(entry[0])
             # lookup data coord system info
             sensorEntry, dataEntry = check_coord_sys(dataTime, sensor, dataName)
@@ -883,11 +924,11 @@ def add_anc_xml(db, entry, dataTime, sensor, pf, dbMatchTime):
             newLine = newLine + 'comment="%s" ' % xmlEscape(dataEntry[-1])
             newLine = newLine + 'time="%s"/>\n' % UnixToHumanTime(dataEntry[0])
         else: # coord system lookup failed, use sensor coordinates
-            newLine = '\t<DataCoordinateSystem name="sensor"/>\n' 
+            newLine = '\t<DataCoordinateSystem name="sensor"/>\n'
     ANC_XML = ANC_XML + newLine
-    
-# look for valid ancillary data entries for a given sensor and time    
-def update_anc_xml(dataTime, sensor, pf): 
+
+# look for valid ancillary data entries for a given sensor and time
+def update_anc_xml(dataTime, sensor, pf):
     global ANC_XML
     ANC_XML = ''
     adKeys = ANC_DATA.keys()
@@ -905,7 +946,7 @@ def update_anc_xml(dataTime, sensor, pf):
                     maxTime, entry  = j[0], j[2:]
                 else:
                     break
-            else:             
+            else:
                 if j[0] >= maxTime and j[0] < dataTime:
                     maxTime, entry  = j[0], j[1:]
                 else:
@@ -929,7 +970,7 @@ def update_anc_data(dataTime, sensor, pf):
             ANC_XML = oldAncillaryXML
             pf.end()
             ANC_XML = saveXML
-        # find next scheduled ancillary change 
+        # find next scheduled ancillary change
         maxUpdate = time()
         newUpdate = maxUpdate
         for i in ANC_DATA.keys():
@@ -950,7 +991,7 @@ def update_anc_databases():
     if PARAMETERS['ancillaryHost'] == 'None':
         ANC_UPDATE = time() + 10000000 # don't update at all
         return
-    try: 
+    try:
         for db in ANC_DATABASES:
             ANC_DATA[db] = sqlConnect('select * from %s order by time' % db,
                  shost=PARAMETERS['ancillaryHost'], suser=UNAME, spasswd=PASSWD, sdb='pad')
@@ -981,7 +1022,7 @@ def dispose_processed_data(tableName, lastTime):
 
     # make sure the number of packets to be deleted is not less than the number written
     deleted = sqlConnect('select time from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime), minTime),shost=PARAMETERS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMETERS['database'])
-    
+
     packetsWrittenCheck = PACKETS_WRITTEN
     PACKETS_WRITTEN = 0
 
@@ -996,9 +1037,9 @@ def dispose_processed_data(tableName, lastTime):
         for i in tb:
             if i[0] == newTable:
                 break
-        else: # newTable not found, must create it 
+        else: # newTable not found, must create it
             key = '' # check if we need a primary key
-            col = sqlConnect('show columns from %s' % tableName,         
+            col = sqlConnect('show columns from %s' % tableName,
                  shost=PARAMETERS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMETERS['database'])
             for c in col:
                 if c[0]=='time' and c[3]=='PRI':
@@ -1009,12 +1050,12 @@ def dispose_processed_data(tableName, lastTime):
             shost=PARAMETERS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMETERS['database'])
         sqlConnect('delete from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime), minTime),
             shost=PARAMETERS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMETERS['database'])
-        
+
     if packetsWrittenCheck > len(deleted): # we should throw an exception here, but generate a warning instead
         print 'WARNING: more packets were written then are being deleted'
         print 'This might mean there are extra packets in the PAD file, skewing data after this point'
         print 'Wrote %s packets to PAD file, but deleting only %s from database' % (packetsWrittenCheck, len(deleted))
-        
+
         # try to determine where the packet not getting deleted is occuring
         around = sqlConnect('select time from %s where time <= %.6lf and time > %.6lf' % (tableName, ceil4(lastTime)+5,ceil4(lastTime)-5 ),shost=PARAMETERS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMETERS['database'])
         # print out times within plus/minus 5 seconds of lastTime
@@ -1069,14 +1110,14 @@ def one_shot(pfs):
         msg = 'This program does NOT handle "ALL" or comma-delimited for tables parameter (Ted legacy NOT supported).'
         log.error(msg)
         raise Exception(msg)
-    
+
     for tableName in tables:
         if idleWait(0):
             break # check for shutdown in progress
 
         #########################################################
         # initialize PadGenerator or PacketInspector class here #
-        #########################################################              
+        #########################################################
         update_anc_databases()
         preCutoffProgress = 0
         packetCount = 0
@@ -1096,7 +1137,7 @@ def one_shot(pfs):
         else:
             pf = pfs[tableName]
         start = ceil4(max(pf.lastTime(), PARAMETERS['startTime'])) # database has only 4 decimals of precision
-        
+
         # write all packets before cutoffTime
         tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'write all pkts before cutoffTime'))
         packetCount = packetCount + len(tpResults)
@@ -1107,9 +1148,9 @@ def one_shot(pfs):
                     print_log('unknown packet type at time %.4lf' % result[0])
                     continue
                 log.debug('%04d one_shot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(get_line(), tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
-                preCutoffProgress = 1                        
+                preCutoffProgress = 1
                 pf.writePacket(p)
-                
+
             if packetCount >= MAX_RESULTS_PER_TABLE or len(tpResults) != MAX_RESULTS or idleWait(0):
                 if packetCount >= MAX_RESULTS_PER_TABLE:
                     moreToDo = 1 # go work on another table for a while
@@ -1121,7 +1162,7 @@ def one_shot(pfs):
                 packetCount = packetCount + len(tpResults)
 
         log.debug('%04d one_shot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (get_line(), tableName, pf.lastTime(), moreToDo))
-            
+
         # write contiguous packets after cutoffTime
         if preCutoffProgress and not moreToDo:
             packetCount = 0
@@ -1172,10 +1213,10 @@ def main_loop():
         raise Exception(msg)
     try:
         while 1: # until killed or ctrl-C or no more data (if PARAMETERS['quitWhenDone'])
-            
+
             # perform one iteration of main loop (get/process packets)
             one_shot(pfs)
-            
+
             if not moreToDo:
                 log.info("%04d NORES TOTAL_PACKETS_FED=%d moreToDo=%d now=%s checkEverySec=%d" % (get_line(), TOTAL_PACKETS_FED, moreToDo, datetime.datetime.now(), SLEEP_TIME))
                 if lastPacketTotal == TOTAL_PACKETS_FED and PARAMETERS['quitWhenDone']:
@@ -1194,7 +1235,7 @@ def main_loop():
             dataFileName = pfs[k].end()
             if  pfs[k]._maybeMove_ != '':
                 pfs[k].movePadFile(pfs[k]._maybeMove_)
-                
+
         # FIXME we IGNORE packetFeederState file
         if False:
             file = open('packetFeederState', 'wb')
@@ -1207,7 +1248,7 @@ def atof_unixstart(s):
     f = atof(s)
     if f >= 0.0:
         return f
-    
+
     # negative value for startTime signals "good" startTime
     _HOSTNAME = socket.gethostname()
     if _HOSTNAME == 'park':
@@ -1223,9 +1264,9 @@ def custom_warn(message, category, filename, lineno, file=None, line=None):
 # check PARAMETERS
 def parameters_ok():
     """check PARAMETERS and possibly change rt_params"""
-# FIXME scrub this for better approach with testing to verify end items
+    # FIXME scrub this for better approach with testing to verify end items
     global log
-    
+
     # Start log; refer to rt_params for log verbose level
     b = rt_params['verbose.level'].upper()
     if b != 'DEBUG' and b != 'INFO' and b != 'WARNING' and b != 'ERROR' and b != 'CRITICAL' :
@@ -1235,7 +1276,7 @@ def parameters_ok():
         rt_params['verbose.level'] = b
         log = SimpleLog('pims_pad_packetfeeder', log_level=b).log
         log.info('Logging started.')
-        
+
     warnings.showwarning = custom_warn
     warnings.warn("Stray warnings are being put into log via custom_warn function.")
 
@@ -1266,14 +1307,14 @@ def parameters_ok():
         return 0
     else:
         PARAMETERS['ascii'] = rt_params['pw.ascii'] = atoi(b)
-        
+
     b = PARAMETERS['quitWhenDone']
     if b != '0' and b != '1':
         log.error(' quitWhenDone must be 0 or 1')
         return 0
     else:
         PARAMETERS['quitWhenDone'] = rt_params['pw.quitWhenDone'] = atoi(b)
-        
+
     b = PARAMETERS['bigEndian']
     if b != '0' and b != '1':
         log.error(' bigEndian must be 0 or 1')
@@ -1287,13 +1328,13 @@ def parameters_ok():
         return 0
     else:
         PARAMETERS['delete'] = rt_params['pw.delete'] = b
-    
+
     b = PARAMETERS['tables']
     if PARAMETERS['tables']=='ALL' or len(split(PARAMETERS['tables'], ',')) != 1:
         log.error(' you must specify only 1 table with "tables="')
         return 0
     else:
-        PARAMETERS['tables'] = rt_params['pw.tables'] = b        
+        PARAMETERS['tables'] = rt_params['pw.tables'] = b
 
     b = PARAMETERS['additionalHeader']
     if b != '\"\"':
@@ -1325,13 +1366,13 @@ def parameters_ok():
             log.error(' host: %s, directory: %s, error: %s' % (host,directory,r))
             sys.exit()
         log.info(' scp OK')
-        
+
     PARAMETERS['destination'] = rt_params['pw.destination'] = b
 
     if 0 == PARAMETERS['resume']:
         # remove any stale resume files
         getoutput('rm -rf packetFeederState temp.*')
-    
+
     return 1
 
 # print usage
@@ -1419,7 +1460,7 @@ def launch_strip_chart(get_datagen, analysis_interval, plot_span, extra_interval
     """launch the strip chart gui"""
     # preamble (packetfeeder.py main_loop code before first one_shot)
     global moreToDo, lastPacketTotal, log
-    
+
     # initialize and get "datagen" object, whose next method gets most recent data
     datagen = get_datagen()
 
@@ -1443,7 +1484,7 @@ def demo_pad_generator(num_iter=2):
     for x in range(num_iter):
         pg.next(step_callback=callback_show)
         log.debug( '%04d done with pg.next() #%d and TOTAL_PACKETS_FED = %d' % (get_line(), x+1, TOTAL_PACKETS_FED) )
-        
+
 def test_time_pad_generator(num_iter=2):
     from timeit import timeit
     sec = timeit("pg.next(step_callback=callback_show)", setup="from __main__ import callback_show, PadGenerator; pg = PadGenerator()", number=num_iter)
@@ -1478,14 +1519,20 @@ def demo_strip():
     #    print k, "%s" % v
     #raise SystemExit
 
+    # initialize our datagen object using PadGenerator
     showWarnings = rt_params['pw.showWarnings']
-    datagen = PadGenerator(showWarnings=showWarnings)
+    analysis_interval = rt_params['time.analysis_interval']
+    maxsec_rttrace = rt_params['time.maxsec_trace']
+    scale_factor = rt_params['data.scale_factor']
+    datagen = PadGenerator(showWarnings=showWarnings, maxsec_rttrace=maxsec_rttrace, scale_factor=scale_factor, analysis_interval=analysis_interval)
+
+    # now start the gui
     app = wx.PySimpleApp()
     app.frame = GraphFrame(datagen, 'title', log, rt_params) # rt_params is from global namespace
     app.frame.Show()
     app.MainLoop()
 
-# ~/dev/programs/python/packet/packetWriter.py tables=121f05 host=localhost ancillaryHost=localhost destination=. delete=0 cutoffDelay=0    
+# ~/dev/programs/python/packet/packetWriter.py tables=121f05 host=localhost ancillaryHost=localhost destination=. delete=0 cutoffDelay=0
 # e.g. python packetfeeder.py host=manbearpig tables=121f05 ancillaryHost=kyle startTime=1382551198.0 endTime=1382552398.0
 # e.g. ON PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=None startTime=1378742112.0 inspect=1
 # 25pkts e.g. PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=localhost startTime=1378742399.5 inspect=1
@@ -1506,8 +1553,8 @@ def run(func, *args, **kwargs):
             func(*args, **kwargs)
             sys.exit(0)
     print_usage()
-    
-if __name__ == '__main__': 
+
+if __name__ == '__main__':
     #run( main_loop )
     #run( test_time_pad_generator, num_iter=2 )
     run( demo_strip )
