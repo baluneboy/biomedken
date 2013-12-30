@@ -331,9 +331,9 @@ class ValidateTimeInterval(object):
 # FIXME get at least key values below from XLS spreadsheet immune to Excel auto-format weirdness
 
 # FIXME these were probably set for debug and testing, but you change to what you like:
-ANIN =   1 # seconds for analysis_interval
+ANIN =  10 # seconds for analysis_interval
 PLTS = 600 # seconds for plot_span
-EXTR =  10 # count for extra_intervals
+EXTR =   2 # count for extra_intervals
 MAXT = int( EXTR * ANIN + PLTS ) # seconds max for real-time trace
 
 # a map from key -> value, converter
@@ -343,7 +343,7 @@ default_params = {
     'paths.snap_path'          : ['/tmp', validate_path_exists], # FIXME
 
     # verbosity setting
-    'verbose.level'     : ['INFO', validate_verbose], # debug, info, warning, error, or critical
+    'verbose.level'     : ['DEBUG', validate_verbose], # debug, info, warning, error, or critical
     'verbose.fileo'     : ['sys.stdout', str],
 
     # line props

@@ -60,9 +60,24 @@ REDRAW_MSEC = 5000 # redraw timer every 5 to 10 seconds or so
 SB_MSEC = int( 2 * REDRAW_MSEC ) #  lower-right time ~every several seconds
 BENCH_STEP = Benchmark('step') # datagen next method ("step") should avg about 3s
 
-# PIMS-friendly extension of RtTrace
+# PIMS extension of RtTrace
 class PimsRtTrace(RtTrace):
-    """PIMS-friendly extension of RtTrace"""
+    """PIMS extension of RtTrace"""
+    #
+    #def __init__(self, *args, **kwargs):
+    #    max_length = kwargs['max_length'] if 'max_length' in kwargs else None
+    #    super(PimsRtTrace, self).__init__(max_length=max_length)
+    #
+    #    # initialize values for step routine
+    #    self.stats.sampling_rate #= kwargs['sampling_rate']
+    #    self.stats.starttime = kwargs['starttime']
+    #    self.analysis_interval = kwargs['analysis_interval']
+    #    self.analysis_samples = np.ceil( self.stats.sampling_rate * self.analysis_interval )
+    
+    def __str__(self):
+        s = super(PimsRtTrace, self).__str__()
+        #s += ' (ANIN: %gsec, %dsa)' % (self.analysis_interval, self.analysis_samples)
+        return s
     
     def absolute_times(self):
         """absolute unixtime"""
@@ -73,7 +88,23 @@ class PimsRtTrace(RtTrace):
         idx = np.where(t >= min_time)
         dtm = [unix2dtm(i) for i in t[idx]]
         return dates.date2num( dtm ), self[idx]
-    
+
+#import numpy as np
+#from obspy.realtime import RtTrace
+#from obspy import read
+#from obspy.realtime.signal import calculateMwpMag
+#data_trace = read('/path/to/II.TLY.BHZ.SAC')[0]
+#traces = data_trace / 5
+##rt_trace = RtTrace()
+#rt_trace = PimsRtTrace()
+#for tr in traces:
+#    processed_trace = rt_trace.append(tr, gap_overlap_check=True)
+#print len(traces[0]), len(traces[1]), "...", len(traces[-2]), len(traces[-1])
+#print rt_trace
+#print rt_trace.stats.endtime
+#print rt_trace.stats.starttime + (rt_trace.stats.npts-1) / rt_trace.stats.sampling_rate  
+#raise SystemExit
+
 class DataGenRandom(object):
     """ A silly class that generates pseudo-random data for plot display."""
     def __init__(self, init=50):
@@ -157,7 +188,7 @@ class DataGenExample(object):
 class DataGenBetterExample(object):
     """Generator for X,Y,Z RtTraces using trace split and rt scaling on example slist ascii file."""
     
-    def __init__(self, scale_factor=0.1, num_splits=3):
+    def __init__(self, scale_factor=1000, num_splits=1):
         self.num = -1
         
         self.scale_factor = scale_factor
@@ -178,28 +209,46 @@ class DataGenBetterExample(object):
         self.append_and_autoprocess_packet()
         self.header_string = 'example header string'
 
+        # initialize values for step routine
+        self.starttime = self.rt_trace['x'].stats.starttime
+        self.analysis_interval = 10.0
+        self.analysis_samples = np.ceil( self.rt_trace['x'].stats.sampling_rate * self.analysis_interval )
+
     def next(self, step_callback=None):
-        if self.num < len(self.rt_trace) - 1:
+        endtime = self.starttime + self.analysis_interval
+        slice_range = {'starttime':self.starttime, 'endtime':endtime}
+        traces = {}
+        traces['x'] = self.rt_trace['x'].slice(**slice_range)
+        slice_len = traces['x'].stats.npts
+        cumulative_info_tuple = (str(self.starttime), str(endtime), '%d' % len(traces['x']))
+        if  slice_len >= self.analysis_samples:
             self.num += 1
-            self.rt_trace['y'].filter('lowpass', freq=2.0, zerophase=True)
-            self.rt_trace['z'].filter('highpass', freq=2.0, zerophase=True)
-            min_time = self.rt_trace['x'].absolute_times()[self.num]
-            t, x = self.rt_trace['x'].slice_after(min_time)
-            y = self.rt_trace['y'].slice_after(min_time)[1]
-            z = self.rt_trace['z'].slice_after(min_time)[1]
-            if step_callback:
-                current_info_tuple = (str(UTCDateTime(t[0])), str(UTCDateTime(t[-1])), '%d' % len(x))
-                cumulative_info_tuple = ('%d' % len(self.rt_trace), str(UTCDateTime(t[-1])), str(UTCDateTime(t[-1])))
-                step_callback(current_info_tuple, cumulative_info_tuple)
-            return t, x
+            # now get y and z
+            for ax in ['y', 'z']:
+                traces[ax] = self.rt_trace[ax].slice(**slice_range)
+            t = traces['x'].absolute_times()
+            traces['y'].filter('lowpass', freq=2.0, zerophase=True)
+            traces['z'].filter('highpass', freq=2.0, zerophase=True)
+
+            # get info and data to pass to step callback routine
+            current_info_tuple = (str(slice_range['starttime']), str(slice_range['endtime']), '%d' % len(t))
+            flash_msg = None
+                
+            # slide to right by analysis_interval
+            self.starttime = endtime
         else:
-            #raise StopIteration()
-            self.num = -1
-            return [], []
-    
+            # not enough analysis_samples to work with, just squawk via flash message
+            t = traces = []
+            current_info_tuple = tuple()
+            flash_msg = "slice_len = %d < %d needed for analysis_interval" % (slice_len, self.analysis_samples)
+
+        if step_callback:
+            step_data = (current_info_tuple, cumulative_info_tuple, t, traces, flash_msg)            
+            step_callback(step_data)
+
     def read_example_trace_demean(self):
         """Read first trace of example data file"""
-        st = read('/home/pims/dev/programs/python/pims/sandbox/data/slist_for_example.ascii')
+        st = read('/home/pims/dev/programs/python/pims/sandbox/data/slist_for_example_f05.ascii')
         st.detrend('demean')
         data_trace = st[0]
         return data_trace
@@ -218,6 +267,11 @@ class DataGenBetterExample(object):
         """append and auto-process packet data into RtTrace"""
         for ax in ['x', 'y', 'z']:
             for tr in self.traces:
+                # change Y and Z to look different than X for testing purposes
+                if ax == 'y':
+                    tr.data = -1.0 * tr.data
+                if ax == 'z':
+                    tr.data = 0.5 * tr.data
                 self.rt_trace[ax].append(tr, gap_overlap_check=True)
 
 class BoundControlBox(wx.Panel):
@@ -369,8 +423,14 @@ class GraphFrame(wx.Frame):
         info_control.end_time_text.SetLabel(info_tuple[1])
         info_control.samples_text.SetLabel(info_tuple[2])
 
-    def step_callback(self, current_info_tuple, cumulative_info_tuple):
-        self.update_info(self.current_info, current_info_tuple)
+    # update plot info and data
+    def step_callback(self, step_data):
+        """update plot info and data"""
+        current_info_tuple, cumulative_info_tuple, t, traces, flash_msg = step_data
+        if flash_msg:
+            self.flash_status_message(flash_msg, flash_len_ms=2000)            
+        else:
+            self.update_info(self.current_info, current_info_tuple)
         self.update_info(self.cumulative_info, cumulative_info_tuple)
 
     def create_menu(self):
@@ -491,11 +551,11 @@ class GraphFrame(wx.Frame):
 
     def create_status_bar(self):
         self.statusbar = self.CreateStatusBar(2, 0)        
-        self.statusbar.SetStatusWidths([-1, 300])
+        self.statusbar.SetStatusWidths([-1, 320])
         self.statusbar.SetStatusText("Ready", SB_LEFT)
 
     def getTimeString(self):
-        return datetime.datetime.now().strftime('%d-%b-%Y,%j/%H:%M:%S ')
+        return datetime.datetime.now().strftime('%d-%b-%Y,  %j/%H:%M:%S ')
 
     def notify(self):
         """ Timer event """
@@ -579,9 +639,9 @@ class GraphFrame(wx.Frame):
     def draw_plot(self):
         """ Redraws the plot"""
         
-        t, x = self.datagen.rt_trace['x'].slice_after(0)
-        t, y = self.datagen.rt_trace['y'].slice_after(0)
-        t, z = self.datagen.rt_trace['z'].slice_after(0)
+        t, x = self.datagen.rt_trace['x'].slice_after(0) # self.datagen.starttime)
+        t, y = self.datagen.rt_trace['y'].slice_after(0) # self.datagen.starttime)
+        t, z = self.datagen.rt_trace['z'].slice_after(0) # self.datagen.starttime)
 
         # when xmin is on auto, it "follows" xmax to produce a 
         # sliding window effect. therefore, xmin is assigned after
@@ -633,7 +693,8 @@ class GraphFrame(wx.Frame):
             self.axes['x'].grid(False)
             self.axes['y'].grid(False)
             self.axes['z'].grid(False)
-            
+        
+        
         self.plot_data['x'].set_xdata( t )
         self.plot_data['x'].set_ydata( x )
         
