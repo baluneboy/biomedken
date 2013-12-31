@@ -83,6 +83,14 @@ class PimsRtTrace(RtTrace):
         """absolute unixtime"""
         return self.times() + float(self.stats.starttime)
     
+    def get_slice_then_trim(self, analysis_interval):
+        t1 = self.stats.starttime
+        t2 = t1 + analysis_interval
+        t3 = t2 + self.stats.delta
+        tr_slice = self.slice(t1, t2)
+        self.trim( starttime = t3 )
+        return tr_slice
+    
     def slice_after(self, min_time):
         t = self.absolute_times()
         idx = np.where(t >= min_time)
@@ -95,14 +103,14 @@ class PimsRtTrace(RtTrace):
 #from obspy.realtime.signal import calculateMwpMag
 #data_trace = read('/path/to/II.TLY.BHZ.SAC')[0]
 #traces = data_trace / 5
-##rt_trace = RtTrace()
 #rt_trace = PimsRtTrace()
 #for tr in traces:
 #    processed_trace = rt_trace.append(tr, gap_overlap_check=True)
-#print len(traces[0]), len(traces[1]), "...", len(traces[-2]), len(traces[-1])
+##print len(traces[0]), len(traces[1]), "...", len(traces[-2]), len(traces[-1])
 #print rt_trace
-#print rt_trace.stats.endtime
-#print rt_trace.stats.starttime + (rt_trace.stats.npts-1) / rt_trace.stats.sampling_rate  
+#tr_slice = rt_trace.get_slice_then_trim(10)
+#print tr_slice
+#print rt_trace
 #raise SystemExit
 
 class DataGenRandom(object):
@@ -385,7 +393,8 @@ class GraphFrame(wx.Frame):
         
         # this is first call to "prime the pump" of data generator via next method
         self.paused = False
-        self.data.append( self.datagen.next(self.step_callback) )
+        #self.data.append( self.datagen.next(self.step_callback) )
+        self.datagen.next(self.step_callback) # this appends first several values to self.data's deque
         self.paused = True
        
         # after our first "next" call above, set plot title using datagen's header_string
@@ -427,10 +436,21 @@ class GraphFrame(wx.Frame):
     def step_callback(self, step_data):
         """update plot info and data"""
         current_info_tuple, cumulative_info_tuple, t, traces, flash_msg = step_data
-        if flash_msg:
-            self.flash_status_message(flash_msg, flash_len_ms=2000)            
+        
+        if len(t) != 0:
+            txyz = tuple()
+            txyz = txyz + ( np.mean( [ traces['x'].stats.starttime.timestamp, traces['x'].stats.endtime.timestamp] ), )
+            for ax in ['x', 'y', 'z']:
+                txyz = txyz + ( traces[ax].std(), )
+            self.data.append(txyz)
+            self.log.debug( 'self.data now contains %d tuples (t, xrms, yrms, zrms)' % len(self.data) )
         else:
-            self.update_info(self.current_info, current_info_tuple)
+            self.log.debug( "We do not append None to self.data's deque." )
+        
+        if flash_msg:
+            self.flash_status_message(flash_msg, flash_len_ms=2000)
+            
+        self.update_info(self.current_info, current_info_tuple)
         self.update_info(self.cumulative_info, cumulative_info_tuple)
 
     def create_menu(self):
@@ -639,10 +659,15 @@ class GraphFrame(wx.Frame):
     def draw_plot(self):
         """ Redraws the plot"""
         
-        t, x = self.datagen.rt_trace['x'].slice_after(0) # self.datagen.starttime)
-        t, y = self.datagen.rt_trace['y'].slice_after(0) # self.datagen.starttime)
-        t, z = self.datagen.rt_trace['z'].slice_after(0) # self.datagen.starttime)
+        t = [ tup[0] for tup in list(self.data) ]
+        x = [ tup[1] for tup in list(self.data) ]
+        y = [ tup[2] for tup in list(self.data) ]
+        z = [ tup[3] for tup in list(self.data) ]
 
+        self.log.debug( 'xRMS[-1]=%.4f' % x[-1] )
+        self.log.debug( 'yRMS[-1]=%.4f' % y[-1] )
+        self.log.debug( 'zRMS[-1]=%.4f' % z[-1] )
+    
         # when xmin is on auto, it "follows" xmax to produce a 
         # sliding window effect. therefore, xmin is assigned after
         # xmax.
@@ -767,7 +792,8 @@ class GraphFrame(wx.Frame):
         # (to respond to scale modifications, grid change, etc.)
         if not self.paused:
             BENCH_STEP.start()
-            self.data.append( self.datagen.next(self.step_callback) )
+            #self.data.append( self.datagen.next(self.step_callback) )
+            self.datagen.next(self.step_callback) # appends RMS values to self.data's deque
             self.flash_status_message(str(BENCH_STEP), 2000)
         self.draw_plot()
     
