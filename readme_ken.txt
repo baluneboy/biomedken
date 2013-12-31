@@ -83,3 +83,41 @@ plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
 plt.gca().xaxis.set_major_locator(mdates.DayLocator())
 plt.plot(x,y)
 plt.gcf().autofmt_xdate()
+
+
+# DELETE THIS CHUNK OF CODER FROM packetfeeder.py (ORIGINAL slice and slide right chunk)
+            # if possible, then slice and slide right for data object attached to plot; otherwise, do nothing        
+            npts = self.rt_trace['x'].stats.npts 
+            if npts == 0 or (npts % self.analysis_samples):
+                log.debug( "%04d %s NON-DIVISIBLE" % (get_line(), str(self.rt_trace['x'])) )
+            else:
+                log.debug( "%04d %s IS DIVISIBLE" % (get_line(), str(self.rt_trace['x'])) )
+                endtime = self.starttime + self.analysis_interval
+                slice_range = {'starttime':UTCDateTime(self.starttime), 'endtime':UTCDateTime(endtime)}
+                traces = {}
+                traces['x'] = self.rt_trace['x'].slice(**slice_range)
+                slice_len = traces['x'].stats.npts
+                cumulative_info_tuple = (str(self.starttime), str(endtime), '%d' % len(traces['x']))
+                #if self.analysis_samples - 1 <= slice_len <= self.analysis_samples + 1:
+                if (slice_len / self.analysis_samples) > 0.90:
+                    # now get y and z
+                    for ax in ['y', 'z']:
+                        traces[ax] = self.rt_trace[ax].slice(**slice_range)
+                    t = traces['x'].absolute_times()
+                    #traces['y'].filter('lowpass', freq=2.0, zerophase=True)
+                    #traces['z'].filter('highpass', freq=2.0, zerophase=True)
+            
+                    # get info and data to pass to step callback routine
+                    current_info_tuple = (str(slice_range['starttime']), str(slice_range['endtime']), '%d' % len(t))
+                    flash_msg = None
+                        
+                    # slide to right by analysis_interval
+                    self.starttime = endtime
+                else:
+                    msg = '%04d how did we get DIVISIBLE, but bad slice_len here?' % get_line()
+                    log.error(msg)
+                    raise Exception(msg)
+            
+                if self.step_callback:
+                    step_data = (current_info_tuple, cumulative_info_tuple, t, traces, flash_msg)            
+                    self.step_callback(step_data) 

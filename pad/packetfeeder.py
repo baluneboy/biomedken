@@ -284,7 +284,9 @@ class PacketFeeder(object):
             ostart = self.lastPacket.time()
             oend = self.lastPacket.endTime()
             start = packet.time()
-            log.debug('%04d writePacket() start: %s end: %s samples: %s packetGap: %0.9f  sampleGap: %0.9f' % (get_line(), unix2dtm(start), unix2dtm(packet.endTime()), packet.samples(), start-ostart, start-oend))
+            log.debug('%04d writePacket() samples: %3s\tpacketGap: %0.9f\tsampleGap: %0.9f' % (get_line(), packet.samples(), start-ostart, start-oend))
+            #log.debug('%04d writePacket()2of3            start: %s' % (get_line(), unix2dtm(start)))
+            #log.debug('%04d writePacket()3of3              end: %s' % (get_line(), unix2dtm(packet.endTime())))
 
 #        print 'writePacket ' + `contiguous`
         update_anc_data(packet.time(), packet.name(), self)
@@ -530,7 +532,7 @@ class PadGenerator(PacketInspector):
         if self.lastPacket:
             return 'lastPacket.endTime()=%s' % unix2dtm( self.lastPacket.endTime() )
         else:
-            return 'HEY...lastPacket is %s' % str(self.lastPacket)
+            return 'oops, you can ignore this because lastPacket is %s' % str(self.lastPacket)
 
     # one_shot as class method
     def next(self, step_callback=None):
@@ -600,7 +602,7 @@ class PadGenerator(PacketInspector):
                 if p.type == 'unknown':
                     log.warning('unknown packet type at time %.4lf' % result[0])
                     continue
-                log.debug('%04d one_shot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(get_line(), tableName, p.type, result[0], p.contiguous(self.lastPacket)))
+                log.debug('%04d just before writePacket(): table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(get_line(), tableName, p.type, result[0], p.contiguous(self.lastPacket)))
                 preCutoffProgress = 1
                 self.writePacket(p)
 
@@ -611,7 +613,7 @@ class PadGenerator(PacketInspector):
                 tpResults = []
             else:
                 start = ceil4(max(self.lastTime(), PARAMETERS['startTime'])) # database has only 4 decimals of precision
-                tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'while more tpResults exist, query new start and new cutoffTime'))
+                tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'while more tpResults exist, new start&cutoffTime'))
                 packetCount = packetCount + len(tpResults)
 
         log.debug('%04d one_shot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (get_line(), tableName, self.lastTime(), self.moreToDo))
@@ -657,7 +659,7 @@ class PadGenerator(PacketInspector):
         # Only the initial "next" uses MAX_RESULTS_PER_TABLE, thereafter we use MAX_RESULTS
         MAX_RESULTS_PER_TABLE = MAX_RESULTS
         
-        return TOTAL_PACKETS_FED
+        #return TOTAL_PACKETS_FED
 
     def init_realtime_trace_registerproc(self, hdr, ax): #, packetStart, analysis_interval):
         """initialize real-time traces and register process for scale-factor"""
@@ -679,55 +681,60 @@ class PadGenerator(PacketInspector):
     #def as_trace(self, data):
     #    return Trace( data=data, header=self.rt_trace['x'].stats )
 
+    def slice_trim_traces(self):
+        slices = {}
+        for ax in ['x', 'y', 'z']:
+            slices[ax] = self.rt_trace[ax].get_slice_then_trim(self.analysis_interval)
+        return slices
+
     def append_process_packet_data(self, atxyzs, start, contig):
         """append and auto-process packet data into PimsRtTrace"""
         # FIXME should we use MERGE method here or somewhere (NaN fill?)
-        if contig:
-            log.debug( '%04d RTAPPEND:..lastPacket.endTime()=%s' % (get_line(), unix2dtm(self.lastPacket.endTime())) )
-            log.debug( '%04d RTAPPEND:thisPacket.startTime()=%s, delta=%0.6f' % (get_line(), unix2dtm(start), start-self.lastPacket.endTime()))
+        ok2append = False
+        if self.lastPacket:
+            if contig:
+                log.debug( '%04d RTAPPEND1of2:..lastPacket.endTime()=%s' % (get_line(), unix2dtm(self.lastPacket.endTime())) )
+                log.debug( '%04d RTAPPEND2of2:thisPacket.startTime()=%s, interPacketDelta=%0.6f' % (get_line(), unix2dtm(start), start-self.lastPacket.endTime()))
+                ok2append = True
+            else:
+                log.warning('%04d NOAPPEND1of3:UNHANDLED NON-CONTIG CASE...maybe rt_trace with good merge might work%s' % (get_line(), '?'*40))
+                log.debug(  '%04d NOAPPEND2of3:..lastPacket.endTime()=%s' % (get_line(), unix2dtm(self.lastPacket.endTime()) if self.lastPacket else 'x') )
+                log.debug(  '%04d NOAPPEND3of3:thisPacket.startTime()=%s, interPacketDelta=%0.6f' % (get_line(), unix2dtm(start), start-self.lastPacket.endTime() if self.lastPacket else 999.9) )
+        else:
+            log.debug( '%04d P1APPEND1of1:thisPacket.startTime()=%s' % (get_line(), unix2dtm(start)) )
+            ok2append = True
+
+        # FIXME how do we handle gaps/overlaps in terms of the appending that should happen here?
+        if ok2append:            
             for i, ax in enumerate(['x', 'y', 'z']):
+                # put packet data into a Trace object
                 tr = Trace( data=atxyzs[:, i+1], header=self.rt_trace['x'].stats )
                 tr.stats.starttime = start
+                # append this trace to the somewhat-growing real-time trace object
                 self.rt_trace[ax].append( tr, gap_overlap_check=False, verbose=self.show_warnings ) # FIXME should this be True (throws error) or pre-nudge?
-        else:
-            log.warning('%04d DROPPED A PACKET; unhandled case when non-contiguous, although rt_trace with good merge might work%s' % (get_line(), '?'*40))
-
-        # if enough pts, then slice and slide right for the data object attached to plot; otherwise, do nothing        
-        npts = self.rt_trace['x'].stats.npts 
-        if npts == 0 or (npts % self.analysis_samples):
-            log.debug( "%04d %s NON-DIVISIBLE" % (get_line(), str(self.rt_trace['x'])) )
-        else:
-            log.debug( "%04d %s IS DIVISIBLE" % (get_line(), str(self.rt_trace['x'])) )
-            endtime = self.starttime + self.analysis_interval
-            slice_range = {'starttime':UTCDateTime(self.starttime), 'endtime':UTCDateTime(endtime)}
-            traces = {}
-            traces['x'] = self.rt_trace['x'].slice(**slice_range)
-            slice_len = traces['x'].stats.npts
-            cumulative_info_tuple = (str(self.starttime), str(endtime), '%d' % len(traces['x']))
-            #if self.analysis_samples - 1 <= slice_len <= self.analysis_samples + 1:
-            if (slice_len / self.analysis_samples) > 0.90:
-                # now get y and z
-                for ax in ['y', 'z']:
-                    traces[ax] = self.rt_trace[ax].slice(**slice_range)
-                t = traces['x'].absolute_times()
-                #traces['y'].filter('lowpass', freq=2.0, zerophase=True)
-                #traces['z'].filter('highpass', freq=2.0, zerophase=True)
+            tr_span = self.rt_trace['x'].stats.endtime - self.rt_trace['x'].stats.starttime
+            log.debug( '%04d TRAPPEND1of1 %s = %.4fs' % (get_line(), self.rt_trace['x'], tr_span) )
+    
+            # if accumulated span fits, then slice and slide right for data object attached to plot; otherwise, do nothing        
+            if tr_span >= self.analysis_interval: 
+                slices = self.slice_trim_traces()
+                for ax in ['x', 'y', 'z']:
+                    slices[ax].filter('lowpass', freq=5.0, zerophase=True)
+                
+                log.debug( '%04d SLICELEFT    %s' % (get_line(), slices['x']) )
+                log.debug( '%04d SLICERIGHT   %s << remaining trace' % (get_line(), self.rt_trace['x']) )
+                log.debug( '%04d SLICE_STDs %g, %g, %g' % (get_line(), slices['x'].std(), slices['y'].std(), slices['z'].std()) )
         
-                # get info and data to pass to step callback routine
-                current_info_tuple = (str(slice_range['starttime']), str(slice_range['endtime']), '%d' % len(t))
-                flash_msg = None
+                # get data/info to pass to step callback routine
+                current_info_tuple = (str(UTCDateTime(slices['x'].stats.starttime)), str(UTCDateTime(slices['x'].stats.endtime)), '%s' % str(slices['x']))
+                flash_msg = 'We have hope here.'
                     
                 # slide to right by analysis_interval
-                self.starttime = endtime
-            else:
-                msg = '%04d how did we get DIVISIBLE, but bad slice_len here?' % get_line()
-                log.error(msg)
-                raise Exception(msg)
-        
-            if self.step_callback:
-                step_data = (current_info_tuple, cumulative_info_tuple, t, traces, flash_msg)            
-                self.step_callback(step_data)        
-
+                self.starttime = slices['x'].stats.endtime
+            
+                if self.step_callback:
+                    step_data = (current_info_tuple, current_info_tuple, slices['x'].absolute_times(), slices, flash_msg)            
+                    self.step_callback(step_data)        
 
     # get header subfields
     def get_subfields(self, h, field, Lsubs):
@@ -800,7 +807,7 @@ class PadGenerator(PacketInspector):
         """append data, per-axis each to rt_trace"""
         global TOTAL_PACKETS_FED
 
-        log.debug( '%04d %s BEFOR append() %s' % (get_line(), str(self), self.show_contig(self.lastPacket, packet)) )
+        log.debug( '%04d                %s BEFOR append() %s' % (get_line(), str(self), self.show_contig(self.lastPacket, packet)) )
 
         # FIXME what happens if we get rid of this thru the BytesIO part?
         if self._file_ == None:
@@ -869,7 +876,7 @@ class PadGenerator(PacketInspector):
         self.lastPacket = packet
         TOTAL_PACKETS_FED = TOTAL_PACKETS_FED + 1
 
-        log.debug( '%04d %s AFTER append() %s' % (get_line(), str(self), self.show_contig(self.lastPacket, packet)) )
+        log.debug( '%04d               %s AFTER append() %s' % (get_line(), str(self), self.show_contig(self.lastPacket, packet)) )
 
 # return sensor and data coordinate system database entries, if they exist
 def check_coord_sys(dataTime, sensor, dataName):
@@ -1147,7 +1154,7 @@ def one_shot(pfs):
                 if p.type == 'unknown':
                     print_log('unknown packet type at time %.4lf' % result[0])
                     continue
-                log.debug('%04d one_shot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(get_line(), tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
+                log.debug('%04d just before writePacket table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(get_line(), tableName, p.type, result[0], p.contiguous(pf.lastPacket)))
                 preCutoffProgress = 1
                 pf.writePacket(p)
 
