@@ -334,7 +334,7 @@ class ValidateTimeInterval(object):
 ANIN =  10 # seconds for analysis_interval
 PLTS = 600 # seconds for plot_span
 EXTR =   2 # count for extra_intervals
-MAXT = int( EXTR * ANIN + PLTS ) # seconds max for real-time trace
+#MAXT = int( EXTR * ANIN + PLTS ) # seconds max for real-time trace
 
 # a map from key -> value, converter
 default_params = {
@@ -378,7 +378,7 @@ default_params = {
     'time.analysis_interval'    : [ANIN, ValidateTimeInterval(  1,   61, closedmin=True, closedmax=False)],
     'time.plot_span'            : [PLTS, ValidateTimeInterval(  4, 7201, closedmin=True, closedmax=False)],
     'time.extra_intervals'      : [EXTR, validate_int],
-    'time.maxsec_trace'         : [MAXT, validate_int],
+    #'time.maxsec_trace'         : [MAXT, validate_int],
     
     # data/buffer props
     'data.maxlen'               : [ 222, validate_int], # max pts; limit otherwise ever-growing data deque

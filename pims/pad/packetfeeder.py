@@ -2,6 +2,8 @@
 version = '$Id$'
 # Adapted from Ted Wright's packetWriter.py,v 1.22 2004-11-29 20:00:04 pims
 
+# TODO track down all references to maxsec, particularly PARAMETERS global as "maxsec_rttrace"
+#      because it seems that PARAMETERS['maxsec_rttrace'] points to nowhere yet is referenced?
 # TODO see how things get initialized relative to CURRENT TIME, PLOT_SPAN, startTime, endTime, etc.
 # TODO fix it so that rt_params['verbose.fileo'] is used for logging file path
 # TODO get rid of inspect as input argument
@@ -60,7 +62,7 @@ MIN_DELAY = 2
 SLEEP_TIME = 3
 
 # Max records in database request
-MAX_RESULTS = 100 # nominal is 200; max sensor packet rate is like 14 pps (nominal is 8 pps)
+MAX_RESULTS = 200 # nominal is 200; max sensor packet rate is like 14 pps (nominal is 8 pps)
 
 # Max records to process before deleting processed data and/or working on another table for a while
 MAX_RESULTS_PER_TABLE = 10 * 60 * 8 # use M * S/M * P/S; 4800 for 10-minute plot (for 8 pps & 5-minute plot, use 2400)
@@ -1261,9 +1263,9 @@ def atof_unixstart(s):
     if _HOSTNAME == 'park':
         return 1378741399.5 # for debug and testing
     else:
-        # timeNow minus plot_buffer, which is rt_params['time.maxsec_trace']
+        # timeNow minus plot_buffer, which is PARAMETERS['maxsec_trace']
         timeNow = time()
-        return timeNow - rt_params['time.maxsec_trace']
+        return timeNow - PARAMETERS['maxsec_trace']
 
 def custom_warn(message, category, filename, lineno, file=None, line=None):
     log.warning(warnings.formatwarning(message, category, filename, lineno).replace('\n',' '))
@@ -1379,6 +1381,13 @@ def parameters_ok():
     if 0 == PARAMETERS['resume']:
         # remove any stale resume files
         getoutput('rm -rf packetFeederState temp.*')
+
+    if rt_params['time.plot_span'] <= rt_params['time.analysis_interval']:
+        log.error(' for rt_params, time.plot_span must be greater than time.analysis_interval')
+        return 0
+
+    # introduce calculated parameter out of the blue like this here!?
+    PARAMETERS['maxsec_trace'] = int( rt_params['time.extra_intervals'] * rt_params['time.analysis_interval'] + rt_params['time.plot_span'] )
 
     return 1
 
@@ -1529,7 +1538,7 @@ def demo_strip():
     # initialize our datagen object using PadGenerator
     showWarnings = rt_params['pw.showWarnings']
     analysis_interval = rt_params['time.analysis_interval']
-    maxsec_rttrace = rt_params['time.maxsec_trace']
+    maxsec_rttrace = PARAMETERS['maxsec_trace']
     scale_factor = rt_params['data.scale_factor']
     datagen = PadGenerator(showWarnings=showWarnings, maxsec_rttrace=maxsec_rttrace, scale_factor=scale_factor, analysis_interval=analysis_interval)
 
@@ -1549,11 +1558,13 @@ def run(func, *args, **kwargs):
         if (2 != len(pair)):
             print 'bad parameter: %s' % p
             break
-        if not PARAMETERS.has_key(pair[0]):
+        if PARAMETERS.has_key(pair[0]):
+            PARAMETERS[pair[0]] = pair[1]
+        elif rt_params.has_key(pair[0]):
+            rt_params[pair[0]] = pair[1]
+        else:
             print 'bad parameter: %s' % pair[0]
             break
-        else:
-            PARAMETERS[pair[0]] = pair[1]
     else:
         if parameters_ok():
             # run func (e.g. main_loop, demo_padgen), then exit like packetWriter.py does

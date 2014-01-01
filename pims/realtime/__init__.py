@@ -216,7 +216,7 @@ class RtParams(OrderedDict):
             dict.__setitem__(self, key, cval)
         except KeyError:
             raise KeyError('%s is not a valid rc parameter.  See rtParams.keys() for a list of valid parameters.' % (key,))
-
+            
     def keys(self):
         """
         Return sorted list of keys.
