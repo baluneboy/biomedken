@@ -57,13 +57,13 @@ def get_line():
 MIN_DELAY = 2
 
 # Wake up and process database every "SLEEP_TIME" seconds (this value is 30 *minutes* in packetWriter)
-SLEEP_TIME = 4
+SLEEP_TIME = 3
 
 # Max records in database request
 MAX_RESULTS = 100 # nominal is 200; max sensor packet rate is like 14 pps (nominal is 8 pps)
 
 # Max records to process before deleting processed data and/or working on another table for a while
-MAX_RESULTS_PER_TABLE = 5 * 60 * 8 # use M * S/M * P/S; 4800 for 10-minute plot (for 8 pps & 5-minute plot, use 2400)
+MAX_RESULTS_PER_TABLE = 10 * 60 * 8 # use M * S/M * P/S; 4800 for 10-minute plot (for 8 pps & 5-minute plot, use 2400)
 
 # Packet counters
 PACKETS_WRITTEN = 0
@@ -719,7 +719,7 @@ class PadGenerator(PacketInspector):
             if tr_span >= self.analysis_interval: 
                 slices = self.slice_trim_traces()
                 for ax in ['x', 'y', 'z']:
-                    slices[ax].filter('lowpass', freq=5.0, zerophase=True)
+                    slices[ax].filter('lowpass', freq=2.0, zerophase=True)
                 
                 log.debug( '%04d SLICELEFT    %s' % (get_line(), slices['x']) )
                 log.debug( '%04d SLICERIGHT   %s << remaining trace' % (get_line(), self.rt_trace['x']) )
@@ -727,7 +727,7 @@ class PadGenerator(PacketInspector):
         
                 # get data/info to pass to step callback routine
                 current_info_tuple = (str(UTCDateTime(slices['x'].stats.starttime)), str(UTCDateTime(slices['x'].stats.endtime)), '%s' % str(slices['x']))
-                flash_msg = 'We have hope here.'
+                flash_msg = 'A debug flash message goes here.'
                     
                 # slide to right by analysis_interval
                 self.starttime = slices['x'].stats.endtime
