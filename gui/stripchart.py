@@ -620,6 +620,7 @@ class GraphFrame(wx.Frame):
         self.plot_data = {}
         for ax in self.axes_labels:
             self.plot_data[ax] = self.axes[ax].plot_date(x, y, '.-', linewidth=1, color=(1,0,0))[0]
+            self.axes[ax].set_ylabel( '%s-Axis Q (units /SF)' % ax.upper() )
             
         # Set major x ticks every 30 minutes, minor every 15 minutes
         self.axes['z'].xaxis.set_major_locator( matplotlib.dates.MinuteLocator(interval=2) )
@@ -705,12 +706,18 @@ class GraphFrame(wx.Frame):
             self.axes['x'].grid(True, color='gray')
             self.axes['y'].grid(True, color='gray')
             self.axes['z'].grid(True, color='gray')
+            self.axes['x'].xaxis.grid(True, 'minor')
+            self.axes['y'].xaxis.grid(True, 'minor')
+            self.axes['z'].xaxis.grid(True, 'minor')
+            
         else:
             self.axes['x'].grid(False)
             self.axes['y'].grid(False)
             self.axes['z'].grid(False)
-        
-        
+            self.axes['x'].xaxis.grid(False, 'minor')
+            self.axes['y'].xaxis.grid(False, 'minor')
+            self.axes['z'].xaxis.grid(False, 'minor')
+                                
         self.plot_data['x'].set_xdata( t )
         self.plot_data['x'].set_ydata( x )
         
