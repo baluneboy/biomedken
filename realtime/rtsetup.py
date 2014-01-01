@@ -344,7 +344,7 @@ default_params = {
 
     # verbosity setting
     'verbose.level'     : ['INFO', validate_verbose], # debug, info, warning, error, or critical
-    'verbose.fileo'     : ['sys.stdout', str],
+    'verbose.fileo'     : ['pims_realtime', str], # basename w/o ext; see if 'sys.stdout' can be used too?
 
     # line props
     'lines.linewidth'       : [1.0, validate_float],     # line width in points

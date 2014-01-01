@@ -486,9 +486,9 @@ class GraphFrame(wx.Frame):
 
         self.get_inputs()
         self.xmin_control = BoundControlBox(self.output_panel, -1, "X min", 0)
-        self.xmax_control = BoundControlBox(self.output_panel, -1, "X max", 120) #self.rt_params['time.plot_span'])
+        self.xmax_control = BoundControlBox(self.output_panel, -1, "X max", 120)
         self.ymin_control = BoundControlBox(self.output_panel, -1, "Y min", 0)
-        self.ymax_control = BoundControlBox(self.output_panel, -1, "Y max", 9000)
+        self.ymax_control = BoundControlBox(self.output_panel, -1, "Y max", 0.1)
         self.current_info = BeginEndSamplesBox(self.output_panel, -1, "Current")
         self.cumulative_info = BeginEndSamplesBox(self.output_panel, -1, "Cumulative")        
 
@@ -659,7 +659,7 @@ class GraphFrame(wx.Frame):
     def draw_plot(self):
         """ Redraws the plot"""
         
-        # FIXME if you can find better way to pull values from self.data for plot
+        # TODO see if you can find better way to pull values from self.data for plot
         t = [ unix2dtm(tup[0]) for tup in list(self.data) ]
         x = [ tup[1] for tup in list(self.data) ]
         y = [ tup[2] for tup in list(self.data) ]
@@ -668,32 +668,34 @@ class GraphFrame(wx.Frame):
         # when xmin is on auto, it "follows" xmax to produce a 
         # sliding window effect. therefore, xmin is assigned after
         # xmax.
+        secpad = self.rt_params['time.analysis_interval']
         if self.xmax_control.is_auto():
-            xmax = t[-1] + datetime.timedelta(seconds=self.rt_params['time.analysis_interval'])
+            xmax = t[-1] + datetime.timedelta(seconds=secpad)
         else:
             xmax = float(self.xmax_control.manual_value())
             
-        if self.xmin_control.is_auto():            
-            xmin = xmax - datetime.timedelta(seconds=self.rt_params['time.plot_span'])
+        if self.xmin_control.is_auto():
+            secdelta = self.rt_params['time.plot_span'] + (2.0 * secpad)
+            xmin = xmax - datetime.timedelta(seconds=secdelta)
         else:
             xmin = float(self.xmin_control.manual_value())
 
-        # for ymin and ymax, find the minimal and maximal values
-        # in the data set and add a mininal margin.
-        # 
-        # note that it's easy to change this scheme to the 
-        # minimal/maximal value in the current display, and not
-        # the whole data set.
+        # for ymin and ymax, find the min and max values
+        # in the data displayed and add margin
         if self.ymin_control.is_auto():
-            ymin = round(min(x), 0) - 1
+            minxyz = min([min(x), min(y), min(z)]) - 0.01
+            ymin = np.round(minxyz, decimals=2)
         else:
             ymin = float(self.ymin_control.manual_value())
-        
+            
         if self.ymax_control.is_auto():
-            ymax = round(max(x), 0) + 1
+            maxxyz = max([max(x), max(y), max(z)])
+            ymax = np.round(maxxyz, decimals=2) + 0.01
         else:
             ymax = float(self.ymax_control.manual_value())
 
+        # only need to set xlims and ylims for x-axis
+        # the y-, and z-axis will share both sets of lims
         self.axes['x'].set_xbound(lower=xmin, upper=xmax)
         self.axes['x'].set_ybound(lower=ymin, upper=ymax)
         
