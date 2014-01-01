@@ -443,9 +443,8 @@ class GraphFrame(wx.Frame):
             for ax in ['x', 'y', 'z']:
                 txyz = txyz + ( traces[ax].std(), )
             self.data.append(txyz)
-            self.log.debug( 'self.data now contains %d tuples (t, xrms, yrms, zrms)' % len(self.data) )
-        else:
-            self.log.debug( "We do not append None to self.data's deque." )
+
+        self.log.debug( 'self.data now contains %4d tuples of (t, xrms, yrms, zrms)' % len(self.data) )
         
         if flash_msg:
             self.flash_status_message(flash_msg, flash_len_ms=2000)
@@ -620,7 +619,7 @@ class GraphFrame(wx.Frame):
         # Plotting goes here ...
         self.plot_data = {}
         for ax in self.axes_labels:
-            self.plot_data[ax] = self.axes[ax].plot_date(x, y, '-', linewidth=1, color=(1,0,0))[0]
+            self.plot_data[ax] = self.axes[ax].plot_date(x, y, '.-', linewidth=1, color=(1,0,0))[0]
             
         # Set major x ticks every 30 minutes, minor every 15 minutes
         self.axes['z'].xaxis.set_major_locator( matplotlib.dates.MinuteLocator(interval=2) )
@@ -659,29 +658,24 @@ class GraphFrame(wx.Frame):
     def draw_plot(self):
         """ Redraws the plot"""
         
-        t = [ tup[0] for tup in list(self.data) ]
+        # FIXME if you can find better way to pull values from self.data for plot
+        t = [ unix2dtm(tup[0]) for tup in list(self.data) ]
         x = [ tup[1] for tup in list(self.data) ]
         y = [ tup[2] for tup in list(self.data) ]
         z = [ tup[3] for tup in list(self.data) ]
 
-        self.log.debug( 'xRMS[-1]=%.4f' % x[-1] )
-        self.log.debug( 'yRMS[-1]=%.4f' % y[-1] )
-        self.log.debug( 'zRMS[-1]=%.4f' % z[-1] )
-    
         # when xmin is on auto, it "follows" xmax to produce a 
         # sliding window effect. therefore, xmin is assigned after
         # xmax.
-        #
-        if False:
-            if self.xmax_control.is_auto():
-                xmax = len(self.data) if len(self.data) > self.rt_params['time.plot_span'] else self.rt_params['time.plot_span']
-            else:
-                xmax = int(self.xmax_control.manual_value())
-                
-            if self.xmin_control.is_auto():            
-                xmin = xmax - self.rt_params['time.plot_span']
-            else:
-                xmin = int(self.xmin_control.manual_value())
+        if self.xmax_control.is_auto():
+            xmax = t[-1] + datetime.timedelta(seconds=self.rt_params['time.analysis_interval'])
+        else:
+            xmax = float(self.xmax_control.manual_value())
+            
+        if self.xmin_control.is_auto():            
+            xmin = xmax - datetime.timedelta(seconds=self.rt_params['time.plot_span'])
+        else:
+            xmin = float(self.xmin_control.manual_value())
 
         # for ymin and ymax, find the minimal and maximal values
         # in the data set and add a mininal margin.
@@ -689,19 +683,16 @@ class GraphFrame(wx.Frame):
         # note that it's easy to change this scheme to the 
         # minimal/maximal value in the current display, and not
         # the whole data set.
-        # 
         if self.ymin_control.is_auto():
             ymin = round(min(x), 0) - 1
         else:
-            ymin = int(self.ymin_control.manual_value())
+            ymin = float(self.ymin_control.manual_value())
         
         if self.ymax_control.is_auto():
             ymax = round(max(x), 0) + 1
         else:
-            ymax = int(self.ymax_control.manual_value())
+            ymax = float(self.ymax_control.manual_value())
 
-        xmin = min(t)
-        xmax = max(t)
         self.axes['x'].set_xbound(lower=xmin, upper=xmax)
         self.axes['x'].set_ybound(lower=ymin, upper=ymax)
         
@@ -749,7 +740,7 @@ class GraphFrame(wx.Frame):
     
     def on_step_button(self, event):
         if self.paused:
-            self.data.append( self.datagen.next(self.step_callback) )
+            self.datagen.next(self.step_callback) # this appends to self.data
             self.draw_plot()
     
     def on_update_step_button(self, event):
