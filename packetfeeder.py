@@ -4,9 +4,6 @@ version = '$Id$'
 
 # TODO track down all references to maxsec, particularly PARAMETERS global as "maxsec_rttrace"
 #      because it seems that PARAMETERS['maxsec_rttrace'] points to nowhere yet is referenced?
-# TODO see how things get initialized relative to CURRENT TIME, PLOT_SPAN, startTime, endTime, etc.
-# TODO fix it so that rt_params['verbose.fileo'] is used for logging file path
-# TODO get rid of inspect as input argument
 
 import wx
 import os
@@ -541,7 +538,7 @@ class PadGenerator(PacketInspector):
         global MAX_RESULTS, MAX_RESULTS_PER_TABLE
         #BENCH_NEXT_METHOD.start()
         self.step_callback = step_callback
-        log.debug('%04d ONESH inspect=%s %s' % (get_line(), PARAMETERS['inspect'], '-' * 99))
+        log.debug('%04d ONESH %s' % (get_line(), '-' * 99))
         self.lastPacketTotal = TOTAL_PACKETS_FED
         self.moreToDo = 0
         timeNow = time()
@@ -1085,7 +1082,7 @@ def get_tp_query_results(table, ustart, ustop, lim, tuplabel):
 def one_shot(pfs):
     global moreToDo, lastPacketTotal, log
     log.debug('%04d PACKETS_WRITTEN = %04d, TOTAL_PACKETS_FED = %04d @ top of one_shot' % (get_line(), PACKETS_WRITTEN, TOTAL_PACKETS_FED))
-    log.debug('%04d ONESH inspect=%s %s' % (get_line(), PARAMETERS['inspect'], '-' * 99))
+    log.debug('%04d ONESH %s' % (get_line(), '-' * 99))
     lastPacketTotal = TOTAL_PACKETS_FED
     moreToDo = 0
     timeNow = time()
@@ -1131,16 +1128,9 @@ def one_shot(pfs):
         preCutoffProgress = 0
         packetCount = 0
         if not pfs.has_key(tableName):
-            if PARAMETERS['inspect'] == 2:
-                pf = PadGenerator(
-                    showWarnings=PARAMETERS['showWarnings'],
-                    maxsec_rttrace=PARAMETERS['maxsec_rttrace'],
-                    scale_factor=PARAMETERS['scale_factor'],
-                    )
-            elif PARAMETERS['inspect'] == 1:
-                pf = PacketInspector(PARAMETERS['showWarnings'])
-            else:
-                pf = PacketFeeder(PARAMETERS['showWarnings'])
+            pf = PadGenerator(  showWarnings=PARAMETERS['showWarnings'],
+                                maxsec_rttrace=PARAMETERS['maxsec_rttrace'],
+                                scale_factor=PARAMETERS['scale_factor'] )
             log.info('%s starting...' % pf.__class__.__name__)
             pfs[tableName] = pf
         else:
@@ -1283,18 +1273,11 @@ def parameters_ok():
         return 0
     else:
         rt_params['verbose.level'] = b
-        log = SimpleLog('pims_pad_packetfeeder', log_level=b).log
+        log = SimpleLog(rt_params['verbose.fileo'], log_level=b).log
         log.info('Logging started.')
 
     warnings.showwarning = custom_warn
     warnings.warn("Stray warnings are being put into log via custom_warn function.")
-
-    b = PARAMETERS['inspect']
-    if b != '0' and b != '1' and b != '2':
-        log.error(' inspect must be 0 or 1 (or 2)')
-        return 0
-    else:
-        PARAMETERS['inspect'] = rt_params['pw.inspect'] =  atoi(b)
 
     b = PARAMETERS['resume']
     if b != '0' and b != '1':
@@ -1550,8 +1533,8 @@ def demo_strip():
 
 # ~/dev/programs/python/packet/packetWriter.py tables=121f05 host=localhost ancillaryHost=localhost destination=. delete=0 cutoffDelay=0
 # e.g. python packetfeeder.py host=manbearpig tables=121f05 ancillaryHost=kyle startTime=1382551198.0 endTime=1382552398.0
-# e.g. ON PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=None startTime=1378742112.0 inspect=1
-# 25pkts e.g. PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=localhost startTime=1378742399.5 inspect=1
+# e.g. ON PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=None startTime=1378742112.0
+# 25pkts e.g. PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=localhost startTime=1378742399.5
 def run(func, *args, **kwargs):
     for p in sys.argv[1:]:  # parse command line
         pair = split(p, '=', 1)
