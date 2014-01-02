@@ -615,12 +615,31 @@ class GraphFrame(wx.Frame):
             UTCDateTime(2014,  1,  1,  0,  4, 0),
             UTCDateTime(2014,  1,  1,  0,  6, 0)] ])
         y = np.zeros(x.shape)
+
+        # TODO move these to rt_params via rtsetup.py
+        self.line_colors = {'x': 'Red', 'y': 'Green', 'z': 'Blue'}
+        self.markersize = 9
+        
+        # TODO encapsulate these with step_callback object
+        self.quantity = 'Accel.'
+        self.units = 'g _{RMS}'
+        if self.rt_params['data.scale_factor'] == 1000:
+            self.units_prefix = 'm'
+        elif self.rt_params['data.scale_factor'] == 1000000:
+            self.units_prefix = '\mu'
+        elif self.rt_params['data.scale_factor'] == 1:
+            self.units_prefix = ''
+        else:
+            raise Exception('unhandled data.scale_factor = %g' % rt_params['data.scale_factor'])
+        ylabel_suffix = r'%s ($%s %s$)' % (self.quantity, self.units_prefix, self.units)
         
         # Plotting goes here ...
         self.plot_data = {}
         for ax in self.axes_labels:
-            self.plot_data[ax] = self.axes[ax].plot_date(x, y, '.-', linewidth=1, color=(1,0,0))[0]
-            self.axes[ax].set_ylabel( '%s-Axis Q (units /SF)' % ax.upper() )
+            self.plot_data[ax] = self.axes[ax].plot_date(x, y, '.-', linewidth=2,
+                                                         color=self.line_colors[ax],
+                                                         markersize=self.markersize)[0]
+            self.axes[ax].set_ylabel( r'%s-Axis %s' % (ax.upper(), ylabel_suffix) )
             
         # Set major x ticks every 30 minutes, minor every 15 minutes
         self.axes['z'].xaxis.set_major_locator( matplotlib.dates.MinuteLocator(interval=2) )
@@ -743,9 +762,8 @@ class GraphFrame(wx.Frame):
         #self.log.debug('done redrawing plot')
 
         #MINDLEN, MAXDLEN = 50, 90
-        #if len(self.data) >= MINDLEN and len(self.data) < MAXDLEN:
-        #    #self.fig.savefig('/tmp/whatever%04d.png' % len(self.data), facecolor=self.fig.get_facecolor(), edgecolor='none')
-        #    self.save_screenshot('/tmp/whatever%04d.png' % len(self.data))
+        #self.save_screenshot('/tmp/whatever%04d.png' % len(self.data))
+        self.fig.savefig('/tmp/example_%06d.png' % len(self.data), facecolor=self.fig.get_facecolor(), edgecolor='none')
     
     def on_step_button(self, event):
         if self.paused:
