@@ -382,7 +382,7 @@ default_params = {
     
     # data/buffer props
     'data.maxlen'               : [ 222, validate_int], # max pts; limit otherwise ever-growing data deque
-    'data.scale_factor'         : [1000, validate_int],
+    'data.scale_factor'         : [ 1e6, validate_int],
         
     # legacy packetWriter.py parameters
     'pw.ancillaryHost'          : ['kyle',            str], # the name of the computer with the auxiliary databases (or 'None')

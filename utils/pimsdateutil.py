@@ -5,6 +5,8 @@ Date/time functions mostly for PIMS/PAD utility.
 
 import os
 import datetime
+import time
+from dateutil import parser
 
 MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY = range(7)
 
@@ -208,9 +210,29 @@ def unix2dtm(u):
     """convert a unix time u to a datetime object"""
     return datetime.datetime.utcfromtimestamp(u)
 
+# FIXME this does not give milli-second resolution [maybe total_seconds fault?]
 def dtm2unix(d):
     """convert a datetime object to unix time (seconds since 01-Jan-1970)"""
-    return (d-datetime.datetime(1970,1,1)).total_seconds()
+    return (d - datetime.datetime(1970,1,1)).total_seconds()
+
+# convert input time from string to unixtime float
+def parse_packetfeeder_input_time(s, sec_plot_span):
+    """
+    convert string input for packetfeeder.py
+    SUBTRACT sec_plot_span if input is zero float string
+    """
+    try:
+        f = float(s)
+        if f > 0.0:
+            return f
+        elif f == 0:
+            timeNow = time.time()
+            return timeNow - sec_plot_span
+        else:
+            raise Exception('no negative unixtime floats accepted')
+    except ValueError:
+        dtm = parser.parse(s)
+        return dtm2unix(dtm)
 
 def testdoc(verbose=True):
     import doctest
