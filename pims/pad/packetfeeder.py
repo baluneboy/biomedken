@@ -27,7 +27,7 @@ from xml.dom.minidom import parseString as xml_parse
 from pims.files.log import SimpleLog
 from pims.realtime import rt_params # centralized place to keep real-time parameters
 from pims.realtime.accelpacket import *
-from pims.utils.pimsdateutil import unix2dtm
+from pims.utils.pimsdateutil import unix2dtm, parse_packetfeeder_input_time
 from pims.kinematics.rotation import rotation_matrix
 from pims.database.pimsquery import ceil4, PadExpect
 from pims.gui.stripchart import GraphFrame
@@ -700,6 +700,7 @@ class PadGenerator(PacketInspector):
                 log.debug(  '%04d NOAPPEND2of3:..lastPacket.endTime()=%s' % (get_line(), unix2dtm(self.lastPacket.endTime()) if self.lastPacket else 'x') )
                 log.debug(  '%04d NOAPPEND3of3:thisPacket.startTime()=%s, interPacketDelta=%0.6f' % (get_line(), unix2dtm(start), start-self.lastPacket.endTime() if self.lastPacket else 999.9) )
         else:
+            # lastPacket is None, so this is initializing
             log.debug( '%04d P1APPEND1of1:thisPacket.startTime()=%s' % (get_line(), unix2dtm(start)) )
             ok2append = True
 
@@ -710,7 +711,14 @@ class PadGenerator(PacketInspector):
                 tr = Trace( data=atxyzs[:, i+1], header=self.rt_trace['x'].stats )
                 tr.stats.starttime = start
                 # append this trace to the somewhat-growing real-time trace object
-                self.rt_trace[ax].append( tr, gap_overlap_check=False, verbose=self.show_warnings ) # FIXME should this be True (throws error) or pre-nudge?
+                log.debug( "%04d CRUXAPPEND1of3 %s is rt_trace['x'] to append to" % (get_line(), self.rt_trace['x']) )
+                log.debug( "%04d CRUXAPPEND2of3 %s is tr to be appended" % (get_line(), tr) )
+                try:
+                    self.rt_trace[ax].append( tr, gap_overlap_check=False, verbose=self.show_warnings ) # FIXME should this be True (throws error) or pre-nudge?
+                    log.debug( "%04d CRUXAPPEND3of3 %s is new rt_trace['x'] after append" % (get_line(), self.rt_trace['x']) )
+                except:
+                    log.debug( "%04d CRUXAPPEND3of3 FAILED (see previous debug lines)" % get_line() )
+                    
             tr_span = self.rt_trace['x'].stats.endtime - self.rt_trace['x'].stats.starttime
             log.debug( '%04d TRAPPEND1of1 %s = %.4fs' % (get_line(), self.rt_trace['x'], tr_span) )
     
@@ -1335,8 +1343,10 @@ def parameters_ok():
         b = string.replace(b, '~', chr(9))   # replace single tilde with tab
         PARAMETERS['additionalHeader'] = rt_params['pw.additionalHeader'] = b
 
-    PARAMETERS['startTime'] = rt_params['pw.startTime'] = atof_unixstart(PARAMETERS['startTime'])
-    PARAMETERS['endTime'] = rt_params['pw.endTime'] = atof(PARAMETERS['endTime'])
+    #PARAMETERS['startTime'] = rt_params['pw.startTime'] = atof_unixstart(PARAMETERS['startTime'])
+    #PARAMETERS['endTime'] = rt_params['pw.endTime'] = atof(PARAMETERS['endTime'])
+    PARAMETERS['startTime'] = rt_params['pw.startTime'] = parse_packetfeeder_input_time(PARAMETERS['startTime'], rt_params['time.plot_span'])
+    PARAMETERS['endTime'] = rt_params['pw.endTime'] = parse_packetfeeder_input_time(PARAMETERS['endTime'], rt_params['time.plot_span'])    
     PARAMETERS['cutoffDelay'] = rt_params['pw.cutoffDelay'] = atof(PARAMETERS['cutoffDelay'])
     PARAMETERS['maxFileTime'] = rt_params['pw.maxFileTime'] = atof(PARAMETERS['maxFileTime'])
 
@@ -1501,21 +1511,10 @@ def dict_as_str(d):
     s += '=' * 78 + '\n'
     return s
 
-def demo_strip():
+def strip_chart():
 
-    #for var in DEFAULTS_LIST:
-    #    if PARAMETERS[var] == rt_params['pw.' + var]:
-    #        print 'OK  ', var
-    #    else:
-    #        print 'BAD ', var
-    #raise SystemExit
-
-    #print '--- PARAMETERS %s\n' % ('-' * 55), dict_as_str(PARAMETERS)
-    #print '--- rt_params %s\n' % ('-' * 55), dict_as_str(rt_params)
-    #raise SystemExit
-
-    #for k, v in zip(rt_params.keys(), rt_params.values()):
-    #    print k, "%s" % v
+    print '--- PARAMETERS %s\n' % ('-' * 55), dict_as_str(PARAMETERS)
+    print '--- rt_params %s\n' % ('-' * 55), dict_as_str(rt_params)
     #raise SystemExit
 
     # initialize our datagen object using PadGenerator
@@ -1527,12 +1526,12 @@ def demo_strip():
 
     # now start the gui
     app = wx.PySimpleApp()
-    app.frame = GraphFrame(datagen, 'title', log, rt_params) # rt_params is from global namespace
+    app.frame = GraphFrame(datagen, 'title', log, rt_params) # NOTE: rt_params is from global namespace
     app.frame.Show()
     app.MainLoop()
 
+# e.g. python packetfeeder.py host=manbearpig tables=121f05 ancillaryHost=kyle startTime="2013-10-31 22:50:00" endTime="2013-10-31 23:55:00"
 # ~/dev/programs/python/packet/packetWriter.py tables=121f05 host=localhost ancillaryHost=localhost destination=. delete=0 cutoffDelay=0
-# e.g. python packetfeeder.py host=manbearpig tables=121f05 ancillaryHost=kyle startTime=1382551198.0 endTime=1382552398.0
 # e.g. ON PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=None startTime=1378742112.0
 # 25pkts e.g. PARK packetfeeder.py tables=121f05 host=localhost ancillaryHost=localhost startTime=1378742399.5
 def run(func, *args, **kwargs):
@@ -1558,4 +1557,4 @@ def run(func, *args, **kwargs):
 if __name__ == '__main__':
     #run( main_loop )
     #run( test_time_pad_generator, num_iter=2 )
-    run( demo_strip )
+    run( strip_chart )

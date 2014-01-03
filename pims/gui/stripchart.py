@@ -623,9 +623,9 @@ class GraphFrame(wx.Frame):
         # TODO encapsulate these with step_callback object
         self.quantity = 'Accel.'
         self.units = 'g _{RMS}'
-        if self.rt_params['data.scale_factor'] == 1000:
+        if self.rt_params['data.scale_factor'] == 1e3:
             self.units_prefix = 'm'
-        elif self.rt_params['data.scale_factor'] == 1000000:
+        elif self.rt_params['data.scale_factor'] == 1e6:
             self.units_prefix = '\mu'
         elif self.rt_params['data.scale_factor'] == 1:
             self.units_prefix = ''
@@ -763,7 +763,7 @@ class GraphFrame(wx.Frame):
 
         #MINDLEN, MAXDLEN = 50, 90
         #self.save_screenshot('/tmp/whatever%04d.png' % len(self.data))
-        self.fig.savefig('/tmp/example_%06d.png' % len(self.data), facecolor=self.fig.get_facecolor(), edgecolor='none')
+        #self.fig.savefig('/tmp/example_%06d.png' % len(self.data), facecolor=self.fig.get_facecolor(), edgecolor='none')
     
     def on_step_button(self, event):
         if self.paused:
