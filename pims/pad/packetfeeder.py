@@ -33,11 +33,11 @@ from pims.database.pimsquery import ceil4, PadExpect
 from pims.gui.stripchart import GraphFrame
 from pims.lib.tools import varname
 from pims.utils.benchmark import Benchmark
-from pims.gui.stripchart import PimsRtTrace
+#from pims.gui.stripchart import PimsRtTrace
+from pims.pad.padstream import PadStream
 
-from obspy.core.utcdatetime import UTCDateTime
-from obspy import Trace
-#from obspy.realtime import RtTrace
+from obspy import Trace, UTCDateTime
+from obspy.core.trace import Stats
 
 import inspect
 
@@ -660,88 +660,128 @@ class PadGenerator(PacketInspector):
         
         #return TOTAL_PACKETS_FED
 
-    def init_realtime_trace_registerproc(self, hdr, ax): #, packetStart, analysis_interval):
-        """initialize real-time traces and register process for scale-factor"""
-        # set max length (in sec) for real-time trace during init to avoid memory issue
-        rt_trace = PimsRtTrace(max_length=self.maxsec_rttrace)
-
-        # data nominally in g, but most likely mg or ug is preferred
-        rt_trace.registerRtProcess('scale', factor=self.scale_factor)
-
+    def init_header(self, hdr):
+        """initialize header info"""
         # use Ted's legacy XML header info to our advantage for real-time trace
-        rt_trace.stats['network'] = hdr['System']
-        rt_trace.stats['station'] = hdr['SensorID']
-        rt_trace.stats['sampling_rate'] = hdr['SampleRate']
-        rt_trace.stats['location'] = hdr['SensorCoordinateSystem']['comment']
-        rt_trace.stats['channel'] = ax
-
-        return rt_trace
+        header = {}
+        header['network']       = hdr['System']
+        header['station']       = hdr['SensorID']
+        header['sampling_rate'] = hdr['SampleRate']
+        header['location']      = hdr['SensorCoordinateSystem']['comment']
+        #header['channel']       = ax
+        return header
 
     #def as_trace(self, data):
     #    return Trace( data=data, header=self.rt_trace['x'].stats )
 
     def slice_trim_traces(self):
-        slices = {}
-        for ax in ['x', 'y', 'z']:
-            slices[ax] = self.rt_trace[ax].get_slice_then_trim(self.analysis_interval)
-        return slices
+        t1 = self.stream[0].stats.starttime
+        t2 = t1 + self.analysis_interval
+        st = self.stream.slice(t1, t2)
+        self.stream.trim(starttime=t2)
+        return st
+    
+    #def OLDappend_process_packet_data(self, atxyzs, start, contig):
+    #    """append and auto-process packet data into PimsRtTrace"""
+    #    # FIXME should we use MERGE method here or somewhere (NaN fill?)
+    #    ok2append = False
+    #    if self.lastPacket:
+    #        if contig:
+    #            log.debug( '%04d RTAPPEND1of2:..lastPacket.endTime()=%s' % (get_line(), unix2dtm(self.lastPacket.endTime())) )
+    #            log.debug( '%04d RTAPPEND2of2:thisPacket.startTime()=%s, interPacketDelta=%0.6f' % (get_line(), unix2dtm(start), start-self.lastPacket.endTime()))
+    #            ok2append = True
+    #        else:
+    #            log.warning('%04d NOAPPEND1of3:UNHANDLED NON-CONTIG CASE...maybe rt_trace with good merge might work%s' % (get_line(), '?'*40))
+    #            log.debug(  '%04d NOAPPEND2of3:..lastPacket.endTime()=%s' % (get_line(), unix2dtm(self.lastPacket.endTime()) if self.lastPacket else 'x') )
+    #            log.debug(  '%04d NOAPPEND3of3:thisPacket.startTime()=%s, interPacketDelta=%0.6f' % (get_line(), unix2dtm(start), start-self.lastPacket.endTime() if self.lastPacket else 999.9) )
+    #    else:
+    #        # lastPacket is None, so this is initializing
+    #        log.debug( '%04d P1APPEND1of1:thisPacket.startTime()=%s' % (get_line(), unix2dtm(start)) )
+    #        ok2append = True
+    #
+    #    # FIXME how do we handle gaps/overlaps in terms of the appending that should happen here?
+    #    if ok2append:            
+    #        for i, ax in enumerate(['x', 'y', 'z']):
+    #            
+    #            # put packet data into a Trace object
+    #            tr = Trace( data=atxyzs[:, i+1], header=self.rt_trace['x'].stats )
+    #            tr.stats.starttime = start
+    #            # append this trace to the somewhat-growing real-time trace object
+    #            log.debug( "%04d CRUXAPPEND1of3 %s is rt_trace['x'] to append to" % (get_line(), self.rt_trace['x']) )
+    #            log.debug( "%04d CRUXAPPEND2of3 %s is tr to be appended" % (get_line(), tr) )
+    #            try:
+    #                self.rt_trace[ax].append( tr, gap_overlap_check=False, verbose=self.show_warnings ) # FIXME should this be True (throws error) or pre-nudge?
+    #                log.debug( "%04d CRUXAPPEND3of3 %s is new rt_trace['x'] after append" % (get_line(), self.rt_trace['x']) )
+    #            except:
+    #                log.debug( "%04d CRUXAPPEND3of3 FAILED (see previous debug lines)" % get_line() )
+    #                          
+    #        tr_span = self.rt_trace['x'].stats.endtime - self.rt_trace['x'].stats.starttime
+    #        log.debug( '%04d TRAPPEND1of1 %s = %.4fs' % (get_line(), self.rt_trace['x'], tr_span) )
+    #
+    #        # if accumulated span fits, then slice and slide right for data object attached to plot; otherwise, do nothing        
+    #        if tr_span >= self.analysis_interval: 
+    #            slices = self.slice_trim_traces()
+    #            for ax in ['x', 'y', 'z']:
+    #                slices[ax].filter('lowpass', freq=2.0, zerophase=True)
+    #            
+    #            log.debug( '%04d SLICELEFT    %s' % (get_line(), slices['x']) )
+    #            log.debug( '%04d SLICERIGHT   %s << remaining trace' % (get_line(), self.rt_trace['x']) )
+    #            log.debug( '%04d SLICE_STDs %g, %g, %g' % (get_line(), slices['x'].std(), slices['y'].std(), slices['z'].std()) )
+    #    
+    #            # get data/info to pass to step callback routine
+    #            current_info_tuple = (str(UTCDateTime(slices['x'].stats.starttime)), str(UTCDateTime(slices['x'].stats.endtime)), '%s' % str(slices['x']))
+    #            flash_msg = 'A debug flash message goes here.'
+    #                
+    #            # slide to right by analysis_interval
+    #            self.starttime = slices['x'].stats.endtime
+    #        
+    #            if self.step_callback:
+    #                step_data = (current_info_tuple, current_info_tuple, slices['x'].absolute_times(), slices, flash_msg)            
+    #                self.step_callback(step_data)        
 
     def append_process_packet_data(self, atxyzs, start, contig):
-        """append and auto-process packet data into PimsRtTrace"""
-        # FIXME should we use MERGE method here or somewhere (NaN fill?)
-        ok2append = False
-        if self.lastPacket:
-            if contig:
-                log.debug( '%04d RTAPPEND1of2:..lastPacket.endTime()=%s' % (get_line(), unix2dtm(self.lastPacket.endTime())) )
-                log.debug( '%04d RTAPPEND2of2:thisPacket.startTime()=%s, interPacketDelta=%0.6f' % (get_line(), unix2dtm(start), start-self.lastPacket.endTime()))
-                ok2append = True
-            else:
-                log.warning('%04d NOAPPEND1of3:UNHANDLED NON-CONTIG CASE...maybe rt_trace with good merge might work%s' % (get_line(), '?'*40))
-                log.debug(  '%04d NOAPPEND2of3:..lastPacket.endTime()=%s' % (get_line(), unix2dtm(self.lastPacket.endTime()) if self.lastPacket else 'x') )
-                log.debug(  '%04d NOAPPEND3of3:thisPacket.startTime()=%s, interPacketDelta=%0.6f' % (get_line(), unix2dtm(start), start-self.lastPacket.endTime() if self.lastPacket else 999.9) )
-        else:
-            # lastPacket is None, so this is initializing
-            log.debug( '%04d P1APPEND1of1:thisPacket.startTime()=%s' % (get_line(), unix2dtm(start)) )
-            ok2append = True
-
-        # FIXME how do we handle gaps/overlaps in terms of the appending that should happen here?
-        if ok2append:            
-            for i, ax in enumerate(['x', 'y', 'z']):
-                # put packet data into a Trace object
-                tr = Trace( data=atxyzs[:, i+1], header=self.rt_trace['x'].stats )
-                tr.stats.starttime = start
-                # append this trace to the somewhat-growing real-time trace object
-                log.debug( "%04d CRUXAPPEND1of3 %s is rt_trace['x'] to append to" % (get_line(), self.rt_trace['x']) )
-                log.debug( "%04d CRUXAPPEND2of3 %s is tr to be appended" % (get_line(), tr) )
-                try:
-                    self.rt_trace[ax].append( tr, gap_overlap_check=False, verbose=self.show_warnings ) # FIXME should this be True (throws error) or pre-nudge?
-                    log.debug( "%04d CRUXAPPEND3of3 %s is new rt_trace['x'] after append" % (get_line(), self.rt_trace['x']) )
-                except:
-                    log.debug( "%04d CRUXAPPEND3of3 FAILED (see previous debug lines)" % get_line() )
-                    
-            tr_span = self.rt_trace['x'].stats.endtime - self.rt_trace['x'].stats.starttime
-            log.debug( '%04d TRAPPEND1of1 %s = %.4fs' % (get_line(), self.rt_trace['x'], tr_span) )
-    
-            # if accumulated span fits, then slice and slide right for data object attached to plot; otherwise, do nothing        
-            if tr_span >= self.analysis_interval: 
-                slices = self.slice_trim_traces()
-                for ax in ['x', 'y', 'z']:
-                    slices[ax].filter('lowpass', freq=2.0, zerophase=True)
-                
-                log.debug( '%04d SLICELEFT    %s' % (get_line(), slices['x']) )
-                log.debug( '%04d SLICERIGHT   %s << remaining trace' % (get_line(), self.rt_trace['x']) )
-                log.debug( '%04d SLICE_STDs %g, %g, %g' % (get_line(), slices['x'].std(), slices['y'].std(), slices['z'].std()) )
-        
-                # get data/info to pass to step callback routine
-                current_info_tuple = (str(UTCDateTime(slices['x'].stats.starttime)), str(UTCDateTime(slices['x'].stats.endtime)), '%s' % str(slices['x']))
-                flash_msg = 'A debug flash message goes here.'
-                    
-                # slide to right by analysis_interval
-                self.starttime = slices['x'].stats.endtime
+        """append packet data to stream"""
+        # put packet data into a Trace object
+        for i, ax in enumerate(['x', 'y', 'z']):
+            tr = Trace( data=atxyzs[:, i+1], header=self.header )
+            tr.stats.starttime = start
+            tr.stats['channel'] = ax
             
-                if self.step_callback:
-                    step_data = (current_info_tuple, current_info_tuple, slices['x'].absolute_times(), slices, flash_msg)            
-                    self.step_callback(step_data)        
+            # append trace to stream
+            self.stream.append(tr)
+    
+        span = self.stream.span()
+        log.debug( '%04d span is now %gseconds' % (get_line(), span) )
+
+        # if accumulated span fits, then slice and slide right for GraphFrame's data object; otherwise, do nothing        
+        if span >= self.analysis_interval: 
+            substream = self.slice_trim_traces()
+            substream.merge()
+            substream.filter('lowpass', freq=5.0, zerophase=True)
+            
+            #print substream[-1]
+            #print self.stream[0]
+            #print substream[-1].stats.endtime - self.stream[0].stats.starttime
+            
+            log.debug( '%04d SLICELEFT    %s' % (get_line(), substream[-1]) )
+            log.debug( '%04d SLICERIGHT   %s << remaining trace' % (get_line(), self.stream[0]) )
+            #log.debug( '%04d SLICE_STDs %g, %g, %g' % (get_line(), slices['x'].std(), slices['y'].std(), slices['z'].std()) )
+    
+            # get data/info to pass to step callback routine
+            curr_start = substream[0].stats.starttime
+            curr_end = substream[-1].stats.endtime
+            current_info_tuple = (str(curr_start), str(curr_end), '%d' % substream[0].stats.npts)
+            flash_msg = 'A flash message from append_process_packet_data goes here.'
+                
+            # slide to right by analysis_interval
+            self.starttime = substream[-1].stats.endtime # FIXME check for multiple traces...why use [-1]
+        
+            # FIXME this is not robust !!! CARELESS ABOUT INDEXING -- what if multiple traces?
+            absolute_times = substream[0].times() + substream[0].stats.starttime.timestamp
+        
+            if self.step_callback:
+                step_data = (current_info_tuple, current_info_tuple, absolute_times, substream, flash_msg)            
+                self.step_callback(step_data)    
 
     # get header subfields
     def get_subfields(self, h, field, Lsubs):
@@ -783,20 +823,17 @@ class PadGenerator(PacketInspector):
             dHeader['SensorCoordinateSystem']['comment'],
             dHeader['DataCoordinateSystem']['name'])
 
-        # initialize real-time trace and register real-time process (scale factor)
-        self.rt_trace = {}
-        for ax in ['x', 'y', 'z']:
-            self.rt_trace[ax] = self.init_realtime_trace_registerproc(dHeader, ax) #, packetStart, analysis_interval)
+        # initialize stream and stats objects
+        self.stream = PadStream()
+        self.header = self.init_header(dHeader)
 
-        self.analysis_samples = np.ceil( self.rt_trace['x'].stats.sampling_rate * self.analysis_interval )
-
-        log.debug('%04d got first header and initialized PimsRtTraces for x, y, and z' % get_line())
+        log.debug('%04d got first header, "stats", and initialized stream' % get_line())
 
     # primative comparison of packet header info to first, lead header counterparts
     def is_header_same(self, p):
         """compare packet header info to first header"""
-        if self.rt_trace['x'].stats['station'] == p.name():              # like "121f05" or maybe "hirap"
-            if self.rt_trace['x'].stats['sampling_rate'] == p.rate():    # a float like say 500.0
+        if self.header['station'] == p.name():              # like "121f05" or maybe "hirap"
+            if self.header['sampling_rate'] == p.rate():    # a float like say 500.0
                 return True
         return False
 

@@ -435,13 +435,13 @@ class GraphFrame(wx.Frame):
     # update plot info and data
     def step_callback(self, step_data):
         """update plot info and data"""
-        current_info_tuple, cumulative_info_tuple, t, traces, flash_msg = step_data
+        current_info_tuple, cumulative_info_tuple, t, substream, flash_msg = step_data
         
         if len(t) != 0:
             txyz = tuple()
-            txyz = txyz + ( np.mean( [ traces['x'].stats.starttime.timestamp, traces['x'].stats.endtime.timestamp] ), )
+            txyz = txyz + ( np.mean( [ substream[0].stats.starttime.timestamp, substream[-1].stats.endtime.timestamp] ), )
             for ax in ['x', 'y', 'z']:
-                txyz = txyz + ( traces[ax].std(), )
+                txyz = txyz + ( substream.select(channel=ax).std()[0], )
             self.data.append(txyz)
 
         self.log.debug( 'self.data now contains %4d tuples of (t, xrms, yrms, zrms)' % len(self.data) )
@@ -683,6 +683,8 @@ class GraphFrame(wx.Frame):
         x = [ tup[1] for tup in list(self.data) ]
         y = [ tup[2] for tup in list(self.data) ]
         z = [ tup[3] for tup in list(self.data) ]
+
+        print np.array(x)
 
         # when xmin is on auto, it "follows" xmax to produce a 
         # sliding window effect. therefore, xmin is assigned after

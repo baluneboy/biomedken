@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 from copy import deepcopy
-#from obspy import UTCDateTime, PadStream, Trace, read
 from obspy import UTCDateTime, Trace, read
 from pims.pad.padstream import PadStream
 from obspy.core.stream import writePickle, readPickle, isPickle
@@ -589,6 +588,10 @@ class StreamTestCase(unittest.TestCase):
         for _i in headers:
             new_trace = Trace(header=_i)
             stream.append(new_trace)
+        # Use PadStream class sorting (by starttime)
+        stream.sort()
+        self.assertEqual([i.stats.sampling_rate for i in stream.traces],
+                         [400.0, 100.0, 200.0, 300.0, 500.0])        
         # Use super class Stream sorting.
         stream.sort(keys=['network', 'station', 'location', 'channel', 'starttime', 'endtime'])
         self.assertEqual([i.stats.sampling_rate for i in stream.traces],
@@ -728,7 +731,7 @@ class StreamTestCase(unittest.TestCase):
         tr2 = Trace(data=np.zeros(5, dtype="float32"))
         st = PadStream([tr1, tr2])
         self.assertRaises(Exception, st.merge)
-        # 2 - different sampling rates for the different channels is ok
+        # 2 - different dtypes for the different channels is ok
         tr1 = Trace(data=np.zeros(5, dtype="int32"))
         tr1.stats.channel = 'EHE'
         tr2 = Trace(data=np.zeros(5, dtype="float32"))
