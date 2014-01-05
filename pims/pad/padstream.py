@@ -2,6 +2,7 @@
 
 #from obspy import UTCDateTime, Trace
 from obspy import Stream
+from pims.utils.iterabletools import quantify
 
 class PadStream(Stream):
     
@@ -19,8 +20,8 @@ class PadStream(Stream):
                     'PadStream.__str__(extended=True))" to print all Traces]'
         return out    
     
-    def sort(self, keys=['starttime', 'endtime'], reverse=False):
-        """Sort by starttime, then by endtime (override)."""
+    def sort(self, keys=['channel', 'starttime', 'endtime'], reverse=False):
+        """Sort by channel (axis), then by starttime (override)."""
         super(PadStream, self).sort(keys=keys, reverse=reverse)
 
     def span(self):
@@ -28,6 +29,10 @@ class PadStream(Stream):
         self.sort()
         span = self[-1].stats.endtime - self[0].stats.starttime
         return span
+
+    def get_trace_counts(self):
+        """are we only keeping 28pt packets?"""
+        return [tr.stats.npts for tr in self.traces]
 
 def demo_ingest(offset):
     # Trace 1: 1111
@@ -41,6 +46,8 @@ def demo_ingest(offset):
     tr2 = Trace(data=np.ones(2, dtype=np.int32) * 2)
     tr2.stats.starttime = tr1.stats.endtime + ( tr1.stats.delta + offset )
     stream = PadStream([tr1, tr2])
+    print stream.get_trace_counts()
+    print "two or three", quantify( stream.get_trace_counts(), lambda i: i == 2 or i == 3 )
     print "span", stream.span()
     for tr in stream: print tr
     stream.verify()
@@ -50,6 +57,7 @@ def demo_ingest(offset):
     print ( tr1.stats.delta + offset )
     print stream[-1][:], "mean=", stream[-1][:].mean(), "std=", stream[-1][:].std()
     print '-' * 100
+    print stream.get_trace_counts()
     
 if __name__ == "__main__":
     for offset in range(-200,200,50):

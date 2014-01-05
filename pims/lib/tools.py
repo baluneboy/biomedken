@@ -5,6 +5,7 @@ Some hopefully useful classes and functions.
 from collections import MutableMapping
 import inspect
 import re
+import operator
 
 class TransformedDict(MutableMapping):
     """
@@ -47,6 +48,24 @@ def varname(p):
           m = re.search(r'\bvarname\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)', line)
           if m:
             return m.group(1)
+
+# return True if x is "inrange"; else False
+def inrange(x, min, max, lower_closed=True, upper_closed=False):
+    """return True if x is "inrange"; else False"""
+    if lower_closed:
+        mincmp = operator.le
+    else:
+        mincmp = operator.lt
+    if upper_closed:
+        maxcmp = operator.ge
+    else:
+        maxcmp = operator.gt
+    #return (min is None or min <= x) and (max is None or max >= x)
+    return (min is None or mincmp(min,x)) and (max is None or maxcmp(max, x))
+
+#for x in range(-5,5,1):
+#    print x, inrange(x, -2, 2, upper_closed=True)
+#raise SystemExit
 
 def demo():
     d = LowerKeysTransformedDict( [ ('Test', 1), ('camelCase', 'dogma') ] )

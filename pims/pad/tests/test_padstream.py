@@ -591,7 +591,7 @@ class StreamTestCase(unittest.TestCase):
         # Use PadStream class sorting (by starttime)
         stream.sort()
         self.assertEqual([i.stats.sampling_rate for i in stream.traces],
-                         [400.0, 100.0, 200.0, 300.0, 500.0])        
+                         [200.0, 500.0, 400.0, 300.0, 100.0])        
         # Use super class Stream sorting.
         stream.sort(keys=['network', 'station', 'location', 'channel', 'starttime', 'endtime'])
         self.assertEqual([i.stats.sampling_rate for i in stream.traces],
@@ -630,6 +630,36 @@ class StreamTestCase(unittest.TestCase):
         self.assertRaises(TypeError, stream.sort, keys='sampling_rate')
         self.assertRaises(TypeError, stream.sort, keys=['npts', 'starttime',
                                                         'wrong_value'])
+
+    def test_sort_start_end_chan(self):
+        """
+        Tests the sort method of the PadStream object again.
+        """
+        # Create new PadStream
+        stream = PadStream()
+        # Create a list of header dictionaries. The sampling rate serves as a
+        # unique identifier for each Trace.
+        headers = [
+            {'starttime': UTCDateTime(1990, 1, 1), 'network': 'AAA', 'endtime': UTCDateTime(1990, 1, 2),
+             'station': 'ZZZ', 'channel': 'x', 'sampling_rate': 100.0},
+            {'starttime': UTCDateTime(1990, 1, 1), 'network': 'AAA', 'endtime': UTCDateTime(1990, 1, 2),
+             'station': 'YYY', 'channel': 'y', 'sampling_rate': 200.0},
+            {'starttime': UTCDateTime(1990, 1, 1), 'network': 'AAA', 'endtime': UTCDateTime(1990, 1, 2),
+             'station': 'YYY', 'channel': 'z', 'sampling_rate': 300.0},            
+            {'starttime': UTCDateTime(2000, 1, 1), 'network': 'AAA', 'endtime': UTCDateTime(2000, 1, 1),
+             'station': 'ZZZ', 'channel': 'x', 'sampling_rate': 400.0},
+            {'starttime': UTCDateTime(2000, 1, 1), 'network': 'AAA', 'endtime': UTCDateTime(2000, 1, 3),
+             'station': 'YYY', 'channel': 'y', 'sampling_rate': 500.0},
+            {'starttime': UTCDateTime(2000, 1, 1), 'network': 'AAA', 'endtime': UTCDateTime(2000, 1, 2),
+             'station': 'YYY', 'channel': 'z', 'sampling_rate': 600.0}]
+        # Create a Trace object of it and append it to the PadStream object.
+        for _i in headers:
+            new_trace = Trace(header=_i)
+            stream.append(new_trace)
+        # Use PadStream class sorting (by starttime)
+        stream.sort() #keys=['channel', 'starttime'])
+        self.assertEqual([i.stats.sampling_rate for i in stream.traces],
+                         [100.0, 400.0, 200.0, 500.0, 300.0, 600.0])        
 
     def test_sortingTwice(self):
         """
@@ -1351,6 +1381,7 @@ class StreamTestCase(unittest.TestCase):
             self.assertEqual(st5 == st, False)
             self.assertEqual(st5 != st, True)
         for st in [st7, st8]:
+            #print st; print st6
             self.assertEqual(st6 == st, True)
             self.assertEqual(st6 != st, False)
         for st in [st0, st1, st2, st3, st4, st5, st9, stA]:

@@ -684,7 +684,7 @@ class GraphFrame(wx.Frame):
         y = [ tup[2] for tup in list(self.data) ]
         z = [ tup[3] for tup in list(self.data) ]
 
-        print np.array(x)
+        print "MIN/MEAN/MAX", np.min(x), np.mean(x), np.max(x)
 
         # when xmin is on auto, it "follows" xmax to produce a 
         # sliding window effect. therefore, xmin is assigned after
