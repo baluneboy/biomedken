@@ -35,6 +35,7 @@ from pims.lib.tools import varname
 from pims.utils.benchmark import Benchmark
 #from pims.gui.stripchart import PimsRtTrace
 from pims.pad.padstream import PadStream
+from pims.lib.tools import inrange
 
 from obspy import Trace, UTCDateTime
 from obspy.core.trace import Stats
@@ -746,6 +747,7 @@ class PadGenerator(PacketInspector):
             tr = Trace( data=atxyzs[:, i+1], header=self.header )
             tr.stats.starttime = start
             tr.stats['channel'] = ax
+            tr.stats.npts = len(tr)
             
             # append trace to stream
             self.stream.append(tr)
@@ -756,25 +758,32 @@ class PadGenerator(PacketInspector):
         # if accumulated span fits, then slice and slide right for GraphFrame's data object; otherwise, do nothing        
         if span >= self.analysis_interval: 
             substream = self.slice_trim_traces()
+
             substream.merge()
+            substream.sort() # need this because merge can shuffle!?
+            substream.detrend(type='demean')
             substream.filter('lowpass', freq=5.0, zerophase=True)
             
-            #print substream[-1]
-            #print self.stream[0]
-            #print substream[-1].stats.endtime - self.stream[0].stats.starttime
-            
-            log.debug( '%04d SLICELEFT    %s' % (get_line(), substream[-1]) )
-            log.debug( '%04d SLICERIGHT   %s << remaining trace' % (get_line(), self.stream[0]) )
-            #log.debug( '%04d SLICE_STDs %g, %g, %g' % (get_line(), slices['x'].std(), slices['y'].std(), slices['z'].std()) )
+            log.debug( '%04d SLICELEFT    %s << substream[-1] from %d traces' % (get_line(), substream[-1], len(substream)) )
+            log.debug( '%04d SLICERIGHT   %s <<    stream[0]' % (get_line(), self.stream[0]) )
+            log.debug( '%04d SLICEGAP %s%gsec << 0 <= slice_gap < 1.5*dt is %s' % (get_line(), ' '*91,
+                                                                                   self.stream[0].stats.starttime - substream[-1].stats.endtime,
+                                                                                   str(inrange(self.stream[0].stats.starttime - substream[-1].stats.endtime, 0, 1.5*self.stream[0].stats.delta))) )
+            #if substream[-1].stats.channel != 'z':
+            #    log.debug( '%04d SUBSTREAM %s' % (get_line(), substream) )
     
             # get data/info to pass to step callback routine
             curr_start = substream[0].stats.starttime
             curr_end = substream[-1].stats.endtime
             current_info_tuple = (str(curr_start), str(curr_end), '%d' % substream[0].stats.npts)
             flash_msg = 'A flash message from append_process_packet_data goes here.'
-                
+            
+            log.debug( '%04d STARTTIME was %s' % (get_line(), self.starttime) )
+            
             # slide to right by analysis_interval
             self.starttime = substream[-1].stats.endtime # FIXME check for multiple traces...why use [-1]
+        
+            log.debug( '%04d STARTTIME now %s' % (get_line(), self.starttime) )        
         
             # FIXME this is not robust !!! CARELESS ABOUT INDEXING -- what if multiple traces?
             absolute_times = substream[0].times() + substream[0].stats.starttime.timestamp
@@ -906,8 +915,8 @@ class PadGenerator(PacketInspector):
         # for very first packet, get header info
         if TOTAL_PACKETS_FED == 0:
             self.get_first_header() #packetStart, self.analysis_interval)
-            self.starttime = packetStart
-
+            self.starttime = UTCDateTime(packetStart)
+            
         # append and auto-process packet data into PimsRtTrace:
         if self.is_header_same(packet):
             with warnings.catch_warnings(): #self.warnfiltstr
