@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+# TODO a class to maintain plot type (IntervalStat) with its parameters & ripple to plot text, etc.
+# TODO how to get filtering in header/title text instead of original cutoff frequency
+# TODO replace original sample rate in header/title text with analysis_interval
+# TODO move header/title text to upperleft and/or upperright like off-line plot routines
+# TODO a class to maintain yticks with a cushion near bottom to allow GMT to slide past w/o clobber
+
 # This demo demonstrates how to draw a dynamic mpl (matplotlib) 
 # plot in a wxPython application.
 #
@@ -25,7 +31,7 @@ import random
 import sys
 import wx
 import numpy as np
-from collections import deque
+#from collections import deque
 import datetime
 from wx.lib.pubsub import Publisher
 
@@ -45,9 +51,11 @@ from matplotlib.backends.backend_wxagg import \
 #from pims.realtime import rt_params as RTPARAMS
 from pims.gui.iogrids import StripChartInputPanel
 from pims.gui.tally_grid import StripChartInputGrid
+from pims.gui.plotutils import PlotDataSortedList
 from pims.files.log import SimpleLog
 from pims.utils.benchmark import Benchmark
 from pims.utils.pimsdateutil import unix2dtm
+from pims.gui.plotutils import smart_ylims
 
 from obspy.core.utcdatetime import UTCDateTime
 from obspy.realtime import RtTrace
@@ -389,7 +397,8 @@ class GraphFrame(wx.Frame):
         #self.get_inputs()
 
         # we must limit size of otherwise ever-growing data object
-        self.data = deque( maxlen=self.rt_params['data.maxlen'] )
+        #self.data = deque( maxlen=self.rt_params['data.maxlen'] )
+        self.data = PlotDataSortedList( maxlen=self.rt_params['data.maxlen'] )
         
         # this is first call to "prime the pump" of data generator via next method
         self.paused = False
@@ -583,7 +592,7 @@ class GraphFrame(wx.Frame):
 
     def set_plot_title(self, title):
         """use datagen header_string to set plot title"""
-        self.axes['x'].set_title(title, size=16)
+        self.axes['x'].set_title('Acceleration vs. Time\n' + title, size=16)
 
     def init_plot(self):
         """initialize the plot"""
@@ -621,7 +630,6 @@ class GraphFrame(wx.Frame):
         self.markersize = 9
         
         # TODO encapsulate these with step_callback object
-        self.quantity = 'Accel.'
         self.units = 'g _{RMS}'
         if self.rt_params['data.scale_factor'] == 1e3:
             self.units_prefix = 'm'
@@ -631,7 +639,7 @@ class GraphFrame(wx.Frame):
             self.units_prefix = ''
         else:
             raise Exception('unhandled data.scale_factor = %g' % rt_params['data.scale_factor'])
-        ylabel_suffix = r'%s ($%s %s$)' % (self.quantity, self.units_prefix, self.units)
+        ylabel_suffix = r' ($%s %s$)' % (self.units_prefix, self.units)
         
         # Plotting goes here ...
         self.plot_data = {}
@@ -684,8 +692,6 @@ class GraphFrame(wx.Frame):
         y = [ tup[2] for tup in list(self.data) ]
         z = [ tup[3] for tup in list(self.data) ]
 
-        print "MIN/MEAN/MAX", np.min(x), np.mean(x), np.max(x)
-
         # when xmin is on auto, it "follows" xmax to produce a 
         # sliding window effect. therefore, xmin is assigned after
         # xmax.
@@ -703,15 +709,16 @@ class GraphFrame(wx.Frame):
 
         # for ymin and ymax, find the min and max values
         # in the data displayed and add margin
+        minxyz = min([min(x), min(y), min(z)])
+        maxxyz = max([max(x), max(y), max(z)])
+        ylims = smart_ylims(minxyz, maxxyz)
         if self.ymin_control.is_auto():
-            minxyz = min([min(x), min(y), min(z)]) - 0.01
-            ymin = np.round(minxyz, decimals=2)
+            ymin = np.round(ylims[0], decimals=0)
         else:
             ymin = float(self.ymin_control.manual_value())
             
         if self.ymax_control.is_auto():
-            maxxyz = max([max(x), max(y), max(z)])
-            ymax = np.round(maxxyz, decimals=2) + 0.01
+            ymax = np.round(ylims[1], decimals=0)
         else:
             ymax = float(self.ymax_control.manual_value())
 

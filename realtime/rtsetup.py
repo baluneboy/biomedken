@@ -381,7 +381,7 @@ default_params = {
     #'time.maxsec_trace'         : [MAXT, validate_int],
     
     # data/buffer props
-    'data.maxlen'               : [ 222, validate_int], # max pts; limit otherwise ever-growing data deque
+    'data.maxlen'               : [  60, validate_int], # max pts; limit otherwise ever-growing data deque
     'data.scale_factor'         : [ 1e6, validate_int],
         
     # legacy packetWriter.py parameters

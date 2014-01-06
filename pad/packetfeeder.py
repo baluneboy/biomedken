@@ -745,6 +745,7 @@ class PadGenerator(PacketInspector):
         # put packet data into a Trace object
         for i, ax in enumerate(['x', 'y', 'z']):
             tr = Trace( data=atxyzs[:, i+1], header=self.header )
+            tr.normalize( norm=(1.0 / self.scale_factor) ) # norm factor is "/=" so invert sf
             tr.stats.starttime = start
             tr.stats['channel'] = ax
             tr.stats.npts = len(tr)
