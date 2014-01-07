@@ -2,6 +2,7 @@
 version = '$Id$'
 # Adapted from Ted Wright's packetWriter.py,v 1.22 2004-11-29 20:00:04 pims
 
+# TODO rename rtsetup.py's "verbose dot" params to "log dot" so to not clobber matplotlibrc
 # TODO track down all references to maxsec, particularly PARAMETERS global as "maxsec_rttrace"
 #      because it seems PARAMETERS['maxsec_rttrace'] points nowhere yet referenced somewhere?
 

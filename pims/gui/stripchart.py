@@ -4,7 +4,7 @@
 # TODO how to get filtering in header/title text instead of original cutoff frequency
 # TODO replace original sample rate in header/title text with analysis_interval
 # TODO move header/title text to upperleft and/or upperright like off-line plot routines
-# TODO ytick class for cushion near bottom tick of bottom subplot not interfere with wide-n-slide GMT
+# TODO test/improve draw_plot code for cushion at bottom tick of bottom subplot not interfere with wide-n-slide GMT
 
 # This is working demo of how to draw a dynamic matplotlib plot with wxPython
 #
@@ -45,6 +45,7 @@ from matplotlib.backends.backend_wxagg import \
       FigureCanvasWxAgg as FigCanvas, \
       NavigationToolbar2WxAgg as NavigationToolbar
 #from matplotlib.ticker import AutoMinorLocator
+from matplotlib.ticker import FormatStrFormatter
 
 #from pims.realtime import rt_params as RTPARAMS
 from pims.gui.iogrids import StripChartInputPanel
@@ -53,7 +54,9 @@ from pims.pad.padstream import PlotDataSortedList
 from pims.files.log import SimpleLog
 from pims.utils.benchmark import Benchmark
 from pims.utils.pimsdateutil import unix2dtm
-from pims.gui.plotutils import smart_ylims
+from pims.gui.plotutils import smart_ylims, round2multiple
+from pims.gui.pimsticker import CushionedLinearLocator
+from pims.gui import DUMMYDATA
 
 from obspy.core.utcdatetime import UTCDateTime
 from obspy.realtime import RtTrace
@@ -613,19 +616,12 @@ class GraphFrame(wx.Frame):
 
         # plot the data as a line series, and save the reference 
         # to the plotted line series
-        #
-        x = np.array([unix2dtm(u) for u in [
-            UTCDateTime(2013, 12, 31, 23, 56, 0),
-            UTCDateTime(2013, 12, 31, 23, 58, 0),
-            UTCDateTime(2014,  1,  1,  0,  0, 0),
-            UTCDateTime(2014,  1,  1,  0,  2, 0),
-            UTCDateTime(2014,  1,  1,  0,  4, 0),
-            UTCDateTime(2014,  1,  1,  0,  6, 0)] ])
-        y = np.zeros(x.shape)
+        x = DUMMYDATA['x']
+        y = DUMMYDATA['y']
 
-        # TODO move these to rt_params via rtsetup.py
+        # TODO move these to rt_params via rtsetup.py or where?
+        #      and bundle via dict with ax_labels (or maybe a class?)
         self.line_colors = {'x': 'Red', 'y': 'Green', 'z': 'Blue'}
-        self.markersize = 9
         
         # TODO encapsulate these with step_callback object
         self.units = 'g _{RMS}'
@@ -642,25 +638,27 @@ class GraphFrame(wx.Frame):
         # Plotting goes here ...
         self.plot_data = {}
         for ax in self.axes_labels:
-            self.plot_data[ax] = self.axes[ax].plot_date(x, y, '.-', linewidth=2,
-                                                         color=self.line_colors[ax],
-                                                         markersize=self.markersize)[0]
+            self.plot_data[ax] = self.axes[ax].plot_date(x, y, '.-', color=self.line_colors[ax])[0]
             self.axes[ax].set_ylabel( r'%s-Axis %s' % (ax.upper(), ylabel_suffix) )
-            ## pad a bit to allow wide GMT to fit against ymin tick value
+            # the pad for GMT in next line was replaced in draw_plot by CushionedLinearLocator
+            # to pad a bit to allow wide-n-glide GMT to fit with ymin tick value (zero for RMS)
             #self.axes[ax].tick_params(axis='y', pad=10)        
 
-        # Set major x ticks every 30 minutes, minor every 15 minutes
+        # Set major x ticks every 2 minutes, minor every 1 minute (x and y subplots get shared)
         self.axes['z'].xaxis.set_major_locator( matplotlib.dates.MinuteLocator(interval=2) )
         self.axes['z'].xaxis.set_minor_locator( matplotlib.dates.MinuteLocator(interval=1) )
         self.axes['z'].xaxis.set_major_formatter( matplotlib.dates.DateFormatter('%H:%M:%S\n%d-%b-%Y') )
         self.axes['z'].xaxis.set_minor_formatter( matplotlib.dates.DateFormatter('%H:%M:%S') )
         
-        # Make tick_params more suitable to your liking...
-        plt.tick_params(axis='both', which='both', width=2, direction='out')
+        # Make tick_params more suitable to our liking...
+        plt.tick_params(axis='x', which='both', width=2)
+        
         # tick_params for x-axis
         plt.tick_params(axis='x', which='major', labelsize=12, length=8)
         plt.tick_params(axis='x', which='minor', labelsize=9)
+        plt.tick_params(axis='x', which='major', length=8)
         plt.tick_params(axis='x', which='minor', length=6, colors='gray')
+        
         # tick_params for y-axis
         plt.tick_params(axis='y', which='both', labelsize=12)
         plt.tick_params(right=True, labelright=True)
@@ -702,17 +700,26 @@ class GraphFrame(wx.Frame):
             xmin = float(self.xmin_control.manual_value())
 
         # for ymin and ymax, find the min and max values
-        # in the data displayed and add margin
+        # in the data displayed and add some cushion for
+        # wide-n-glide GMT on xaxis
         minxyz = min([min(x), min(y), min(z)])
         maxxyz = max([max(x), max(y), max(z)])
         ylims = smart_ylims(minxyz, maxxyz)
         if self.ymin_control.is_auto():
-            ymin = np.round(ylims[0], decimals=0)
+            # this is where cushion happens for positive RMS data
+            ycushion = np.diff(ylims) / 20.0
+            ymin = -ycushion
+            plt.ylim( (0, round2multiple(10, np.abs(ylims[1]))) )
+            ytick_locator = CushionedLinearLocator()
+            ytick_formatter = FormatStrFormatter('%g')
+            self.axes['z'].yaxis.set_major_locator( ytick_locator )
+            self.axes['z'].yaxis.set_major_formatter( ytick_formatter )
+            plt.ylim( (-ycushion, round2multiple(10, np.abs(ylims[1]))) )
         else:
             ymin = float(self.ymin_control.manual_value())
             
         if self.ymax_control.is_auto():
-            ymax = np.round(ylims[1], decimals=0)
+            ymax = round2multiple(10, ylims[1])
         else:
             ymax = float(self.ymax_control.manual_value())
 
