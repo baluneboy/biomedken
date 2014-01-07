@@ -3,7 +3,7 @@ version = '$Id$'
 # Adapted from Ted Wright's packetWriter.py,v 1.22 2004-11-29 20:00:04 pims
 
 # TODO track down all references to maxsec, particularly PARAMETERS global as "maxsec_rttrace"
-#      because it seems that PARAMETERS['maxsec_rttrace'] points to nowhere yet is referenced?
+#      because it seems PARAMETERS['maxsec_rttrace'] points nowhere yet referenced somewhere?
 
 import wx
 import os
