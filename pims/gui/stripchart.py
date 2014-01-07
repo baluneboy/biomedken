@@ -4,10 +4,9 @@
 # TODO how to get filtering in header/title text instead of original cutoff frequency
 # TODO replace original sample rate in header/title text with analysis_interval
 # TODO move header/title text to upperleft and/or upperright like off-line plot routines
-# TODO a class to maintain yticks with a cushion near bottom to allow GMT to slide past w/o clobber
+# TODO ytick class for cushion near bottom tick of bottom subplot not interfere with wide-n-slide GMT
 
-# This demo demonstrates how to draw a dynamic mpl (matplotlib) 
-# plot in a wxPython application.
+# This is working demo of how to draw a dynamic matplotlib plot with wxPython
 #
 # It allows "live" plotting as well as manual zooming to specific
 # regions.
@@ -17,8 +16,7 @@
 # For X, auto mode makes the graph "follow" the data. Set it X min
 # to manual 0 to always see the whole data from the beginning.
 #
-# Note: press Enter in the 'manual' text box to make a new value 
-# affect the plot.
+# Note: have to press Enter in 'manual' text box to make new value affect plot.
 #
 # Most of the strip chart aspects of this are thanks to Eli, that is:
 # Eli Bendersky (eliben@gmail.com)
@@ -51,7 +49,7 @@ from matplotlib.backends.backend_wxagg import \
 #from pims.realtime import rt_params as RTPARAMS
 from pims.gui.iogrids import StripChartInputPanel
 from pims.gui.tally_grid import StripChartInputGrid
-from pims.gui.plotutils import PlotDataSortedList
+from pims.pad.padstream import PlotDataSortedList
 from pims.files.log import SimpleLog
 from pims.utils.benchmark import Benchmark
 from pims.utils.pimsdateutil import unix2dtm
@@ -648,19 +646,14 @@ class GraphFrame(wx.Frame):
                                                          color=self.line_colors[ax],
                                                          markersize=self.markersize)[0]
             self.axes[ax].set_ylabel( r'%s-Axis %s' % (ax.upper(), ylabel_suffix) )
-            
+            ## pad a bit to allow wide GMT to fit against ymin tick value
+            #self.axes[ax].tick_params(axis='y', pad=10)        
+
         # Set major x ticks every 30 minutes, minor every 15 minutes
         self.axes['z'].xaxis.set_major_locator( matplotlib.dates.MinuteLocator(interval=2) )
         self.axes['z'].xaxis.set_minor_locator( matplotlib.dates.MinuteLocator(interval=1) )
         self.axes['z'].xaxis.set_major_formatter( matplotlib.dates.DateFormatter('%H:%M:%S\n%d-%b-%Y') )
         self.axes['z'].xaxis.set_minor_formatter( matplotlib.dates.DateFormatter('%H:%M:%S') )
-        
-        ### One can supply an argument to AutoMinorLocator to
-        ### specify a fixed number of minor intervals per major interval, e.g.:
-        ### minorLocator = AutoMinorLocator(2)
-        ### would lead to a single minor tick between major ticks.
-        ##minorLocator   = AutoMinorLocator(5)
-        ##self.axes['z'].xaxis.set_minor_locator(minorLocator)
         
         # Make tick_params more suitable to your liking...
         plt.tick_params(axis='both', which='both', width=2, direction='out')
@@ -672,6 +665,7 @@ class GraphFrame(wx.Frame):
         plt.tick_params(axis='y', which='both', labelsize=12)
         plt.tick_params(right=True, labelright=True)
 
+        # fancy way of making top 2 subplot x-labels vanish (zero labelsize)
         self.axes['x'].tick_params(axis='x', which='minor', labelsize=0, direction='out', length=6)
         self.axes['y'].tick_params(axis='x', which='minor', labelsize=0, direction='out', length=6)
 
