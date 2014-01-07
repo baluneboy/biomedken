@@ -56,10 +56,6 @@ class PlotDataSortedList(sortedlist):
         while len(self) > self.maxlen:
             toss = self.pop(0)
 
-d = PlotDataSortedList()
-d.append( (1,2) )
-d.add( (1,2) )
-
 def demo_ingest(offset):
     from pims.utils.iterabletools import quantify
     # Trace 1: 1111
