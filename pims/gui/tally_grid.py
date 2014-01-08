@@ -115,8 +115,8 @@ class CheapPadHoursInputGrid(gridlib.Grid):
         self.rows = [
         #    row_label          default_value1
         #--------------------------------------------------
-            ('start',           '2013-11-30',           parser.parse),
-            ('stop',            '2013-12-30',           parser.parse),
+            ('start',           '2013-12-28',           parser.parse),
+            ('stop',            '2014-01-03',           parser.parse),
             ('pattern',         self.pattern,           str),
             ('basepath',        '/misc/yoda/pub/pad',   str),
             ('update_sec',      '600',                  int),
@@ -160,8 +160,8 @@ class RoadmapsInputGrid(CheapPadHoursInputGrid):
         self.rows = [
         #    row_label          default_value1
         #--------------------------------------------------
-            ('start',           '2013-10-22',           parser.parse),
-            ('stop',            '2013-11-01',           parser.parse),
+            ('start',           '2013-12-28',           parser.parse),
+            ('stop',            '2014-01-03',           parser.parse),
             ('pattern',         self.pattern,                   str),
             ('basepath',        '/misc/yoda/www/plots/batch',   str),
             ('update_sec',      '600',                          int),
