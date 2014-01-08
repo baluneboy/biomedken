@@ -6,12 +6,13 @@ import subprocess
 import threading
 
 class StdoutLog(object):
-    
-    def error(self, s):
-        print s
-        
-    def info(self, s):
-        print s
+    def info(self, s): print s
+    def debug(self, s): print s
+    def warning(self, s): print s
+    def warn(self, s): print s
+    def error(self, s): print 'ERROR ' + s
+    def exception(self, s): print 'EXCEPTION ' + s
+    def critical(self, s): print 'CRITICAL ' + s
     
 class Command(object):
     def __init__(self, cmd, log):
@@ -49,7 +50,7 @@ def timeLogRun(command, timeoutSec, log):
     log.info( 'START: ' + command )
     retCode = cmdObj.run(timeout=timeoutSec)
     elapsedSec = time.time() - tzero
-    log.info( 'Took about %.2f seconds' % elapsedSec )
+    log.info( 'Took about %.3f seconds' % elapsedSec )
     log.info( 'Return code = %d' % retCode)
     return retCode, elapsedSec
 

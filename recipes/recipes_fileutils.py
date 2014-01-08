@@ -154,9 +154,11 @@ def pivot_table_insert_day_roadmaps(df, d=datetime.date.today()-datetime.timedel
         df.insert({'date':dat, 'hour':hr, 'sensor':sensor, 'abbrev':abbrev, 'bname':bname, 'fname':f})
 
 def demo_pivot_roadmap_pdfs():
-    d = datetime.date(2013,8,1)
-    dStop = datetime.date(2013,8,19)
-    pattern = '.*_121f0\d{1}one_.*roadmaps.*\.pdf$' # '.*roadmaps.*\.pdf$'
+    d = datetime.date(2013,10,1)
+    dStop = datetime.date(2013,11,9)
+    #pattern = '.*_121f0\d{1}one_.*roadmaps.*\.pdf$' # '.*roadmaps.*\.pdf$'
+    #pattern = '.*_121f0\d{1}ten_.*roadmaps.*\.pdf$' # '.*roadmaps.*\.pdf$'
+    pattern = '.*_121f0\d{1}.*_.*roadmaps.*\.pdf$' # '.*roadmaps.*\.pdf$'
     print 'FROM %s TO %s USING PATTERN "%s"' % (str(d), str(dStop), pattern)
     build_pivot_roadmap_pdfs(d, dStop, pattern)
     
