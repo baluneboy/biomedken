@@ -38,10 +38,11 @@ class PlotDataSortedList(sortedlist):
     def __init__(self, *args, **kwargs):
         # intentionally clobber key; set to sort by tuple's first element
         kwargs['key'] = lambda tup: tup[0]
-        if kwargs.has_key('maxlen'):
-            self.maxlen = int( kwargs.pop('maxlen') )
-        else:
-            self.maxlen = 123456
+        #if kwargs.has_key('maxlen'):
+        #    self.maxlen = int( kwargs.pop('maxlen') )
+        #else:
+        #    self.maxlen = 123456
+        self.maxlen = int( kwargs.pop('maxlen', 123456) )
         super(PlotDataSortedList, self).__init__(*args, **kwargs)
 
     def __add(self, *args, **kwargs):
@@ -53,6 +54,7 @@ class PlotDataSortedList(sortedlist):
     
     def append(self, txyz):
         self.__add( txyz )
+        # FIXME this is incredibly crude way to do the needed pruning
         while len(self) > self.maxlen:
             toss = self.pop(0)
 

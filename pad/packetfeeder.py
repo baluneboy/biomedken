@@ -673,9 +673,6 @@ class PadGenerator(PacketInspector):
         #header['channel']       = ax
         return header
 
-    #def as_trace(self, data):
-    #    return Trace( data=data, header=self.rt_trace['x'].stats )
-
     def slice_trim_traces(self):
         t1 = self.stream[0].stats.starttime
         t2 = t1 + self.analysis_interval
@@ -683,64 +680,6 @@ class PadGenerator(PacketInspector):
         self.stream.trim(starttime=t2)
         return st
     
-    #def OLDappend_process_packet_data(self, atxyzs, start, contig):
-    #    """append and auto-process packet data into PimsRtTrace"""
-    #    # FIXME should we use MERGE method here or somewhere (NaN fill?)
-    #    ok2append = False
-    #    if self.lastPacket:
-    #        if contig:
-    #            log.debug( '%04d RTAPPEND1of2:..lastPacket.endTime()=%s' % (get_line(), unix2dtm(self.lastPacket.endTime())) )
-    #            log.debug( '%04d RTAPPEND2of2:thisPacket.startTime()=%s, interPacketDelta=%0.6f' % (get_line(), unix2dtm(start), start-self.lastPacket.endTime()))
-    #            ok2append = True
-    #        else:
-    #            log.warning('%04d NOAPPEND1of3:UNHANDLED NON-CONTIG CASE...maybe rt_trace with good merge might work%s' % (get_line(), '?'*40))
-    #            log.debug(  '%04d NOAPPEND2of3:..lastPacket.endTime()=%s' % (get_line(), unix2dtm(self.lastPacket.endTime()) if self.lastPacket else 'x') )
-    #            log.debug(  '%04d NOAPPEND3of3:thisPacket.startTime()=%s, interPacketDelta=%0.6f' % (get_line(), unix2dtm(start), start-self.lastPacket.endTime() if self.lastPacket else 999.9) )
-    #    else:
-    #        # lastPacket is None, so this is initializing
-    #        log.debug( '%04d P1APPEND1of1:thisPacket.startTime()=%s' % (get_line(), unix2dtm(start)) )
-    #        ok2append = True
-    #
-    #    # FIXME how do we handle gaps/overlaps in terms of the appending that should happen here?
-    #    if ok2append:            
-    #        for i, ax in enumerate(['x', 'y', 'z']):
-    #            
-    #            # put packet data into a Trace object
-    #            tr = Trace( data=atxyzs[:, i+1], header=self.rt_trace['x'].stats )
-    #            tr.stats.starttime = start
-    #            # append this trace to the somewhat-growing real-time trace object
-    #            log.debug( "%04d CRUXAPPEND1of3 %s is rt_trace['x'] to append to" % (get_line(), self.rt_trace['x']) )
-    #            log.debug( "%04d CRUXAPPEND2of3 %s is tr to be appended" % (get_line(), tr) )
-    #            try:
-    #                self.rt_trace[ax].append( tr, gap_overlap_check=False, verbose=self.show_warnings ) # FIXME should this be True (throws error) or pre-nudge?
-    #                log.debug( "%04d CRUXAPPEND3of3 %s is new rt_trace['x'] after append" % (get_line(), self.rt_trace['x']) )
-    #            except:
-    #                log.debug( "%04d CRUXAPPEND3of3 FAILED (see previous debug lines)" % get_line() )
-    #                          
-    #        tr_span = self.rt_trace['x'].stats.endtime - self.rt_trace['x'].stats.starttime
-    #        log.debug( '%04d TRAPPEND1of1 %s = %.4fs' % (get_line(), self.rt_trace['x'], tr_span) )
-    #
-    #        # if accumulated span fits, then slice and slide right for data object attached to plot; otherwise, do nothing        
-    #        if tr_span >= self.analysis_interval: 
-    #            slices = self.slice_trim_traces()
-    #            for ax in ['x', 'y', 'z']:
-    #                slices[ax].filter('lowpass', freq=2.0, zerophase=True)
-    #            
-    #            log.debug( '%04d SLICELEFT    %s' % (get_line(), slices['x']) )
-    #            log.debug( '%04d SLICERIGHT   %s << remaining trace' % (get_line(), self.rt_trace['x']) )
-    #            log.debug( '%04d SLICE_STDs %g, %g, %g' % (get_line(), slices['x'].std(), slices['y'].std(), slices['z'].std()) )
-    #    
-    #            # get data/info to pass to step callback routine
-    #            current_info_tuple = (str(UTCDateTime(slices['x'].stats.starttime)), str(UTCDateTime(slices['x'].stats.endtime)), '%s' % str(slices['x']))
-    #            flash_msg = 'A debug flash message goes here.'
-    #                
-    #            # slide to right by analysis_interval
-    #            self.starttime = slices['x'].stats.endtime
-    #        
-    #            if self.step_callback:
-    #                step_data = (current_info_tuple, current_info_tuple, slices['x'].absolute_times(), slices, flash_msg)            
-    #                self.step_callback(step_data)        
-
     def append_process_packet_data(self, atxyzs, start, contig):
         """append packet data to stream"""
         # put packet data into a Trace object
