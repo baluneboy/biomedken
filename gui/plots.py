@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+# TODO incorporate "Current GMT with AOS/LOS indicator" [updated on status bar timer?]
+
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.figure import Figure
@@ -9,6 +11,7 @@ from pims.gui import DUMMYDATA
 #import matplotlib
 #print matplotlib.get_configdir()
 #print matplotlib.matplotlib_fname()
+#raise SystemExit
 
 class Plot3x1(object):
     """Container class for general purpose 3x1 plot, like for xyz vs. time."""

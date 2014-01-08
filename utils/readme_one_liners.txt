@@ -115,3 +115,7 @@ for H in $TSCCOMPUTERS; do ssh ${H} pgrep -fl packetWriter; done
 
 # a line in crontab to check mem usage
 #*/15 * * * *  top -b -n1 -c -p $(pgrep -d',' -f packetReaderThreadGui) >> /tmp/top.txt
+
+
+# python unpack tuple or list format print
+L = list(txyzTuple); L.insert(0, unix2dtm(txyzTuple[0])); L.insert(0, len(data)); self.log.debug( "CSV {:d},{:},{:f},{:f},{:f},{:f}".format(*L) )

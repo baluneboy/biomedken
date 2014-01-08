@@ -60,7 +60,7 @@ backend      : TkAgg
 lines.linewidth   : 2.0     # line width in points
 lines.linestyle   : -       # solid line
 #lines.color       : blue
-#lines.marker      : None    # the default marker
+#lines.marker      : None    # the default marker (nominal is None)
 #lines.markeredgewidth  : 0.5     # the line width around the marker symbol
 lines.markersize  : 9            # markersize, in points
 #lines.dash_joinstyle : miter        # miter|round|bevel
@@ -230,8 +230,8 @@ lines.markersize  : 9            # markersize, in points
 #polaraxes.grid      : True    # display grid on polar axes
 #axes3d.grid         : True    # display grid on 3d axes
 
-### NOTE: regarding ticks, there's a bug for plot_date, so use plt.tick_params
-###       and leave the TICKS section alone here (all commented our here)
+### HROVAT NOTE: regarding ticks, there's a bug for plot_date, so use plt.tick_params
+###              so leave the TICKS section alone here (leave all commented out here)
 ### TICKS
 # see http://matplotlib.sourceforge.net/api/axis_api.html#matplotlib.axis.Tick
 #xtick.major.size     : 5      # major tick size in points (nominal is 4)
@@ -285,10 +285,10 @@ lines.markersize  : 9            # markersize, in points
 
 ### FIGURE
 # See http://matplotlib.sourceforge.net/api/figure_api.html#matplotlib.figure.Figure
-#figure.figsize   : 8, 6    # figure size in inches
-#figure.dpi       : 80      # figure dots per inch
-figure.facecolor : white    # figure facecolor; 0.75 is scalar gray
-#figure.edgecolor : white   # figure edgecolor
+figure.figsize   : 8, 6    # figure size in inches
+figure.dpi       : 80      # figure dots per inch (see below where savefig can be higher value)
+figure.facecolor : white   # figure facecolor; 0.75 is scalar gray intensity level
+figure.edgecolor : white   # figure edgecolor
 
 # The figure subplot parameters.  All dimensions are fraction of the
 # figure width or height
@@ -334,9 +334,9 @@ figure.facecolor : white    # figure facecolor; 0.75 is scalar gray
 # the default savefig params can be different from the display params
 # Eg, you may want a higher resolution, or to make the figure
 # background white
-#savefig.dpi       : 100      # figure dots per inch
-#savefig.facecolor : white    # figure facecolor when saving
-#savefig.edgecolor : white    # figure edgecolor when saving
+savefig.dpi       : 100      # figure dots per inch
+savefig.facecolor : white    # figure facecolor when saving
+savefig.edgecolor : white    # figure edgecolor when saving
 #savefig.extension : auto     # what extension to use for savefig('foo'), or 'auto'
 
 #cairo.format      : png      # png, ps, pdf, svg

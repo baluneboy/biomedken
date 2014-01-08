@@ -65,9 +65,9 @@ from obspy import read
 # Status bar and other global vars
 SB_LEFT = 0
 SB_RIGHT = 1
-REDRAW_MSEC = 5000 # redraw timer every 5 to 10 seconds or so
-SB_MSEC = int( 2 * REDRAW_MSEC ) #  lower-right time ~every several seconds
-BENCH_STEP = Benchmark('step') # datagen next method ("step") should avg about 3s
+REDRAW_MSEC = 5000               # redraw timer every 5 to 10 seconds or so
+SB_MSEC = int( 3 * REDRAW_MSEC ) # lower-right time ~every several seconds
+BENCH_STEP = Benchmark('step')   # datagen next method ("step") should avg about 3s
 
 # PIMS extension of RtTrace
 class PimsRtTrace(RtTrace):
@@ -454,7 +454,7 @@ class GraphFrame(wx.Frame):
                 txyz = txyz + ( substream.select(channel=ax).std()[0], )
             self.data.append(txyz)
 
-        self.log.debug( 'self.data now contains %4d tuples of (t, xrms, yrms, zrms)' % len(self.data) )
+        L = list(txyz); L.insert(0, unix2dtm(txyz[0])); L.insert(0, len(self.data)); self.log.debug( "CSV {:d},{:},{:f},{:f},{:f},{:f}".format(*L) )
         
         if flash_msg:
             self.flash_status_message(flash_msg, flash_len_ms=2000)
@@ -588,6 +588,7 @@ class GraphFrame(wx.Frame):
 
     def notify(self):
         """ Timer event """
+        self.fig.savefig('/misc/yoda/www/plots/user/jaxa/test.png', facecolor=self.fig.get_facecolor(), edgecolor='none')
         t = self.getTimeString() + ' (update every ' + str(int(SB_MSEC/1000.0)) + 's)'
         self.SetStatusText(t, SB_RIGHT)
 
