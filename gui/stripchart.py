@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+# TODO for vertical autoscale, do based on plot_span min-to-max time and not what's in plot.data (LOS issue)
 # TODO a class to maintain plot type (IntervalStat) with its parameters & ripple to plot text, etc.
 # TODO how to get filtering in header/title text instead of original cutoff frequency
 # TODO replace original sample rate in header/title text with analysis_interval
