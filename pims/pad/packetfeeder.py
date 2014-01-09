@@ -683,12 +683,24 @@ class PadGenerator(PacketInspector):
     def append_process_packet_data(self, atxyzs, start, contig):
         """append packet data to stream"""
         # put packet data into a Trace object
+        if contig:
+            log.debug( '%04d CONTIGCOMPARE1of3    %s is "declared start"' % (get_line(), unix2dtm(start)) )
+            prevEndTime = self.stream[-1].stats.endtime
+            start = prevEndTime + self.stream[-1].stats.delta
+            log.debug( '%04d CONTIGCOMPARE2of3    %s is "calc start' % (get_line(), unix2dtm(start)) )
+            log.debug( '%04d CONTIGCOMPARE3of3    %s is "prev end' % (get_line(), unix2dtm(prevEndTime)) )
+        elif self.lastPacket:
+            prevEndTime = self.stream[-1].stats.endtime
+            log.debug( '%04d NOTCONTIGCOMPARE1of2 %s is "declared start"' % (get_line(), unix2dtm(start)) )
+            log.debug( '%04d NOTCONTIGCOMPARE2of2 %s is "prev end"' % (get_line(), unix2dtm(start)) )
+            
+        npts = atxyzs.shape[0]
         for i, ax in enumerate(['x', 'y', 'z']):
             tr = Trace( data=atxyzs[:, i+1], header=self.header )
             tr.normalize( norm=(1.0 / self.scale_factor) ) # norm factor is "/=" so invert sf
             tr.stats.starttime = start
             tr.stats['channel'] = ax
-            tr.stats.npts = len(tr)
+            tr.stats.npts = npts
             
             # append trace to stream
             self.stream.append(tr)
@@ -699,19 +711,16 @@ class PadGenerator(PacketInspector):
         # if accumulated span fits, then slice and slide right for GraphFrame's data object; otherwise, do nothing        
         if span >= self.analysis_interval: 
             substream = self.slice_trim_traces()
-
             substream.merge()
-            substream.sort() # need this because merge can shuffle!?
+            substream.sort() # need this because merge can shuffle xyz order!?
             substream.detrend(type='demean')
             substream.filter('lowpass', freq=5.0, zerophase=True)
-            
-            log.debug( '%04d SLICELEFT    %s << substream[-1] from %d traces' % (get_line(), substream[-1], len(substream)) )
-            log.debug( '%04d SLICERIGHT   %s <<    stream[0]' % (get_line(), self.stream[0]) )
-            log.debug( '%04d SLICEGAP %s%gsec << 0 <= slice_gap < 1.5*dt is %s' % (get_line(), ' '*91,
+
+            log.debug( '%04d SLICELEFT    %s is substream[-1] from %d traces' % (get_line(), substream[-1], len(substream)) )
+            log.debug( '%04d SLICERIGHT   %s is stream[0]' % (get_line(), self.stream[0]) )
+            log.debug( '%04d SLICEGAP %s%gsec and 0 <= slice_gap < 1.5*dt is %s' % (get_line(), ' '*91,
                                                                                    self.stream[0].stats.starttime - substream[-1].stats.endtime,
                                                                                    str(inrange(self.stream[0].stats.starttime - substream[-1].stats.endtime, 0, 1.5*self.stream[0].stats.delta))) )
-            #if substream[-1].stats.channel != 'z':
-            #    log.debug( '%04d SUBSTREAM %s' % (get_line(), substream) )
     
             # get data/info to pass to step callback routine
             curr_start = substream[0].stats.starttime

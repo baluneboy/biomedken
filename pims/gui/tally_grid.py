@@ -6,7 +6,7 @@ import wx.grid as  gridlib
 import numpy as np
 from dateutil import parser
 from datetime import timedelta
-from pims.utils.pimsdateutil import dtm2unix, format_datetime_as_pad_underscores
+from pims.utils.pimsdateutil import dtm2unix, format_datetime_as_pad_underscores, _2DAYSAGO
 from pims.utils.datetime_ranger import DateRange
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 #from pims.utils import pyperclip
@@ -115,8 +115,8 @@ class CheapPadHoursInputGrid(gridlib.Grid):
         self.rows = [
         #    row_label          default_value1
         #--------------------------------------------------
-            ('start',           '2013-12-28',           parser.parse),
-            ('stop',            '2014-01-03',           parser.parse),
+            ('start',           _2DAYSAGO,           parser.parse),
+            ('stop',            _2DAYSAGO,           parser.parse),
             ('pattern',         self.pattern,           str),
             ('basepath',        '/misc/yoda/pub/pad',   str),
             ('update_sec',      '600',                  int),
@@ -160,8 +160,8 @@ class RoadmapsInputGrid(CheapPadHoursInputGrid):
         self.rows = [
         #    row_label          default_value1
         #--------------------------------------------------
-            ('start',           '2013-12-28',           parser.parse),
-            ('stop',            '2014-01-03',           parser.parse),
+            ('start',           _2DAYSAGO,           parser.parse),
+            ('stop',            _2DAYSAGO,           parser.parse),
             ('pattern',         self.pattern,                   str),
             ('basepath',        '/misc/yoda/www/plots/batch',   str),
             ('update_sec',      '600',                          int),
@@ -569,21 +569,7 @@ class StripChartInputGrid(CheapPadHoursInputGrid):
             self.rows.append( (label, value, str))
             self.row_labels.append(label)
 
-#def demo_stripchart2():
-#    from pims.realtime import rt_params as RTPARAMS
-#    from pims.utils.gridworkers import RoadmapsGridWorker
-#    log = sys.stdout
-#    input_grid =  StripChartInputGrid
-#    grid_worker = RoadmapsGridWorker
-#    output_grid = RoadmapsOutputGrid
-#
-#    # launch app
-#    app = wx.App(False)
-#    frame = MainFrame(log, input_grid, grid_worker, output_grid)
-#    frame.Show()
-#    app.MainLoop()
-
 if __name__ == '__main__':
     # SEE ROADMAPS TALLY GRID FOR F02, F04, AND HIRAP FOR 15-OCT-2013 THRU 18-NOV-2013
-    from pims.utils.gridworkers import demo2 as roadmaps, demo1 as pads
+    from pims.utils.gridworkers import roadmaps, pads
     eval( sys.argv[1] + '()' )
