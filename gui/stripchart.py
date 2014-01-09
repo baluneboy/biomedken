@@ -449,15 +449,24 @@ class GraphFrame(wx.Frame):
         
         if len(t) != 0:
             txyz = tuple()
-            txyz = txyz + ( np.mean( [ substream[0].stats.starttime.timestamp, substream[-1].stats.endtime.timestamp] ), )
+            meantime = np.mean( [ substream[0].stats.starttime.timestamp, substream[-1].stats.endtime.timestamp] )
+            txyz = txyz + ( meantime, )
             for ax in ['x', 'y', 'z']:
-                txyz = txyz + ( substream.select(channel=ax).std()[0], )
+                rms = substream.select(channel=ax).std()[0]
+                if np.isinf(rms):
+                    # FIXME does merge, detrend, filter, or std cause this inf value issue?
+                    #fname = '/tmp/substream_' + datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S') + ".SLIST"
+                    #substream.write(fname, format="SLIST")
+                    #self.log.debug('WROTE SUBSTREAM FILE %s' % fname)
+                    rms = np.nan
+                    log.warning( 'INF2NAN had to set %s-axis inf value to nan for time %s' % (ax, unix2dtm(meantime)) )
+                txyz = txyz + ( rms, )
             self.data.append(txyz)
 
         L = list(txyz); L.insert(0, unix2dtm(txyz[0])); L.insert(0, len(self.data)); self.log.debug( "CSV {:d},{:},{:f},{:f},{:f},{:f}".format(*L) )
         
         if flash_msg:
-            self.flash_status_message(flash_msg, flash_len_ms=2000)
+            self.flash_status_message(flash_msg, flash_len_ms=500)
             
         self.update_info(self.current_info, current_info_tuple)
         self.update_info(self.cumulative_info, cumulative_info_tuple)

@@ -28,7 +28,7 @@ class PadStream(Stream):
     def span(self):
         """Return timespan in seconds."""
         self.sort()
-        span = self[-1].stats.endtime - self[0].stats.starttime
+        span = self[-1].stats.endtime - self[0].stats.starttime # FIXME assumptions okay!?
         return span
 
 # container for sorted list of (t,x,y,z) tuples
@@ -36,7 +36,7 @@ class PlotDataSortedList(sortedlist):
     """container for sorted list of (t,x,y,z) tuples"""
     
     def __init__(self, *args, **kwargs):
-        # intentionally clobber key; set to sort by tuple's first element
+        # clobber key intentionally so we sort by tuple's first element
         kwargs['key'] = lambda tup: tup[0]
         #if kwargs.has_key('maxlen'):
         #    self.maxlen = int( kwargs.pop('maxlen') )
@@ -59,13 +59,14 @@ class PlotDataSortedList(sortedlist):
             toss = self.pop(0)
 
 def demo_bisect():
+    DELTA = 1
     b = PlotDataSortedList()
     txyzs = [
         (0, 0),
         (1, 1),
-        (5, 5),
+        (3, 3),
         (6, 6),
-        (9, 9),
+        (5, 5),
     ]
     for txyz in txyzs:
         i, tup = b._bisect_left(txyz)
@@ -76,13 +77,18 @@ def demo_bisect():
             print " leftDelta is %g - %g = %g" % ( txyz[0], b[i-1][0], txyz[0] - b[i-1][0] )
         elif len(b) > 0:
             # if appendDelta > analysis_interval, then also insert some/what number of NaNs?
-            print " appendDelta is %g - %g = %g" % ( txyz[0], b[i-1][0], txyz[0] - b[i-1][0] )
+            delta = txyz[0] - b[i-1][0]
+            if delta > DELTA:
+                print " appendDelta TOO BIG: %g - %g = %g" % ( txyz[0], b[i-1][0], delta )
+            elif delta <= 0:
+                print " appendDelta OVERLAP: %g - %g = %g" % ( txyz[0], b[i-1][0], delta )
+            else:
+                print " appendDelta okay: %g - %g = %g" % ( txyz[0], b[i-1][0], delta )
         b.append(txyz)
     print b
 
-demo_bisect()
-raise SystemExit
-    
+#demo_bisect()
+#raise SystemExit
 
 def demo_ingest(offset):
     from pims.utils.iterabletools import quantify

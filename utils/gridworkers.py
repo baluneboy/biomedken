@@ -144,7 +144,7 @@ class CheapPadHoursGridWorker(RoadmapsGridWorker):
         # replace None's with zero's in the rows
         self.rows = [ [0 if not x else x for x in r] for r in rows ]        
 
-def demo1():
+def pads():
     # gather input info
     log = sys.stdout
     input_grid =  CheapPadHoursInputGrid #RoadmapsInputGrid
@@ -156,7 +156,7 @@ def demo1():
     frame.Show()
     app.MainLoop()
 
-def demo2():
+def roadmaps():
     # gather input info
     log = sys.stdout
     input_grid =  RoadmapsInputGrid
@@ -170,7 +170,7 @@ def demo2():
 
 if __name__ == "__main__":
 
-    demo2()
+    roadmaps()
     raise SystemExit
 
     #d1 = parser.parse('2013-10-18').date()
