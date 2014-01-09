@@ -58,6 +58,32 @@ class PlotDataSortedList(sortedlist):
         while len(self) > self.maxlen:
             toss = self.pop(0)
 
+def demo_bisect():
+    b = PlotDataSortedList()
+    txyzs = [
+        (0, 0),
+        (1, 1),
+        (5, 5),
+        (6, 6),
+        (9, 9),
+    ]
+    for txyz in txyzs:
+        i, tup = b._bisect_left(txyz)
+        print b, "app", txyz, "at", i
+        if tup:
+            # inserting out of order (playback data?)
+            print "rightDelta is %g - %g = %g" % ( b[i][0], txyz[0], b[i][0] - txyz[0] )
+            print " leftDelta is %g - %g = %g" % ( txyz[0], b[i-1][0], txyz[0] - b[i-1][0] )
+        elif len(b) > 0:
+            # if appendDelta > analysis_interval, then also insert some/what number of NaNs?
+            print " appendDelta is %g - %g = %g" % ( txyz[0], b[i-1][0], txyz[0] - b[i-1][0] )
+        b.append(txyz)
+    print b
+
+demo_bisect()
+raise SystemExit
+    
+
 def demo_ingest(offset):
     from pims.utils.iterabletools import quantify
     # Trace 1: 1111
