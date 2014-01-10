@@ -25,6 +25,7 @@
 # Last modified: 31.07.2008 (by Eli)
 
 import os
+import re
 import logging
 import random
 import sys
@@ -409,7 +410,9 @@ class GraphFrame(wx.Frame):
         self.paused = True
        
         # after our first "next" call above, set plot title using datagen's header_string
-        self.set_plot_title(self.datagen.header_string)
+        # FIXME this should use input args and objects to modify parentheses to show LPF info
+        newstr = re.sub(r'(.*)\((.*)\)(.*)', r'\1(5 Hz LPF)\3', self.datagen.header_string)
+        self.set_plot_title(newstr)
        
         # Set up a timer to update the date/time (every few seconds)
         self.timer = wx.PyTimer(self.notify)
@@ -598,13 +601,15 @@ class GraphFrame(wx.Frame):
 
     def notify(self):
         """ Timer event """
-        self.fig.savefig('/misc/yoda/www/plots/user/jaxa/test.png', facecolor=self.fig.get_facecolor(), edgecolor='none')
+        # FIXME the path and plot name should come for free with inputs/objects
+        self.fig.savefig('/misc/yoda/www/plots/sams/121f05/intrms_10sec_5hz.png', facecolor=self.fig.get_facecolor(), edgecolor='none')
         t = self.getTimeString() + ' (update every ' + str(int(SB_MSEC/1000.0)) + 's)'
         self.SetStatusText(t, SB_RIGHT)
 
     def set_plot_title(self, title):
         """use datagen header_string to set plot title"""
-        self.axes['x'].set_title('Acceleration vs. Time\n' + title, size=16)
+        # FIXME this "plot type" title info should come with input arg yet-to-be generalized object
+        self.axes['x'].set_title('10-Second Interval RMS\n' + title, size=16)
 
     def init_plot(self):
         """initialize the plot"""
