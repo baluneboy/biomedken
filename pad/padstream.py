@@ -58,38 +58,6 @@ class PlotDataSortedList(sortedlist):
         while len(self) > self.maxlen:
             toss = self.pop(0)
 
-def demo_bisect():
-    DELTA = 1
-    b = PlotDataSortedList()
-    txyzs = [
-        (0, 0),
-        (1, 1),
-        (3, 3),
-        (6, 6),
-        (5, 5),
-    ]
-    for txyz in txyzs:
-        i, tup = b._bisect_left(txyz)
-        print b, "app", txyz, "at", i
-        if tup:
-            # inserting out of order (playback data?)
-            print "rightDelta is %g - %g = %g" % ( b[i][0], txyz[0], b[i][0] - txyz[0] )
-            print " leftDelta is %g - %g = %g" % ( txyz[0], b[i-1][0], txyz[0] - b[i-1][0] )
-        elif len(b) > 0:
-            # if appendDelta > analysis_interval, then also insert some/what number of NaNs?
-            delta = txyz[0] - b[i-1][0]
-            if delta > DELTA:
-                print " appendDelta TOO BIG: %g - %g = %g" % ( txyz[0], b[i-1][0], delta )
-            elif delta <= 0:
-                print " appendDelta OVERLAP: %g - %g = %g" % ( txyz[0], b[i-1][0], delta )
-            else:
-                print " appendDelta okay: %g - %g = %g" % ( txyz[0], b[i-1][0], delta )
-        b.append(txyz)
-    print b
-
-#demo_bisect()
-#raise SystemExit
-
 def demo_ingest(offset):
     from pims.utils.iterabletools import quantify
     # Trace 1: 1111
@@ -112,7 +80,49 @@ def demo_ingest(offset):
     print ( tr1.stats.delta + offset )
     print stream[-1][:], "mean=", stream[-1][:].mean(), "std=", stream[-1][:].std()
     print '-' * 100
+
+def demo_bisect():
+    DELTA = 1
+    b = PlotDataSortedList()
+    txyzs = [
+        (0, 0),
+        (1, 1),
+        (3, 3),
+        (6, 6),
+        (4, 4),
+    ]
+    for txyz in txyzs:
+        i, tup = b._bisect_left(txyz)
+        print b, "app", txyz, "at", i
+        if tup:
+            # inserting out of order (playback data?)
+            delta = txyz[0] - b[i-1][0]
+            print " leftDelta is %g - %g = %g" % ( txyz[0], b[i-1][0], delta ),
+            if delta > 1.25 * DELTA:
+                print "TOO BIG"
+            else:
+                print
+            delta = b[i][0] - txyz[0] # RIGHT DELTA
+            print "rightDelta is %g - %g = %g" % ( b[i][0], txyz[0], delta ),
+            if delta > 1.25 * DELTA:
+                print "TOO BIG"
+            else:
+                print
+        elif len(b) > 0:
+            # if appendDelta > analysis_interval, then also insert some/what number of NaNs?
+            delta = txyz[0] - b[i-1][0]
+            if delta > DELTA:
+                print " appendDelta TOO BIG: %g - %g = %g" % ( txyz[0], b[i-1][0], delta )
+            elif delta <= 0:
+                print " appendDelta OVERLAP: %g - %g = %g" % ( txyz[0], b[i-1][0], delta )
+            else:
+                print " appendDelta okay: %g - %g = %g" % ( txyz[0], b[i-1][0], delta )
+        b.append(txyz)
+    print '-' *25, '\n', b
     
 if __name__ == "__main__":
+    
+    demo_bisect(); raise SystemExit
+    
     for offset in range(-200,200,50):
         demo_ingest(offset/100.0)
