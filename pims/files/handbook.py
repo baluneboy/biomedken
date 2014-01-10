@@ -553,7 +553,7 @@ if __name__ == '__main__':
     hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Cygnus_Capture_Install')
     hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan')
     
-    if True: # True for process_pages, False for process_build
+    if True: # True for process_pages (the first stage), False for process_build (the last stage)
         
         if not hbe.will_clobber():
             err_msg = hbe.process_pages()
