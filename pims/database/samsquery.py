@@ -31,6 +31,10 @@ class SimpleQueryAOS(object):
         self.run_query()
         return '%s,%s' % (self.gse_tiss_dtm, self.aos_los)
 
+    def get_aos_tisstime(self):
+        self.run_query()
+        return self.aos_los, self.gse_tiss_dtm
+
     def run_query(self):
         cmdQuery = 'mysql --skip-column-names -h %s -D %s -u %s -p%s --execute="%s"' % (self.host, self.schema, self.uname, self.pword, self.query)
         p = subprocess.Popen([cmdQuery], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)

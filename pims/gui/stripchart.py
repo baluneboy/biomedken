@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# TODO current GMT text
-# TODO AOS/LOS indicator text
 # TODO for vertical autoscale, do based on plot_span min-to-max time and not what's in plot.data (LOS issue, fewer pts?)
 # TODO a class to maintain plot type (IntervalStat) with its parameters & ripple to plot text, etc.
 # TODO how to get filtering in header/title text instead of original cutoff frequency
@@ -61,6 +59,7 @@ from pims.utils.pimsdateutil import unix2dtm
 from pims.gui.plotutils import smart_ylims, round2multiple
 from pims.gui.pimsticker import CushionedLinearLocator
 from pims.gui import DUMMYDATA
+from pims.database.samsquery import SimpleQueryAOS, get_samsops_db_params
 
 from obspy.core.utcdatetime import UTCDateTime
 from obspy.realtime import RtTrace
@@ -395,6 +394,9 @@ class GraphFrame(wx.Frame):
         
         #self.create_menu() # on close, this causes LIBDBUSMENU-GLIB-WARNING Trying to remove a child that doesn't believe we're it's parent.
         
+        _HOST, _SCHEMA, _UNAME, _PASSWD = get_samsops_db_params('samsquery')
+        self.aos_tiss_time_callback = SimpleQueryAOS(_HOST, _SCHEMA, _UNAME, _PASSWD).get_aos_tisstime
+        
         self.create_status_bar()
         self.create_panels()
 
@@ -613,16 +615,15 @@ class GraphFrame(wx.Frame):
         # FIXME this "plot type" title info should come with input arg yet-to-be generalized object
         self.axes['x'].set_title('10-Second Interval RMS\n' + title, size=16)
 
-    # A generator for *fake* AOS/LOS updates
-    def fake_aos_callback(self):
-        aos_gmt = True, datetime.datetime.now()
-        while 1:
-            aos_gmt = not aos_gmt[0], datetime.datetime.now()
-            yield aos_gmt
+    ### A generator for *fake* AOS/LOS updates 
+    ##def fake_aos_tiss_time_callback(self):
+    ##    aos_tiss = True, datetime.datetime.now()
+    ##    while 1:
+    ##        aos_tiss = not aos_tiss[0], datetime.datetime.now()
+    ##        yield aos_tiss
 
     def init_plot(self):
         """initialize the plot"""
-        self.aos_gmt_callback = self.fake_aos_callback().next
         self.axes_labels = ['x', 'y', 'z']
         self.dpi = self.rt_params['figure.dpi']
         self.fig = Figure(self.rt_params['figure.figsize'], dpi=self.dpi)
@@ -800,13 +801,14 @@ class GraphFrame(wx.Frame):
         plt.setp(self.axes['y'].get_xticklabels(), visible=self.cb_xlab.IsChecked())
 
         # update AOS/LOS and current GMT
-        self.aos, self.gmt = self.aos_gmt_callback()
-        if self.aos:
+        self.aos, self.gmt = self.aos_tiss_time_callback()
+        if self.aos == 'AOS':
             self.text_aos_gmt.set_backgroundcolor('LightGreen')
-            self.text_aos_gmt.set_text('AOS\n%s' % self.gmt.strftime('%H:%M:%S\n%d-%h-%Y'))    
-        else:
+        elif self.aos == 'LOS':
             self.text_aos_gmt.set_backgroundcolor('LightPink')
-            self.text_aos_gmt.set_text('LOS\n%s' % self.gmt.strftime('%H:%M:%S\n%d-%h-%Y')) 
+        else:
+            self.text_aos_gmt.set_backgroundcolor('LightBlue')
+        self.text_aos_gmt.set_text('%s\n%s' % (self.aos, self.gmt.strftime('%H:%M:%S\n%d-%h-%Y')) )
 
         self.canvas.draw()
 

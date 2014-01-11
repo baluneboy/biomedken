@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.figure import Figure
 from pims.gui import DUMMYDATA
+from pims.database.samsquery import SimpleQueryAOS, get_samsops_db_params
 
 #########################################
 # NOTE: we use matplotlibrc conventions
@@ -19,7 +20,7 @@ class Plot3x1(object):
     # it does not appear to be straightforward to subclass Figure class!?
     
     def __init__(self):
-        self.aos_gmt_callback = self.fake_aos_callback().next
+        self.aos_gmt_callback = self.fake_aos_tiss_time_callback().next
         self.fig = plt.figure()
         self.suptitle = plt.suptitle("GridSpec3x1")
         self.gs = gridspec.GridSpec(3, 1)
@@ -30,7 +31,7 @@ class Plot3x1(object):
         self.clickid = self.fig.canvas.mpl_connect('button_press_event', self.on_click)
     
     # A generator for *fake* AOS/LOS updates
-    def fake_aos_callback(self):
+    def fake_aos_tiss_time_callback(self):
         aos_gmt = True, datetime.now()
         while 1:
             aos_gmt = not aos_gmt[0], datetime.now()
@@ -76,6 +77,11 @@ class Plot3x1(object):
     #        ax.text(0.5, 0.5, "ax%d1" % (i+1), va="center", ha="center")
     #        for tl in ax.get_xticklabels() + ax.get_yticklabels():
     #            tl.set_visible(False)
+
+#_HOST, _SCHEMA, _UNAME, _PASSWD = get_samsops_db_params('samsquery')
+#query_aos = SimpleQueryAOS(_HOST, _SCHEMA, _UNAME, _PASSWD)
+#aos_los, gse_tiss_time = query_aos.get_aos_tisstime()
+#print aos_los, gse_tiss_time
 
 plotxyz = Plot3x1()
 plt.show()
