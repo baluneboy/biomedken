@@ -1,50 +1,81 @@
 #!/usr/bin/python
 
-# TODO incorporate "Current GMT with AOS/LOS indicator" [updated on status bar timer?]
-
+from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.figure import Figure
 from pims.gui import DUMMYDATA
 
+#########################################
 # NOTE: we use matplotlibrc conventions
 #import matplotlib
 #print matplotlib.get_configdir()
 #print matplotlib.matplotlib_fname()
 #raise SystemExit
+#########################################
 
 class Plot3x1(object):
     """Container class for general purpose 3x1 plot, like for xyz vs. time."""
     # it does not appear to be straightforward to subclass Figure class!?
     
     def __init__(self):
+        self.aos_gmt_callback = self.fake_aos_callback().next
         self.fig = plt.figure()
         self.suptitle = plt.suptitle("GridSpec3x1")
         self.gs = gridspec.GridSpec(3, 1)
-        self.handles = self.get_handles()
+        self.init_plot()
+        
+        # connect to mouse click event for testing
+        self.clickid = None
+        self.clickid = self.fig.canvas.mpl_connect('button_press_event', self.on_click)
     
-    def get_handles(self):
+    # A generator for *fake* AOS/LOS updates
+    def fake_aos_callback(self):
+        aos_gmt = True, datetime.now()
+        while 1:
+            aos_gmt = not aos_gmt[0], datetime.now()
+            yield aos_gmt
+    
+    def init_plot(self):
         """
         plot the data as a line series, and save the reference 
-        to the plotted line series
+        to the plotted line series and axes as attributes of self
         """
-        h = {}
         x = DUMMYDATA['x']
         y = DUMMYDATA['y']
         for i in range(3):
             suffix = '%d1' % (i + 1)
             hax = plt.subplot(self.gs[i], gid='ax' + suffix)
             hline = hax.plot_date(x, y, '.-', gid='line' + suffix)[0]
-            h['ax' + suffix] = hax
-            h['line' + suffix] = hline
-        return h
+            setattr(self, 'ax' + suffix, hax)
+            setattr(self, 'line' + suffix, hline)
+        
+        # attach AOS/LOS GMT to "last" axes
+        ax = self.fig.axes[-1]
+        self.text_aos_gmt = ax.text(1.02, -0.2, '???\n00:00:00\ndd-Mon-yyyy',
+                                                horizontalalignment='center',
+                                                verticalalignment='center',
+                                                transform = ax.transAxes,
+                                                bbox=dict(facecolor='LightBlue', alpha=0.3))
 
-    def show_demo(self):
-        for i, ax in enumerate(self.fig.axes):
-            ax.text(0.5, 0.5, "ax%d1" % (i+1), va="center", ha="center")
-            for tl in ax.get_xticklabels() + ax.get_yticklabels():
-                tl.set_visible(False)
+    def on_click(self, event):
+        #print 'button=%d, x=%d, y=%d, xdata=%f, ydata=%f'%(
+        #    event.button, event.x, event.y, event.xdata, event.ydata)
+        self.aos, self.gmt = self.aos_gmt_callback()
+        if self.aos:
+            self.text_aos_gmt.set_backgroundcolor('LightGreen')
+            self.text_aos_gmt.set_text('AOS\n%s' % self.gmt.strftime('%H:%M:%S\n%d-%h-%Y'))    
+        else:
+            self.text_aos_gmt.set_backgroundcolor('LightPink')
+            self.text_aos_gmt.set_text('LOS\n%s' % self.gmt.strftime('%H:%M:%S\n%d-%h-%Y'))    
+
+        self.fig.canvas.draw()
+
+    #def show_demo(self):
+    #    for i, ax in enumerate(self.fig.axes):
+    #        ax.text(0.5, 0.5, "ax%d1" % (i+1), va="center", ha="center")
+    #        for tl in ax.get_xticklabels() + ax.get_yticklabels():
+    #            tl.set_visible(False)
 
 plotxyz = Plot3x1()
-plotxyz.show_demo()
 plt.show()

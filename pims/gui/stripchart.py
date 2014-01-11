@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-# TODO for vertical autoscale, do based on plot_span min-to-max time and not what's in plot.data (LOS issue)
+# TODO current GMT text
+# TODO AOS/LOS indicator text
+# TODO for vertical autoscale, do based on plot_span min-to-max time and not what's in plot.data (LOS issue, fewer pts?)
 # TODO a class to maintain plot type (IntervalStat) with its parameters & ripple to plot text, etc.
 # TODO how to get filtering in header/title text instead of original cutoff frequency
 # TODO replace original sample rate in header/title text with analysis_interval
@@ -611,8 +613,16 @@ class GraphFrame(wx.Frame):
         # FIXME this "plot type" title info should come with input arg yet-to-be generalized object
         self.axes['x'].set_title('10-Second Interval RMS\n' + title, size=16)
 
+    # A generator for *fake* AOS/LOS updates
+    def fake_aos_callback(self):
+        aos_gmt = True, datetime.datetime.now()
+        while 1:
+            aos_gmt = not aos_gmt[0], datetime.datetime.now()
+            yield aos_gmt
+
     def init_plot(self):
         """initialize the plot"""
+        self.aos_gmt_callback = self.fake_aos_callback().next
         self.axes_labels = ['x', 'y', 'z']
         self.dpi = self.rt_params['figure.dpi']
         self.fig = Figure(self.rt_params['figure.figsize'], dpi=self.dpi)
@@ -686,6 +696,14 @@ class GraphFrame(wx.Frame):
         # only apply GMT xlabel to z-axis
         self.axes['z'].set_xlabel('GMT')
         
+        # attach AOS/LOS GMT to "last" axes
+        ax = self.fig.axes[-1]
+        self.text_aos_gmt = ax.text(1.08, -0.25, '???\n00:00:00\ndd-Mon-yyyy',
+                                                horizontalalignment='center',
+                                                verticalalignment='center',
+                                                transform = ax.transAxes,
+                                                bbox=dict(facecolor='LightBlue', alpha=0.3))        
+        
         # to save fig with same facecolor as rt plot, use:
         #fig.savefig('whatever.png', facecolor=fig.get_facecolor(), edgecolor='none')
 
@@ -748,7 +766,6 @@ class GraphFrame(wx.Frame):
         # given even if b is set to False.
         # so just passing the flag into the first statement won't
         # work.
-        #
         if self.cb_grid.IsChecked():
             self.axes['x'].grid(True, color='gray')
             self.axes['y'].grid(True, color='gray')
@@ -781,6 +798,15 @@ class GraphFrame(wx.Frame):
         #pylab.setp(self.axes['x'].get_xticklabels(), visible=self.cb_xlab.IsChecked())
         plt.setp(self.axes['x'].get_xticklabels(), visible=self.cb_xlab.IsChecked())
         plt.setp(self.axes['y'].get_xticklabels(), visible=self.cb_xlab.IsChecked())
+
+        # update AOS/LOS and current GMT
+        self.aos, self.gmt = self.aos_gmt_callback()
+        if self.aos:
+            self.text_aos_gmt.set_backgroundcolor('LightGreen')
+            self.text_aos_gmt.set_text('AOS\n%s' % self.gmt.strftime('%H:%M:%S\n%d-%h-%Y'))    
+        else:
+            self.text_aos_gmt.set_backgroundcolor('LightPink')
+            self.text_aos_gmt.set_text('LOS\n%s' % self.gmt.strftime('%H:%M:%S\n%d-%h-%Y')) 
 
         self.canvas.draw()
 
