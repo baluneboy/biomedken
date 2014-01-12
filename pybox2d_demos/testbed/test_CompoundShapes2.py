@@ -20,11 +20,12 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 from test_main import *
+from test_BoxCutter import BoxCutter
 
-class CompoundShapes (Framework):
-    name="CompoundShapes"
+class CompoundShapes2(BoxCutter, Framework):
+    name="CompoundShapes2"
     def __init__(self):
-        super(CompoundShapes, self).__init__()
+        super(CompoundShapes2, self).__init__()
 
         # create platform
         bd = box2d.b2BodyDef() 
@@ -140,5 +141,42 @@ class CompoundShapes (Framework):
         body.CreateShape(sd_right)
         body.SetMassFromShapes()
 
+        # The "laser"
+        bd=box2d.b2BodyDef()
+        bd.position = (0.0, 1.0)
+        bd.userData = "laser"
+        self.laserBody = self.world.CreateBody(bd)
+        
+        sd=box2d.b2PolygonDef()
+        sd.SetAsBox(5.0, 1.0)
+        sd.density = 4.0
+        self.laserBody.CreateShape(sd)
+        self.laserBody.SetMassFromShapes()
+
+    #def Show(self):
+    #    print 'ok, now you pressed the "Show" key'
+    #    
+    #def Keyboard(self, key):
+    #    if key==K_s:
+    #        self.Show()
+    #    else:
+    #        print 'you pressed the key whose value is %d' % key
+    #
+    #def Step(self, settings):
+    #    super(CompoundShapes, self).Step(settings)
+    #
+    #    self.DrawStringCR("Keys: Show = s")
+    #
+    #    segmentLength = 10.0
+    #    
+    #    segment=box2d.b2Segment()
+    #    laserStart=(5.0-0.1,0.0)
+    #    laserDir  =(segmentLength,0.0)
+    #    segment.p1 = self.laserBody.GetWorldPoint(laserStart)
+    #    segment.p2 = segment.p1+self.laserBody.GetWorldVector(laserDir)
+    #    laserColor=box2d.b2Color(1,0,0)
+    #
+    #    self.debugDraw.DrawSegment(segment.p1,segment.p2,laserColor)
+
 if __name__=="__main__":
-     main(CompoundShapes)
+     main(CompoundShapes2)
