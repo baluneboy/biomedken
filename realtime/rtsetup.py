@@ -340,7 +340,7 @@ EXTR =   2 # count for extra_intervals
 default_params = {
 
     # path(s)
-    'paths.snap_path'          : ['/tmp', validate_path_exists], # FIXME
+    'paths.snap_path'          : ['/misc/yoda/www/plots/sams/121f05', validate_path_exists], # FIXME
 
     # verbosity setting
     'verbose.level'     : ['INFO', validate_verbose], # debug, info, warning, error, or critical
