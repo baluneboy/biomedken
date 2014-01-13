@@ -708,11 +708,14 @@ class PadGenerator(PacketInspector):
         span = self.stream.span()
         log.debug( '%04d span is now %gseconds' % (get_line(), span) )
 
+        # TODO for debug case, deepcopy substream BEFORE merge/sort/detrend/filter; if any of xyz RMS isinf or isnan, then save
+        #      [pickle] that "raw" substream to a file with "DATA TIMESTAMP" in filename and do log.debug with filename
+
         # if accumulated span fits, then slice and slide right for GraphFrame's data object; otherwise, do nothing        
         if span >= self.analysis_interval: 
             substream = self.slice_trim_traces()
             substream.merge()
-            substream.sort() # need this because merge can shuffle xyz order!?
+            substream.sort() # need this because merge can shuffle xyz order of traces in substream!?
             substream.detrend(type='demean')
             substream.filter('lowpass', freq=5.0, zerophase=True)
 

@@ -1,23 +1,18 @@
 #!/usr/bin/env python
 
-# TODO for vertical autoscale, do based on plot_span min-to-max time and not what's in plot.data (LOS issue, fewer pts?)
+# TODO header/title text with analysis_interval (not hard-coded)
 # TODO a class to maintain plot type (IntervalStat) with its parameters & ripple to plot text, etc.
-# TODO how to get filtering in header/title text instead of original cutoff frequency
-# TODO replace original sample rate in header/title text with analysis_interval
-# TODO move header/title text to upperleft and/or upperright like off-line plot routines
-# TODO test/improve draw_plot code for cushion at bottom tick of bottom subplot not interfere with wide-n-slide GMT
+# TODO improved draw_plot code (robustness testing) for cushion at bottom tick of bottom subplot not interfere with wide-n-slide GMT
+# TODO for vertical autoscale, do based on plot_span min-to-max time and not what's in plot.data (LOS issue, fewer pts?)
+# TODO put processing or data details not already in header/title text to upperleft and/or upperright like off-line plot routines
 
-# This is working demo of how to draw a dynamic matplotlib plot with wxPython
-#
-# It allows "live" plotting as well as manual zooming to specific
-# regions.
-#
-# Both X and Y axes allow "auto" or "manual" settings. For Y, auto
+# The Y axes allows "auto" or "manual" settings. For Y, auto
 # mode sets the scaling of the graph to see all the data points.
-# For X, auto mode makes the graph "follow" the data. Set it X min
-# to manual 0 to always see the whole data from the beginning.
+# Note: have to press Enter in 'manual' text boxes to make new value affect plot.
 #
-# Note: have to press Enter in 'manual' text box to make new value affect plot.
+# For X, manual mode does not apply to this graph.  In strip chart
+# fashion, we want X to follow the data in near real-time.
+#
 #
 # Most of the strip chart aspects of this are thanks to Eli, that is:
 # Eli Bendersky (eliben@gmail.com)
@@ -60,6 +55,7 @@ from pims.gui.plotutils import smart_ylims, round2multiple
 from pims.gui.pimsticker import CushionedLinearLocator
 from pims.gui import DUMMYDATA
 from pims.database.samsquery import SimpleQueryAOS, get_samsops_db_params
+from pims.pad.intervalstat import IntervalStat
 
 from obspy.core.utcdatetime import UTCDateTime
 from obspy.realtime import RtTrace
@@ -73,7 +69,7 @@ SB_MSEC = int( 3 * REDRAW_MSEC ) # lower-right time ~every several seconds
 BENCH_STEP = Benchmark('step')   # datagen next method ("step") should avg about 3s
 
 # PIMS extension of RtTrace
-class PimsRtTrace(RtTrace):
+class OBSOLETEPimsRtTrace(RtTrace):
     """PIMS extension of RtTrace"""
     #
     #def __init__(self, *args, **kwargs):
@@ -108,22 +104,6 @@ class PimsRtTrace(RtTrace):
         idx = np.where(t >= min_time)
         dtm = [unix2dtm(i) for i in t[idx]]
         return dates.date2num( dtm ), self[idx]
-
-#import numpy as np
-#from obspy.realtime import RtTrace
-#from obspy import read
-#from obspy.realtime.signal import calculateMwpMag
-#data_trace = read('/path/to/II.TLY.BHZ.SAC')[0]
-#traces = data_trace / 5
-#rt_trace = PimsRtTrace()
-#for tr in traces:
-#    processed_trace = rt_trace.append(tr, gap_overlap_check=True)
-##print len(traces[0]), len(traces[1]), "...", len(traces[-2]), len(traces[-1])
-#print rt_trace
-#tr_slice = rt_trace.get_slice_then_trim(10)
-#print tr_slice
-#print rt_trace
-#raise SystemExit
 
 class DataGenRandom(object):
     """ A silly class that generates pseudo-random data for plot display."""
@@ -390,6 +370,14 @@ class GraphFrame(wx.Frame):
         self.log = log
         self.rt_params = rt_params
         
+        # FIXME rt_params should be enough to completely define snap_file
+        self.snap_file = os.path.join( rt_params['paths.snap_path'], 'intrms_10sec_5hz.png' ) 
+        
+        # FIXME better container for "plot type"
+        self.plot_type = IntervalRMS(self.rt_params['time.analysis_interval'],
+                                     self.rt_params['time.plot_span'],
+                                     self.rt_params['data.scale_factor'])
+        
         wx.Frame.__init__(self, None, -1, self.title)
         
         #self.create_menu() # on close, this causes LIBDBUSMENU-GLIB-WARNING Trying to remove a child that doesn't believe we're it's parent.
@@ -583,13 +571,12 @@ class GraphFrame(wx.Frame):
         """switch panels"""
         if self.input_panel.IsShown():
             self.get_inputs()
-            
-            self.SetTitle("Output Panel")
+            self.SetTitle("Output Panel") # FIXME with better, succinct convention title
             self.input_panel.Hide()
             self.output_panel.Show()
             self.sizer.Layout()
         else:
-            self.SetTitle("Input Panel")
+            self.SetTitle("Input Panel") # FIXME with better, succinct convention title
             self.input_panel.Show()
             self.output_panel.Hide()
         self.Fit()
@@ -606,7 +593,8 @@ class GraphFrame(wx.Frame):
     def notify(self):
         """ Timer event """
         # FIXME the path and plot name should come for free with inputs/objects
-        self.fig.savefig('/misc/yoda/www/plots/sams/121f05/intrms_10sec_5hz.png', facecolor=self.fig.get_facecolor(), edgecolor='none')
+        #self.fig.savefig('/misc/yoda/www/plots/sams/121f05/intrms_10sec_5hz.png', facecolor=self.fig.get_facecolor(), edgecolor='none')
+        self.fig.savefig(self.snap_file, facecolor=self.fig.get_facecolor(), edgecolor='none')
         t = self.getTimeString() + ' (update every ' + str(int(SB_MSEC/1000.0)) + 's)'
         self.SetStatusText(t, SB_RIGHT)
 
