@@ -373,10 +373,10 @@ class GraphFrame(wx.Frame):
         # FIXME rt_params should be enough to completely define snap_file
         self.snap_file = os.path.join( rt_params['paths.snap_path'], 'intrms_10sec_5hz.png' ) 
         
-        # FIXME better container for "plot type"
-        self.plot_type = IntervalRMS(self.rt_params['time.analysis_interval'],
-                                     self.rt_params['time.plot_span'],
-                                     self.rt_params['data.scale_factor'])
+        ## FIXME better container for "plot type"
+        #self.plot_type = IntervalRMS(self.rt_params['time.analysis_interval'],
+        #                             self.rt_params['time.plot_span'],
+        #                             self.rt_params['data.scale_factor'])
         
         wx.Frame.__init__(self, None, -1, self.title)
         
