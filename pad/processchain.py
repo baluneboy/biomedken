@@ -17,7 +17,7 @@ class IntervalStat(object):
 
 class IntervalRMS(IntervalStat):
     def get_result(self, obj, meth):
-        print obj.get_span()
+        print obj.span()
         method_to_call = getattr(obj, meth)
         result = method_to_call()
         return result 
@@ -56,14 +56,37 @@ class PadProcessChain(object):
              str(self.axes))
 
 if __name__=="__main__":
-    from obspy import read
     from pims.pad.padstream import PadStream
+    import numpy as np
+    from copy import deepcopy
+    from obspy import UTCDateTime, Trace, read
+    from pims.pad.padstream import PadStream
+    
+    np.random.seed(815)
+    header = {'network': 'BW', 'station': 'BGLD',
+              'starttime': UTCDateTime(2007, 12, 31, 23, 59, 59, 915000),
+              'npts': 412, 'sampling_rate': 200.0,
+              'channel': 'EHE'}
+    trace1 = Trace(data=np.random.randint(0, 1000, 412).astype('float64'),
+                   header=deepcopy(header))
+    header['starttime'] = UTCDateTime(2008, 1, 1, 0, 0, 4, 35000)
+    header['npts'] = 824
+    trace2 = Trace(data=np.random.randint(0, 1000, 824).astype('float64'),
+                   header=deepcopy(header))
+    header['starttime'] = UTCDateTime(2008, 1, 1, 0, 0, 10, 215000)
+    trace3 = Trace(data=np.random.randint(0, 1000, 824).astype('float64'),
+                   header=deepcopy(header))
+    header['starttime'] = UTCDateTime(2008, 1, 1, 0, 0, 18, 455000)
+    header['npts'] = 50668
+    trace4 = Trace(
+        data=np.random.randint(0, 1000, 50668).astype('float64'),
+       header=deepcopy(header))
+    st = PadStream(traces=[trace1, trace2, trace3, trace4])    
     
     ppc = PadProcessChain()
     print ppc
     
     irms = IntervalRMS(10)
-    st = read()
     result = irms.get_result(st, 'std')
     print result
     

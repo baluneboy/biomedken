@@ -442,7 +442,7 @@ class GraphFrame(wx.Frame):
     def step_callback(self, step_data):
         """update plot info and data"""
         current_info_tuple, cumulative_info_tuple, t, substream, flash_msg = step_data
-        
+        #substream.write('/tmp/example.slist','SLIST')
         if len(t) != 0:
             txyz = tuple()
             meantime = np.mean( [ substream[0].stats.starttime.timestamp, substream[-1].stats.endtime.timestamp] )

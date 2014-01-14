@@ -30,6 +30,13 @@ class PadStream(Stream):
         self.sort()
         span = self[-1].stats.endtime - self[0].stats.starttime # FIXME assumptions okay!?
         return span
+    
+    def is_valid_substream(self):
+        """Return boolean True if has 3 traces (x,y,z) in that order."""
+        if [tr.stats.channel for tr in self] == ['x', 'y', 'z']:
+            return True
+        else:
+            return False
 
 # container for sorted list of (t,x,y,z) tuples
 class PlotDataSortedList(sortedlist):

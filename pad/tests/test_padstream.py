@@ -51,6 +51,19 @@ class StreamTestCase(unittest.TestCase):
             data=np.random.randint(0, 1000, 12000).astype('float64'),
             header=header)
         self.gse2_stream = PadStream(traces=[trace])
+        header = {'network': 'KH', 'station': 'BLAH',
+                  'starttime': UTCDateTime(2001, 5, 3, 23, 59, 59, 999000),
+                  'npts': 500, 'sampling_rate': 500.0,
+                  'channel': 'x'}
+        tracex = Trace(data=np.random.randint(0, 1000, 500).astype('float64'),
+                       header=deepcopy(header))
+        header['channel'] = 'y'
+        tracey = Trace(data=np.random.randint(0, 1000, 500).astype('float64'),
+                       header=deepcopy(header))
+        header['channel'] = 'z'
+        tracez = Trace(data=np.random.randint(0, 1000, 500).astype('float64'),
+                       header=deepcopy(header))
+        self.valid_substream = PadStream(traces=[tracex, tracey, tracez])
 
     def test_setitem(self):
         """
@@ -661,6 +674,18 @@ class StreamTestCase(unittest.TestCase):
         self.assertEqual([i.stats.sampling_rate for i in stream.traces],
                          [100.0, 400.0, 200.0, 500.0, 300.0, 600.0])        
 
+    def test_span(self):
+        """Span for the streams we set up."""
+        self.assertEqual( 271.875, self.mseed_stream.span() )
+        self.assertEqual(  59.995, self.gse2_stream.span() )
+        self.assertEqual(   0.998, self.valid_substream.span() )
+    
+    def test_is_valid_substream(self):
+        """Valid substreams?"""
+        self.assertNotEqual( True, self.mseed_stream.is_valid_substream() )
+        self.assertNotEqual( True, self.gse2_stream.is_valid_substream() )
+        self.assertEqual( True, self.valid_substream.is_valid_substream() )
+    
     def test_sortingTwice(self):
         """
         Sorting twice should not change order.
