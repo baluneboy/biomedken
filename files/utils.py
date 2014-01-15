@@ -4,6 +4,14 @@ from pims.files.base import File, UnrecognizedPimsFile
 from pims.patterns.handbookpdfs import is_unique_handbook_pdf_match
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN
 from pims.utils.pimsdateutil import timestr_to_datetime
+from pims.strings.utils import remove_non_ascii
+
+def overwrite_file_with_non_ascii_chars_removed(f):
+    with open (f, "r") as myfile:
+        data = myfile.read()
+    s = remove_non_ascii(data)
+    with open (f, "w") as newfile:
+        newfile.write(s)
 
 def parse_roadmap_filename(f):
     """Parse roadmap filename."""

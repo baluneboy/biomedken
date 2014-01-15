@@ -3,6 +3,10 @@ from datetime import datetime
 from dateutil.parser import parse
 from pims.patterns.handbookpdfs import _SENSOR_PATTERN
 
+def remove_non_ascii(s):
+    """Remove non-ascii characters."""
+    return "".join(i for i in s if ord(i)<128)
+
 def sensor_tuple(s):
     """
     Return tuple with (sensor, suffix)
