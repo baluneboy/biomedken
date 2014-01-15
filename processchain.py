@@ -58,7 +58,7 @@ class PadProcessChain(object):
     # 1. this is how we apply scale factor to trace as we append packet data (trace then appended to stream)
     def scale(self, trace):
         # norm factor is "/=" so invert sf
-        tr.normalize( norm=(1.0 / self.scale_factor) )
+        trace.normalize( norm=(1.0 / self.scale_factor) )
 
     # 2. this is how we detrend [demean] (currently) substream based on analysis_interval's worth of data
     def detrend(self, substream):
