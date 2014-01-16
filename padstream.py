@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import numpy as np
 from obspy import Stream
 from blist import sortedlist
 
@@ -38,17 +39,13 @@ class PadStream(Stream):
         else:
             return False
 
-# container for sorted list of (t,x,y,z) tuples
+# container for sorted list of (t, x, y, z) tuples
 class PlotDataSortedList(sortedlist):
-    """container for sorted list of (t,x,y,z) tuples"""
+    """container for sorted list of (t, x, y, z) tuples"""
     
     def __init__(self, *args, **kwargs):
         # clobber key intentionally so we sort by tuple's first element
         kwargs['key'] = lambda tup: tup[0]
-        #if kwargs.has_key('maxlen'):
-        #    self.maxlen = int( kwargs.pop('maxlen') )
-        #else:
-        #    self.maxlen = 123456
         self.maxlen = int( kwargs.pop('maxlen', 123456) )
         super(PlotDataSortedList, self).__init__(*args, **kwargs)
 
@@ -65,13 +62,28 @@ class PlotDataSortedList(sortedlist):
         while len(self) > self.maxlen:
             toss = self.pop(0)
 
+# container for sorted list of (t, rss) tuples
+class RssPlotDataSortedList(PlotDataSortedList):
+    
+    def __add(self, *args, **kwargs):
+        # note leading double-underscore for private method
+        super(PlotDataSortedList, self).add(*args, **kwargs)    
+    
+    def append(self, txyz):
+        t = txyz[0]
+        xyz = np.asarray( txyz[1:] )
+        rss = np.sqrt( np.sum((xyz)**2) )
+        self.__add( (t, rss) )
+        # FIXME this is incredibly crude way to do the needed pruning
+        while len(self) > self.maxlen:
+            toss = self.pop(0)
+
 def demo_ingest(offset):
     from pims.utils.iterabletools import quantify
     # Trace 1: 1111
     # Trace 2:          555
     # 1 + 2  : 1111.....555
     #          123456789^
-    import numpy as np
     from obspy import UTCDateTime, Trace
 
     tr1 = Trace(data=np.ones(3, dtype=np.int32) * 1)
@@ -127,7 +139,23 @@ def demo_bisect():
         b.append(txyz)
     print '-' *25, '\n', b
     
+def demo_rss():
+    b = RssPlotDataSortedList()
+    txyzs = [
+        (0, 0, 0, 0),
+        (1, 1, 2, 3),
+        (3, 3, 4, 5),
+        (6, 6, 7, 8),
+        (4, 4, 5, 6),
+    ]
+    for txyz in txyzs:    
+        b.append(txyz)
+
+    print '-' *25, '\n', b
+
 if __name__ == "__main__":
+    
+    demo_rss(); raise SystemExit
     
     demo_bisect(); raise SystemExit
     

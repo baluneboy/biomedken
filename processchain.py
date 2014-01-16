@@ -36,7 +36,7 @@ class PadProcessChain(object):
         self.detrend_type = detrend_type
         self.filter_params = filter_params
         self.interval_func = interval_params['type'](interval_params['analysis_interval'])
-        self.axes = axes
+        self.axes = self._check_axes(axes)
 
     def _get_units(self):
         if self.scale_factor == 1e3:
@@ -54,6 +54,12 @@ class PadProcessChain(object):
              str(self.filter_params),
              str(self.interval_func),
              str(self.axes))
+    
+    def _check_axes(self, axes):
+        if axes != ['x', 'y', 'z']:
+            raise ValueError("unhandled case when axes is not ['x', 'y', 'z']")
+        else:
+            return axes
         
     # 1. this is how we apply scale factor to trace as we append packet data (trace then appended to stream)
     def scale(self, trace):
@@ -72,15 +78,14 @@ class PadProcessChain(object):
 
     # 4. this is how we apply interval func (RMS) to analysis_interval's worth of data
     def apply_interval_func(self, substream):
+        rms = []
         for ax in ['x', 'y', 'z']:
-            rms = substream.select(channel=ax).std()[0]
+            rms.append( substream.select(channel=ax).std()[0] )
+        return rms
     
     # 5. finally, we'd either show per-axis or somehow combine for plotting
-    def combine_axes(self):
-        if self.axes == ['x', 'y', 'z']:
-            pass
-        else:
-            raise ValueError("unhandled case when axes is not ['x', 'y', 'z']")
+    def combine_axes(self, plot_data):
+        pass
 
 if __name__=="__main__":
     from pims.pad.padstream import PadStream
