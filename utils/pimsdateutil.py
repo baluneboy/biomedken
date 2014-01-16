@@ -228,8 +228,9 @@ def parse_packetfeeder_input_time(s, sec_plot_span):
         if f > 0.0:
             return f
         elif f == 0:
-            timeNow = time.time()
-            return timeNow - sec_plot_span
+            # convenient end time
+            dtm = parser.parse('2064-12-02 23:59:59')
+            return dtm2unix(dtm)
         else:
             raise Exception('no negative unixtime floats accepted')
     except ValueError:
