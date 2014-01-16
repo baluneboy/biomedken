@@ -392,7 +392,7 @@ class GraphFrame(wx.Frame):
         #self.get_inputs()
 
         # we must limit size of otherwise ever-growing data object
-        #self.data = deque( maxlen=self.rt_params['data.maxlen'] )
+        # use a list of tuples sorted by first element
         self.data = PlotDataSortedList( maxlen=self.rt_params['data.maxlen'] )
         
         # this is first call to "prime the pump" of data generator via next method

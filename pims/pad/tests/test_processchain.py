@@ -14,7 +14,9 @@ from scipy import signal
 def filter_setup():
     t = np.linspace(0, 10.0, 5001)
     xlow = np.sin(2 * np.pi * 3 * t)
-    xhigh = np.sin(2 * np.pi * 25 * t)
+    # now, use a = sqrt(2) so rms = a / sqrt(2) = 1
+    # for the xhigh component
+    xhigh = np.sqrt(2) * np.sin(2 * np.pi * 25 * t)
     x = xlow + xhigh
     return t, x, xlow, xhigh
 
@@ -142,7 +144,95 @@ class PadProcessChainTestCase(unittest.TestCase):
         diff = np.abs( self.sines_substream.select(channel='x')[0].data - \
                        self.sines_substream.select(channel='y')[0].data).max()
         self.assertAlmostEqual( 0.0, diff, 0)
-        #self.assertAlmostEqual()
+        # After 5 Hz lowpass filtering, z trace should be almost equal to zero
+        zchk = np.abs(self.sines_substream.select(channel='z')[0].data).max()
+        self.assertAlmostEqual( 0.0, zchk, 0)
+
+    def test_apply_interval_func(self):
+        """Test apply interval func to data of substream."""
+        # check RMS, that is, std(), which is the default
+        ppc = PadProcessChain()
+        rms = ppc.apply_interval_func(self.saved_substream)
+        self.assertEqual( 3, len(rms) )
+        self.assertAlmostEqual( 40.3683, rms[0], 3 )
+        self.assertAlmostEqual( 19.4536, rms[1], 3 )
+        self.assertAlmostEqual( 29.3168, rms[2], 3 )
+        # now check sines, which makes for easy RMS check
+        ppc = PadProcessChain()
+        rms = ppc.apply_interval_func(self.sines_substream)
+        self.assertEqual( 3, len(rms) )
+        # for sum of 2 sines, RMS is RSS of the 2 components
+        rss = np.sqrt(3.0/2.0)
+        self.assertAlmostEqual(          rss, rms[0], 3 )
+        self.assertAlmostEqual( 1/np.sqrt(2), rms[1], 3 )
+        self.assertAlmostEqual(            1, rms[2], 3 )
+        # add DC offset to see that Stream's std() has built-in demeaning
+        self.sines_substream[2].data = self.sines_substream[2].data + 55.5
+        rms = ppc.apply_interval_func(self.sines_substream)
+        self.assertEqual( 3, len(rms) )
+        self.assertAlmostEqual(          rss, rms[0], 3 )
+        self.assertAlmostEqual( 1/np.sqrt(2), rms[1], 3 )
+        self.assertAlmostEqual(            1, rms[2], 3 )
+        # now calculate rms value that includes the dc offset
+        rms_dc = np.sqrt(np.mean(self.sines_substream[2].data**2))
+        self.assertAlmostEqual(         55.5, rms_dc, 1 )
+        
+    def test_combine_axes(self):
+        """Test combine_axes of substream."""
+        # this per-axis input is okay...
+        ppc = PadProcessChain(axes=['x', 'y','z']) # ...so no error, yay!
+        ppc.combine_axes() # ..BUT, it currently does nothing, boo
+        # since we only handle per-axis (no combine yet)...
+        kwargs = { 'axes': ['combined'] } # ...we do get error for this input
+        self.assertRaises(ValueError, PadProcessChain, **kwargs )
+
+    def test_complete_chain(self):
+        """Test complete chain sequence."""
+        ppc = PadProcessChain()
+        stream = PadStream()
+        # 1. apply scale factor to trace as we append packet data (trace then appended to stream)
+        #    this happens to ALL data in append_process_packet_data method of PadGenerator object
+        #    on per-axis (x,y,z) basis as the data from atxyzs are put in PadStream as Traces
+        npts = len(self.sines_substream)
+        for i, ax in enumerate(['x', 'y', 'z']):
+            # actually for next line, use Trace with atxyzs columns & header, BUT WITHOUT
+            # dividing by 1e6 after semi-colon
+            tr = self.sines_substream.select(channel=ax)[0]; tr.data /= 1.0e6
+            ppc.scale(tr) # instead of tr.normalize( norm=(1.0 / self.scale_factor) )
+            # SNIPPED 3 lines for adjusting tr.stats
+            # append trace to stream
+            stream.append(tr)
+        
+        # 2. detrend [demean] (currently) substream based on analysis_interval's worth of data
+        #    this happens after we have appended enough data for analysis_interval span
+        #    in append_process_packet_data method of PadGenerator object...
+        # AND we CASCADE at this point with...
+        # 3. filter the now detrended substream based on analysis_interval's worth of data
+        substream = deepcopy(stream) # FOR THESE STEPS, WE WORK ON substream!
+        substream.select(channel='z')[0].data = substream.select(channel='z')[0].data + 55.5
+        #substream.plot()
+        ppc.detrend(substream)
+        ppc.filter(substream)
+        #substream.plot()
+    
+        # 4. apply interval func (RMS) to analysis_interval's worth of data
+        #    this happens on per analysis_interval basis in step_callback method of GraphFrame object
+        #    and it always happens to each axis regardless of how we want to combine for plotting
+        txyz = tuple()
+        meantime = np.mean( [ substream[0].stats.starttime.timestamp, substream[-1].stats.endtime.timestamp] )
+        txyz = txyz + ( meantime, )
+        rms = ppc.apply_interval_func(substream)
+        if np.any(np.isinf(rms)):
+            # replace inf values with nan
+            rms[np.isinf(rms)] = np.nan
+            # AND SQUAWK TOO, like this commented line:
+            #log.warning( 'INF2NAN had to set %s-axis inf value to nan for time %s' % (ax, unix2dtm(meantime)) )
+        txyz = txyz + tuple(rms)
+        
+        # 5. show per-axis [not implemented yet is our combine_axes method for plotting]
+        #    we probably will maintain GraphFrame's data attribute with either "3 columns" or "1 column"
+        #    note that this data attribute is a PlotDataSortedList object
+        print txyz
 
 def suite():
     return unittest.makeSuite(PadProcessChainTestCase, 'test')
