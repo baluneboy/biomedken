@@ -1,5 +1,10 @@
 #!/usr/bin/python
 
+import numpy as np
+from pims.pad.padstream import RssPlotDataSortedList, PlotDataSortedList
+
+MAXLEN = 500
+
 class IntervalStat(object):
     """istat = IntervalStat(analysis_interval)
 
@@ -30,13 +35,13 @@ class PadProcessChain(object):
                  detrend_type='demean',
                  filter_params={'type':'lowpass', 'freq':5, 'zerophase':True},
                  interval_params={'type':IntervalRMS, 'analysis_interval':10},
-                 axes=['x','y','z']):
+                 axes='xyz'): # either 'xyz' or 'rss'
         self.scale_factor = scale_factor
         self.units = self._get_units()
         self.detrend_type = detrend_type
         self.filter_params = filter_params
         self.interval_func = interval_params['type'](interval_params['analysis_interval'])
-        self.axes = self._check_axes(axes)
+        self.plot_data_container = self._get_plot_data_container(axes)
 
     def _get_units(self):
         if self.scale_factor == 1e3:
@@ -47,19 +52,21 @@ class PadProcessChain(object):
             raise ValueError('unexpected scale factor of %g (try 1e3 or 1e6)' % self.scale_factor)
 
     def __repr__(self):
-        return "%s:\n(1) scale_factor=%g (%s)\n(2) detrend_type='%s'\n(3) filter_params=%s\n(4) interval_func='%s'\n(5) axes=%s" % \
+        return "%s:\n(1) scale_factor=%g (%s)\n(2) detrend_type='%s'\n(3) filter_params=%s\n(4) interval_func='%s'\n(5) plot_data_container=%s" % \
             (self.__class__.__name__,
              self.scale_factor, self.units,
              self.detrend_type,
              str(self.filter_params),
              str(self.interval_func),
-             str(self.axes))
+             str(self.plot_data_container) )
     
-    def _check_axes(self, axes):
-        if axes != ['x', 'y', 'z']:
-            raise ValueError("unhandled case when axes is not ['x', 'y', 'z']")
+    def _get_plot_data_container(self, axes):
+        if axes == 'rss':
+            return RssPlotDataSortedList( maxlen=MAXLEN )
+        elif axes == 'xyz':
+            return PlotDataSortedList( maxlen=MAXLEN )
         else:
-            return axes
+            raise ValueError("unhandled case when axes is not 'xyz' or 'rss'")
         
     # 1. this is how we apply scale factor to trace as we append packet data (trace then appended to stream)
     def scale(self, trace):
@@ -81,11 +88,10 @@ class PadProcessChain(object):
         rms = []
         for ax in ['x', 'y', 'z']:
             rms.append( substream.select(channel=ax).std()[0] )
-        return rms
+        return np.array(rms)
     
     # 5. finally, we'd either show per-axis or somehow combine for plotting
-    def combine_axes(self, plot_data):
-        pass
+
 
 if __name__=="__main__":
     from pims.pad.padstream import PadStream
@@ -114,8 +120,11 @@ if __name__=="__main__":
         data=np.random.randint(0, 1000, 50668).astype('float64'),
        header=deepcopy(header))
     st = PadStream(traces=[trace1, trace2, trace3, trace4])    
+
+    ppc = PadProcessChain(axes='xyz')
+    print ppc    
     
-    ppc = PadProcessChain()
+    ppc = PadProcessChain(axes='rss')
     print ppc
     
     irms = IntervalRMS(10)

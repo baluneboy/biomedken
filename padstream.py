@@ -62,21 +62,15 @@ class PlotDataSortedList(sortedlist):
         while len(self) > self.maxlen:
             toss = self.pop(0)
 
-# container for sorted list of (t, rss) tuples
+# container for sorted list of (t, RSS ) tuples
 class RssPlotDataSortedList(PlotDataSortedList):
-    
-    def __add(self, *args, **kwargs):
-        # note leading double-underscore for private method
-        super(PlotDataSortedList, self).add(*args, **kwargs)    
+    """container for sorted list of (t, rss) tuples"""
     
     def append(self, txyz):
         t = txyz[0]
         xyz = np.asarray( txyz[1:] )
         rss = np.sqrt( np.sum((xyz)**2) )
-        self.__add( (t, rss) )
-        # FIXME this is incredibly crude way to do the needed pruning
-        while len(self) > self.maxlen:
-            toss = self.pop(0)
+        super(RssPlotDataSortedList, self).append( (t, rss) )
 
 def demo_ingest(offset):
     from pims.utils.iterabletools import quantify
