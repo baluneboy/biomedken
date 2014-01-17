@@ -13,10 +13,9 @@ from scipy import signal
 
 def filter_setup():
     t = np.linspace(0, 10.0, 5001)
-    xlow = np.sin(2 * np.pi * 3 * t)
-    # now, use a = sqrt(2) so rms = a / sqrt(2) = 1
-    # for the xhigh component
-    xhigh = np.sqrt(2) * np.sin(2 * np.pi * 25 * t)
+    # for xhigh, use a = sqrt(2) so rms = a / sqrt(2) = 1
+    xhigh = np.sqrt(2) * np.sin(2 * np.pi * 25 * t) # 25 Hz
+    xlow = np.sin(2 * np.pi * 2 * t)                # 2 Hz
     x = xlow + xhigh
     return t, x, xlow, xhigh
 
@@ -177,17 +176,17 @@ class PadProcessChainTestCase(unittest.TestCase):
         rms_dc = np.sqrt(np.mean(self.sines_substream[2].data**2))
         self.assertAlmostEqual(         55.5, rms_dc, 1 )
         
-    def test_combine_axes(self):
-        """Test combine_axes of substream."""
-        # this per-axis input is okay...
-        ppc = PadProcessChain(axes=['x', 'y','z']) # ...so no error, yay!
-        ppc.combine_axes() # ..BUT, it currently does nothing, boo
-        # since we only handle per-axis (no combine yet)...
-        kwargs = { 'axes': ['combined'] } # ...we do get error for this input
-        self.assertRaises(ValueError, PadProcessChain, **kwargs )
+    #def test_combine_axes(self):
+    #    """Test combine_axes of substream."""
+    #    # this per-axis input is okay...
+    #    ppc = PadProcessChain(axes=['x', 'y','z']) # ...so no error, yay!
+    #    ppc.combine_axes(None) # ..BUT, it currently does nothing, boo
+    #    # since we only handle per-axis (no combine yet)...
+    #    kwargs = { 'axes': ['combined'] } # ...we do get error for this input
+    #    self.assertRaises(ValueError, PadProcessChain, **kwargs )
 
-    def test_complete_chain(self):
-        """Test complete chain sequence."""
+    def test_entire_chain(self):
+        """Test entire chain sequence."""
         ppc = PadProcessChain()
         stream = PadStream()
         # 1. apply scale factor to trace as we append packet data (trace then appended to stream)
@@ -218,21 +217,29 @@ class PadProcessChainTestCase(unittest.TestCase):
         # 4. apply interval func (RMS) to analysis_interval's worth of data
         #    this happens on per analysis_interval basis in step_callback method of GraphFrame object
         #    and it always happens to each axis regardless of how we want to combine for plotting
-        txyz = tuple()
-        meantime = np.mean( [ substream[0].stats.starttime.timestamp, substream[-1].stats.endtime.timestamp] )
-        txyz = txyz + ( meantime, )
-        rms = ppc.apply_interval_func(substream)
-        if np.any(np.isinf(rms)):
-            # replace inf values with nan
-            rms[np.isinf(rms)] = np.nan
-            # AND SQUAWK TOO, like this commented line:
-            #log.warning( 'INF2NAN had to set %s-axis inf value to nan for time %s' % (ax, unix2dtm(meantime)) )
-        txyz = txyz + tuple(rms)
+        txyzs = []
+        for testing_offset, possibly_inf_val in zip([20.0, 0.0, 10.0], [0, np.inf, 0]):
+            txyz = tuple()
+            meantime = np.mean( [ substream[0].stats.starttime.timestamp, substream[-1].stats.endtime.timestamp] )
+            meantime = meantime + testing_offset # GET RID OF THIS IN ACTUAL CODE
+            txyz = txyz + ( meantime, )
+            rms = ppc.apply_interval_func(substream)
+            rms[0] = rms[0] + possibly_inf_val # GET RID OF THIS IN ACTUAL CODE
+            if np.any(np.isinf(rms)):
+                # replace inf values with nan
+                rms[np.where(np.isinf(rms))] = np.nan
+                # AND SQUAWK TOO, like this commented line:
+                #log.warning( 'INF2NAN had to set %s-axis inf value to nan for time %s' % (ax, unix2dtm(meantime)) )
+            txyz = txyz + tuple(rms)
+            txyzs.append(txyz)
+        # for testing, we gather up a bunch of tuples above in a list, then append here:
+        for txyz in txyzs:
+            ppc.plot_data_container.append(txyz)
         
         # 5. show per-axis [not implemented yet is our combine_axes method for plotting]
         #    we probably will maintain GraphFrame's data attribute with either "3 columns" or "1 column"
         #    note that this data attribute is a PlotDataSortedList object
-        print txyz
+        print ppc.plot_data_container
 
 def suite():
     return unittest.makeSuite(PadProcessChainTestCase, 'test')
