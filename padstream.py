@@ -49,6 +49,9 @@ class PlotDataSortedList(sortedlist):
         self.maxlen = int( kwargs.pop('maxlen', 123456) )
         super(PlotDataSortedList, self).__init__(*args, **kwargs)
 
+    def __repr__(self):
+        return "%s(maxlen=%d)" % (self.__class__.__name__, self.maxlen)
+
     def __add(self, *args, **kwargs):
         # note leading double-underscore for private method
         super(PlotDataSortedList, self).add(*args, **kwargs)

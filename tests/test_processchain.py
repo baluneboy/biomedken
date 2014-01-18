@@ -239,7 +239,7 @@ class PadProcessChainTestCase(unittest.TestCase):
         # 5. show per-axis [not implemented yet is our combine_axes method for plotting]
         #    we probably will maintain GraphFrame's data attribute with either "3 columns" or "1 column"
         #    note that this data attribute is a PlotDataSortedList object
-        print ppc.plot_data_container
+        #print ppc.plot_data_container
 
 def suite():
     return unittest.makeSuite(PadProcessChainTestCase, 'test')
