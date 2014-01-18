@@ -3,8 +3,6 @@
 import numpy as np
 from pims.pad.padstream import RssPlotDataSortedList, PlotDataSortedList
 
-MAXLEN = 500
-
 class IntervalStat(object):
     """istat = IntervalStat(analysis_interval)
 
@@ -35,13 +33,15 @@ class PadProcessChain(object):
                  detrend_type='demean',
                  filter_params={'type':'lowpass', 'freq':5, 'zerophase':True},
                  interval_params={'type':IntervalRMS, 'analysis_interval':10},
-                 axes='xyz'): # either 'xyz' or 'rss'
+                 axes='xyz',    # either 'xyz' or 'rss'
+                 maxlen=500 ):  # for plot_data_container
         self.scale_factor = scale_factor
+        self.analysis_interval = interval_params['analysis_interval']
         self.units = self._get_units()
         self.detrend_type = detrend_type
         self.filter_params = filter_params
-        self.interval_func = interval_params['type'](interval_params['analysis_interval'])
-        self.plot_data_container = self._get_plot_data_container(axes)
+        self.interval_func = interval_params['type'](self.analysis_interval)
+        self.plot_data_container = self._get_plot_data_container(axes, maxlen)
 
     def _get_units(self):
         if self.scale_factor == 1e3:
@@ -60,11 +60,11 @@ class PadProcessChain(object):
              str(self.interval_func),
              str(self.plot_data_container) )
     
-    def _get_plot_data_container(self, axes):
+    def _get_plot_data_container(self, axes, maxlen):
         if axes == 'rss':
-            return RssPlotDataSortedList( maxlen=MAXLEN )
+            return RssPlotDataSortedList( maxlen=maxlen )
         elif axes == 'xyz':
-            return PlotDataSortedList( maxlen=MAXLEN )
+            return PlotDataSortedList( maxlen=maxlen )
         else:
             raise ValueError("unhandled case when axes is not 'xyz' or 'rss'")
         

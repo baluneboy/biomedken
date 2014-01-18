@@ -381,7 +381,7 @@ default_params = {
     #'time.maxsec_trace'         : [MAXT, validate_int],
     
     # data/buffer props
-    'data.maxlen'               : [  60, validate_int], # max pts; limit otherwise ever-growing data deque
+    'data.maxlen'               : [ 600, validate_int], # max pts; limit otherwise ever-growing data deque
     'data.scale_factor'         : [ 1e6, validate_int],
         
     # legacy packetWriter.py parameters
@@ -393,7 +393,7 @@ default_params = {
     'pw.delete'                 : ['0',               str], # 0=delete processed data, 1=leave in database OR use databaseName to move to that db
     'pw.resume'                 : [0,        validate_int], # try to pick up where a previous run left off, or do whole database
     'pw.inspect'                : [2 ,       validate_int], # JUST INSPECT FOR UNEXPECTED CHANGES, DO NOT WRITE PAD FILES
-    'pw.showWarnings'           : [1,        validate_int], # show or supress warning message
+    'pw.showWarnings'           : [0,        validate_int], # show or supress warning message
     'pw.ascii'                  : [0,        validate_int], # write data in ASCII or binary
     'pw.startTime'              : [-1.0,   validate_float], # first data time to process (0 means anything back to 1970, negative for "good" start)
     'pw.endTime'                : [0.0,    validate_float], # last data time to process (0 means no limit)

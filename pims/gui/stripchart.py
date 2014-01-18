@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
+# TODO a class to maintain plot type (IntervalStat/RMS) with its parameters & ripple to plot text, etc.
 # TODO header/title text with analysis_interval (not hard-coded)
-# TODO a class to maintain plot type (IntervalStat) with its parameters & ripple to plot text, etc.
 # TODO improved draw_plot code (robustness testing) for cushion at bottom tick of bottom subplot not interfere with wide-n-slide GMT
 # TODO for vertical autoscale, do based on plot_span min-to-max time and not what's in plot.data (LOS issue, fewer pts?)
 # TODO put processing or data details not already in header/title text to upperleft and/or upperright like off-line plot routines
@@ -55,7 +55,6 @@ from pims.gui.plotutils import smart_ylims, round2multiple
 from pims.gui.pimsticker import CushionedLinearLocator
 from pims.gui import DUMMYDATA
 from pims.database.samsquery import SimpleQueryAOS, get_samsops_db_params
-from pims.pad.intervalstat import IntervalStat
 
 from obspy.core.utcdatetime import UTCDateTime
 from obspy.realtime import RtTrace
