@@ -599,7 +599,7 @@ class PadGenerator(PacketInspector):
         start = ceil4(max(self.lastTime(), PARAMETERS['startTime'])) # database has only 4 decimals of precision
 
         # write all packets before cutoffTime
-        tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'write all pkts before cutoffTime'))
+        tpResults = get_timepacket_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'write all pkts before cutoffTime'))
         packetCount = packetCount + len(tpResults)
         while len(tpResults) != 0:
             for result in tpResults:
@@ -618,7 +618,7 @@ class PadGenerator(PacketInspector):
                 tpResults = []
             else:
                 start = ceil4(max(self.lastTime(), PARAMETERS['startTime'])) # database has only 4 decimals of precision
-                tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'while more tpResults exist, new start&cutoffTime'))
+                tpResults = get_timepacket_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'while more tpResults exist, new start&cutoffTime'))
                 packetCount = packetCount + len(tpResults)
 
         log.debug('%04d one_shot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (get_line(), tableName, self.lastTime(), self.moreToDo))
@@ -631,7 +631,7 @@ class PadGenerator(PacketInspector):
             if PARAMETERS['endTime'] > 0.0:
                 maxTime = min(maxTime, PARAMETERS['endTime'])
             if PARAMETERS['endTime'] == 0.0 or maxTime < PARAMETERS['endTime']:
-                tpResults = get_tp_query_results(tableName, ceil4(self.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'write contiguous pkts after cutoffTime'))
+                tpResults = get_timepacket_query_results(tableName, ceil4(self.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'write contiguous pkts after cutoffTime'))
                 packetCount = packetCount + len(tpResults)
                 while stillContiguous and len(tpResults) != 0 and not idleWait(0):
                     for result in tpResults:
@@ -649,7 +649,7 @@ class PadGenerator(PacketInspector):
                         self.end()
                         tpResults = []
                     elif stillContiguous:
-                        tpResults = get_tp_query_results(tableName, ceil4(self.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'while still contiguous and more tpResults...'))
+                        tpResults = get_timepacket_query_results(tableName, ceil4(self.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'while still contiguous and more tpResults...'))
                         packetCount = packetCount + len(tpResults)
                     else:
                         tpResults = []
@@ -975,7 +975,7 @@ class OBSOLETEPadGenerator(PacketInspector):
         start = ceil4(max(self.lastTime(), PARAMETERS['startTime'])) # database has only 4 decimals of precision
 
         # write all packets before cutoffTime
-        tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'write all pkts before cutoffTime'))
+        tpResults = get_timepacket_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'write all pkts before cutoffTime'))
         packetCount = packetCount + len(tpResults)
         while len(tpResults) != 0:
             for result in tpResults:
@@ -994,7 +994,7 @@ class OBSOLETEPadGenerator(PacketInspector):
                 tpResults = []
             else:
                 start = ceil4(max(self.lastTime(), PARAMETERS['startTime'])) # database has only 4 decimals of precision
-                tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'while more tpResults exist, new start&cutoffTime'))
+                tpResults = get_timepacket_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'while more tpResults exist, new start&cutoffTime'))
                 packetCount = packetCount + len(tpResults)
 
         log.debug('%04d one_shot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (get_line(), tableName, self.lastTime(), self.moreToDo))
@@ -1007,7 +1007,7 @@ class OBSOLETEPadGenerator(PacketInspector):
             if PARAMETERS['endTime'] > 0.0:
                 maxTime = min(maxTime, PARAMETERS['endTime'])
             if PARAMETERS['endTime'] == 0.0 or maxTime < PARAMETERS['endTime']:
-                tpResults = get_tp_query_results(tableName, ceil4(self.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'write contiguous pkts after cutoffTime'))
+                tpResults = get_timepacket_query_results(tableName, ceil4(self.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'write contiguous pkts after cutoffTime'))
                 packetCount = packetCount + len(tpResults)
                 while stillContiguous and len(tpResults) != 0 and not idleWait(0):
                     for result in tpResults:
@@ -1025,7 +1025,7 @@ class OBSOLETEPadGenerator(PacketInspector):
                         self.end()
                         tpResults = []
                     elif stillContiguous:
-                        tpResults = get_tp_query_results(tableName, ceil4(self.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'while still contiguous and more tpResults...'))
+                        tpResults = get_timepacket_query_results(tableName, ceil4(self.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'while still contiguous and more tpResults...'))
                         packetCount = packetCount + len(tpResults)
                     else:
                         tpResults = []
@@ -1456,7 +1456,7 @@ def dispose_processed_data(tableName, lastTime):
         print 'The next packet in the database to be processed is at time %.6lf' % around[0] # assumes that around will be after lastTime
 
 # get time,packet results from db table with a limit on number of results
-def get_tp_query_results(table, ustart, ustop, lim, tuplabel):
+def get_timepacket_query_results(table, ustart, ustop, lim, tuplabel):
     """get time,packet results from db table with set limit"""
     querystr = 'select time,packet from %s where time > %.6f and time < %.6f order by time limit %d' % (table, ustart, ustop, lim)
     #print querystr
@@ -1525,7 +1525,7 @@ def one_shot(pfs):
         start = ceil4(max(pf.lastTime(), PARAMETERS['startTime'])) # database has only 4 decimals of precision
 
         # write all packets before cutoffTime
-        tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'write all pkts before cutoffTime'))
+        tpResults = get_timepacket_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'write all pkts before cutoffTime'))
         packetCount = packetCount + len(tpResults)
         while len(tpResults) != 0:
             for result in tpResults:
@@ -1544,7 +1544,7 @@ def one_shot(pfs):
                 tpResults = []
             else:
                 start = ceil4(max(pf.lastTime(), PARAMETERS['startTime'])) # database has only 4 decimals of precision
-                tpResults = get_tp_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'while more tpResults exist, query new start and new cutoffTime'))
+                tpResults = get_timepacket_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'while more tpResults exist, query new start and new cutoffTime'))
                 packetCount = packetCount + len(tpResults)
 
         log.debug('%04d one_shot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (get_line(), tableName, pf.lastTime(), moreToDo))
@@ -1557,7 +1557,7 @@ def one_shot(pfs):
             if PARAMETERS['endTime'] > 0.0:
                 maxTime = min(maxTime, PARAMETERS['endTime'])
             if PARAMETERS['endTime'] == 0.0 or maxTime < PARAMETERS['endTime']:
-                tpResults = get_tp_query_results(tableName, ceil4(pf.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'write contiguous pkts after cutoffTime'))
+                tpResults = get_timepacket_query_results(tableName, ceil4(pf.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'write contiguous pkts after cutoffTime'))
                 packetCount = packetCount + len(tpResults)
                 while stillContiguous and len(tpResults) != 0 and not idleWait(0):
                     for result in tpResults:
@@ -1575,7 +1575,7 @@ def one_shot(pfs):
                         pf.end()
                         tpResults = []
                     elif stillContiguous:
-                        tpResults = get_tp_query_results(tableName, ceil4(pf.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'while still contiguous and more tpResults...'))
+                        tpResults = get_timepacket_query_results(tableName, ceil4(pf.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'while still contiguous and more tpResults...'))
                         packetCount = packetCount + len(tpResults)
                     else:
                         tpResults = []
@@ -1863,16 +1863,6 @@ def launch_strip_chart(get_datagen, analysis_interval, plot_span, extra_interval
     app.frame.Show()
     app.MainLoop()
 
-def callback_show(curr_info, cum_info):
-    log.debug(curr_info)
-    log.debug(cum_info)
-
-def demo_pad_generator(num_iter=2):
-    pg = PadGenerator()
-    for x in range(num_iter):
-        pg.next(step_callback=callback_show)
-        log.debug( '%04d done with pg.next() #%d and TOTAL_PACKETS_FED = %d' % (get_line(), x+1, TOTAL_PACKETS_FED) )
-
 def test_time_pad_generator(num_iter=2):
     from timeit import timeit
     sec = timeit("pg.next(step_callback=callback_show)", setup="from __main__ import callback_show, PadGenerator; pg = PadGenerator()", number=num_iter)
@@ -1889,6 +1879,14 @@ def dict_as_str(d):
         s += fmt.format( k, str(d[k]) )
     s += '=' * 78 + '\n'
     return s
+
+def demo_sink_pad_generator(datagen, num_iter=2):
+    def callback_show(step_data):
+        current_info_tuple, current_info_tuple, absolute_times, substream, flash_msg = step_data
+        print substream
+    for x in range(num_iter):
+        datagen.next(step_callback=callback_show)
+        log.info( '%04d done with datagen.next() iter #%d of %d and TOTAL_PACKETS_FED = %d' % (get_line(), x+1, num_iter, TOTAL_PACKETS_FED) )
 
 def strip_chart():
 
@@ -1915,10 +1913,10 @@ def strip_chart():
                                        showWarnings=rt_params['pw.showWarnings'],
                                        maxsec_rttrace=PARAMETERS['maxsec_trace'])
 
-    print ppc
-    print type(datagen)
-    datagen.next()
-    raise SystemExit
+    #print ppc
+    #print type(datagen)
+    #demo_sink_pad_generator(datagen, num_iter=3)
+    #raise SystemExit
 
     # now start the gui
     app = wx.PySimpleApp()
