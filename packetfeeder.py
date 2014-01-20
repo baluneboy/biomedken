@@ -514,7 +514,7 @@ class PacketInspector(PacketFeeder):
 # class to feed packet data hopefully to a good strip chart display
 class PadGenerator(PacketInspector):
     """Generator for PimsRtTrace using real-time scaling."""
-    def __init__(self, process_chain, showWarnings=1, maxsec_rttrace=7200): # ppc
+    def __init__(self, process_chain, showWarnings=1, maxsec_rttrace=7200, analysis_overlap=0): # ppc
         """initialize packet-based, real-time trace PAD generator with scaling"""
         self.process_chain = process_chain
         super(PadGenerator, self).__init__(showWarnings)
@@ -522,6 +522,7 @@ class PadGenerator(PacketInspector):
         self.maxsec_rttrace     = maxsec_rttrace # in seconds for EACH (x,y,z) rt_trace
         #self.scale_factor       = scale_factor # ppc
         self.analysis_interval  = self.process_chain.analysis_interval # ppc
+        self.analysis_overlap   = analysis_overlap
         self.analysis_samples   = None
         self.starttime          = None
         if showWarnings:
@@ -678,10 +679,12 @@ class PadGenerator(PacketInspector):
         return header
 
     def slice_trim_traces(self):
+        """return analysis_interval worth of stream and slice at analysis_overlap"""
         t1 = self.stream[0].stats.starttime
         t2 = t1 + self.analysis_interval # ppc
         st = self.stream.slice(t1, t2)
-        self.stream.trim(starttime=t2)
+        t3 = t2 - self.analysis_overlap
+        self.stream.trim(starttime=t3)
         return st
     
     def append_process_packet_data(self, atxyzs, start, contig):
@@ -1758,7 +1761,11 @@ def parameters_ok():
         log.error(' for rt_params, time.plot_span must be greater than time.analysis_interval')
         return 0
 
-    # introduce calculated parameter out of the blue like this here!?
+    if rt_params['time.analysis_overlap'] > 0.95 * rt_params['time.analysis_interval']:
+        log.error(' for rt_params, time.analysis_overlap must be less than 95% of time.analysis_interval')
+        return 0
+
+    # FIXME okay to introduce calculated parameter out of the blue like this here!?
     PARAMETERS['maxsec_trace'] = int( rt_params['time.extra_intervals'] * rt_params['time.analysis_interval'] + rt_params['time.plot_span'] )
 
     return 1
@@ -1911,7 +1918,8 @@ def strip_chart():
     # interface to fetch packets with important time throttling
     datagen             = PadGenerator(ppc,
                                        showWarnings=rt_params['pw.showWarnings'],
-                                       maxsec_rttrace=PARAMETERS['maxsec_trace'])
+                                       maxsec_rttrace=PARAMETERS['maxsec_trace'],
+                                       analysis_overlap=rt_params['time.analysis_overlap'])
 
     #print ppc
     #print type(datagen)
