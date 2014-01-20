@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import numpy as np
-from pims.pad.padstream import RssPlotDataSortedList, PlotDataSortedList
+from pims.pad.padstream import RssPlotDataSortedList, XyzPlotDataSortedList
 
 class IntervalStat(object):
     """istat = IntervalStat(analysis_interval)
@@ -64,7 +64,7 @@ class PadProcessChain(object):
         if axes == 'rss':
             return RssPlotDataSortedList( maxlen=maxlen )
         elif axes == 'xyz':
-            return PlotDataSortedList( maxlen=maxlen )
+            return XyzPlotDataSortedList( maxlen=maxlen )
         else:
             raise ValueError("unhandled case when axes is not 'xyz' or 'rss'")
         
