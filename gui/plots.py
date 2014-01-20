@@ -6,6 +6,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.figure import Figure
 from pims.gui import DUMMYDATA
 from pims.database.samsquery import SimpleQueryAOS, get_samsops_db_params
+from pims.pad.padstream import XyzPlotDataSortedList, RssPlotDataSortedList
 
 #########################################
 # NOTE: we use matplotlibrc conventions
@@ -14,7 +15,7 @@ from pims.database.samsquery import SimpleQueryAOS, get_samsops_db_params
 #print matplotlib.matplotlib_fname()
 #raise SystemExit
 #########################################
-
+    
 class Plot3x1(object):
     """Container class for general purpose 3x1 plot, like for xyz vs. time."""
     # it does not appear to be straightforward to subclass Figure class!?
@@ -77,6 +78,17 @@ class Plot3x1(object):
     #        ax.text(0.5, 0.5, "ax%d1" % (i+1), va="center", ha="center")
     #        for tl in ax.get_xticklabels() + ax.get_yticklabels():
     #            tl.set_visible(False)
+
+class Plot1x1(Plot3x1): pass
+
+PLOTMAP = {
+                XyzPlotDataSortedList   : Plot3x1,
+                RssPlotDataSortedList   : Plot1x1,
+}
+
+for k, v in PLOTMAP.iteritems():
+    print k, v
+#raise SystemExit
 
 #_HOST, _SCHEMA, _UNAME, _PASSWD = get_samsops_db_params('samsquery')
 #query_aos = SimpleQueryAOS(_HOST, _SCHEMA, _UNAME, _PASSWD)

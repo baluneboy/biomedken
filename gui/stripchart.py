@@ -47,7 +47,7 @@ from matplotlib.ticker import FormatStrFormatter
 #from pims.realtime import rt_params as RTPARAMS
 from pims.gui.iogrids import StripChartInputPanel
 from pims.gui.tally_grid import StripChartInputGrid
-from pims.pad.padstream import PlotDataSortedList
+from pims.pad.padstream import XyzPlotDataSortedList
 from pims.files.log import SimpleLog
 from pims.utils.benchmark import Benchmark
 from pims.utils.pimsdateutil import unix2dtm
@@ -365,6 +365,7 @@ class GraphFrame(wx.Frame):
     def __init__(self, datagen, title, log, rt_params):
         
         self.datagen = datagen
+        self.apply_interval_func = datagen.process_chain.apply_interval_func
         self.title = '%s using %s' % (title, self.datagen.__class__.__name__)
         self.log = log
         self.rt_params = rt_params
@@ -392,7 +393,7 @@ class GraphFrame(wx.Frame):
 
         # we must limit size of otherwise ever-growing data object
         # use a list of tuples sorted by first element
-        self.data = PlotDataSortedList( maxlen=self.rt_params['data.maxlen'] )
+        self.data = XyzPlotDataSortedList( maxlen=self.rt_params['data.maxlen'] )
         
         # this is first call to "prime the pump" of data generator via next method
         self.paused = False
@@ -446,18 +447,21 @@ class GraphFrame(wx.Frame):
             txyz = tuple()
             meantime = np.mean( [ substream[0].stats.starttime.timestamp, substream[-1].stats.endtime.timestamp] )
             txyz = txyz + ( meantime, )
-            for ax in ['x', 'y', 'z']:
-                rms = substream.select(channel=ax).std()[0]
-                if np.isinf(rms):
-                    # FIXME does merge, detrend, filter, or std cause this inf value issue?
-                    #fname = '/tmp/substream_' + datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S') + ".SLIST"
-                    #substream.write(fname, format="SLIST")
-                    #self.log.debug('WROTE SUBSTREAM FILE %s' % fname)
-                    rms = np.nan
-                    log.warning( 'INF2NAN had to set %s-axis inf value to nan for time %s' % (ax, unix2dtm(meantime)) )
-                txyz = txyz + ( rms, )
+            # apply interval function on per-axis basis (like IntervalRMS)
+            rms = self.apply_interval_func(substream)
+            # kludge to get rid of pesky inf values
+            if np.any(np.isinf(rms)):
+                # FIXME does merge, detrend, filter, or std cause this inf value issue?
+                #fname = '/tmp/substream_' + datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S') + ".SLIST"
+                #substream.write(fname, format="SLIST")
+                #self.log.debug('WROTE SUBSTREAM FILE %s' % fname)            
+                # replace inf values with nan
+                rms[np.where(np.isinf(rms))] = np.nan
+                # FIXME can we trace back to before detrend & filtering to see what happened?
+                log.warning( 'INF2NAN had to set inf value to nan for time %s' % unix2dtm(meantime) )
+            txyz = txyz + tuple(rms)
             self.data.append(txyz)
-
+            
         L = list(txyz); L.insert(0, unix2dtm(txyz[0])); L.insert(0, len(self.data)); self.log.debug( "CSV {:d},{:},{:f},{:f},{:f},{:f}".format(*L) )
         
         if flash_msg:
