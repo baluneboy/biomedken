@@ -331,6 +331,7 @@ class ValidateTimeInterval(object):
 # FIXME get at least key values below from XLS spreadsheet immune to Excel auto-format weirdness
 
 # FIXME these were probably set for debug and testing, but you change to what you like:
+OLAP =   9 # seconds overlap of analysis_intervals
 ANIN =  10 # seconds for analysis_interval
 PLTS = 600 # seconds for plot_span
 EXTR =   2 # count for extra_intervals
@@ -350,7 +351,7 @@ default_params = {
     'lines.linewidth'       : [1.0, validate_float],     # line width in points
     'lines.linestyle'       : ['-', str],                # solid line
     'lines.color'           : ['b', validate_color],     # blue
-    'lines.marker'          : ['None', str],     # black
+    'lines.marker'          : ['None', str],             # black
     'lines.markeredgewidth' : [0.5, validate_float],
     'lines.markersize'      : [6, validate_float],       # markersize, in points
     'lines.antialiased'     : [True, validate_bool],     # antialised (no jaggies)
@@ -375,6 +376,7 @@ default_params = {
     'figure.subplot.hspace' : [0.2, ValidateInterval(0, 1, closedmin=True, closedmax=False)],
 
     # time props (units are seconds)
+    'time.analysis_overlap'     : [OLAP, validate_float],    
     'time.analysis_interval'    : [ANIN, ValidateTimeInterval(  1,   61, closedmin=True, closedmax=False)],
     'time.plot_span'            : [PLTS, ValidateTimeInterval(  4, 7201, closedmin=True, closedmax=False)],
     'time.extra_intervals'      : [EXTR, validate_int],
