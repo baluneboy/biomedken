@@ -40,21 +40,21 @@ class PadStream(Stream):
             return False
 
 # container for sorted list of (t, x, y, z) tuples
-class PlotDataSortedList(sortedlist):
+class XyzPlotDataSortedList(sortedlist):
     """container for sorted list of (t, x, y, z) tuples"""
     
     def __init__(self, *args, **kwargs):
         # clobber key intentionally so we sort by tuple's first element
         kwargs['key'] = lambda tup: tup[0]
         self.maxlen = int( kwargs.pop('maxlen', 123456) )
-        super(PlotDataSortedList, self).__init__(*args, **kwargs)
+        super(XyzPlotDataSortedList, self).__init__(*args, **kwargs)
 
     def __repr__(self):
         return "%s(maxlen=%d)" % (self.__class__.__name__, self.maxlen)
 
     def __add(self, *args, **kwargs):
         # note leading double-underscore for private method
-        super(PlotDataSortedList, self).add(*args, **kwargs)
+        super(XyzPlotDataSortedList, self).add(*args, **kwargs)
     
     def add(self, *args, **kwargs):
         raise AttributeError('"add" method does not work for %s, try "append" method' % self.__class__.__name__)
@@ -66,7 +66,7 @@ class PlotDataSortedList(sortedlist):
             toss = self.pop(0)
 
 # container for sorted list of (t, RSS ) tuples
-class RssPlotDataSortedList(PlotDataSortedList):
+class RssPlotDataSortedList(XyzPlotDataSortedList):
     """container for sorted list of (t, rss) tuples"""
     
     def append(self, txyz):
@@ -99,7 +99,7 @@ def demo_ingest(offset):
 
 def demo_bisect():
     DELTA = 1
-    b = PlotDataSortedList()
+    b = XyzPlotDataSortedList()
     txyzs = [
         (0, 0),
         (1, 1),

@@ -720,8 +720,8 @@ class PadGenerator(PacketInspector):
             substream = self.slice_trim_traces()
             substream.merge()
             substream.sort() # need this because merge can shuffle xyz order of traces in substream!?
-            substream.detrend(type='demean')
-            substream.filter('lowpass', freq=5.0, zerophase=True)
+            self.process_chain.detrend(substream) # ppc #substream.detrend(type='demean')
+            self.process_chain.filter(substream) # ppc #substream.filter('lowpass', freq=5.0, zerophase=True)
 
             log.debug( '%04d SLICELEFT    %s is substream[-1] from %d traces' % (get_line(), substream[-1], len(substream)) )
             log.debug( '%04d SLICERIGHT   %s is stream[0]' % (get_line(), self.stream[0]) )
