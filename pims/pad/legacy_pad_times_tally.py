@@ -14,7 +14,7 @@ from padpro import *
 
 # set default command line parameters, times are always measured in seconds
 defaults = {'padPath':'/misc/yoda/pub/pad',# the original PAD directory path
-            'outputPath':'/misc/yoda/www/plots/batch/padtimes/padtimes.csv',# the destination path
+            'outputFile':'/misc/yoda/www/plots/batch/padtimes/padtimes.csv',# the destination path
             'sensorList':'all',# sensor directories to check
             'startDate': None, # Start date to process (None to resume based on csv last date);  or set manually to like '2001-05-03' 
             'stopDate': None,  # Will stop when no year directory is found (None for "two days ago"); or set manually to like '2029-01-01'
@@ -64,12 +64,12 @@ def parametersOK():
         print msg
         return 0
 
-    if not os.path.exists(parameters['outputPath']):
-        print 'output file "%s" did not exist' % parameters['outputPath']
+    if not os.path.exists(parameters['outputFile']):
+        print 'output file "%s" did not exist' % parameters['outputFile']
         myStartDate = datetime.datetime.strptime('2001-05-03','%Y-%m-%d').date()
     else:
         if parameters['startDate'] is None:
-            csvFileStopDate = getCsvFileStopDate(parameters['outputPath'])
+            csvFileStopDate = getCsvFileStopDate(parameters['outputFile'])
             myStartDate = csvFileStopDate + datetime.timedelta(1)
         else:
             myStartDate = datetime.datetime.strptime(parameters['startDate'],'%Y-%m-%d').date()
@@ -151,7 +151,7 @@ def mainLoop():
 
     #Input and output paths
     padPath = parameters['padPath']
-    outPath = parameters['outputPath']
+    outPath = parameters['outputFile']
 
     #Parse start and stop times
     astart = split(parameters['startDate'],'-');
