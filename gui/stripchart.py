@@ -458,7 +458,7 @@ class GraphFrame(wx.Frame):
                 # replace inf values with nan
                 rms[np.where(np.isinf(rms))] = np.nan
                 # FIXME can we trace back to before detrend & filtering to see what happened?
-                log.warning( 'INF2NAN had to set inf value to nan for time %s' % unix2dtm(meantime) )
+                self.log.warning( 'INF2NAN had to set inf value to nan for time %s' % unix2dtm(meantime) )
             txyz = txyz + tuple(rms)
             self.data.append(txyz)
             
