@@ -5,10 +5,11 @@
 
 import re
 import csv
-from pandas import read_csv, pivot_table, concat
+from pandas import read_csv, pivot_table, concat, DataFrame
 import numpy as np
 from legacy_pad_times_tally import *
-    
+import matplotlib.pyplot as plt
+
 # read CSV into dataframe (for pivot tables)
 def csv2dataframe(csvfile):
     """read CSV into dataframe (for pivot tables)"""
@@ -26,6 +27,15 @@ def csv2dataframe(csvfile):
     cols = [i for i in ndf.columns if i not in ['Year', 'Month', 'Day']]
     t = pivot_table(ndf, rows=['Year','Month'], values=cols, aggfunc=np.sum)
     mams_series = t.transpose().sum()
+
+    print 'Monthly Totals of Sensor Hours'
+    tdf = DataFrame({'SAMS': sams_series, 'MAMS':mams_series})
+    
+    tdf.plot()
+    plt.show()
+    csvout = '/tmp/out.csv'
+    tdf.to_csv(csvout)
+    print 'wrote %s' % csvout
 
     pass    
     
