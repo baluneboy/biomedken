@@ -7,6 +7,8 @@ import socket
 from MySQLdb import *
 from _mysql_exceptions import *
 from pims.config.conf import get_db_params
+from pims.utils.iterabletools import pairwise
+import pandas as pd
 
 # FIXME add logging feature
 
@@ -43,6 +45,98 @@ def quick_test(host, schema):
 def ceil4(input): # the database has time to only 4 decimal places of precision
     """round a float up at the 4th decimal place"""
     return math.ceil(input*10000.0)/10000.0
+
+# fetch all entries from pad.coord_system_db table [on kyle] into dataframe
+class CoordQueryAsDataFrame(object):
+    """fetch all entries from pad.coord_system_db table [on kyle] into dataframe"""
+    def __init__(self, host='kyle', uname=_UNAME, passwd=_PASSWD):
+        self.host = host
+        self.schema = 'pad'
+        self.uname = uname
+        self.passwd = passwd        
+        self.query = 'SELECT * FROM %s.coord_system_db;' % self.schema
+        self.dataframe = self.coord_db_to_dataframe()
+
+    def __str__(self):
+        #self.run_query()
+        #return '%s,%s' % (self.gse_tiss_dtm, self.aos_los)
+        return 'self.dataframe'
+
+    # fetch all entries from pad.coord_system_db table [on kyle] into dataframe
+    def coord_db_to_dataframe(self):
+        """fetch all entries from pad.coord_system_db table [on kyle] into dataframe"""
+        con = Connection(host=self.host, user=self.uname, passwd=self.passwd, db=self.schema)
+        cursor = con.cursor()
+        cursor.execute(self.query)
+        results = cursor.fetchall()
+        cursor.close()
+        con.close()
+        df = pd.DataFrame( list(results) )
+        df.columns = [rec[0] for rec in cursor.description]
+        df.rename(columns={'coord_name':    'sensor',
+                           'r_orient':      'roll',
+                           'p_orient':      'pitch',
+                           'y_orient':      'yaw',
+                           'x_location':    'x',
+                           'y_location':    'y',
+                           'z_location':    'z'}, inplace=True)
+        # convert unixtime to datetime and get rid of old column
+        gmt = pd.to_datetime(df['time'], unit='s')
+        df['gmt'] = gmt
+        
+        ## make gmt the index
+        #df.set_index(gmt, inplace=True)
+        ## cleanup to get rid of original unixtime column
+        #df = df.drop(['gmt'], axis=1)
+        
+        # return sorted by sensor, then by gmt
+        return df.sort(['sensor', 'time'], ascending=[1, 1])
+
+    def filter_dataframe_sensors(self, regex_pattern):
+        """keep only certain sensors matching regex_pattern"""
+        self.dataframe = self.dataframe[ self.dataframe.sensor.str.contains(regex_pattern) ]
+    
+    def filter_pre2001(self):
+        """get rid of bogus entries (CIR, FIR) on kyle"""
+        self.dataframe = self.dataframe[ self.dataframe.gmt > datetime.datetime(2001, 1, 1) ]
+    
+    def consolidate_rpy_xyz(self):
+        """for convenience, merge all of the location/orientation info into single column"""
+        #self.dataframe['location'] = self.dataframe.location_name + "; " + \
+        #                            "rpy: [" + self.dataframe.roll.map(str) + ", " + \
+        #                                  self.dataframe.pitch.map(str) + ", " + \
+        #                                  self.dataframe.yaw.map(str) + "], " + \
+        #                            "xyz: [" + self.dataframe.x.map(str) + ", " + \
+        #                                  self.dataframe.y.map(str) + ", " + \
+        #                                  self.dataframe.y.map(str) + "]"
+        self.dataframe['location'] = self.dataframe.location_name
+        self.dataframe = self.dataframe.drop(['location_name', 'roll', 'pitch', 'yaw', 'x', 'y', 'z', 'time'], axis=1)
+    
+    def format_date(self, d):
+        return d.strftime('new Date(%Y, %m, %d, %H, %M, %S)')
+        
+    def print_row(self, sensor, location, start, stop):
+        """          [ 'SE-F02',  'USL, Location One',        new Date(2001, 5, 3,12,15,55),  new Date(2003,12,31,14,22,44) ],"""
+        return "          [ '%s',\t'%s', %s, %s ]," % (sensor, location, self.format_date(start), self.format_date(stop))
+    
+    def per_sensor_pairwise_start_stop(self, sensor):
+        sensor_entries = []
+        df = self.dataframe[ self.dataframe.sensor.str.contains(sensor) ]
+        if len(df) > 1:
+            for a,b in pairwise( df.iterrows() ):
+                sensor_entries.append( self.print_row(sensor, a[1].location, a[1].gmt, b[1].gmt) )
+            sensor_entries.append( self.print_row(sensor, b[1].location, b[1].gmt, pd.Timestamp.now()) ) #.strftime('%Y-%m-%d %H:%M:%S')) )
+        else:
+            for a in df.iterrows():
+                sensor_entries.append( self.print_row(sensor, a[1].location, a[1].gmt, pd.Timestamp.now()) ) #.strftime('%Y-%m-%d %H:%M:%S')) )
+        return '\n'.join(sensor_entries)
+        
+    def get_rows(self):
+        sensor_rows = []
+        for sensor in self.dataframe['sensor'].unique():
+            sensor_rows.append( self.per_sensor_pairwise_start_stop(sensor) )
+        return '\n'.join(sensor_rows)
+
 
 #####################################################################################
 # SQL helper routines ---------------------------------------------------------------
