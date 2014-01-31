@@ -62,7 +62,12 @@ def filter_filenames(dirpath, predicate):
             abspath = os.path.join(root, filename)
             if predicate(abspath):
                 yield abspath
-                
+
+# transfer file uploaded (by JAXA) FROM fromdir TO todir
+def ike_jaxa_file_transfer(fromdir, todir):
+    """transfer file uploaded (by JAXA) FROM fromdir TO todir"""
+    pass
+
 def demo():
     dirpath = '/misc/yoda/pub/pad/year2013/month01/day03'
     fullfile_pattern = '(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_(?P<sensor>.*))/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.(?P=sensor)\.header\Z'
