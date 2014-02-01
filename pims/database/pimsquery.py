@@ -292,6 +292,59 @@ class PadExpect(object):
         expected_values = c.fetchone()
         return expected_values
 
+class JaxaPostFileQuery(object):
+    """Query yoda for jaxa post file."""
+    def __init__ (self, host='yoda', user=_UNAME, passwd=_PASSWD, db='jaxapost', table='plotfile'):
+        self.host = host
+        self.user = user
+        self.passwd = passwd
+        self.db = db
+        self.table = table
+
+    # INSERT INTO jaxapost.plotfile ( time, file, status ) VALUES ( '2014-02-01 10:03:00', 'hirap_intavg.csv', 'found' );
+    def insert(self, fname):
+        """insert entry for file found, presumably by ike on /misc/jaxa"""
+        if self.file_exists(fname):
+            print 'NO INSERT BECAUSE %s EXISTS IN "found" STATE ALREADY.' % fname
+        t = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        querystr = "INSERT INTO plotfile ( time, file, status ) VALUES ( '%s', '%s', 'found' );" % (t, fname)
+        try:
+            db_conn = connect(host=self.host, user=self.user, passwd=self.passwd, db=self.db)
+            c = db_conn.cursor() 
+            c.execute(querystr)
+            db_conn.close()
+        except Exception, e:
+            print e.message
+
+    def file_exists(self, fname):
+        """Establish db connection and query if file exists."""
+        querystr = 'SELECT * FROM %s.%s where file = "%s";' % (self.db, self.table, fname)
+        files = self._run_query( querystr )
+        # FIXME robustness: file is PK in db, so we should only get zero or one for len!?
+        if len(files) > 0:
+            return True
+        else:
+            return False
+
+    def file_status(self, fname):
+        """Establish db connection and query file state."""
+        if self.file_exists(fname):
+            querystr = 'SELECT * FROM %s.%s where file = "%s";' % (self.db, self.table, fname)
+            s = self._run_query( querystr )
+            dtm, fname, status = s[0]
+        else:
+            dtm, status = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'non-existent'
+        return dtm, status
+
+    def _run_query(self, querystr):
+        """run query"""
+        db_conn = connect(host=self.host, user=self.user, passwd=self.passwd, db=self.db)
+        c = db_conn.cursor() 
+        c.execute(querystr)
+        db_conn.close()
+        s = c.fetchall()
+        return s
+
 def demo():
     err_msg = db_insert_handbook('hb_qs_crew_A_Nice_Enough_Title.pdf', 'A Nice Enough Title', 'quasi-steady', 'crew')
     
@@ -302,6 +355,15 @@ def demo():
     
     #hbcf = HandbookQueryFilename('hb_vib_equipment_testing3.pdf')
     #print hbcf.file_exists
-    
+
+def demo_jaxapost():
+    jpf = JaxaPostFileQuery(host='localhost')
+    jpf.insert('holy_cow.csv')
+    fnames = ['121f05_intrms.csv', 'holy_cow.csv']
+    for fname in fnames:
+        dtm, status = jpf.file_status(fname)
+        print "at GMT", dtm, fname, "was", status
+
 if __name__ == "__main__":
-    demo()
+    #demo()
+    demo_jaxapost()
