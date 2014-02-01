@@ -292,7 +292,8 @@ class PadExpect(object):
         expected_values = c.fetchone()
         return expected_values
 
-class JaxaPostFileQuery(object):
+# Query yoda for jaxa post file.
+class JaxaPostPlotFile(object):
     """Query yoda for jaxa post file."""
     def __init__ (self, host='yoda', user=_UNAME, passwd=_PASSWD, db='jaxapost', table='plotfile'):
         self.host = host
@@ -301,20 +302,43 @@ class JaxaPostFileQuery(object):
         self.db = db
         self.table = table
 
-    # INSERT INTO jaxapost.plotfile ( time, file, status ) VALUES ( '2014-02-01 10:03:00', 'hirap_intavg.csv', 'found' );
     def insert(self, fname):
         """insert entry for file found, presumably by ike on /misc/jaxa"""
         if self.file_exists(fname):
             print 'NO INSERT BECAUSE %s EXISTS IN "found" STATE ALREADY.' % fname
+            return
+        
         t = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        querystr = "INSERT INTO plotfile ( time, file, status ) VALUES ( '%s', '%s', 'found' );" % (t, fname)
+        querystr = "INSERT INTO %s.%s ( time, file, status ) VALUES ( '%s', '%s', 'found' );" % (
+            self.db, self.table, t, fname)
         try:
             db_conn = connect(host=self.host, user=self.user, passwd=self.passwd, db=self.db)
             c = db_conn.cursor() 
             c.execute(querystr)
-            db_conn.close()
+            db_conn.commit()
         except Exception, e:
+            db_conn.rollback()
             print e.message
+        db_conn.close()
+
+    def update(self, fname, status):
+        """update entry for file found, presumably by manbearpig WHAT JAXA-ISH PATH ON YODA?"""
+        if not self.file_exists(fname):
+            print 'NO UPDATE BECAUSE %s DOES NOT EXIST.' % fname
+            return
+        #UPDATE jaxapost.plotfile SET status="pending", time="2014-02-01 09:30:00" WHERE file = "121f05_intrms.csv";
+        t = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        querystr = "UPDATE %s.%s SET status='%s', time='%s' WHERE file='%s';" % (
+            self.db, self.table, status, t, fname)
+        try:
+            db_conn = connect(host=self.host, user=self.user, passwd=self.passwd, db=self.db)
+            c = db_conn.cursor() 
+            c.execute(querystr)
+            db_conn.commit()
+        except Exception, e:
+            db_conn.rollback()
+            print e.message
+        db_conn.close()
 
     def file_exists(self, fname):
         """Establish db connection and query if file exists."""
@@ -327,7 +351,7 @@ class JaxaPostFileQuery(object):
             return False
 
     def file_status(self, fname):
-        """Establish db connection and query file state."""
+        """Establish db connection and query file state (found, pending, deployed, problem)"""
         if self.file_exists(fname):
             querystr = 'SELECT * FROM %s.%s where file = "%s";' % (self.db, self.table, fname)
             s = self._run_query( querystr )
@@ -357,12 +381,23 @@ def demo():
     #print hbcf.file_exists
 
 def demo_jaxapost():
-    jpf = JaxaPostFileQuery(host='localhost')
-    jpf.insert('holy_cow.csv')
-    fnames = ['121f05_intrms.csv', 'holy_cow.csv']
+    
+    # create object to keep track of jaxa posting plotfile
+    jppf = JaxaPostPlotFile(host='localhost')
+    
+    # IKE: this is how we insert (as "found" file)
+    jppf.insert('holy_cow.csv')
+    
+    # check if these files exist
+    fnames = ['121f05_intrms.csv', 'holy_cow.csv', 'holy_cow2.csv']
     for fname in fnames:
-        dtm, status = jpf.file_status(fname)
+        dtm, status = jppf.file_status(fname)
         print "at GMT", dtm, fname, "was", status
+        
+    # MANBEARPIG: this is how we update from "found" to "pending" (or "deployed" or "problem")
+    jppf.update('holy_cow.csv', 'problem')
+    dtm, status = jppf.file_status('holy_cow.csv')
+    print "at GMT", dtm, 'holy_cow.csv', "was", status
 
 if __name__ == "__main__":
     #demo()
