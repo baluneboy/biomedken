@@ -7,10 +7,13 @@ class ProcessTransientFile(pyinotify.ProcessEvent):
     """process transient file"""
     
     def process_IN_CREATE(self, event):
-        print event.pathname, ' -> created'
+        print event.pathname, ' -> creating'
 
     def process_IN_DELETE(self, event):
-        print event.pathname, ' -> deleted'
+        print event.pathname, ' -> deleting'
+
+    def process_IN_MODIFY(self, event):
+        print event.pathname, ' -> modifying'
 
 # JaxaFileHandler with quick_check method to see if we created or deleted file of interest
 class JaxaFileHandler(object):
@@ -21,7 +24,7 @@ class JaxaFileHandler(object):
         self.watch_file = watch_file
         self.handler = handler
         self.wm = pyinotify.WatchManager()
-        self.mask =  pyinotify.IN_DELETE|pyinotify.IN_CREATE # watched events
+        self.mask =  pyinotify.IN_DELETE|pyinotify.IN_CREATE|pyinotify.IN_MODIFY # watched events
         self.timeout = timeout
         self.notifier =  pyinotify.Notifier(self.wm, timeout=self.timeout)
         self.wm.watch_transient_file(self.watch_file, self.mask, self.handler)
@@ -42,3 +45,6 @@ def demo():
 
 if __name__ == "__main__":
     demo()
+
+# apt-get install inotify-tools
+# DIR=/tmp/p; while RES=$(inotifywait -e create $DIR --format %f .); do echo RES is $RES at `date`; done
