@@ -606,12 +606,14 @@ class GraphFrame(wx.Frame):
         # FIXME this "plot type" title info should come with input arg yet-to-be generalized object
         self.axes['x'].set_title('10-Second Interval RMS\n' + title, size=16)
 
-    ### A generator for *fake* AOS/LOS updates 
-    ##def fake_aos_tiss_time_callback(self):
-    ##    aos_tiss = True, datetime.datetime.now()
-    ##    while 1:
-    ##        aos_tiss = not aos_tiss[0], datetime.datetime.now()
-    ##        yield aos_tiss
+    # A generator for *fake* AOS/LOS updates 
+    def fake_aos_tiss_time_callback(self):
+        #aos_tiss = True, datetime.datetime.now()
+        aos_tiss = Faose, datetime.datetime.now()
+        while 1:
+            #aos_tiss = not aos_tiss[0], datetime.datetime.now()
+            aos_tiss = aos_tiss[0], datetime.datetime.now()
+            yield aos_tiss
 
     def init_plot(self):
         """initialize the plot"""
@@ -792,7 +794,8 @@ class GraphFrame(wx.Frame):
         plt.setp(self.axes['y'].get_xticklabels(), visible=self.cb_xlab.IsChecked())
 
         # update AOS/LOS and current GMT
-        self.aos, self.gmt = self.aos_tiss_time_callback()
+        #self.aos, self.gmt = self.aos_tiss_time_callback()
+        self.aos, self.gmt = self.fake_aos_tiss_time_callback()
         if self.aos == 'AOS':
             self.text_aos_gmt.set_backgroundcolor('LightGreen')
         elif self.aos == 'LOS':
