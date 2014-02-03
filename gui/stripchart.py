@@ -383,7 +383,9 @@ class GraphFrame(wx.Frame):
         #self.create_menu() # on close, this causes LIBDBUSMENU-GLIB-WARNING Trying to remove a child that doesn't believe we're it's parent.
         
         _HOST, _SCHEMA, _UNAME, _PASSWD = get_samsops_db_params('samsquery')
-        self.aos_tiss_time_callback = SimpleQueryAOS(_HOST, _SCHEMA, _UNAME, _PASSWD).get_aos_tisstime
+        #self.aos_tiss_time_callback = SimpleQueryAOS(_HOST, _SCHEMA, _UNAME, _PASSWD).get_aos_tisstime
+        self.aos_tiss_time_callback = self.fake_aos_tiss_time_callback
+        foo, bar = self.aos_tiss_time_callback(); print foo, bar
         
         self.create_status_bar()
         self.create_panels()
@@ -609,11 +611,10 @@ class GraphFrame(wx.Frame):
     # A generator for *fake* AOS/LOS updates 
     def fake_aos_tiss_time_callback(self):
         #aos_tiss = True, datetime.datetime.now()
-        aos_tiss = Faose, datetime.datetime.now()
-        while 1:
-            #aos_tiss = not aos_tiss[0], datetime.datetime.now()
-            aos_tiss = aos_tiss[0], datetime.datetime.now()
-            yield aos_tiss
+        #while 1:
+        #    aos_tiss = aos_tiss[0], datetime.datetime.now()
+        #    yield aos_tiss
+        return False, datetime.datetime.now()
 
     def init_plot(self):
         """initialize the plot"""
