@@ -795,8 +795,8 @@ class GraphFrame(wx.Frame):
         plt.setp(self.axes['y'].get_xticklabels(), visible=self.cb_xlab.IsChecked())
 
         # update AOS/LOS and current GMT
-        #self.aos, self.gmt = self.aos_tiss_time_callback()
-        self.aos, self.gmt = self.false_aos_tiss_time_callback()
+        self.aos, self.gmt = self.aos_tiss_time_callback()
+        #self.aos, self.gmt = self.false_aos_tiss_time_callback()
         if self.aos == 'AOS':
             self.text_aos_gmt.set_backgroundcolor('LightGreen')
         elif self.aos == 'LOS':
