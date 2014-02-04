@@ -383,9 +383,9 @@ class GraphFrame(wx.Frame):
         #self.create_menu() # on close, this causes LIBDBUSMENU-GLIB-WARNING Trying to remove a child that doesn't believe we're it's parent.
         
         _HOST, _SCHEMA, _UNAME, _PASSWD = get_samsops_db_params('samsquery')
-        #self.aos_tiss_time_callback = SimpleQueryAOS(_HOST, _SCHEMA, _UNAME, _PASSWD).get_aos_tisstime
-        self.aos_tiss_time_callback = self.fake_aos_tiss_time_callback
-        foo, bar = self.aos_tiss_time_callback(); print foo, bar
+        self.aos_tiss_time_callback = SimpleQueryAOS(_HOST, _SCHEMA, _UNAME, _PASSWD).get_aos_tisstime
+        #self.aos_tiss_time_callback = self.false_aos_tiss_time_callback
+        #foo, bar = self.aos_tiss_time_callback(); print foo, bar; raise SystemExit
         
         self.create_status_bar()
         self.create_panels()
@@ -609,7 +609,7 @@ class GraphFrame(wx.Frame):
         self.axes['x'].set_title('10-Second Interval RMS\n' + title, size=16)
 
     # A generator for *fake* AOS/LOS updates 
-    def fake_aos_tiss_time_callback(self):
+    def false_aos_tiss_time_callback(self):
         #aos_tiss = True, datetime.datetime.now()
         #while 1:
         #    aos_tiss = aos_tiss[0], datetime.datetime.now()
@@ -796,7 +796,7 @@ class GraphFrame(wx.Frame):
 
         # update AOS/LOS and current GMT
         #self.aos, self.gmt = self.aos_tiss_time_callback()
-        self.aos, self.gmt = self.fake_aos_tiss_time_callback()
+        self.aos, self.gmt = self.false_aos_tiss_time_callback()
         if self.aos == 'AOS':
             self.text_aos_gmt.set_backgroundcolor('LightGreen')
         elif self.aos == 'LOS':
