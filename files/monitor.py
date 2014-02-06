@@ -1,33 +1,54 @@
 #!/usr/bin/python
 
+import os
 import pyinotify
+from pims.patterns.dailyproducts import _PLOTSPATH
+from pims.database.pimsquery import JaxaPostPlotFile
 
 # process transient file
 class ProcessTransientFile(pyinotify.ProcessEvent):
     """process transient file"""
     
     def process_IN_CREATE(self, event):
-        print event.pathname, ' -> creating'
+        #print event.pathname, ' -> in_create'
+        pass
 
     def process_IN_DELETE(self, event):
-        print event.pathname, ' -> deleting'
+        #print event.pathname, ' -> in_delete'
+        pass
 
-    def process_IN_MODIFY(self, event):
-        print event.pathname, ' -> modifying'
+    def process_IN_CLOSE_WRITE(self, event):
+        print event.pathname, ' -> in_close_write'
+        # query for event.pathname
+        # if no records, then insert as 'found'
+        # if 'found', then change to 'pending' and queue up changes
+        # if 'pending', then log message to ignore because previous_timestamp still pending
+        # if 'problem', then change to 'found'
 
 # JaxaFileHandler with quick_check method to see if we created or deleted file of interest
 class JaxaFileHandler(object):
     """JaxaFileHandler with quick_check method to see if we created or deleted file of interest"""
 
-    def __init__(self, watch_file='/tmp/trash.txt', handler=ProcessTransientFile, timeout=3):
+    csvpath = os.path.join(_PLOTSPATH, 'sams', 'params')
+    
+    def __init__(self, sensor='121f05', plot_type='intrms', handler=ProcessTransientFile, timeout=3):
         # The watch manager stores the watches and provides operations on watches
-        self.watch_file = watch_file
+        self.sensor = sensor
+        self.plot_type = plot_type
+        self.basename = self.sensor + '_' + self.plot_type + '.csv'
+        self.watch_file = os.path.join(self.csvpath, self.basename)
         self.handler = handler
         self.wm = pyinotify.WatchManager()
-        self.mask =  pyinotify.IN_DELETE|pyinotify.IN_CREATE|pyinotify.IN_MODIFY # watched events
+        #self.mask =  pyinotify.IN_DELETE|pyinotify.IN_CREATE|pyinotify.IN_CLOSE_WRITE # watched events
+        self.mask =  pyinotify.IN_CLOSE_WRITE # watched events
         self.timeout = timeout
         self.notifier =  pyinotify.Notifier(self.wm, timeout=self.timeout)
         self.wm.watch_transient_file(self.watch_file, self.mask, self.handler)
+        # create object to keep track of jaxa posting plotfile
+        self.jaxa_post = JaxaPostPlotFile() # host='localhost')
+        dtm, status = self.jaxa_post.file_status(self.basename)
+        if status != 'found':
+            raise Exception( 'We need db basename entry for "%s" file to start with!' % self.watch_file )
 
     def quick_check(self):
         assert self.notifier._timeout is not None, 'Notifier must be constructed with a short timeout'

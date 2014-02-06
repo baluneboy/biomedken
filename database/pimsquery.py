@@ -383,10 +383,10 @@ def demo():
 def demo_jaxapost():
     
     # create object to keep track of jaxa posting plotfile
-    jppf = JaxaPostPlotFile(host='localhost')
+    jppf = JaxaPostPlotFile() # host='localhost')
     
     # IKE: this is how we insert (as "found" file)
-    jppf.insert('holy_cow.csv')
+    jppf.insert('121f05_intrms.csv')
     
     # check if these files exist
     fnames = ['121f05_intrms.csv', 'holy_cow.csv', 'holy_cow2.csv']
@@ -394,10 +394,10 @@ def demo_jaxapost():
         dtm, status = jppf.file_status(fname)
         print "at GMT", dtm, fname, "was", status
         
-    # MANBEARPIG: this is how we update from "found" to "pending" (or "deployed" or "problem")
-    jppf.update('holy_cow.csv', 'problem')
-    dtm, status = jppf.file_status('holy_cow.csv')
-    print "at GMT", dtm, 'holy_cow.csv', "was", status
+    ## MANBEARPIG: this is how we update from "found" to "pending" (or "deployed" or "problem")
+    #jppf.update('holy_cow.csv', 'problem')
+    #dtm, status = jppf.file_status('holy_cow.csv')
+    #print "at GMT", dtm, 'holy_cow.csv', "was", status
 
 if __name__ == "__main__":
     #demo()
