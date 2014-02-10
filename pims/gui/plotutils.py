@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+import pandas as pd
 
 def smart_ylims(minval, maxval):
     span = maxval - minval
@@ -17,3 +18,8 @@ def round2multiple(target, n):
         return np.floor(n/float(target)) * target;
     else:
         return n
+
+# read csvfile like for JAXA plot parameters
+def read_plot_params(csvfile):
+    """read csvfile like for JAXA plot parameters"""
+    df = pd.read_csv(csvfile)
