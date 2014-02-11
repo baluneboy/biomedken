@@ -304,13 +304,14 @@ class JaxaPostPlotFile(object):
 
     def insert(self, fname):
         """insert entry for file found, presumably by ike on /misc/jaxa"""
-        if self.file_exists(fname):
-            print 'NO INSERT BECAUSE %s EXISTS IN "found" STATE ALREADY.' % fname
+        dtm, status = self.file_status(fname)
+        if status in ['found', 'pending']:
+            print 'NO INSERT BECAUSE %s EXISTS IN "%s" STATE ALREADY.' % (fname, status)
             return
         
         t = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        querystr = "INSERT INTO %s.%s ( time, file, status ) VALUES ( '%s', '%s', 'found' );" % (
-            self.db, self.table, t, fname)
+        querystr = "REPLACE INTO %s.%s ( time, file, status, host ) VALUES ( '%s', '%s', 'found', '%s' );" % (
+            self.db, self.table, t, fname, _HOSTNAME)
         try:
             db_conn = connect(host=self.host, user=self.user, passwd=self.passwd, db=self.db)
             c = db_conn.cursor() 
@@ -355,7 +356,7 @@ class JaxaPostPlotFile(object):
         if self.file_exists(fname):
             querystr = 'SELECT * FROM %s.%s where file = "%s";' % (self.db, self.table, fname)
             s = self._run_query( querystr )
-            dtm, fname, status = s[0]
+            dtm, fname, status, host = s[0]
         else:
             dtm, status = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'non-existent'
         return dtm, status
