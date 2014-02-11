@@ -14,16 +14,23 @@ class IntervalStat(object):
 
     def __repr__(self):
         return "%g-Second %s" % (self.analysis_interval, self.__class__.__name__)
+    
+    def plotstr(self):
+        raise NotImplementedError('it is subclass responsibility to implement plotstr method')
    
     def get_result(self, obj, meth):
         raise NotImplementedError('it is subclass responsibility to implement get_result method')
 
 class IntervalRMS(IntervalStat):
+    
     def get_result(self, obj, meth):
         print obj.span()
         method_to_call = getattr(obj, meth)
         result = method_to_call()
-        return result 
+        return result
+    
+    def plotstr(self):
+        return 'intrms'
 
 class PadProcessChain(object):
     """Scale, Demean, 5 Hz Lowpass, 10-Second Interval RMS, Per-Axis"""
@@ -52,8 +59,8 @@ class PadProcessChain(object):
             raise ValueError('unexpected scale factor of %g (try 1e3 or 1e6)' % self.scale_factor)
 
     def __repr__(self):
-        return "%s:\n(1) scale_factor=%g (%s)\n(2) detrend_type='%s'\n(3) filter_params=%s\n(4) interval_func='%s'\n(5) plot_data_container=%s" % \
-            (self.__class__.__name__,
+        return "%s for %s:\n(1) scale_factor=%g (%s)\n(2) detrend_type='%s'\n(3) filter_params=%s\n(4) interval_func='%s'\n(5) plot_data_container=%s" % \
+            (self.__class__.__name__, self.interval_func.plotstr(),
              self.scale_factor, self.units,
              self.detrend_type,
              str(self.filter_params),

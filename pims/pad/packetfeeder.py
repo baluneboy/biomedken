@@ -1765,7 +1765,7 @@ def parameters_ok():
         log.error(' for rt_params, time.analysis_overlap must be less than 95% of time.analysis_interval')
         return 0
 
-    # FIXME okay to introduce calculated parameter out of the blue like this here!?
+    # FIXME just introduce calculated parameter out of the blue like this here!?
     PARAMETERS['maxsec_trace'] = int( rt_params['time.extra_intervals'] * rt_params['time.analysis_interval'] + rt_params['time.plot_span'] )
 
     return 1
@@ -1913,6 +1913,11 @@ def strip_chart():
                           axes='xyz',
                           maxlen=rt_params['data.maxlen'])
     
+    #print ppc
+    #raise SystemExit
+
+    # check for plot parameter csv file
+
     # initialize PadGenerator, which is data generator workhorse that
     # was based on Ted Wright's packetWriter.py code; it is the db
     # interface to fetch packets with important time throttling
@@ -1921,7 +1926,7 @@ def strip_chart():
                                        maxsec_rttrace=PARAMETERS['maxsec_trace'],
                                        analysis_overlap=rt_params['time.analysis_overlap'])
 
-    #print ppc
+    #print datagen.process_chain
     #print type(datagen)
     #demo_sink_pad_generator(datagen, num_iter=3)
     #raise SystemExit
