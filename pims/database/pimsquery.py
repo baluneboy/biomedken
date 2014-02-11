@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import sys
 import math
 from time import sleep
@@ -10,6 +11,7 @@ from _mysql_exceptions import *
 from pims.config.conf import get_db_params
 from pims.utils.iterabletools import pairwise
 import pandas as pd
+from hashlib import md5
 
 # FIXME add logging feature
 
@@ -303,16 +305,18 @@ class JaxaPostPlotFile(object):
         self.db = db
         self.table = table
 
-    def insert(self, fname):
-        """insert entry for file found, presumably by ike on /misc/jaxa"""
+    def insert(self, f):
+        """insert entry for file found, presumably by ike along /misc/jaxa/mmadata/plot"""
+        fname = os.path.basename(f)
         dtm, status = self.file_status(fname)
         if status in ['found', 'pending']:
             print 'NO INSERT BECAUSE %s EXISTS IN "%s" STATE ALREADY.' % (fname, status)
             return False
         
         t = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        querystr = "REPLACE INTO %s.%s ( time, file, status, host ) VALUES ( '%s', '%s', 'found', '%s' );" % (
-            self.db, self.table, t, fname, _HOSTNAME)
+        md5sum = md5(f).hexdigest()
+        querystr = "REPLACE INTO %s.%s ( time, file, status, host, md5sum ) VALUES ( '%s', '%s', 'found', '%s', '%s');" % (
+            self.db, self.table, t, fname, _HOSTNAME, md5sum)
         try:
             db_conn = connect(host=self.host, user=self.user, passwd=self.passwd, db=self.db)
             c = db_conn.cursor() 
@@ -405,13 +409,13 @@ def demo_jaxapost():
     #print "at GMT", dtm, 'holy_cow.csv', "was", status
 
 # for Linux command-line usage, return zero when "insert as found"; otherwise non-zero
-def ike_insert(basename):
+def ike_insert(f):
     """for Linux command-line usage, return zero when "insert as found"; otherwise non-zero"""
     # create object to keep track of jaxa posting plotfile
     jppf = JaxaPostPlotFile() # host='localhost')
     
     # IKE: this is how we insert, actually REPLACE, as "found" file
-    if jppf.insert(basename):
+    if jppf.insert(f):
         sys.exit(0)
     else:
         sys.exit(-1)
@@ -419,4 +423,4 @@ def ike_insert(basename):
 if __name__ == "__main__":
     #demo()
     #demo_jaxapost()
-    ike_insert('121f05_intrms.csv')
+    ike_insert('/misc/yoda/www/plots/sams/params/121f05_intrms.csv')
