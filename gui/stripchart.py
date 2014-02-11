@@ -369,7 +369,7 @@ class GraphFrame(wx.Frame):
         self.title = '%s using %s' % (title, self.datagen.__class__.__name__)
         self.log = log
         self.rt_params = rt_params
-        
+
         # FIXME rt_params should be enough to completely define snap_file
         self.snap_file = os.path.join( rt_params['paths.snap_path'], 'intrms_10sec_5hz.png' ) 
         
@@ -434,6 +434,7 @@ class GraphFrame(wx.Frame):
             key = k.replace('.', '_')
             setattr(self, key, v)
             #print key, getattr(self, key)
+        self.sensor = self.pw_tables # FIXME rename legacy pw tables to sensor early on?
 
     def update_info(self, info_control, info_tuple):
         info_control.begin_time_text.SetLabel(info_tuple[0])
@@ -602,6 +603,14 @@ class GraphFrame(wx.Frame):
         self.fig.savefig(self.snap_file, facecolor=self.fig.get_facecolor(), edgecolor='none')
         t = self.getTimeString() + ' (update every ' + str(int(SB_MSEC/1000.0)) + 's)'
         self.SetStatusText(t, SB_RIGHT)
+        
+        # check for new plot parameter file (paths.csvpost_path + sensor_plotstr.csv)
+        fname = self.sensor + '_' + self.datagen.process_chain.interval_func.plotstr() + '.csv'
+        csvfile = os.path.join( self.paths_params_path, fname )
+        if os.path.exists(csvfile):
+            # handle JAXA posted plot parameter CSV file here (pending, deployed, problem)
+            msg = '%s BEING HANDLED' % csvfile
+        print msg
 
     def set_plot_title(self, title):
         """use datagen header_string to set plot title"""

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import math
 from time import sleep
 import datetime
@@ -307,7 +308,7 @@ class JaxaPostPlotFile(object):
         dtm, status = self.file_status(fname)
         if status in ['found', 'pending']:
             print 'NO INSERT BECAUSE %s EXISTS IN "%s" STATE ALREADY.' % (fname, status)
-            return
+            return False
         
         t = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         querystr = "REPLACE INTO %s.%s ( time, file, status, host ) VALUES ( '%s', '%s', 'found', '%s' );" % (
@@ -317,10 +318,13 @@ class JaxaPostPlotFile(object):
             c = db_conn.cursor() 
             c.execute(querystr)
             db_conn.commit()
+            b = True
         except Exception, e:
             db_conn.rollback()
             print e.message
+            b = False
         db_conn.close()
+        return b
 
     def update(self, fname, status):
         """update entry for file found, presumably by manbearpig WHAT JAXA-ISH PATH ON YODA?"""
@@ -356,7 +360,7 @@ class JaxaPostPlotFile(object):
         if self.file_exists(fname):
             querystr = 'SELECT * FROM %s.%s where file = "%s";' % (self.db, self.table, fname)
             s = self._run_query( querystr )
-            dtm, fname, status, host = s[0]
+            dtm, fname, status, host, md5sum = s[0]
         else:
             dtm, status = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'non-existent'
         return dtm, status
@@ -380,7 +384,7 @@ def demo():
     
     #hbcf = HandbookQueryFilename('hb_vib_equipment_testing3.pdf')
     #print hbcf.file_exists
-
+    
 def demo_jaxapost():
     
     # create object to keep track of jaxa posting plotfile
@@ -400,6 +404,19 @@ def demo_jaxapost():
     #dtm, status = jppf.file_status('holy_cow.csv')
     #print "at GMT", dtm, 'holy_cow.csv', "was", status
 
+# for Linux command-line usage, return zero when "insert as found"; otherwise non-zero
+def ike_insert(basename):
+    """for Linux command-line usage, return zero when "insert as found"; otherwise non-zero"""
+    # create object to keep track of jaxa posting plotfile
+    jppf = JaxaPostPlotFile() # host='localhost')
+    
+    # IKE: this is how we insert, actually REPLACE, as "found" file
+    if jppf.insert(basename):
+        sys.exit(0)
+    else:
+        sys.exit(-1)
+        
 if __name__ == "__main__":
     #demo()
-    demo_jaxapost()
+    #demo_jaxapost()
+    ike_insert('121f05_intrms.csv')

@@ -341,7 +341,9 @@ EXTR =   2 # count for extra_intervals
 default_params = {
 
     # path(s)
-    'paths.snap_path'          : ['/misc/yoda/www/plots/sams/121f05', validate_path_exists], # FIXME
+    # FIXME snap_path not always 121f05
+    'paths.snap_path'          : ['/misc/yoda/www/plots/sams/121f05', validate_path_exists],
+    'paths.params_path'        : ['/misc/yoda/www/plots/sams/params', validate_path_exists],
 
     # verbosity setting
     'verbose.level'     : ['INFO', validate_verbose], # debug, info, warning, error, or critical
