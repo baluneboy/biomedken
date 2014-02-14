@@ -166,6 +166,16 @@ class Psd3RoadmapPdf(SpgxRoadmapPdf):
 
     def _get_plot_type(self): return _PLOTTYPES['psd']
 
+class Gvt3Pdf(SpgxRoadmapPdf):
+    """
+    GVT XYZ PDF handbook file like this example:
+    /tmp/4qualify_2013_10_08_13_35_00_es03_gvt3_my_notes_here.pdf
+    """
+    def __init__(self, name, pattern=_GVT3PDF_PATTERN, show_warnings=False):
+        super(Gvt3Pdf, self).__init__(name, pattern, show_warnings=show_warnings)
+
+    def _get_plot_type(self): return _PLOTTYPES['gvt']
+
 class CvfsRoadmapPdf(SpgxRoadmapPdf):
     """
     Cumulative RMS vs. frequency (sum) PDF handbook file like this example:
@@ -550,10 +560,11 @@ if __name__ == '__main__':
 
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Cygnus_Capture_Install')
     #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
-    hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Cygnus_Capture_Install')
-    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan')
+    #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Cygnus_Capture_Install')
+    #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan')
+    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat')
     
-    if True: # True for process_pages (the first stage), False for process_build (the last stage)
+    if False: # True for process_pages (the first stage), False for process_build (the last stage)
         
         if not hbe.will_clobber():
             err_msg = hbe.process_pages()

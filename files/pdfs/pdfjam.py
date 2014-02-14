@@ -231,7 +231,28 @@ def demojoin():
     outfile = '/home/pims/Documents/test/hb_vib_vehicle_Big_Bang/hb_FILE.pdf'
     pdfjoin_cmd = PdfjoinCommand(infiles, outfile)
     pdfjoin_cmd.run()
+
+def manual_pdfjam_and_join():
+    import os
+    from pims.files.utils import listdir_filename_pattern
+    dirpath = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat'
+    xysfs = [
+        (-4.25, 1.00, 0.86, os.path.join(dirpath, '1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf')),
+        (-4.25, 1.00, 0.86, os.path.join(dirpath, '2quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_hist.pdf')),
+        (-4.25, 1.00, 0.86, os.path.join(dirpath, '3quantify_2011_05_19_00_08_00_121f03006_gvt3_12hour_pm1mg_001800_z1mg.pdf')),
+        ]
+    for xoffset, yoffset, scale, f in xysfs:
+        p = PdfjamCommand(f, xoffset=xoffset, yoffset=yoffset, scale=scale)
+        p.run()
     
+    fname_pattern = '.qua.*_offset_.*cm_.*cm_scale_.*\.pdf'
+    infiles = listdir_filename_pattern(dirpath, fname_pattern)
+    outfile = os.path.join(dirpath, 'hb.pdf')
+    pdfjoin_cmd = PdfjoinCommand(infiles, outfile)
+    pdfjoin_cmd.run()
+
+manual_pdfjam_and_join(); raise SystemExit
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()

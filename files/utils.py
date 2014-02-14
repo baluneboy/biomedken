@@ -29,15 +29,16 @@ def guess_file(name, file_type_classes, show_warnings=False):
     Verify unique pattern, then guess class based on its name.
     """
     p = File(name)
-    p.recognized = False
-    if is_unique_handbook_pdf_match(name):
+    if True: #is_unique_handbook_pdf_match(name):
         for i in file_type_classes:
             try:
                 p = i(name, show_warnings=show_warnings)
+                #print i, name
                 return p
             except UnrecognizedPimsFile:
-                pass
-    if show_warnings and not p.recognized:
+                p.recognized = False
+    #if show_warnings and not p.recognized:
+    if not p.recognized:
         print 'Unrecognized file "%s"' % name
     return p
 
