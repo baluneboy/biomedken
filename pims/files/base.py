@@ -46,13 +46,16 @@ class RecognizedFile(File):
     """
     A generic representation of a PIMS recognized file.
     """
-    def __init__(self, name, pattern, show_warnings=False):
+    def __init__(self, name, pattern='.*', show_warnings=False):
         super(RecognizedFile, self).__init__(name)
         self._pattern = pattern
         self._show_warnings = show_warnings
         self._match = self._get_match()
         if not self._is_recognized():
+            self.recognized = False
             raise UnrecognizedPimsFile('"%s"' % self.name)
+        else:
+            self.recognized = True
 
     def __str__(self):
         return '%s object for recognized PIMS file "%s"' % (self.__class__.__name__, self.name)
@@ -95,13 +98,21 @@ if __name__ == '__main__':
 
     from pims.files.utils import guess_file
 
-    files = [ '/tmp/trash_stupid.txt', '/tmp/trash.txt' ]
+    files = [
+        '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat/1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
+        ]
+    filetype_classes = [ RecognizedFile ]
 
-    filetypes = [ StupidRecognizedFile ]
+    #files = [
+    #    '/tmp/trash_stupid.txt',
+    #    '/tmp/trash.txt'
+    #    ]
+    #filetype_classes = [ StupidRecognizedFile ]
+
     for f in files:
         print_fname(f)
         try:
-            srf = guess_file(f, filetypes=filetypes, show_warnings=False)
+            srf = guess_file(f, filetype_classes, show_warnings=False)
             print srf._get_dict()
         except UnrecognizedPimsFile:
             print 'SKIPPED unrecognized file'

@@ -13,9 +13,9 @@ __all__ = [
     '_PLOTTYPES',
     '_ABBREVS',
     '_PSD3ROADMAPPDF_PATTERN',
+    '_GVT3PDF_PATTERN',
     '_CVFSROADMAPPDF_PATTERN',
     ]
-
 
 #/tmp/pth/1qualify_notes.pdf
 #---------------------------
@@ -28,7 +28,6 @@ _HANDBOOKPDF_PATTERN = (
     "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
     )
-
 
 #/tmp/pth/3qualify_2013_09_01_121f05006_irmsy_entire_month.pdf
 #-------------------------------------------------------------
@@ -47,7 +46,6 @@ _ISTATPDF_PATTERN = (
     "\.pdf\Z"                                   # extension to finish
     )
 
-
 #/tmp/pth/4quantify_2013_09_28_16_radgse_roadmapnup1x2.pdf
 #---------------------------------------------------------------
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>radgse)_roadmapnup1x2(?P<notes>.*)\.pdf\Z
@@ -64,7 +62,6 @@ _RADGSEROADMAPNUP1X2PDF_PATTERN = (
     "\.pdf\Z"                                   # extension to finish
     )
 
-
 #/tmp/pth/2quantify_2013_10_01_08_ossbtmf_roadmap+some_notes.pdf
 #---------------------------------------------------------------
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>ossbtmf)_roadmap(?P<notes>.*)\.pdf\Z
@@ -80,7 +77,6 @@ _OSSBTMFROADMAPPDF_PATTERN = (
     "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
     )
-
 
 #/tmp/1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500.pdf
 #--------------------------------------------------------------------
@@ -101,7 +97,6 @@ _SPGXROADMAPPDF_PATTERN = (
     "\.pdf\Z"                                   # extension to finish
     )
 
-
 #/tmp/4qualify_2013_10_08_13_35_00_es03_psd3_compare_msg_wv3fans.pdf
 #-------------------------------------------------------------------
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>\w*)(?P<axis>.)_(?P<notes>.*)\.pdf\Z
@@ -119,6 +114,22 @@ _PSD3ROADMAPPDF_PATTERN = (
     "\.pdf\Z"                                   # extension to finish
     )
 
+#/tmp/1qualify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf
+#-----------------------------------------------------------------------------
+#.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>\w*)(?P<axis>.)_(?P<notes>.*)\.pdf\Z
+_GVT3PDF_PATTERN = (
+    ".*/"                                       # path at the start, then
+    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
+    "_"                                         # underscore, then
+    "(?P<timestr>.*)"                           # timestr, then    
+    "_"                                         # underscore, then
+    "(?P<sensor>.*)"                            # sensor, then
+    "_(?P<plot_type>gvt)"                       # underscore spg, then
+    "(?P<axis>.)"                               # axis, then
+    "_(?P<notes>.*)"                            # notes, then
+    "\.pdf\Z"                                   # extension to finish
+    )
 
 #/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf
 #-------------------------------------------------------------------
@@ -137,7 +148,6 @@ _CVFSROADMAPPDF_PATTERN = (
     "\.pdf\Z"                                   # extension to finish
     )
 
-
 #121f03one, hirap, ossbtmf
 #-------------------------
 #\A(?P<head>121f0|hira|oss|0bb)(?P<tail>btmf|raw|\w{1})(?P<suffix>one|ten|006)?\Z
@@ -146,7 +156,6 @@ _SENSOR_PATTERN = (
     "(?P<tail>btmf|raw|gse|\w{1})"              # btmf, raw, or single alphanumeric
     "(?P<suffix>one|ten|006)?\Z"                # zero or one enum for suffix to finish string
     )
-
 
 _PLOTTYPES = {
     'gvt':   'Acceleration vs. Time',
@@ -158,12 +167,10 @@ _PLOTTYPES = {
     '':      'empty',
 }
 
-
 _ABBREVS = {
 'vib':  'Vibratory',
 'qs':   'Quasi-Steady',
 }
-
 
     #yyyy_mm_dd_HH_MM_ss.sss_SENSOR_PLOTTYPE_roadmapsRATE.pdf
     #(DTOBJ, SYSTEM=SMAMS, SENSOR, PLOTTYPE={pcss|spgX}, fs=RATE, fc='unknown', LOCATION='fromdb')
@@ -210,29 +217,28 @@ def is_unique_handbook_pdf_match(fname):
     # define predicate to quantify num matches (hopefully unique patterns!)
     is_matched = lambda pat : bool(re.match(pat, fname))
     num_matches = quantify(pats, is_matched)
+    #print fname, num_matches
     if num_matches == 1:
         return True
     else:
         return False
-    
+
 if __name__ == "__main__":
     
     #demo_hbfpat(); raise SystemExit
 
-    #/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_CMG_Spindown_and_Spinup/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf
-    print is_unique_handbook_pdf_match('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_CMG_Spindown_and_Spinup/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf')
+    files = [
+        '/tmp/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf',
+        '/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf',
+        '/tmp/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf',
+        '/tmp/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf',
+        '/tmp/1quantify_2013_12_11_16_20_00_ossbtmf_gvt3_progress53p_reboost.pdf',
+        '/tmp/1qualify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
+        '/tmp/2quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_hist.pdf',
+        '/tmp/3quantify_2011_05_19_00_08_00_121f03006_gvt3_12hour_pm1mg_001800_z1mg.pdf',
+        '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat/1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
+        ]
 
-    #/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf
-    print is_unique_handbook_pdf_match('/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf')
-
-    #/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf
-    print is_unique_handbook_pdf_match('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf')
-
-    #/tmp/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf
-    print is_unique_handbook_pdf_match('/tmp/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf')
-
-    #/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_vehicle_Progress_53P_Reboosts/1quantify_2013_12_11_16_20_00_ossbtmf_gvt3_progress53p_reboost.pdf
-    print is_unique_handbook_pdf_match('/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_vehicle_Progress_53P_Reboosts/1quantify_2013_12_11_16_20_00_ossbtmf_gvt3_progress53p_reboost.pdf')
-    
-    
+    for f in files:
+        print is_unique_handbook_pdf_match(f), f
     

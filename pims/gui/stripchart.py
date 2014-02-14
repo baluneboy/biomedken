@@ -605,12 +605,12 @@ class GraphFrame(wx.Frame):
         self.SetStatusText(t, SB_RIGHT)
         
         # check for new plot parameter file (paths.csvpost_path + sensor_plotstr.csv)
-        fname = self.sensor + '_' + self.datagen.process_chain.interval_func.plotstr() + '.csv'
-        csvfile = os.path.join( self.paths_params_path, fname )
-        if os.path.exists(csvfile):
-            # handle JAXA posted plot parameter CSV file here (pending, deployed, problem)
-            msg = '%s BEING HANDLED' % csvfile
-        print msg
+        #fname = self.sensor + '_' + self.datagen.process_chain.interval_func.plotstr() + '.csv'
+        #csvfile = os.path.join( self.paths_params_path, fname )
+        #if os.path.exists(csvfile):
+        #    # handle JAXA posted plot parameter CSV file here (pending, deployed, problem)
+        #    msg = '%s BEING HANDLED' % csvfile
+        #print msg
 
     def set_plot_title(self, title):
         """use datagen header_string to set plot title"""
