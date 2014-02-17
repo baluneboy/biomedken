@@ -1,1 +1,1 @@
-"""State machine."""
+"""Acceleration signal processing."""
