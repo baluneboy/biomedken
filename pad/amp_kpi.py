@@ -24,12 +24,29 @@ def monthly_hours_dataframe(df, systems_series):
     monthly_hours_df.columns = [ s.upper() for s in monthly_hours_df.columns ]
     return monthly_hours_df
 
+# parse date/times from the csv
+def parse(s):
+    yr = int(s[0:4])
+    doy = int(s[5:8])
+    hr = int(s[9:11])
+    min = int(s[12:14])
+    sec = int(s[15:17])
+    #sec = float(sec)
+    #mu_sec = int((sec - int(sec)) * 1e6)
+    mu_sec = 0
+    #sec = int(sec)
+    dt = datetime(yr - 1, 12, 31)
+    delta = timedelta(days=doy, hours=hr, minutes=min, seconds=sec, microseconds=mu_sec)
+    return dt + delta
+
 # read CSV into dataframe (for pivot tables)
 def csv2dataframe(csvfile):
     """read CSV into dataframe (for pivot tables)"""
     with open(csvfile, 'rb') as f:
         labels = f.next().strip().split(',')
     df = pd.read_csv(csvfile, parse_dates=True, index_col = [0])
+    # NOTE: use something like next line for [better?] parse of datetime
+    #df = pd.read_csv(csvfile, parse_dates={'datetime':['GMTofDisturbance']}, date_parser=parse, index_col='datetime')
     return df
 
 # produce output csv with per-system monthly sensor hours totals & rolling means
