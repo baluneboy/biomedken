@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# $Id$
 version = '$Id$'
 
 # TODO write a record of processing results that includes:
@@ -30,6 +29,16 @@ import math
 import pickle
 from MySQLdb import *
 import traceback
+
+from pims.lib.tools import OrderedSet
+
+s = OrderedSet()
+s.add( ('one','a') )
+s.add( ('one','b') )
+s.add( ('one','a') )
+s.add( ('one','c') )
+print list(s)
+raise SystemExit
 
 #Instantiate logging
 log = InitLogging()
