@@ -11,6 +11,7 @@ from pims.utils.datetime_ranger import DateRange
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 #from pims.utils import pyperclip
 from pims.utils.commands import timeLogRun
+from pims.gui.pywxgrideditmixin import PyWXGridEditMixin
 
 # TODO add Pause button so that we can freeze state to do remedy or maybe "digging"
 #      initially, remedy will just be a filtered look at data frame [or pivot table?]
@@ -87,7 +88,7 @@ class RoadmapsRenderer(CheapPadHoursRenderer):
     def Clone(self):
         return RoadmapsRenderer()
 
-class CheapPadHoursInputGrid(gridlib.Grid):
+class CheapPadHoursInputGrid(gridlib.Grid, PyWXGridEditMixin):
     """Simple grid for inputs to a grid worker that gets results for tallying."""
     def __init__(self, parent, log, pattern=_PADHEADERFILES_PATTERN):
         gridlib.Grid.__init__(self, parent, -1)
@@ -96,6 +97,8 @@ class CheapPadHoursInputGrid(gridlib.Grid):
         self.pattern = pattern
         self.get_default_values()
         self.set_default_attributes()
+        # To add copy/paste ability for grids, use mixin; also you can set key handler, or add call to grid.Key() in your own handler
+        self.__init_mixin__() # mixin for copy/paste
     
     def set_default_attributes(self):
         """Set default attributes of grid."""
@@ -169,13 +172,15 @@ class RoadmapsInputGrid(CheapPadHoursInputGrid):
         ]
         self.row_labels = [ t[0] for t in self.rows ]   
 
-class TallyOutputGrid(gridlib.Grid):
+class TallyOutputGrid(gridlib.Grid, PyWXGridEditMixin):
     """Simple grid for output of tally."""
     
     def __init__(self, panel, log, results):
         gridlib.Grid.__init__(self, panel, -1)
         self.panel = panel
         self.log = log
+        # To add copy/paste ability for grids, use mixin; also you can set key handler, or add call to grid.Key() in your own handler
+        self.__init_mixin__() # mixin for copy/paste
         
         # get properties from results dictionary 
         self.row_labels = results['row_labels']

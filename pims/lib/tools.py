@@ -134,20 +134,6 @@ def demo():
     assert d.get('TEST') is d['test']   # free get
     assert 'TeSt' in d                  # free __contains__
                                         # free setdefault, __eq__, and so on
-    
+
 if __name__ == "__main__":
-    #demo()
-    
-    s = OrderedSet()
-    s.add( ('one','a') )
-    s.add( ('one','b') )
-    s.add( ('one','a') )
-    s.add( ('one','c') )
-    print list(s)
-    
-    
-    #s = OrderedSet('abracadaba')
-    #t = OrderedSet('simsalabim')
-    #print s | t
-    #print s & t
-    #print s - t
+    demo()
