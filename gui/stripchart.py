@@ -737,6 +737,10 @@ class GraphFrame(wx.Frame):
         else:
             xmin = float(self.xmin_control.manual_value())
 
+        # FIXME check whether something like ax.margins(0.05)
+        #       or "just y" version gives cushion better than
+        #       CushionedLinearLocator
+
         # for ymin and ymax, find the min and max values
         # in the data displayed and add some cushion for
         # wide-n-glide GMT on xaxis
@@ -758,6 +762,7 @@ class GraphFrame(wx.Frame):
             
         if self.ymax_control.is_auto():
             ymax = round2multiple(10, ylims[1])
+            # for better kludge here, how about min( [ 1001 round2multiple(10, ylims[1]) ] ) ?
         else:
             ymax = float(self.ymax_control.manual_value())
 
