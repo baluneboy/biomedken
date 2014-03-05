@@ -4,7 +4,7 @@
     {'type':'Background',
           'name':'bgBody',
           'title':'OneLiners',
-          'size':(656, 550),
+          'size':(1567, 550),
 
         'menubar': {'type':'MenuBar',
          'menus': [
@@ -149,19 +149,19 @@
 {'type':'TextField', 
     'name':'Name', 
     'position':(100, 10), 
-    'size':(291, 24), 
+    'size':(1200, 24), 
     },
 
 {'type':'TextField', 
-    'name':'Company', 
+    'name':'Command', 
     'position':(100, 40), 
-    'size':(291, 23), 
+    'size':(1200, 23), 
     },
 
 {'type':'TextField', 
     'name':'Street', 
     'position':(100, 70), 
-    'size':(291, 23), 
+    'size':(1200, 23), 
     },
 
 {'type':'TextField', 
@@ -233,11 +233,11 @@
     },
 
 {'type':'StaticText', 
-    'name':'CompanyLabel', 
+    'name':'CommandLabel', 
     'position':(5, 45), 
     'size':(68, -1), 
     'alignment':'right', 
-    'text':'Company', 
+    'text':'Command', 
     },
 
 {'type':'StaticText', 
@@ -273,11 +273,11 @@
     },
 
 {'type':'StaticText', 
-    'name':'TelephoneLabel', 
+    'name':'PhoneLabel', 
     'position':(5, 195), 
     'size':(68, -1), 
     'alignment':'right', 
-    'text':'Telephone', 
+    'text':'Phone', 
     },
 
 {'type':'StaticText', 
@@ -365,7 +365,7 @@
 {'type':'TextField', 
     'name':'CorrectName', 
     'position':(100, -5), 
-    'size':(291, 24), 
+    'size':(1200, 24), 
     'visible':False, 
     },
 
