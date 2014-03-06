@@ -15,6 +15,7 @@ __all__ = [
     '_PSD3ROADMAPPDF_PATTERN',
     '_GVT3PDF_PATTERN',
     '_CVFSROADMAPPDF_PATTERN',
+    '_RVTXPDF_PATTERN',
     ]
 
 #/tmp/pth/1qualify_notes.pdf
@@ -89,10 +90,28 @@ _SPGXROADMAPPDF_PATTERN = (
     "(?P<timestr>.*)"                           # timestr, then    
     "_"                                         # underscore, then
     "(?P<sensor>.*)"                            # sensor, then
-    "_(?P<plot_type>\w*)"                       # underscore spg, then
+    "_(?P<plot_type>spg|pcs)"                       # underscore spg|pcs, then
     "(?P<axis>.)"                               # axis, then
     "_roadmaps"                                 # underscore roadmaps, then
     "(?P<sample_rate>[0-9]*[p\.]?[0-9]+)"       # zero or more digits, zero or one pee or dot, one or more digit, then
+    "(?P<notes>.*)"                             # notes, then
+    "\.pdf\Z"                                   # extension to finish
+    )
+
+#/tmp/1qualify_2013_10_01_16_00_00.000_121f02_rvts_glacier3_note.pdf
+#--------------------------------------------------------------------
+#.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>rvt)(?P<axis>.)_(?P<notes>.*)\.pdf\Z
+_RVTXPDF_PATTERN = (
+    ".*/"                                       # path at the start, then
+    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
+    "_"                                         # underscore, then
+    "(?P<timestr>.*)"                           # timestr, then    
+    "_"                                         # underscore, then
+    "(?P<sensor>.*)"                            # sensor, then
+    "_(?P<plot_type>rvt)"                       # underscore rvt, then
+    "(?P<axis>.)"                               # axis, then
+    "_"                                         # underscore, then
     "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
     )
@@ -164,6 +183,7 @@ _PLOTTYPES = {
     'pcs':   'PCSA',
     'cvf':   'Cumulative RMS vs. Frequency',
     'ist':   'Interval Stat',
+    'rvt':   'RMS vs. Time',    
     '':      'empty',
 }
 
@@ -210,17 +230,22 @@ def is_unique_handbook_pdf_match(fname):
     """
     import re
     from pims.utils.iterabletools import quantify
+    
     # get rid of generic pattern first
     if '_HANDBOOKPDF_PATTERN' in __all__: __all__.remove('_HANDBOOKPDF_PATTERN')
+    
     # use eval to get actual patterns from their __all__ names
     pats = [eval(x) for x in __all__ if x.endswith('PDF_PATTERN')]
+    
     # define predicate to quantify num matches (hopefully unique patterns!)
     is_matched = lambda pat : bool(re.match(pat, fname))
     num_matches = quantify(pats, is_matched)
+    
     #print fname, num_matches
     if num_matches == 1:
         return True
     else:
+        print num_matches
         return False
 
 if __name__ == "__main__":
@@ -237,6 +262,7 @@ if __name__ == "__main__":
         '/tmp/2quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_hist.pdf',
         '/tmp/3quantify_2011_05_19_00_08_00_121f03006_gvt3_12hour_pm1mg_001800_z1mg.pdf',
         '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat/1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
+        '/tmp/3quantify_2014_03_03_14_30_00_121f08_rvts_glacier3_duty_cycle.pdf',
         ]
 
     for f in files:

@@ -28,6 +28,7 @@ from appy.pod.renderer import Renderer
 from pims.paths import _YODA_HANDBOOK_DIR
 from pims.database.pimsquery import db_insert_handbook, HandbookQueryFilename
 from pims.gui.alert_dialog import simple_gui
+from pims.utils.iterabletools import quantify
 
 # TODO see /home/pims/dev/programs/python/pims/README.txt
 
@@ -152,7 +153,10 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     def _get_plot_type(self): return _PLOTTYPES['spg']
     
     def _get_axis(self): return self._match.group('axis')
-    
+
+class RvtxRoadmapPdf(SpgxRoadmapPdf):
+    def _get_plot_type(self): return _PLOTTYPES['rvt']
+
 class PcsaRoadmapPdf(SpgxRoadmapPdf):
     def _get_plot_type(self): return _PLOTTYPES['pcs']
 
@@ -556,15 +560,67 @@ class HandbookEntry(object):
         return new_name.replace('.odt','.pdf')
 
 
+# Update the map_regexp_class dict in this routine and use as helper to verify match
+def helper_to_verify_match():
+    """Map via dictionary with fname regexp pattern as key and class name as value"""
+
+    map_regexp_class = {}
+    map_regexp_class[re.compile( _GVT3PDF_PATTERN )]                = Gvt3Pdf
+    map_regexp_class[re.compile( _SPGXROADMAPPDF_PATTERN )]         = SpgxRoadmapPdf
+    map_regexp_class[re.compile( _OSSBTMFROADMAPPDF_PATTERN )]      = OssBtmfRoadmapPdf
+    map_regexp_class[re.compile( _RADGSEROADMAPNUP1X2PDF_PATTERN )] = RadgseRoadmapNup1x2Pdf
+    map_regexp_class[re.compile( _ISTATPDF_PATTERN )]               = IntStatPdf
+    map_regexp_class[re.compile( _PSD3ROADMAPPDF_PATTERN )]         = Psd3RoadmapPdf
+    map_regexp_class[re.compile( _CVFSROADMAPPDF_PATTERN )]         = CvfsRoadmapPdf
+    map_regexp_class[re.compile( _RVTXPDF_PATTERN )]                = RvtxRoadmapPdf
+    
+    # map filename via unique pattern match to its class
+    def map_fname_pat_to_class(s):
+        """map filename via unique pattern match to its class"""
+        
+        # match each regex on the string
+        matches = ( (c, regex.match(s)) for regex, c in map_regexp_class.iteritems() )
+    
+        # filter out empty (non) matches, and extract groups
+        match_list = [ (c, match.groups()) for c, match in matches if match is not None ]
+        
+        # verify unique pattern match
+        if len(match_list) != 1:
+            raise ValueError( 'DO NOT have unique handbook pattern match for %s' % s )    
+    
+        # since only one, pull class, mgroups off list
+        klass, args = match_list[0]
+        return klass, args
+    
+    files = [
+        '/tmp/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf',
+        '/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf',
+        '/tmp/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf',
+        '/tmp/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf',
+        '/tmp/1quantify_2013_12_11_16_20_00_ossbtmf_gvt3_progress53p_reboost.pdf',
+        '/tmp/1qualify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
+        '/tmp/2quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_hist.pdf',
+        '/tmp/3quantify_2011_05_19_00_08_00_121f03006_gvt3_12hour_pm1mg_001800_z1mg.pdf',
+        '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat/1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
+        '/tmp/3quantify_2014_03_03_14_30_00_121f08_rvts_glacier3_duty_cycle.pdf',
+        ]
+    
+    for f in files:
+        c, args = map_fname_pat_to_class(f)
+        print c, f
+
+#helper_to_verify_match(); raise SystemExit
+    
 if __name__ == '__main__':
 
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Cygnus_Capture_Install')
     #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Big_Bang')
     #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Cygnus_Capture_Install')
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan')
-    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat')
+    #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat')
+    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Columbus_GLACIER-3')
     
-    if False: # True for process_pages (the first stage), False for process_build (the last stage)
+    if True: # True for process_pages (the first stage), False for process_build (the last stage)
         
         if not hbe.will_clobber():
             err_msg = hbe.process_pages()
