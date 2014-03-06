@@ -251,7 +251,7 @@ def manual_pdfjam_and_join():
     pdfjoin_cmd = PdfjoinCommand(infiles, outfile)
     pdfjoin_cmd.run()
 
-manual_pdfjam_and_join(); raise SystemExit
+#manual_pdfjam_and_join(); raise SystemExit
 
 if __name__ == "__main__":
     import doctest
