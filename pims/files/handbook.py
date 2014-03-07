@@ -561,11 +561,23 @@ class HandbookEntry(object):
         ret_code = convert_odt2pdf(new_name)
         return new_name.replace('.odt','.pdf')
 
-# A file dialog to weed out files that do not match a handbook PDF pattern.
-class FileDialog(MultiChoiceDialog):
-    """ A file dialog to weed out files that do not match a handbook PDF pattern. """
+# Dictionary to map pattern -> class
+_MAP_REGEXP_CLASS = {}
+_MAP_REGEXP_CLASS[re.compile( _GVT3PDF_PATTERN )]                = Gvt3Pdf
+_MAP_REGEXP_CLASS[re.compile( _SPGXROADMAPPDF_PATTERN )]         = SpgxRoadmapPdf
+_MAP_REGEXP_CLASS[re.compile( _OSSBTMFROADMAPPDF_PATTERN )]      = OssBtmfRoadmapPdf
+_MAP_REGEXP_CLASS[re.compile( _RADGSEROADMAPNUP1X2PDF_PATTERN )] = RadgseRoadmapNup1x2Pdf
+_MAP_REGEXP_CLASS[re.compile( _ISTATPDF_PATTERN )]               = IntStatPdf
+_MAP_REGEXP_CLASS[re.compile( _PSD3ROADMAPPDF_PATTERN )]         = Psd3RoadmapPdf
+_MAP_REGEXP_CLASS[re.compile( _CVFSROADMAPPDF_PATTERN )]         = CvfsRoadmapPdf
+_MAP_REGEXP_CLASS[re.compile( _RVTXPDF_PATTERN )]                = RvtxRoadmapPdf
+# Add any new pattern/class here
 
-    def __init__(self,title, prompt, choice_list):
+# A file dialog to show files that match one of handbook PDF patterns.
+class FileDialog(MultiChoiceDialog):
+    """ A file dialog to show files that match one of handbook PDF patterns. """
+
+    def __init__(self, title, prompt, choice_list):
         super(FileDialog, self).__init__(title, prompt, choice_list)
         self.dirnames = [os.path.dirname(f) for f in choice_list]
         self.fullnames = choice_list
@@ -589,27 +601,15 @@ class FileDialog(MultiChoiceDialog):
         
         return [ os.path.join(d,b) for d,b in zip(self.dirnames, choices)]
 
-# Update the map_regexp_class dict in this routine and use as helper to verify match
-def helper_to_verify_match(files):
-    """Map via dictionary with fname regexp pattern as key and class name as value"""
-
-    map_regexp_class = {}
-    map_regexp_class[re.compile( _GVT3PDF_PATTERN )]                = Gvt3Pdf
-    map_regexp_class[re.compile( _SPGXROADMAPPDF_PATTERN )]         = SpgxRoadmapPdf
-    map_regexp_class[re.compile( _OSSBTMFROADMAPPDF_PATTERN )]      = OssBtmfRoadmapPdf
-    map_regexp_class[re.compile( _RADGSEROADMAPNUP1X2PDF_PATTERN )] = RadgseRoadmapNup1x2Pdf
-    map_regexp_class[re.compile( _ISTATPDF_PATTERN )]               = IntStatPdf
-    map_regexp_class[re.compile( _PSD3ROADMAPPDF_PATTERN )]         = Psd3RoadmapPdf
-    map_regexp_class[re.compile( _CVFSROADMAPPDF_PATTERN )]         = CvfsRoadmapPdf
-    map_regexp_class[re.compile( _RVTXPDF_PATTERN )]                = RvtxRoadmapPdf
-    
     # map filename via unique pattern match to its class
-    def map_fname_pat_to_class(s):
+    def map_fname_pat_to_class(self, s):
         """map filename via unique pattern match to its class"""
         
         # match each regex on the string
-        matches = ( (c, regex.match(s)) for regex, c in map_regexp_class.iteritems() )
+        matches = ( (c, regex.match(s)) for regex, c in _MAP_REGEXP_CLASS.iteritems() )
     
+        print matches
+        
         # filter out empty (non) matches, and extract groups
         match_list = [ (c, match.groups()) for c, match in matches if match is not None ]
         
@@ -620,19 +620,13 @@ def helper_to_verify_match(files):
         # since only one, pull class, mgroups off list
         klass, args = match_list[0]
         return klass, args
-    
-    #title = "FileDialog"
-    #prompt = "Pick from\nthis file list:"
-    #choice_list = files   
-    #
-    #mcd = FileDialog(title, prompt, choice_list)
-    #choices = mcd.get_choices()    
-    #print choices
-    #return
-    
-    for f in files:
-        c, args = map_fname_pat_to_class(f)
-        print c, f
+
+    def show_matches(self):
+        """Map via dictionary with fname regexp pattern as key and class name as value"""
+       
+        for f in self.fullnames:
+            c, args = self.map_fname_pat_to_class(f)
+            print c, f
 
 files = [
     '/tmp/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf',
@@ -646,7 +640,9 @@ files = [
     '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat/1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
     '/tmp/3quantify_2014_03_03_14_30_00_121f08_rvts_glacier3_duty_cycle.pdf',
     ]
-helper_to_verify_match(files); raise SystemExit
+fd = FileDialog('title', 'prompt', files)
+fd.show_matches()
+raise SystemExit
     
 if __name__ == '__main__':
 
