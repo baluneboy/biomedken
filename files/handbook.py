@@ -14,6 +14,7 @@ import os
 import sys
 import re
 import datetime
+import wx
 from pims.files.base import RecognizedFile, UnrecognizedPimsFile
 from pims.strings.utils import underscore_as_datetime, title_case_special, sensor_tuple
 from pims.files.utils import guess_file
@@ -27,8 +28,9 @@ from pims.pad.padheader import PadHeaderDict
 from appy.pod.renderer import Renderer
 from pims.paths import _YODA_HANDBOOK_DIR
 from pims.database.pimsquery import db_insert_handbook, HandbookQueryFilename
-from pims.gui.alert_dialog import simple_gui
+#from pims.gui.alert_dialog import simple_gui
 from pims.utils.iterabletools import quantify
+from pims.gui.multichoice_dialog import MultiChoiceDialog
 
 # TODO see /home/pims/dev/programs/python/pims/README.txt
 
@@ -559,9 +561,36 @@ class HandbookEntry(object):
         ret_code = convert_odt2pdf(new_name)
         return new_name.replace('.odt','.pdf')
 
+# A file dialog to weed out files that do not match a handbook PDF pattern.
+class FileDialog(MultiChoiceDialog):
+    """ A file dialog to weed out files that do not match a handbook PDF pattern. """
+
+    def __init__(self,title, prompt, choice_list):
+        super(FileDialog, self).__init__(title, prompt, choice_list)
+        self.dirnames = [os.path.dirname(f) for f in choice_list]
+        self.fullnames = choice_list
+        self.basenames = [os.path.basename(f) for f in choice_list]
+
+    def set_choice_list(self, choice_list):
+        return [os.path.basename(f) for f in choice_list]
+
+    def get_choices(self):
+        
+        # pre-select only items that match a handbook PDF pattern
+        self.dialog.SetSelections(range(len(self.choice_list)))
+        
+        # interact with user
+        if (self.dialog.ShowModal() == wx.ID_OK):
+            selections = self.dialog.GetSelections()
+            choices = [self.choice_list[x] for x in selections]
+            
+        self.dialog.Destroy()
+        self.app.MainLoop()
+        
+        return [ os.path.join(d,b) for d,b in zip(self.dirnames, choices)]
 
 # Update the map_regexp_class dict in this routine and use as helper to verify match
-def helper_to_verify_match():
+def helper_to_verify_match(files):
     """Map via dictionary with fname regexp pattern as key and class name as value"""
 
     map_regexp_class = {}
@@ -592,24 +621,32 @@ def helper_to_verify_match():
         klass, args = match_list[0]
         return klass, args
     
-    files = [
-        '/tmp/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf',
-        '/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf',
-        '/tmp/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf',
-        '/tmp/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf',
-        '/tmp/1quantify_2013_12_11_16_20_00_ossbtmf_gvt3_progress53p_reboost.pdf',
-        '/tmp/1qualify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
-        '/tmp/2quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_hist.pdf',
-        '/tmp/3quantify_2011_05_19_00_08_00_121f03006_gvt3_12hour_pm1mg_001800_z1mg.pdf',
-        '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat/1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
-        '/tmp/3quantify_2014_03_03_14_30_00_121f08_rvts_glacier3_duty_cycle.pdf',
-        ]
+    #title = "FileDialog"
+    #prompt = "Pick from\nthis file list:"
+    #choice_list = files   
+    #
+    #mcd = FileDialog(title, prompt, choice_list)
+    #choices = mcd.get_choices()    
+    #print choices
+    #return
     
     for f in files:
         c, args = map_fname_pat_to_class(f)
         print c, f
 
-#helper_to_verify_match(); raise SystemExit
+files = [
+    '/tmp/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf',
+    '/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf',
+    '/tmp/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf',
+    '/tmp/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf',
+    '/tmp/1quantify_2013_12_11_16_20_00_ossbtmf_gvt3_progress53p_reboost.pdf',
+    '/tmp/1qualify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
+    '/tmp/2quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_hist.pdf',
+    '/tmp/3quantify_2011_05_19_00_08_00_121f03006_gvt3_12hour_pm1mg_001800_z1mg.pdf',
+    '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat/1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
+    '/tmp/3quantify_2014_03_03_14_30_00_121f08_rvts_glacier3_duty_cycle.pdf',
+    ]
+helper_to_verify_match(files); raise SystemExit
     
 if __name__ == '__main__':
 
