@@ -18,7 +18,6 @@ import wx
 from pims.files.base import RecognizedFile, UnrecognizedPimsFile
 from pims.strings.utils import underscore_as_datetime, title_case_special, sensor_tuple
 from pims.files.utils import guess_file
-from pims.patterns.handbookpdfs import * # THIS IS WHERE PATTERNS ARE DEFINED/REFINED
 from pims.files.utils import listdir_filename_pattern
 from pims.files.pdfs.pdfjam import PdfjamCommand, PdfjoinCommand
 from pims.files.log import HandbookLog
@@ -28,18 +27,33 @@ from pims.pad.padheader import PadHeaderDict
 from appy.pod.renderer import Renderer
 from pims.paths import _YODA_HANDBOOK_DIR
 from pims.database.pimsquery import db_insert_handbook, HandbookQueryFilename
-#from pims.gui.alert_dialog import simple_gui
 from pims.utils.iterabletools import quantify
 from pims.gui.multichoice_dialog import MultiChoiceDialog
+import pims.patterns.handbookpdfs as hbpat
 
 # TODO see /home/pims/dev/programs/python/pims/README.txt
+
+# for convenience, build dict for patterns
+PATS = {}
+for key, value in hbpat.__dict__.items():
+    if key.endswith('PDF_PATTERN'):
+        PATS[key] = value
+
+files = [
+    '/tmp/x1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500.pdf',
+    '/tmp/1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500.pdf',    
+    ]
+
+for f in files:
+    print 'match = %s for %s' % (bool(re.match(PATS['_SPGXROADMAPPDF_PATTERN'], f)), f)
+raise SystemExit
 
 class HandbookPdf(RecognizedFile):
     """
     A class derived from RecognizedFile, which provides
     additional features for dealing with handbook files.
     """
-    def __init__(self, name, pattern=_HANDBOOKPDF_PATTERN, show_warnings=False):
+    def __init__(self, name, pattern=hbpat._HANDBOOKPDF_PATTERN, show_warnings=False):
         super(HandbookPdf, self).__init__(name, pattern, show_warnings=show_warnings)
         self.plot_type = self._get_plot_type()
         self.page = self._get_page()
@@ -56,14 +70,14 @@ class HandbookPdf(RecognizedFile):
 
     def _get_notes(self): return self._match.group('notes') or 'empty'
 
-    def _get_plot_type(self): return _PLOTTYPES['']
+    def _get_plot_type(self): return hbpat._PLOTTYPES['']
     
 class OssBtmfRoadmapPdf(HandbookPdf):
     """
     OSSBTMF Roadmap PDF handbook file like this example:
     /tmp/2quantify_2013_10_01_08_ossbtmf_roadmap+some_notes.pdf
     """
-    def __init__(self, name, pattern=_OSSBTMFROADMAPPDF_PATTERN, show_warnings=False):
+    def __init__(self, name, pattern=hbpat._OSSBTMFROADMAPPDF_PATTERN, show_warnings=False):
         super(OssBtmfRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings) # pattern is specialized for this class
         self.timestr = self._get_timestr()
         self.datetime = self._get_datetime()
@@ -107,14 +121,14 @@ class OssBtmfRoadmapPdf(HandbookPdf):
         else:
             return sensor
 
-    def _get_plot_type(self): return _PLOTTYPES['gvt']
+    def _get_plot_type(self): return hbpat._PLOTTYPES['gvt']
 
 class RadgseRoadmapNup1x2Pdf(OssBtmfRoadmapPdf):
     """
     Radgse gvt3 (1x2 nup) Roadmap PDF handbook file like this example name:
     /tmp/4quantify_2013_09_28_16_radgse_roadmapnup1x2.pdf
     """
-    def __init__(self, name, pattern=_RADGSEROADMAPNUP1X2PDF_PATTERN, show_warnings=False):
+    def __init__(self, name, pattern=hbpat._RADGSEROADMAPNUP1X2PDF_PATTERN, show_warnings=False):
         super(RadgseRoadmapNup1x2Pdf, self).__init__(name, pattern, show_warnings=show_warnings)
         self.location = 'ISS'
     
@@ -134,14 +148,14 @@ class RadgseRoadmapNup1x2Pdf(OssBtmfRoadmapPdf):
         orient = 'landscape'
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
    
-    def _get_plot_type(self): return _PLOTTYPES['gvt']
+    def _get_plot_type(self): return hbpat._PLOTTYPES['gvt']
 
 class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     """
     Spectrogram Roadmap PDF handbook file like this example:
     /tmp/1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500_maybe_notes.pdf
     """
-    def __init__(self, name, pattern=_SPGXROADMAPPDF_PATTERN, show_warnings=False):
+    def __init__(self, name, pattern=hbpat._SPGXROADMAPPDF_PATTERN, show_warnings=False):
         super(SpgxRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings)
         self.axis = self._get_axis()
     
@@ -152,45 +166,45 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
         orient = 'landscape'
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
    
-    def _get_plot_type(self): return _PLOTTYPES['spg']
+    def _get_plot_type(self): return hbpat._PLOTTYPES['spg']
     
     def _get_axis(self): return self._match.group('axis')
 
 class RvtxRoadmapPdf(SpgxRoadmapPdf):
-    def _get_plot_type(self): return _PLOTTYPES['rvt']
+    def _get_plot_type(self): return hbpat._PLOTTYPES['rvt']
 
 class PcsaRoadmapPdf(SpgxRoadmapPdf):
-    def _get_plot_type(self): return _PLOTTYPES['pcs']
+    def _get_plot_type(self): return hbpat._PLOTTYPES['pcs']
 
 class Psd3RoadmapPdf(SpgxRoadmapPdf):
     """
     PSD XYZ PDF handbook file like this example:
     /tmp/4qualify_2013_10_08_13_35_00_es03_psd3_compare_msg_wv3fans.pdf
     """
-    def __init__(self, name, pattern=_PSD3ROADMAPPDF_PATTERN, show_warnings=False):
+    def __init__(self, name, pattern=hbpat._PSD3ROADMAPPDF_PATTERN, show_warnings=False):
         super(Psd3RoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings)
 
-    def _get_plot_type(self): return _PLOTTYPES['psd']
+    def _get_plot_type(self): return hbpat._PLOTTYPES['psd']
 
 class Gvt3Pdf(SpgxRoadmapPdf):
     """
     GVT XYZ PDF handbook file like this example:
     /tmp/4qualify_2013_10_08_13_35_00_es03_gvt3_my_notes_here.pdf
     """
-    def __init__(self, name, pattern=_GVT3PDF_PATTERN, show_warnings=False):
+    def __init__(self, name, pattern=hbpat._GVT3PDF_PATTERN, show_warnings=False):
         super(Gvt3Pdf, self).__init__(name, pattern, show_warnings=show_warnings)
 
-    def _get_plot_type(self): return _PLOTTYPES['gvt']
+    def _get_plot_type(self): return hbpat._PLOTTYPES['gvt']
 
 class CvfsRoadmapPdf(SpgxRoadmapPdf):
     """
     Cumulative RMS vs. frequency (sum) PDF handbook file like this example:
     /tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf
     """
-    def __init__(self, name, pattern=_CVFSROADMAPPDF_PATTERN, show_warnings=False):
+    def __init__(self, name, pattern=hbpat._CVFSROADMAPPDF_PATTERN, show_warnings=False):
         super(CvfsRoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings)
 
-    def _get_plot_type(self): return _PLOTTYPES['cvf']
+    def _get_plot_type(self): return hbpat._PLOTTYPES['cvf']
 
     def _get_pdfjam_cmd(self):
         xoffset, yoffset = -4.25, 1.0
@@ -203,7 +217,7 @@ class IntStatPdf(SpgxRoadmapPdf):
     Interval stat PDF handbook file like this example:
     /tmp/2qualify_2013_09_01_121f05006_irmsx_entire_month.pdf
     """
-    def __init__(self, name, pattern=_ISTATPDF_PATTERN, show_warnings=False):
+    def __init__(self, name, pattern=hbpat._ISTATPDF_PATTERN, show_warnings=False):
         super(IntStatPdf, self).__init__(name, pattern, show_warnings=show_warnings)
         self.axis = self._get_axis()
         
@@ -213,7 +227,7 @@ class IntStatPdf(SpgxRoadmapPdf):
         orient = 'landscape'
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
    
-    def _get_plot_type(self): return _PLOTTYPES['ist']
+    def _get_plot_type(self): return hbpat._PLOTTYPES['ist']
 
 # FIXME do some log.info
 class HandbookPdfjamCommand(PdfjamCommand):
@@ -310,7 +324,7 @@ class HandbookEntry(object):
         """ Parse source directory string into regime, category, and title. """
         parentDir, s = os.path.split(self.source_dir)
         tup = s.split('_')
-        regime = _ABBREVS[tup[1]]
+        regime = hbpat._ABBREVS[tup[1]]
         category = title_case_special(tup[2])
         title = ' '.join(tup[3:])
         self.log.process.info( 'Parsed source_dir string: regime:{0}, category:{1}, and title:{2}'.format(regime, category, title) )
