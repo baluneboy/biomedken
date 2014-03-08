@@ -33,21 +33,6 @@ import pims.patterns.handbookpdfs as hbpat
 
 # TODO see /home/pims/dev/programs/python/pims/README.txt
 
-# for convenience, build dict for patterns
-PATS = {}
-for key, value in hbpat.__dict__.items():
-    if key.endswith('PDF_PATTERN'):
-        PATS[key] = value
-
-files = [
-    '/tmp/x1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500.pdf',
-    '/tmp/1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500.pdf',    
-    ]
-
-for f in files:
-    print 'match = %s for %s' % (bool(re.match(PATS['_SPGXROADMAPPDF_PATTERN'], f)), f)
-raise SystemExit
-
 class HandbookPdf(RecognizedFile):
     """
     A class derived from RecognizedFile, which provides
@@ -577,70 +562,39 @@ class HandbookEntry(object):
 
 # Dictionary to map pattern -> class
 _MAP_REGEXP_CLASS = {}
-_MAP_REGEXP_CLASS[re.compile( _GVT3PDF_PATTERN )]                = Gvt3Pdf
-_MAP_REGEXP_CLASS[re.compile( _SPGXROADMAPPDF_PATTERN )]         = SpgxRoadmapPdf
-_MAP_REGEXP_CLASS[re.compile( _OSSBTMFROADMAPPDF_PATTERN )]      = OssBtmfRoadmapPdf
-_MAP_REGEXP_CLASS[re.compile( _RADGSEROADMAPNUP1X2PDF_PATTERN )] = RadgseRoadmapNup1x2Pdf
-_MAP_REGEXP_CLASS[re.compile( _ISTATPDF_PATTERN )]               = IntStatPdf
-_MAP_REGEXP_CLASS[re.compile( _PSD3ROADMAPPDF_PATTERN )]         = Psd3RoadmapPdf
-_MAP_REGEXP_CLASS[re.compile( _CVFSROADMAPPDF_PATTERN )]         = CvfsRoadmapPdf
-_MAP_REGEXP_CLASS[re.compile( _RVTXPDF_PATTERN )]                = RvtxRoadmapPdf
+_MAP_REGEXP_CLASS[re.compile( hbpat._GVT3PDF_PATTERN )]                = Gvt3Pdf
+_MAP_REGEXP_CLASS[re.compile( hbpat._SPGXROADMAPPDF_PATTERN )]         = SpgxRoadmapPdf
+_MAP_REGEXP_CLASS[re.compile( hbpat._OSSBTMFROADMAPPDF_PATTERN )]      = OssBtmfRoadmapPdf
+_MAP_REGEXP_CLASS[re.compile( hbpat._RADGSEROADMAPNUP1X2PDF_PATTERN )] = RadgseRoadmapNup1x2Pdf
+_MAP_REGEXP_CLASS[re.compile( hbpat._ISTATPDF_PATTERN )]               = IntStatPdf
+_MAP_REGEXP_CLASS[re.compile( hbpat._PSD3ROADMAPPDF_PATTERN )]         = Psd3RoadmapPdf
+_MAP_REGEXP_CLASS[re.compile( hbpat._CVFSROADMAPPDF_PATTERN )]         = CvfsRoadmapPdf
+_MAP_REGEXP_CLASS[re.compile( hbpat._RVTXPDF_PATTERN )]                = RvtxRoadmapPdf
 # Add any new pattern/class here
 
-# A file dialog to show files that match one of handbook PDF patterns.
-class FileDialog(MultiChoiceDialog):
-    """ A file dialog to show files that match one of handbook PDF patterns. """
-
-    def __init__(self, title, prompt, choice_list):
-        super(FileDialog, self).__init__(title, prompt, choice_list)
-        self.dirnames = [os.path.dirname(f) for f in choice_list]
-        self.fullnames = choice_list
-        self.basenames = [os.path.basename(f) for f in choice_list]
-
-    def set_choice_list(self, choice_list):
-        return [os.path.basename(f) for f in choice_list]
-
-    def get_choices(self):
-        
-        # pre-select only items that match a handbook PDF pattern
-        self.dialog.SetSelections(range(len(self.choice_list)))
-        
-        # interact with user
-        if (self.dialog.ShowModal() == wx.ID_OK):
-            selections = self.dialog.GetSelections()
-            choices = [self.choice_list[x] for x in selections]
-            
-        self.dialog.Destroy()
-        self.app.MainLoop()
-        
-        return [ os.path.join(d,b) for d,b in zip(self.dirnames, choices)]
-
-    # map filename via unique pattern match to its class
-    def map_fname_pat_to_class(self, s):
-        """map filename via unique pattern match to its class"""
-        
-        # match each regex on the string
-        matches = ( (c, regex.match(s)) for regex, c in _MAP_REGEXP_CLASS.iteritems() )
+# map filename via unique pattern match to its class
+def map_fname_pat_to_class(s):
+    """map filename via unique pattern match to its class"""
     
-        print matches
-        
-        # filter out empty (non) matches, and extract groups
-        match_list = [ (c, match.groups()) for c, match in matches if match is not None ]
-        
-        # verify unique pattern match
-        if len(match_list) != 1:
-            raise ValueError( 'DO NOT have unique handbook pattern match for %s' % s )    
+    # match each regex on the string
+    matches = ( (c, regex.match(s)) for regex, c in _MAP_REGEXP_CLASS.iteritems() )
     
-        # since only one, pull class, mgroups off list
-        klass, args = match_list[0]
-        return klass, args
+    # filter out empty (non) matches, and extract groups
+    match_list = [ (c, match.groups()) for c, match in matches if match is not None ]
+    
+    # verify unique pattern match
+    if len(match_list) != 1:
+        raise ValueError( 'DO NOT have unique handbook pattern match for %s' % s )    
 
-    def show_matches(self):
-        """Map via dictionary with fname regexp pattern as key and class name as value"""
-       
-        for f in self.fullnames:
-            c, args = self.map_fname_pat_to_class(f)
-            print c, f
+    # since only one, pull class, mgroups off list
+    klass, args = match_list[0]
+    return klass, args
+
+def show_matches(fullnames):
+    """Map via dictionary with fname regexp pattern as key and class name as value"""
+    for f in fullnames:
+        c, args = map_fname_pat_to_class(f)
+        print c, f
 
 files = [
     '/tmp/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf',
@@ -654,10 +608,9 @@ files = [
     '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat/1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
     '/tmp/3quantify_2014_03_03_14_30_00_121f08_rvts_glacier3_duty_cycle.pdf',
     ]
-fd = FileDialog('title', 'prompt', files)
-fd.show_matches()
+show_matches(files)
 raise SystemExit
-    
+
 if __name__ == '__main__':
 
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Cygnus_Capture_Install')
