@@ -2,72 +2,102 @@
 
 import wx
 import os
+import re
 
 # A simple multi-choice dialog
 class MultiChoiceDialog(object):
     """ A simple multi-choice dialog. """
     
-    def __init__(self, title, prompt, choice_list):
+    def __init__(self, title, prompt, choices):
         
-        # set choice list
-        self.choice_list = self.set_choice_list(choice_list)
+        # inputs
+        self.title = title
+        self.prompt = prompt
+        self.choices = choices
         
-        # need to create app first
+        # format or otherwise prettify the choices
+        self.pretty_choices = self.prettify_choices()
+        
+        # for wx, we need to create app before constructing dialog
         self.app = wx.PySimpleApp()
         
-        # now multichoice dialog
-        self.dialog = wx.MultiChoiceDialog( None, prompt, title, self.choice_list )       
+        # construct wx multichoice dialog
+        self.dialog = wx.MultiChoiceDialog( None, self.prompt, self.title, self.pretty_choices )       
     
-    def set_choice_list(self, choice_list):
-        return choice_list
+        # preselect items
+        self.preselect()
     
-    def get_choices(self):
-        
-        # pre-select all items
-        self.dialog.SetSelections(range(len(self.choice_list)))
+    def prettify_choices(self):
+        # nothing pretty for simple base class
+        return self.choices
+    
+    def preselect(self):
+        """This is where a subclass might, for example, filter for pre-selects."""
+        # we just select all items for simple base class
+        idx = range(len(self.choices))
+        self.dialog.SetSelections(idx)
+    
+    def show_dialog(self):
         
         # interact with user
         if (self.dialog.ShowModal() == wx.ID_OK):
             selections = self.dialog.GetSelections()
-            choices = [self.choice_list[x] for x in selections]
+            user_selections = [self.choices[x] for x in selections]
             
         self.dialog.Destroy()
         self.app.MainLoop()
         
         # return items the user selected
-        return choices        
+        return user_selections        
     
-# A simple multi-choice dialog for files (with paths)
+# A multi-choice dialog for files (with paths).
 class MultiChoiceFileDialog(MultiChoiceDialog):
-    """ A simple multi-choice dialog for files (with paths). """
+    """ A multi-choice dialog for files (with paths). """
 
-    def __init__(self,title, prompt, choice_list):
-        super(MultiChoiceFileDialog, self).__init__(title, prompt, choice_list)
-        self.dirnames = [os.path.dirname(f) for f in choice_list]
+    def prettify_choices(self):
+        # to make file choices pretty, we strip dirnames
+        return [os.path.basename(f) for f in self.choices]
 
-    def set_choice_list(self, choice_list):
-        return [os.path.basename(f) for f in choice_list]
+# A multi-choice dialog for files with a filter for preselects.
+class MultiChoiceFilterFileDialog(MultiChoiceFileDialog):
+    """ A multi-choice dialog for files with a filter for preselects. """
 
-    def get_choices(self):
-        basenames = super(MultiChoiceFileDialog, self).get_choices()
-        return [ os.path.join(d,b) for d,b in zip(self.dirnames, basenames)]
+    def __init__(self, title, prompt, choices, predicate):
+        # we will use predicate for preselect method
+        self.predicate = predicate
+        super(MultiChoiceFilterFileDialog, self).__init__(title, prompt, choices)
+
+    def preselect(self):
+        """Apply filtering via predicate to do preselection."""
+        idx = [ i for i, f in enumerate(self.choices) if self.predicate(f) ]
+        self.dialog.SetSelections(idx)
 
 if __name__ == '__main__':
     
     #title = "Demo wx.MultiChoiceDialog"
     #prompt = "Pick from\nthis list:"
-    #choice_list = [ 'apple', 'pear', 'banana', 'coconut', 'orange', 'grape', 'pineapple',
+    #choices = [ 'apple', 'pear', 'banana', 'coconut', 'orange', 'grape', 'pineapple',
     #        'blueberry', 'raspberry', 'blackberry', 'snozzleberry',
     #        'etc' ]    
     #
-    #mcd = MultiChoiceDialog(title, prompt, choice_list)
-    #choices = mcd.get_choices()
+    #mcd = MultiChoiceDialog(title, prompt, choices)
+    #user_selections = mcd.show_dialog()
+    #
+    #print user_selections
+    #raise SystemExit
+
+    # example predicates
+    is_csv = lambda fname : bool(re.match('.*\.csv', fname))
+    is_txt = lambda fname : bool(re.match('.*\.txt', fname))
+    is_csv_or_txt = lambda fname : bool(re.match('.*\.csv|.*\.txt', fname))
+    
+    is_unique_match = any(somePredicate(elem) for elem in someIterable)
     
     title = "Demo Class MultiChoiceFileDialog"
     prompt = "Pick from\nthis file list:"
-    choice_list = [ '/tmp/one.txt', '/path/two.csv' ]    
+    choices = [ '/tmp/one.txt', '/path/two.csv' ]    
     
-    mcd = MultiChoiceFileDialog(title, prompt, choice_list)
-    choices = mcd.get_choices()    
+    mcd = MultiChoiceFilterFileDialog(title, prompt, choices, is_csv)
+    user_selections = mcd.show_dialog()    
     
-    print choices
+    print user_selections
