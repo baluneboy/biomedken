@@ -40,9 +40,11 @@ class MultiChoiceDialog(object):
     def show_dialog(self):
         
         # interact with user
-        if (self.dialog.ShowModal() == wx.ID_OK):
+        if self.dialog.ShowModal() == wx.ID_OK:
             selections = self.dialog.GetSelections()
             user_selections = [self.choices[x] for x in selections]
+        else:
+            return None
             
         self.dialog.Destroy()
         self.app.MainLoop()
@@ -90,9 +92,7 @@ if __name__ == '__main__':
     is_csv = lambda fname : bool(re.match('.*\.csv', fname))
     is_txt = lambda fname : bool(re.match('.*\.txt', fname))
     is_csv_or_txt = lambda fname : bool(re.match('.*\.csv|.*\.txt', fname))
-    
-    is_unique_match = any(somePredicate(elem) for elem in someIterable)
-    
+       
     title = "Demo Class MultiChoiceFileDialog"
     prompt = "Pick from\nthis file list:"
     choices = [ '/tmp/one.txt', '/path/two.csv' ]    
@@ -100,4 +100,9 @@ if __name__ == '__main__':
     mcd = MultiChoiceFilterFileDialog(title, prompt, choices, is_csv)
     user_selections = mcd.show_dialog()    
     
-    print user_selections
+    if user_selections is None:
+        print 'you pressed cancel'        
+    elif len(user_selections) == 0:
+        print 'you chose nothing'
+    else:
+        print user_selections

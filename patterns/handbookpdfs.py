@@ -9,7 +9,7 @@ __all__ = [
     '_OSSBTMFROADMAPPDF_PATTERN',
     '_RADGSEROADMAPNUP1X2PDF_PATTERN',    
     '_SPGXROADMAPPDF_PATTERN',
-    '_ISTATPDF_PATTERN',
+    '_INTSTATPDF_PATTERN',
     '_PLOTTYPES',
     '_ABBREVS',
     '_PSD3ROADMAPPDF_PATTERN',
@@ -33,7 +33,7 @@ _HANDBOOKPDF_PATTERN = (
 #/tmp/pth/3qualify_2013_09_01_121f05006_irmsy_entire_month.pdf
 #-------------------------------------------------------------
 #.*(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>[\d_\.]*)_(?P<sensor>.*)_(?P<plot_type>imm|irms)(?P<axis>.)_(?P<notes>.*)\.pdf
-_ISTATPDF_PATTERN = (
+_INTSTATPDF_PATTERN = (
     ".*/"                                       # path at the start, then
     "(?P<page>\d{1})"                           # a digit, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
@@ -90,7 +90,26 @@ _SPGXROADMAPPDF_PATTERN = (
     "(?P<timestr>.*)"                           # timestr, then    
     "_"                                         # underscore, then
     "(?P<sensor>.*)"                            # sensor, then
-    "_(?P<plot_type>spg|pcs)"                       # underscore spg|pcs, then
+    "_(?P<plot_type>spg)"                       # underscore spg, then
+    "(?P<axis>.)"                               # axis, then
+    "_roadmaps"                                 # underscore roadmaps, then
+    "(?P<sample_rate>[0-9]*[p\.]?[0-9]+)"       # zero or more digits, zero or one pee or dot, one or more digit, then
+    "(?P<notes>.*)"                             # notes, then
+    "\.pdf\Z"                                   # extension to finish
+    )
+
+#/tmp/1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500.pdf
+#--------------------------------------------------------------------
+#.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>\w*)(?P<axis>.)_roadmaps(?P<sample_rate>[0-9]*[p\.]?[0-9]+)(?P<notes>.*)\.pdf\Z
+_PCSAROADMAPPDF_PATTERN = (
+    ".*/"                                       # path at the start, then
+    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
+    "_"                                         # underscore, then
+    "(?P<timestr>.*)"                           # timestr, then    
+    "_"                                         # underscore, then
+    "(?P<sensor>.*)"                            # sensor, then
+    "_(?P<plot_type>pcs)"                       # underscore pcs, then
     "(?P<axis>.)"                               # axis, then
     "_roadmaps"                                 # underscore roadmaps, then
     "(?P<sample_rate>[0-9]*[p\.]?[0-9]+)"       # zero or more digits, zero or one pee or dot, one or more digit, then
@@ -216,7 +235,7 @@ def demo_hbfpat():
     m = re.match( re.compile(_SPGXROADMAPPDF_PATTERN), input_value)
 
     input_value = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf'
-    m = re.match( re.compile(_ISTATPDF_PATTERN), input_value)
+    m = re.match( re.compile(_INTSTATPDF_PATTERN), input_value)
     
     if m is None:
         raise ValueError('Invalid literal for PATTERN: %r' % input_value)

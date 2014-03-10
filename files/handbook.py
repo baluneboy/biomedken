@@ -28,7 +28,6 @@ from appy.pod.renderer import Renderer
 from pims.paths import _YODA_HANDBOOK_DIR
 from pims.database.pimsquery import db_insert_handbook, HandbookQueryFilename
 from pims.utils.iterabletools import quantify
-from pims.gui.multichoice_dialog import MultiChoiceDialog
 import pims.patterns.handbookpdfs as hbpat
 
 # TODO see /home/pims/dev/programs/python/pims/README.txt
@@ -155,7 +154,7 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     
     def _get_axis(self): return self._match.group('axis')
 
-class RvtxRoadmapPdf(SpgxRoadmapPdf):
+class RvtxPdf(SpgxRoadmapPdf):
     def _get_plot_type(self): return hbpat._PLOTTYPES['rvt']
 
 class PcsaRoadmapPdf(SpgxRoadmapPdf):
@@ -202,7 +201,7 @@ class IntStatPdf(SpgxRoadmapPdf):
     Interval stat PDF handbook file like this example:
     /tmp/2qualify_2013_09_01_121f05006_irmsx_entire_month.pdf
     """
-    def __init__(self, name, pattern=hbpat._ISTATPDF_PATTERN, show_warnings=False):
+    def __init__(self, name, pattern=hbpat._INTSTATPDF_PATTERN, show_warnings=False):
         super(IntStatPdf, self).__init__(name, pattern, show_warnings=show_warnings)
         self.axis = self._get_axis()
         
@@ -326,7 +325,8 @@ class HandbookEntry(object):
 
     def _get_files(self, pth, fname_pattern):
         """Get files that match filename pattern at path."""
-        return listdir_filename_pattern(pth, fname_pattern)        
+        # if ALL files have unique match (for mapping to class), then use as-is
+        return listdir_filename_pattern(pth, fname_pattern)
 
     def _get_handbook_files(self):
         """Get files that match pattern for handbook PDFs."""
@@ -559,57 +559,6 @@ class HandbookEntry(object):
         os.rename(self.ancillary_odt_name, new_name)
         ret_code = convert_odt2pdf(new_name)
         return new_name.replace('.odt','.pdf')
-
-# Dictionary to map pattern -> class
-_MAP_REGEXP_CLASS = {}
-_MAP_REGEXP_CLASS[re.compile( hbpat._GVT3PDF_PATTERN )]                = Gvt3Pdf
-_MAP_REGEXP_CLASS[re.compile( hbpat._SPGXROADMAPPDF_PATTERN )]         = SpgxRoadmapPdf
-_MAP_REGEXP_CLASS[re.compile( hbpat._OSSBTMFROADMAPPDF_PATTERN )]      = OssBtmfRoadmapPdf
-_MAP_REGEXP_CLASS[re.compile( hbpat._RADGSEROADMAPNUP1X2PDF_PATTERN )] = RadgseRoadmapNup1x2Pdf
-_MAP_REGEXP_CLASS[re.compile( hbpat._ISTATPDF_PATTERN )]               = IntStatPdf
-_MAP_REGEXP_CLASS[re.compile( hbpat._PSD3ROADMAPPDF_PATTERN )]         = Psd3RoadmapPdf
-_MAP_REGEXP_CLASS[re.compile( hbpat._CVFSROADMAPPDF_PATTERN )]         = CvfsRoadmapPdf
-_MAP_REGEXP_CLASS[re.compile( hbpat._RVTXPDF_PATTERN )]                = RvtxRoadmapPdf
-# Add any new pattern/class here
-
-# map filename via unique pattern match to its class
-def map_fname_pat_to_class(s):
-    """map filename via unique pattern match to its class"""
-    
-    # match each regex on the string
-    matches = ( (c, regex.match(s)) for regex, c in _MAP_REGEXP_CLASS.iteritems() )
-    
-    # filter out empty (non) matches, and extract groups
-    match_list = [ (c, match.groups()) for c, match in matches if match is not None ]
-    
-    # verify unique pattern match
-    if len(match_list) != 1:
-        raise ValueError( 'DO NOT have unique handbook pattern match for %s' % s )    
-
-    # since only one, pull class, mgroups off list
-    klass, args = match_list[0]
-    return klass, args
-
-def show_matches(fullnames):
-    """Map via dictionary with fname regexp pattern as key and class name as value"""
-    for f in fullnames:
-        c, args = map_fname_pat_to_class(f)
-        print c, f
-
-files = [
-    '/tmp/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf',
-    '/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf',
-    '/tmp/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf',
-    '/tmp/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf',
-    '/tmp/1quantify_2013_12_11_16_20_00_ossbtmf_gvt3_progress53p_reboost.pdf',
-    '/tmp/1qualify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
-    '/tmp/2quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_hist.pdf',
-    '/tmp/3quantify_2011_05_19_00_08_00_121f03006_gvt3_12hour_pm1mg_001800_z1mg.pdf',
-    '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat/1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
-    '/tmp/3quantify_2014_03_03_14_30_00_121f08_rvts_glacier3_duty_cycle.pdf',
-    ]
-show_matches(files)
-raise SystemExit
 
 if __name__ == '__main__':
 
