@@ -748,385 +748,10 @@ class PadGenerator(PacketInspector):
             # FIXME this is not robust !!! CARELESS ABOUT INDEXING -- what if multiple traces?
             absolute_times = substream[0].times() + substream[0].stats.starttime.timestamp
         
+            # this is where we send the data over to (presumably) the plot routine
             if self.step_callback:
                 step_data = (current_info_tuple, current_info_tuple, absolute_times, substream, flash_msg)            
-                self.step_callback(step_data)    
-
-    # get header subfields
-    def get_subfields(self, h, field, Lsubs):
-        """get sub fields using xml parser"""
-        d = {}
-        for k in Lsubs:
-            theElement = h.documentElement.getElementsByTagName(field)[0]
-            d[k] = str(theElement.getAttribute(k))
-        return d
-
-    # get first header
-    def get_first_header(self): #, packetStart, analysis_interval):
-        """get first header (only first)"""
-        dHeader = {}
-        h = xml_parse( self.buildHeader('NOFILE') )
-
-        # get XML root node localName (like "sams2_accel") and split for system
-        dHeader['System'] = h.documentElement.localName.split('_')[0].upper()
-
-        # get a few basic fields
-        L = ['SampleRate', 'CutoffFreq', 'DataQualityMeasure', 'SensorID', 'TimeZero', 'ISSConfiguration']
-        for i in L:
-            dHeader[i] = str(h.documentElement.getElementsByTagName(i)[0].childNodes[0].nodeValue)
-        dHeader['SampleRate'] = float(dHeader['SampleRate'])
-        dHeader['CutoffFreq'] = float(dHeader['CutoffFreq'])
-
-        # get fields that have sub-fields
-        Lcoord = ['x','y','z','r','p','w','name','time','comment']
-        dHeader['SensorCoordinateSystem'] = self.get_subfields(h,'SensorCoordinateSystem',Lcoord)
-        dHeader['DataCoordinateSystem'] = self.get_subfields(h,'DataCoordinateSystem',Lcoord)
-        dHeader['GData'] = self.get_subfields(h,'GData',['format','file'])
-
-        # use first header as self.header_string
-        self.header_string = '%s, %s (%g Hz, %g sps), at %s in %s Coordinates' % (
-            dHeader['System'],
-            dHeader['SensorID'],
-            dHeader['CutoffFreq'],
-            dHeader['SampleRate'],
-            dHeader['SensorCoordinateSystem']['comment'],
-            dHeader['DataCoordinateSystem']['name'])
-
-        # initialize stream and stats objects
-        self.stream = PadStream()
-        self.header = self.init_header(dHeader)
-
-        log.debug('%04d got first header, "stats", and initialized stream' % get_line())
-
-    # primative comparison of packet header info to first, lead header counterparts
-    def is_header_same(self, p):
-        """compare packet header info to first header"""
-        if self.header['station'] == p.name():              # like "121f05" or maybe "hirap"
-            if self.header['sampling_rate'] == p.rate():    # a float like say 500.0
-                return True
-        return False
-
-    # formatted string of bool; True if this packet is contiguous with last packet"""
-    def show_contig(self, lastp, thisp):
-        """formatted string of bool; True if this packet is contiguous with last packet"""
-        if not lastp:
-            bln = 'XXXXX'
-        else:
-            bln = thisp.contiguous(lastp)
-        return "contig={0:<5s}".format( str(bln) )
-
-    # append data, per-axis each to rt_trace
-    def append(self, packet):
-        """append data, per-axis each to rt_trace"""
-        global TOTAL_PACKETS_FED
-
-        log.debug( '%04d                %s BEFOR append() %s' % (get_line(), str(self), self.show_contig(self.lastPacket, packet)) )
-
-        # FIXME what happens if we get rid of this thru the BytesIO part?
-        if self._file_ == None:
-            newName = 'temp.' + packet.name()
-            #os.system('rm -rf %s.header' % self._fileName_)
-            ok = True #os.system('mv %s %s' % (self._fileName_, newName)) == 0
-            log.debug('%04d append() is NOT REALLY moving %s to %s, success:%s' % (get_line(), self._fileName_, newName, ok))
-            if not ok: # move failed, maybe file doesn't exist anymore
-                contiguous = packet.contiguous(self.lastPacket)
-                if contiguous:
-                    self._fileSep = '+'
-                else:
-                    self._fileSep = '-'
-                self._fileStart_ = packet.time()
-            self._fileName_ = newName
-            #self._file_ = open(self._fileName_, 'ab') # this is okay, giving zero-length file
-            self._file_ = BytesIO(self._fileName_) # FIXME w/o this or line above we run slow
-
-        txyzs = packet.txyz()
-        packetStart = packet.time()
-        atxyzs = np.array(txyzs, np.float32)
-        if  self._rotateData_ and 4 == len(atxyzs[0]):  # do coordinate system rotation
-            atxyzs[:,1:] = np.dot(atxyzs[:,1:], self._rotationMatrix_ )
-        atxyzs[:,0] = atxyzs[:,0] + np.array(packetStart-self._fileStart_, np.float32) # add offset to times
-
-        aextra = None
-        extra = packet.extraColumns()
-        if extra:
-            aextra = np.array(extra, np.float32)
-
-        if not PARAMETERS['ascii']:
-            if PARAMETERS['bigEndian']:
-                atxyzs = atxyzs.byteswap()
-                if extra:
-                    aextra = aextra.byteswap()
-            if extra:
-                atxyzs = concatenate((atxyzs, aextra), 1)
-            #self._file_.write(atxyzs.tostring()) # NOTE THIS IS "NOT-WRITING" JUST INSPECTING
-            #print atxyzs
-        else:
-            s= ''
-            if extra:
-                atxyzs = concatenate((atxyzs, aextra), 1)
-            formatString = '%.4f'
-            for col in atxyzs[0][1:]:
-                formatString = formatString + ' %.7e'
-            formatString = formatString + '\n'
-            for row in atxyzs:
-                s = s + formatString % tuple(row)
-            #self._file_.write(s) # NOTE THIS IS "NOT-WRITING" JUST INSPECTING
-
-        # for very first packet, get header info
-        if TOTAL_PACKETS_FED == 0:
-            self.get_first_header() #packetStart, self.analysis_interval)
-            self.starttime = UTCDateTime(packetStart)
-            
-        # append and auto-process packet data into PimsRtTrace:
-        if self.is_header_same(packet):
-            with warnings.catch_warnings(): #self.warnfiltstr
-                warnings.filterwarnings(self.warnfiltstr, '.*RtTrace.*|Gap of.*|Overlap of.*')
-                self.append_process_packet_data(atxyzs, packetStart, packet.contiguous(self.lastPacket))
-        else:
-            log.warning( 'DO NOT APPEND PACKET because we got False from is_header_same (near line %d)' % get_line() )
-
-        # update lastPacket and TOTAL_PACKETS_FED
-        self.lastPacket = packet
-        TOTAL_PACKETS_FED = TOTAL_PACKETS_FED + 1
-
-        log.debug( '%04d               %s AFTER append() %s' % (get_line(), str(self), self.show_contig(self.lastPacket, packet)) )
-
-# class to feed packet data hopefully to a good strip chart display
-class OBSOLETEPadGenerator(PacketInspector):
-    """Generator for PimsRtTrace using real-time scaling."""
-    def __init__(self, showWarnings=1, maxsec_rttrace=7200, scale_factor=1000, analysis_interval=10.0):
-        """initialize packet-based, real-time trace PAD generator with scaling"""
-        super(PadGenerator, self).__init__(showWarnings)
-        self.show_warnings      = showWarnings
-        self.maxsec_rttrace     = maxsec_rttrace # in seconds for EACH (x,y,z) rt_trace
-        self.scale_factor       = scale_factor
-        self.analysis_interval  = analysis_interval
-        self.analysis_samples   = None
-        self.starttime          = None
-        if showWarnings:
-            self.warnfiltstr = 'always'
-        else:
-            self.warnfiltstr = 'ignore'
-
-    def __str__(self):
-        #s = ''
-        #for k,v in self.__dict__.iteritems():
-        #    s += '%25s: %s\n' % (k, str(v))
-        #return s
-        if self.lastPacket:
-            return 'lastPacket.endTime()=%s' % unix2dtm( self.lastPacket.endTime() )
-        else:
-            return 'oops, you can ignore this because lastPacket is %s' % str(self.lastPacket)
-
-    # one_shot as class method
-    def next(self, step_callback=None):
-        global MAX_RESULTS, MAX_RESULTS_PER_TABLE
-        #BENCH_NEXT_METHOD.start()
-        self.step_callback = step_callback
-        log.debug('%04d ONESH %s' % (get_line(), '-' * 99))
-        self.lastPacketTotal = TOTAL_PACKETS_FED
-        self.moreToDo = 0
-        timeNow = time()
-        cutoffTime = timeNow - max(PARAMETERS['cutoffDelay'], MIN_DELAY)
-        if PARAMETERS['endTime'] > 0.0:
-            cutoffTime = min(cutoffTime, PARAMETERS['endTime'])
-
-        # verify host has table we want
-        tables = []
-        for table in sqlConnect('show tables',
-                         shost=PARAMETERS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMETERS['database']):
-            tableName = table[0]
-            columns = []
-            for col in sqlConnect('show columns from %s' % tableName,
-                           shost=PARAMETERS['host'], suser=UNAME, spasswd=PASSWD, sdb=PARAMETERS['database']):
-                columns.append(col[0])
-            if ('time' in columns) and ('packet' in columns):
-                tables.append(tableName)
-        if PARAMETERS['tables'] != 'ALL':
-            wanted = split(PARAMETERS['tables'], ',')
-            newTables = []
-            for w in wanted:
-                if w in tables:
-                    newTables.append(w)
-                else:
-                    t = UnixToHumanTime(time(), 1)
-                    t = t + ' warning: table %s was not found, ignoring it' % w
-                    print_log(t)
-            tables = newTables
-        else:
-            msg = 'This program does NOT handle "ALL" or comma-delimited for tables parameter (Ted legacy NOT supported).'
-            log.error(msg)
-            raise Exception(msg)
-        # here's where we check for one and only one table of interest on host
-        if len(tables) != 1:
-            msg = 'did not find exactly one table for %s on host %s' % (PARAMETERS['tables'], PARAMETERS['host'])
-            log.error(msg)
-            raise Exception(msg)
-
-        tableName = tables[0]
-        if idleWait(0):
-            msg = 'idleWait(0) returned True, this is where packetWriter.py would itself exit.'
-            log.error(msg)
-            raise Exception(msg)
-
-        ############################################
-        # get key info for processing packets here #
-        ############################################
-        update_anc_databases()
-        preCutoffProgress = 0
-        packetCount = 0
-        start = ceil4(max(self.lastTime(), PARAMETERS['startTime'])) # database has only 4 decimals of precision
-
-        # write all packets before cutoffTime
-        tpResults = get_timepacket_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'write all pkts before cutoffTime'))
-        packetCount = packetCount + len(tpResults)
-        while len(tpResults) != 0:
-            for result in tpResults:
-                p = guessPacket(result[1], showWarnings=1)
-                if p.type == 'unknown':
-                    log.warning('unknown packet type at time %.4lf' % result[0])
-                    continue
-                log.debug('%04d just before writePacket(): table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(get_line(), tableName, p.type, result[0], p.contiguous(self.lastPacket)))
-                preCutoffProgress = 1
-                self.writePacket(p)
-
-            if packetCount >= MAX_RESULTS_PER_TABLE or len(tpResults) != MAX_RESULTS or idleWait(0):
-                if packetCount >= MAX_RESULTS_PER_TABLE:
-                    self.moreToDo = 1 # go work on another table for a while
-                self.end()
-                tpResults = []
-            else:
-                start = ceil4(max(self.lastTime(), PARAMETERS['startTime'])) # database has only 4 decimals of precision
-                tpResults = get_timepacket_query_results(tableName, start, cutoffTime, MAX_RESULTS, (get_line(), 'while more tpResults exist, new start&cutoffTime'))
-                packetCount = packetCount + len(tpResults)
-
-        log.debug('%04d one_shot() finished BEFORE-cutoff packets for %s up to %.6f, moreToDo:%s' % (get_line(), tableName, self.lastTime(), self.moreToDo))
-
-        # write contiguous packets after cutoffTime
-        if preCutoffProgress and not self.moreToDo:
-            packetCount = 0
-            stillContiguous = 1
-            maxTime = timeNow-MIN_DELAY
-            if PARAMETERS['endTime'] > 0.0:
-                maxTime = min(maxTime, PARAMETERS['endTime'])
-            if PARAMETERS['endTime'] == 0.0 or maxTime < PARAMETERS['endTime']:
-                tpResults = get_timepacket_query_results(tableName, ceil4(self.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'write contiguous pkts after cutoffTime'))
-                packetCount = packetCount + len(tpResults)
-                while stillContiguous and len(tpResults) != 0 and not idleWait(0):
-                    for result in tpResults:
-                        p = guessPacket(result[1])
-                        if p.type == 'unknown':
-                            continue
-                        log.debug('%04d one_shot() table=%7s ptype=%s r[0]=%.4f pcontig=%s' %(get_line(), tableName, p.type, result[0], p.contiguous(self.lastPacket)))
-                        stillContiguous = p.contiguous(self.lastPacket)
-                        if not stillContiguous:
-                            break
-                        self.writePacket(p, stillContiguous)
-                    if packetCount >= MAX_RESULTS_PER_TABLE or len(tpResults) != MAX_RESULTS:
-                        if packetCount >= MAX_RESULTS_PER_TABLE:
-                            self.moreToDo = 1 # go work on another table for a while
-                        self.end()
-                        tpResults = []
-                    elif stillContiguous:
-                        tpResults = get_timepacket_query_results(tableName, ceil4(self.lastTime()), maxTime, MAX_RESULTS, (get_line(), 'while still contiguous and more tpResults...'))
-                        packetCount = packetCount + len(tpResults)
-                    else:
-                        tpResults = []
-
-        log.debug('%04d one_shot() finished AFTER-cutoff CONTIGUOUS packets for %s up to %.6f, moreToDo:%s' % (get_line(), tableName, self.lastTime(), self.moreToDo))
-
-        self.end()
-        dispose_processed_data(tableName, self.lastTime())
-
-        #log.debug('%04d %s' % (get_line(), BENCH_NEXT_METHOD))
-
-        # Only the initial "next" uses MAX_RESULTS_PER_TABLE, thereafter we use MAX_RESULTS
-        MAX_RESULTS_PER_TABLE = MAX_RESULTS
-        
-        #return TOTAL_PACKETS_FED
-
-    def init_header(self, hdr):
-        """initialize header info"""
-        # use Ted's legacy XML header info to our advantage for real-time trace
-        header = {}
-        header['network']       = hdr['System']
-        header['station']       = hdr['SensorID']
-        header['sampling_rate'] = hdr['SampleRate']
-        header['location']      = hdr['SensorCoordinateSystem']['comment']
-        #header['channel']       = ax
-        return header
-
-    def slice_trim_traces(self):
-        t1 = self.stream[0].stats.starttime
-        t2 = t1 + self.analysis_interval
-        st = self.stream.slice(t1, t2)
-        self.stream.trim(starttime=t2)
-        return st
-    
-    def append_process_packet_data(self, atxyzs, start, contig):
-        """append packet data to stream"""
-        # put packet data into a Trace object
-        if contig:
-            log.debug( '%04d CONTIGCOMPARE1of3    %s is "declared start"' % (get_line(), unix2dtm(start)) )
-            prevEndTime = self.stream[-1].stats.endtime
-            start = prevEndTime + self.stream[-1].stats.delta
-            log.debug( '%04d CONTIGCOMPARE2of3    %s is "calc start' % (get_line(), unix2dtm(start)) )
-            log.debug( '%04d CONTIGCOMPARE3of3    %s is "prev end' % (get_line(), unix2dtm(prevEndTime)) )
-        elif self.lastPacket:
-            prevEndTime = self.stream[-1].stats.endtime
-            log.debug( '%04d NOTCONTIGCOMPARE1of2 %s is "declared start"' % (get_line(), unix2dtm(start)) )
-            log.debug( '%04d NOTCONTIGCOMPARE2of2 %s is "prev end"' % (get_line(), unix2dtm(start)) )
-            
-        npts = atxyzs.shape[0]
-        for i, ax in enumerate(['x', 'y', 'z']):
-            tr = Trace( data=atxyzs[:, i+1], header=self.header )
-            tr.normalize( norm=(1.0 / self.scale_factor) ) # norm factor is "/=" so invert sf
-            tr.stats.starttime = start
-            tr.stats['channel'] = ax
-            tr.stats.npts = npts
-            
-            # append trace to stream
-            self.stream.append(tr)
-    
-        span = self.stream.span()
-        log.debug( '%04d span is now %gseconds' % (get_line(), span) )
-
-        # TODO for debug case, deepcopy substream BEFORE merge/sort/detrend/filter; if any of xyz RMS isinf or isnan, then save
-        #      [pickle] that "raw" substream to a file with "DATA TIMESTAMP" in filename and do log.debug with filename
-
-        # if accumulated span fits, then slice and slide right for GraphFrame's data object; otherwise, do nothing        
-        if span >= self.analysis_interval: 
-            substream = self.slice_trim_traces()
-            substream.merge()
-            substream.sort() # need this because merge can shuffle xyz order of traces in substream!?
-            substream.detrend(type='demean')
-            substream.filter('lowpass', freq=5.0, zerophase=True)
-
-            log.debug( '%04d SLICELEFT    %s is substream[-1] from %d traces' % (get_line(), substream[-1], len(substream)) )
-            log.debug( '%04d SLICERIGHT   %s is stream[0]' % (get_line(), self.stream[0]) )
-            log.debug( '%04d SLICEGAP %s%gsec and 0 <= slice_gap < 1.5*dt is %s' % (get_line(), ' '*91,
-                                                                                   self.stream[0].stats.starttime - substream[-1].stats.endtime,
-                                                                                   str(inrange(self.stream[0].stats.starttime - substream[-1].stats.endtime, 0, 1.5*self.stream[0].stats.delta))) )
-    
-            # get data/info to pass to step callback routine
-            curr_start = substream[0].stats.starttime
-            curr_end = substream[-1].stats.endtime
-            current_info_tuple = (str(curr_start), str(curr_end), '%d' % substream[0].stats.npts)
-            flash_msg = 'A flash message from append_process_packet_data goes here.'
-            
-            log.debug( '%04d STARTTIME was %s' % (get_line(), self.starttime) )
-            
-            # slide to right by analysis_interval
-            self.starttime = substream[-1].stats.endtime # FIXME check for multiple traces...why use [-1]
-        
-            log.debug( '%04d STARTTIME now %s' % (get_line(), self.starttime) )        
-        
-            # FIXME this is not robust !!! CARELESS ABOUT INDEXING -- what if multiple traces?
-            absolute_times = substream[0].times() + substream[0].stats.starttime.timestamp
-        
-            if self.step_callback:
-                step_data = (current_info_tuple, current_info_tuple, absolute_times, substream, flash_msg)            
-                self.step_callback(step_data)    
+                self.step_callback(step_data) 
 
     # get header subfields
     def get_subfields(self, h, field, Lsubs):
@@ -1895,8 +1520,10 @@ def demo_sink_pad_generator(datagen, num_iter=2):
         datagen.next(step_callback=callback_show)
         log.info( '%04d done with datagen.next() iter #%d of %d and TOTAL_PACKETS_FED = %d' % (get_line(), x+1, num_iter, TOTAL_PACKETS_FED) )
 
+# get data from pims db tables, process it, and send to near real-time plot routine
 def strip_chart():
-
+    """get data from pims db tables, process it, and send to near real-time plot routine"""
+    
     #print '--- PARAMETERS %s\n' % ('-' * 55), dict_as_str(PARAMETERS)
     #print '--- rt_params %s\n' % ('-' * 55),  dict_as_str(rt_params)
     #raise SystemExit
@@ -1911,12 +1538,13 @@ def strip_chart():
                           interval_params={'type':IntervalRMS,
                                            'analysis_interval':rt_params['time.analysis_interval']},
                           axes='xyz',
-                          maxlen=rt_params['data.maxlen'])
+                          maxlen=rt_params['data.maxlen']
+                          )
     
     #print ppc
     #raise SystemExit
 
-    # check for plot parameter csv file
+    # this is probably where we check for plot parameter csv file (submitted by JAXA?)
 
     # initialize PadGenerator, which is data generator workhorse that
     # was based on Ted Wright's packetWriter.py code; it is the db
@@ -1924,7 +1552,8 @@ def strip_chart():
     datagen             = PadGenerator(ppc,
                                        showWarnings=rt_params['pw.showWarnings'],
                                        maxsec_rttrace=PARAMETERS['maxsec_trace'],
-                                       analysis_overlap=rt_params['time.analysis_overlap'])
+                                       analysis_overlap=rt_params['time.analysis_overlap']
+                                       )
 
     #print datagen.process_chain
     #print type(datagen)
