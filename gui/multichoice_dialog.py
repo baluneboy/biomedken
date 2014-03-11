@@ -50,7 +50,7 @@ class MultiChoiceDialog(object):
         self.app.MainLoop()
         
         # return items the user selected
-        return user_selections        
+        return user_selections
     
 # A multi-choice dialog for files (with paths).
 class MultiChoiceFileDialog(MultiChoiceDialog):

@@ -24,19 +24,17 @@ def parse_roadmap_filename(f):
     else:
         return 'UNKNOWN', 'UNKNOWN', 'UNKNOWN', "%s" % os.path.basename(f)
 
-def guess_file(name, file_type_classes, show_warnings=False):
+def guess_file(name, klass, show_warnings=False):
     """
-    Verify unique pattern, then guess class based on its name.
+    Verify unique pattern, then instantiate class.
     """
     p = File(name)
-    if True: #is_unique_handbook_pdf_match(name):
-        for i in file_type_classes:
-            try:
-                p = i(name, show_warnings=show_warnings)
-                #print i, name
-                return p
-            except UnrecognizedPimsFile:
-                p.recognized = False
+    try:
+        p = klass(name, show_warnings=show_warnings)
+        #print i, name
+        return p
+    except UnrecognizedPimsFile:
+        p.recognized = False
     #if show_warnings and not p.recognized:
     if not p.recognized:
         print 'Unrecognized file "%s"' % name

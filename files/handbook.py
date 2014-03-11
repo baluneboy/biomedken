@@ -1,20 +1,24 @@
 #!/usr/bin/env python
 
 # For new handbook PDF type, do the following:
-# 1. Add it's name as string to __all__ near top of handbookpdfs.py
-# 2. Add it's regex pattern info section below of handbookpdfs.py
-# 3. Use Rx helper to verify good matching
-# 4. Add new class in this file, handbook.py
+# 1. In pims.patterns.handbookpdfs, add new UNIQUE regex pattern and...
+#    be sure pattern varname ends with "PDF_PATTERN", but does NOT start with "_HANDBOOK".
+# 2. In the current module (this file), use existing class (if possible), or add new class for new pattern.
+# 3. In the current module (this file), add example/new filename to "files" and run to see if it checks out here.
+
+# TODO see /home/pims/dev/programs/python/pims/README.txt
 
 """
-Utilities for building handbook files.
+Building handbook files.
 """
-import inspect
+
 import os
-import sys
 import re
-import datetime
 import wx
+import sys
+import inspect
+import datetime
+import warnings
 from pims.files.base import RecognizedFile, UnrecognizedPimsFile
 from pims.strings.utils import underscore_as_datetime, title_case_special, sensor_tuple
 from pims.files.utils import guess_file
@@ -28,9 +32,8 @@ from appy.pod.renderer import Renderer
 from pims.paths import _YODA_HANDBOOK_DIR
 from pims.database.pimsquery import db_insert_handbook, HandbookQueryFilename
 from pims.utils.iterabletools import quantify
-import pims.patterns.handbookpdfs as hbpat
-
-# TODO see /home/pims/dev/programs/python/pims/README.txt
+import pims.patterns.handbookpdfs as hbpat  # patterns
+from pims.gui.multichoice_dialog import MultiChoiceFilterFileDialog
 
 class HandbookPdf(RecognizedFile):
     """
@@ -155,6 +158,10 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     def _get_axis(self): return self._match.group('axis')
 
 class RvtxPdf(SpgxRoadmapPdf):
+    
+    def __init__(self, name, pattern=hbpat._RVTXPDF_PATTERN, show_warnings=False):
+        super(RvtxPdf, self).__init__(name, pattern, show_warnings=show_warnings)
+    
     def _get_plot_type(self): return hbpat._PLOTTYPES['rvt']
 
 class PcsaRoadmapPdf(SpgxRoadmapPdf):
@@ -264,6 +271,78 @@ class HandbookPdftkCommand(PdftkCommand):
         else:
             return None
 
+# convert camel-case name to underscore pattern name
+def camelname_to_patname(cname):
+    pname = '_' + cname.upper() + '_PATTERN'
+    return pname
+
+_HB_CLASS_MEMBERS = [ s for s,c in inspect.getmembers(sys.modules[__name__], inspect.isclass) ]
+
+# we want hb classes that end with "Pdf", but not start with "Handbook"
+def get_map_regexp_class():
+    map_regexp_class = {}
+    dhb = [c for c in _HB_CLASS_MEMBERS if c.endswith('Pdf') and not c.startswith('Handbook')]
+    for hb_class_name in dhb:
+        regexp_name = camelname_to_patname(hb_class_name)
+        #the_class = getattr(hb, hb_class_name)
+        the_class = globals()[hb_class_name] # FIXME if there is better, more pythonic way
+        the_pattern = getattr(hbpat, regexp_name)
+        map_regexp_class[re.compile(the_pattern)] = the_class
+    return map_regexp_class
+
+# map filename via unique pattern match to its class
+def map_fname_pat_to_class(s):
+    """map filename via unique pattern match to its class"""
+    
+    # get dict that maps regexp to class
+    map_regexp_class = get_map_regexp_class()
+    
+    # match each regex on the string
+    matches = ( (c, regex.match(s)) for regex, c in map_regexp_class.iteritems() )
+    
+    # filter out empty (non) matches, and extract groups
+    match_list = [ (c, match.groups()) for c, match in matches if match is not None ]
+    
+    # verify unique pattern match
+    if len(match_list) != 1:
+        warnings.warn( 'DO NOT have unique handbook pattern match for %s' % s )    
+        klass = None
+        args = None
+    else:
+        # since only one, pull class, mgroups off list
+        klass, args = match_list[0]
+    return klass, args
+
+def show_matches(fullnames):
+    """Map via dictionary with fname regexp pattern as key and class name as value"""
+    for f in fullnames:
+        klass, args = map_fname_pat_to_class(f)
+        print f, klass, args
+
+def is_unique_hb_pdf(fname):
+    klass, args = map_fname_pat_to_class(fname)
+    if klass:
+        return True
+    else:
+        return False
+
+class HandbookFileDialog(MultiChoiceFilterFileDialog):
+
+    def __init__(self, files):
+        # we will use this predicate for preselect method
+        self.predicate = is_unique_hb_pdf
+        title = 'Handbook File Dialog'
+        prompt1 = 'Are all desired files checked?'
+        prompt2 = 'IF NOT, THEN HIT CANCEL and fix to verify patterns match...'
+        prompt3 = 'OTHERWISE, just leave the desired ones checked and hit OK'
+        prompt = '\n'.join( (prompt1, prompt2, prompt3) )
+        super(MultiChoiceFilterFileDialog, self).__init__(title, prompt, files)
+    
+    def all_match(self):
+        """Return True if all unique matches for handbook patterns; else return False."""
+        idx = [ i for i, f in enumerate(self.choices) if self.predicate(f) ]
+        self.dialog.SetSelections(idx)
+
 class HandbookEntry(object):
     """
     A handbook entry container that processes recognized pdf files in a recognized
@@ -326,11 +405,22 @@ class HandbookEntry(object):
     def _get_files(self, pth, fname_pattern):
         """Get files that match filename pattern at path."""
         # if ALL files have unique match (for mapping to class), then use as-is
-        return listdir_filename_pattern(pth, fname_pattern)
+        files = listdir_filename_pattern(pth, fname_pattern)
+        dialog = HandbookFileDialog(files)
+        user_selections = dialog.show_dialog()    
+        if user_selections is None:
+            msg = 'user pressed cancel on file dialog'
+        elif len(user_selections) == 0:
+            msg = 'user chose no files from file dialog'
+        else:
+            return user_selections
+        
+        self.log.process.error(msg)
+        raise ValueError(msg)
 
     def _get_handbook_files(self):
         """Get files that match pattern for handbook PDFs."""
-        fname_pattern = _HANDBOOKPDF_PATTERN[3:] # get rid of ".*/"
+        fname_pattern = hbpat._HANDBOOKPDF_PATTERN[3:] # get rid of ".*/"
         return self._get_files(self.source_dir, fname_pattern)
 
     def process_pages(self):
@@ -348,12 +438,19 @@ class HandbookEntry(object):
             self.log.process.info( 'Attempting to process %d pages from files in %s' % ( len(self.pdf_files), self.source_dir ) )
             self.graceful_mkdir_build()
             for f in self.pdf_files:
+                
+                klass, args = map_fname_pat_to_class(f)
+                #print klass, f, args
+                #print type(klass)
+                #continue
+                
                 bname = os.path.basename(f)
                 try:
                     
-                    hbf = guess_file(f, self._pdf_classes, show_warnings=False)
+                    # FIXME we do not need to guess
+                    hbf = guess_file(f, klass, show_warnings=False)
     
-                    # Add 3 high-level hb entry props to hb file object
+                    # Add 3 high-level hb entry properties to hb file object
                     hbf.regime = self.regime
                     hbf.category = self.category
                     hbf.title = self.title
@@ -408,7 +505,7 @@ class HandbookEntry(object):
 
     def _get_odt_files(self):
         """Get files that match pattern for ODTs."""
-        fname_pattern = _HANDBOOKPDF_PATTERN[3:].replace('.pdf', '.odt') # FIXME with low priority (SEE _get_handbook_files)
+        fname_pattern = hbpat._HANDBOOKPDF_PATTERN[3:].replace('.pdf', '.odt') # FIXME with low priority (SEE _get_handbook_files)
         return self._get_files(self.build_dir, fname_pattern)
 
     def process_build(self):
@@ -427,7 +524,7 @@ class HandbookEntry(object):
                 raise IOError('The build sudir %s is not a directory' % self.build_dir)
             
             # get list of files to join (except for ancillary at this point)
-            fname_pattern = _HANDBOOKPDF_PATTERN[3:].replace('.pdf', '_pdftk.pdf')
+            fname_pattern = hbpat._HANDBOOKPDF_PATTERN[3:].replace('.pdf', '_pdftk.pdf')
             self.unjoined_files = self._get_files(self.build_dir, fname_pattern)
             
             # convert ancillary ODT to PDF, prepend page num, and include with other pages to be joined
@@ -560,6 +657,39 @@ class HandbookEntry(object):
         ret_code = convert_odt2pdf(new_name)
         return new_name.replace('.odt','.pdf')
 
+# use this function to test a folder of interest
+def check_dir(folder):
+
+    files = listdir_filename_pattern(folder, hbpat._HANDBOOKPDF_PATTERN[3:])
+
+    #files = [
+    #    '/tmp/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf',
+    #    '/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf',
+    #    '/tmp/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf',
+    #    '/tmp/x3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf',
+    #    '/tmp/1quantify_2013_12_11_16_20_00_ossbtmf_gvt3_progress53p_reboost.pdf',
+    #    '/tmp/1qualify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
+    #    '/tmp/2quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_hist.pdf',
+    #    '/tmp/x3quantify_2011_05_19_00_08_00_121f03006_gvt3_12hour_pm1mg_001800_z1mg.pdf',
+    #    '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat/1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
+    #    '/tmp/x3quantify_2014_03_03_14_30_00_121f08_rvts_glacier3_duty_cycle.pdf',
+    #    ]
+    #show_matches(files)
+       
+    dialog = HandbookFileDialog(files)
+    user_selections = dialog.show_dialog()    
+    if user_selections is None:
+        print 'you pressed cancel'        
+    elif len(user_selections) == 0:
+        print 'you chose nothing'
+    else:
+        print user_selections
+    
+    print "=== above are user selections, below are class assignments ==="
+    show_matches(user_selections)
+    
+#check_dir('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Bogus_Entry'); raise SystemExit
+
 if __name__ == '__main__':
 
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Cygnus_Capture_Install')
@@ -567,7 +697,8 @@ if __name__ == '__main__':
     #hbe = HandbookEntry(source_dir='/home/pims/Documents/test/hb_vib_vehicle_Cygnus_Capture_Install')
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan')
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat')
-    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Columbus_GLACIER-3')
+    #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Columbus_GLACIER-3')
+    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Bogus_Entry')
     
     if True: # True for process_pages (the first stage), False for process_build (the last stage)
         
