@@ -33,7 +33,7 @@ class IntervalRMS(IntervalStat):
         return 'intrms'
 
 class PadProcessChain(object):
-    """Scale, Demean, 5 Hz Lowpass, 10-Second Interval RMS, Per-Axis"""
+    """e.g. Scale, Demean, 5 Hz Lowpass, 10-Second Interval RMS, Per-Axis"""
 
     def __init__(self,
                  scale_factor=1e6,

@@ -67,43 +67,6 @@ REDRAW_MSEC = 5000               # redraw timer every 5 to 10 seconds or so
 SB_MSEC = int( 3 * REDRAW_MSEC ) # lower-right time ~every several seconds
 BENCH_STEP = Benchmark('step')   # datagen next method ("step") should avg about 3s
 
-# PIMS extension of RtTrace
-class OBSOLETEPimsRtTrace(RtTrace):
-    """PIMS extension of RtTrace"""
-    #
-    #def __init__(self, *args, **kwargs):
-    #    max_length = kwargs['max_length'] if 'max_length' in kwargs else None
-    #    super(PimsRtTrace, self).__init__(max_length=max_length)
-    #
-    #    # initialize values for step routine
-    #    self.stats.sampling_rate #= kwargs['sampling_rate']
-    #    self.stats.starttime = kwargs['starttime']
-    #    self.analysis_interval = kwargs['analysis_interval']
-    #    self.analysis_samples = np.ceil( self.stats.sampling_rate * self.analysis_interval )
-    
-    def __str__(self):
-        s = super(PimsRtTrace, self).__str__()
-        #s += ' (ANIN: %gsec, %dsa)' % (self.analysis_interval, self.analysis_samples)
-        return s
-    
-    def absolute_times(self):
-        """absolute unixtime"""
-        return self.times() + float(self.stats.starttime)
-    
-    def get_slice_then_trim(self, analysis_interval):
-        t1 = self.stats.starttime
-        t2 = t1 + analysis_interval
-        t3 = t2 + self.stats.delta
-        tr_slice = self.slice(t1, t2)
-        self.trim( starttime = t3 )
-        return tr_slice
-    
-    def slice_after(self, min_time):
-        t = self.absolute_times()
-        idx = np.where(t >= min_time)
-        dtm = [unix2dtm(i) for i in t[idx]]
-        return dates.date2num( dtm ), self[idx]
-
 class DataGenRandom(object):
     """ A silly class that generates pseudo-random data for plot display."""
     def __init__(self, init=50):
@@ -444,14 +407,20 @@ class GraphFrame(wx.Frame):
     # update plot info and data
     def step_callback(self, step_data):
         """update plot info and data"""
+        
+        # incoming data from (presumably) PadGenerator
         current_info_tuple, cumulative_info_tuple, t, substream, flash_msg = step_data
+        
         #substream.write('/tmp/example.slist','SLIST')
+        
         if len(t) != 0:
             txyz = tuple()
             meantime = np.mean( [ substream[0].stats.starttime.timestamp, substream[-1].stats.endtime.timestamp] )
             txyz = txyz + ( meantime, )
+            
             # apply interval function on per-axis basis (like IntervalRMS)
             rms = self.apply_interval_func(substream)
+            
             # kludge to get rid of pesky inf values
             if np.any(np.isinf(rms)):
                 # FIXME does merge, detrend, filter, or std cause this inf value issue?
@@ -462,6 +431,7 @@ class GraphFrame(wx.Frame):
                 rms[np.where(np.isinf(rms))] = np.nan
                 # FIXME can we trace back to before detrend & filtering to see what happened?
                 self.log.warning( 'INF2NAN had to set inf value to nan for time %s' % unix2dtm(meantime) )
+                
             txyz = txyz + tuple(rms)
             self.data.append(txyz)
             
