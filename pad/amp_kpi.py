@@ -5,6 +5,7 @@ import sys
 import csv
 import numpy as np
 import pandas as pd
+from pims.utils.pimsdateutil import hours_in_month
 
 # filter and pivot to get aggregate sum of monthly hours
 def monthly_hours(df, s):
@@ -50,7 +51,7 @@ def csv2dataframe(csvfile):
     return df
 
 # produce output csv with per-system monthly sensor hours totals & rolling means
-def main(csvfile):
+def OLD_main(csvfile):
     """produce output csv with per-system monthly sensor hours totals & rolling means"""
     # read input CSV into big pd.DataFrame
     df = csv2dataframe(csvfile)
@@ -63,10 +64,10 @@ def main(csvfile):
     systems = list(monthly_hours_df.columns)
     original_mdf = monthly_hours_df.copy()
     num_months = [3, 6, 9]
-    clip_value = 0.01
+    clip_value = 0.01 # threshold to clip tiny values with
     for n in num_months:
         roll_mean = pd.rolling_mean(original_mdf, window=n)
-        # rolling mean can produce tiny values, so let's clip/replace with zeros
+        # rolling mean can produce tiny values (very close to zero), so clip/replace with zeros
         for system in systems:
             roll_mean[system] = roll_mean[system].clip(clip_value, None)
             roll_mean.replace(to_replace=clip_value, value=0.0, inplace=True)
@@ -76,6 +77,36 @@ def main(csvfile):
     # save csv output file
     csvout = csvfile.replace('.csv','_monthly.csv')
     monthly_hours_df.to_csv(csvout)
+    print 'wrote %s' % csvout
+
+
+
+# produce output csv with per-system monthly sensor hours totals & rolling means
+def main(csvfile):
+    """produce output csv with per-system monthly sensor hours totals & rolling means"""
+    # read input CSV into big pd.DataFrame
+    df = csv2dataframe(csvfile)
+
+    # filter to keep only hours columns (gets rid of bytes columns)
+    ndf = df.filter(regex='Date|Year|Month|Day|.*_hours')
+    
+    # pivot to aggregate monthly sum for each "sensor_hours" column
+    t = pd.pivot_table(ndf, rows=['Year','Month'], aggfunc=np.sum)
+    
+    # drop the unwanted "Day" column
+    df_monthly_hours = t.drop('Day', 1)
+    
+    #print df_monthly_hours.columns.tolist(); raise SystemExit
+    
+    # append month_hours column
+    a = df_monthly_hours.index
+    print type(a); raise SystemExit
+    df_monthly_hours['month_hours'] = pd.Series( a, index=df_monthly_hours.index)
+    
+    
+    # save csv output file
+    csvout = csvfile.replace('.csv','_monthly_hours.csv')
+    df_monthly_hours.to_csv(csvout)
     print 'wrote %s' % csvout
         
 if __name__ == '__main__':

@@ -116,7 +116,23 @@ def days_in_month(dt):
     else:
         next = datetime.date(dt.year, dt.month+1, 1)
         return next.toordinal() - dt.replace(day=1).toordinal()
+    
+def hours_in_month(dt):
+    """Total number of hours in date's month.
 
+    >>> for y in 1999, 2000, 2001:
+    ...     print y,
+    ...     for m in range(1, 13):
+    ...         dt = datetime.date(y, m, 1)
+    ...         print "%d:%d:%d" % (m, days_in_month(dt), hours_in_month(dt)),    
+    ...     print
+    1999 1:31:744 2:28:672 3:31:744 4:30:720 5:31:744 6:30:720 7:31:744 8:31:744 9:30:720 10:31:744 11:30:720 12:31:744
+    2000 1:31:744 2:29:696 3:31:744 4:30:720 5:31:744 6:30:720 7:31:744 8:31:744 9:30:720 10:31:744 11:30:720 12:31:744
+    2001 1:31:744 2:28:672 3:31:744 4:30:720 5:31:744 6:30:720 7:31:744 8:31:744 9:30:720 10:31:744 11:30:720 12:31:744
+    """
+    days = days_in_month(dt)
+    return days * 24
+    
 def first_weekday_on_or_after(weekday, dt):
     """First day of kind MONDAY .. SUNDAY on or after date.
 
