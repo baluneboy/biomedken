@@ -147,9 +147,6 @@ class DayContainer(DayContainerFive):
     
     def __init__(self, *args, **kw):
         DayContainerFive.__init__(self, *args, **kw)
-        self.append(Bold(Text('RMS LINKS >>')))
-        self.append(Href('http://pims.grc.nasa.gov/plots/user/buffer/intrms.html','CLICK HERE for interval RMS (every 5 minutes)'))
-        self.append(BR(1))
         
     def appendSensors(self):
         for s in self.sensorSuperset:
@@ -167,6 +164,9 @@ def disclaimer():
     d = Text('Plots linked below may show time gaps due to LOS, however, those will get filled in ')
     d.append( Href('http://pims.grc.nasa.gov/roadmap','roadmap PDFs.') )
     d.append(BR(1))
+    d = Text('Near real-time plots Interval RMS plots are buffered more frequently at ')
+    d.append( Href('http://pims.grc.nasa.gov/plots/user/buffer/intrms.html','this link.') )
+    d.append(BR(1))    
     d.append('For help, contact')
     d.append(Href('mailto:pimsops@grc.nasa.gov','pimsops@grc.nasa.gov'))
     return d

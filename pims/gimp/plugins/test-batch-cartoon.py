@@ -46,8 +46,8 @@ def batch_cartoon(img, layer, inputFolder, outputFolder, maskRadius, blackPct):
     for file in os.listdir(inputFolder):
         try:
             # Build the full file paths.
-            inputPath = inputFolder + "\\" + file
-            outputPath = outputFolder + "\\" + file
+            inputPath = os.path.join( inputFolder, file )
+            outputPath = os.path.join( outputFolder, file )
         
             # Open the file if is a JPEG or PNG image.
             image = None
