@@ -1,1 +1,1 @@
-gimp -i -b '(python-flip-leftright RUN-NONINTERACTIVE "/tmp/test.jpg")' -b '(gimp-quit 0)'
+To show pdb names (references) for other plug-ins, see stdout with "print dir(pdb)".
