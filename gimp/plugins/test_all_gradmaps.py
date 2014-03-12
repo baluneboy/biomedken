@@ -2,7 +2,7 @@
 #
 # -------------------------------------------------------------------------------------
 #
-# Copyright (c) 2013, Jose F. Maldonado
+# Copyright (c) 2014, Kenneth Hrovat
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, 
@@ -31,47 +31,62 @@
 import os
 from gimpfu import *
 
-def save_to_files(image, layer, outputFolder):
-    ''' Save the current layer into a PNG file, a JPEG file and a BMP file.
+def save_all_gradmaps_to_files(image, layer, out_folder):
+    ''' Save the current layer into a PNG files, one for each gradient map.
     
     Parameters:
     image : image The current image.
     layer : layer The layer of the image that is selected.
-    outputFolder : string The folder in which to save the images.
+    out_folder : string The folder in which to save the images.
     '''
+    
     # Indicates that the process has started.
-    gimp.progress_init("Saving to '" + outputFolder + "'...")
+    gimp.progress_init("Saving to '" + out_folder + "'...")
     
-    stub = os.path.join(outputFolder, layer.name + '_fromtest')
-    
-    try:
-        
-        # Save as PNG
-        gimp.pdb.file_png_save(image, layer, stub + ".png", "raw_filename", 0, 9, 0, 0, 0, 0, 0)
-        
-        # Save as JPEG
-        gimp.pdb.file_jpeg_save(image, layer, stub + ".jpg", "raw_filename", 0.9, 0, 0, 0, "Created with GIMP", 0, 0, 0, 0)
-        
-        # Save as BMP
-        gimp.pdb.file_bmp_save(image, layer, stub + ".bmp", "raw_filename")
-        
-    except Exception as err:
-        
-        gimp.message("Unhandled error: " + str(err))
+    # Get list of gradient maps
+    n, gradmaps = pdb.gimp_gradients_get_list('.*') # use print to show this list
+
+    for gradmap in gradmaps:
+
+        # copy layer
+        layer_gradmap = layer.copy()
+        layer_gradmap.name = "tmp4gradmap"
+        image.add_layer(layer_gradmap, 0) 
+
+        # apply gradmap
+        try:
+            
+            # set gradient map and output PNG filename
+            stub = os.path.join( out_folder, layer.name + gradmap.replace(' ', '_').lower() )
+            pdb.gimp_context_set_gradient(gradmap)
+            
+            # apply gradient map
+            img = pdb.plug_in_gradmap(image, layer_gradmap, run_mode=RUN_NONINTERACTIVE)
+            
+            # Save as PNG
+            gimp.pdb.file_png_save(image, layer_gradmap, stub + ".png", "raw_filename", 0, 9, 0, 0, 0, 0, 0)
+            
+        except Exception as err:
+            
+            gimp.message("Unhandled error: " + str(err))
+
+                    
+        # remove layer
+        image.remove_layer(layer_gradmap)
     
 register(
-    "python_fu_test_save_to_files",
-    "Save to files",
-    "Save the current layer into a PNG file, a JPEG file and a BMP file.",
-    "JFM",
+    "python_fu_test_save_all_gradmaps_to_files",
+    "Save all gradient map samples to PNG files",
+    "Save the current layer into PNG files, one for each gradient map.",
+    "KH",
     "Open source (BSD 3-clause license)",
-    "2013",
-    "<Image>/Filters/Test/Save to files",
+    "2014",
+    "<Image>/Filters/Test/Save PNG gradmap files",
     "*",
     [
-        (PF_DIRNAME, "outputFolder", "Output directory", ""),
+        (PF_DIRNAME, "out_folder", "Output directory", ""),
     ],
     [],
-    save_to_files)
+    save_all_gradmaps_to_files)
 
 main()

@@ -43,14 +43,21 @@
 from gimpfu import *
 
 def say_something(img, layer, message) :
-    ''' Display a message, defined by the user, in the bottom of GIMP.
+    """ Display a message, defined by the user, in the bottom of GIMP.
     
     Parameters:
     img : image The current image.
     layer : layer The layer of the image that is selected.
-	message : string A message
-    '''
+    message : string A message """
+    
     gimp.message(message)
+    
+    # use this line to get registered name of "save_to_files"
+    #print dir(pdb)
+    
+    # call save_to_files via name registered in pdf
+    #pdb.python_fu_test_save_to_files(img, layer, '/tmp')
+    
 
 register(
     "python_fu_test_say_something",
@@ -63,7 +70,7 @@ register(
     "*",
     [
         (PF_STRING, "message", "Message to display", "hello")
-	],
+    ],
     [],
     say_something)
 
