@@ -5,6 +5,7 @@ import sys
 import csv
 import numpy as np
 import pandas as pd
+import datetime
 from pims.utils.pimsdateutil import hours_in_month
 
 # filter and pivot to get aggregate sum of monthly hours
@@ -28,67 +29,80 @@ def monthly_hours_dataframe(df, systems_series):
 # parse date/times from the csv
 def parse(s):
     yr = int(s[0:4])
-    doy = int(s[5:8])
-    hr = int(s[9:11])
-    min = int(s[12:14])
-    sec = int(s[15:17])
+    #doy = int(s[5:8])
+    mo = int(s[5:7])
+    da = int(s[8:10])
+    #hr = int(s[9:11])
+    #min = int(s[12:14])
+    #sec = int(s[15:17])
     #sec = float(sec)
     #mu_sec = int((sec - int(sec)) * 1e6)
-    mu_sec = 0
+    #mu_sec = 0
     #sec = int(sec)
-    dt = datetime(yr - 1, 12, 31)
-    delta = timedelta(days=doy, hours=hr, minutes=min, seconds=sec, microseconds=mu_sec)
-    return dt + delta
+    #dt = datetime(yr - 1, 12, 31)
+    #delta = timedelta(days=doy, hours=hr, minutes=min, seconds=sec, microseconds=mu_sec)
+    #return dt + delta
+    return datetime.date(yr, mo, da)
 
-# read CSV into dataframe (for pivot tables)
+# read big CSV into dataframe (for pivot tables)
 def csv2dataframe(csvfile):
-    """read CSV into dataframe (for pivot tables)"""
+    """read CSV into dataframe (so we can use pivot tables)"""
     with open(csvfile, 'rb') as f:
         labels = f.next().strip().split(',')
-    df = pd.read_csv(csvfile, parse_dates=True, index_col = [0])
-    # NOTE: use something like next line for [better?] parse of datetime
-    #df = pd.read_csv(csvfile, parse_dates={'datetime':['GMTofDisturbance']}, date_parser=parse, index_col='datetime')
+        df = pd.read_csv( csvfile, parse_dates=True, index_col = [0] )
     return df
 
+# read resource config CSV file into dataframe
+def resource_csv2dataframe(csvfile):
+    """read resource config CSV file into dataframe"""
+    with open(csvfile, 'rb') as f:
+        labels = f.next().strip().split(',')
+        df = pd.read_csv( csvfile )
+    return df
+
+## produce output csv with per-system monthly sensor hours totals & rolling means
+#def OLD_main(csvfile):
+#    """produce output csv with per-system monthly sensor hours totals & rolling means"""
+#    # read input CSV into big pd.DataFrame
+#    df = csv2dataframe(csvfile)
+#
+#    # systems' monthly hours (each a series from pivot) into dataframe
+#    systems_series = {'sams':None, 'mams':None}
+#    monthly_hours_df = monthly_hours_dataframe(df, systems_series)
+#    
+#    # pd.concat rolling means (most recent n months) into growing dataframe
+#    systems = list(monthly_hours_df.columns)
+#    original_mdf = monthly_hours_df.copy()
+#    num_months = [3, 6, 9]
+#    clip_value = 0.01 # threshold to clip tiny values with
+#    for n in num_months:
+#        roll_mean = pd.rolling_mean(original_mdf, window=n)
+#        # rolling mean can produce tiny values (very close to zero), so clip/replace with zeros
+#        for system in systems:
+#            roll_mean[system] = roll_mean[system].clip(clip_value, None)
+#            roll_mean.replace(to_replace=clip_value, value=0.0, inplace=True)
+#        roll_mean.columns = [ i + '-%d' % n for i in systems]
+#        monthly_hours_df = pd.concat([monthly_hours_df, roll_mean], axis=1)
+#    
+#    # save csv output file
+#    csvout = csvfile.replace('.csv','_monthly.csv')
+#    monthly_hours_df.to_csv(csvout)
+#    print 'wrote %s' % csvout
+
 # produce output csv with per-system monthly sensor hours totals & rolling means
-def OLD_main(csvfile):
+def main(csvfile, resource_csvfile):
     """produce output csv with per-system monthly sensor hours totals & rolling means"""
+    
+    # read resource config csv file
+    df_cfg = resource_csv2dataframe(resource_csvfile)
+    regex_sensor_hours = '.*' + '_hours|.*'.join(df_cfg['Resource']) + '_hours'
+    
     # read input CSV into big pd.DataFrame
     df = csv2dataframe(csvfile)
 
-    # systems' monthly hours (each a series from pivot) into dataframe
-    systems_series = {'sams':None, 'mams':None}
-    monthly_hours_df = monthly_hours_dataframe(df, systems_series)
-    
-    # pd.concat rolling means (most recent n months) into growing dataframe
-    systems = list(monthly_hours_df.columns)
-    original_mdf = monthly_hours_df.copy()
-    num_months = [3, 6, 9]
-    clip_value = 0.01 # threshold to clip tiny values with
-    for n in num_months:
-        roll_mean = pd.rolling_mean(original_mdf, window=n)
-        # rolling mean can produce tiny values (very close to zero), so clip/replace with zeros
-        for system in systems:
-            roll_mean[system] = roll_mean[system].clip(clip_value, None)
-            roll_mean.replace(to_replace=clip_value, value=0.0, inplace=True)
-        roll_mean.columns = [ i + '-%d' % n for i in systems]
-        monthly_hours_df = pd.concat([monthly_hours_df, roll_mean], axis=1)
-    
-    # save csv output file
-    csvout = csvfile.replace('.csv','_monthly.csv')
-    monthly_hours_df.to_csv(csvout)
-    print 'wrote %s' % csvout
-
-
-
-# produce output csv with per-system monthly sensor hours totals & rolling means
-def main(csvfile):
-    """produce output csv with per-system monthly sensor hours totals & rolling means"""
-    # read input CSV into big pd.DataFrame
-    df = csv2dataframe(csvfile)
-
-    # filter to keep only hours columns (gets rid of bytes columns)
-    ndf = df.filter(regex='Date|Year|Month|Day|.*_hours')
+    # filter to keep only hours columns (gets rid of bytes columns) for each sensor
+    # that shows up in df_cfg's Resource column
+    ndf = df.filter(regex='Date|Year|Month|Day|' + regex_sensor_hours)
     
     # pivot to aggregate monthly sum for each "sensor_hours" column
     t = pd.pivot_table(ndf, rows=['Year','Month'], aggfunc=np.sum)
@@ -96,13 +110,23 @@ def main(csvfile):
     # drop the unwanted "Day" column
     df_monthly_hours = t.drop('Day', 1)
     
-    #print df_monthly_hours.columns.tolist(); raise SystemExit
+    # convert index, which are tuples like (YEAR, MONTH), to tuples like (YEAR, MONTH, 1)
+    date_tuples = [ ( t + (1,) ) for t in df_monthly_hours.index.values ]
+
+    # convert date_tuples each to hours_in_month
+    hours = [ hours_in_month( datetime.date( *tup ) ) for tup in date_tuples ]
+
+    # before we add hours_in_month column, get list of columns for iteration below
+    cols = df_monthly_hours.columns.tolist()
     
-    # append month_hours column
-    a = df_monthly_hours.index
-    print type(a); raise SystemExit
-    df_monthly_hours['month_hours'] = pd.Series( a, index=df_monthly_hours.index)
+    # now we can append month_hours column
+    df_monthly_hours['hours_in_month'] = pd.Series( hours, index=df_monthly_hours.index)
     
+    # iterate over columns (excluding hours_in_month) to get 100*sensor_hours/hours_in_month
+    for c in cols:
+        pctstr = c + '_pct'
+        pct = 100 * df_monthly_hours[c] / df_monthly_hours['hours_in_month']
+        df_monthly_hours[pctstr] = pd.Series( pct, index=df_monthly_hours.index)
     
     # save csv output file
     csvout = csvfile.replace('.csv','_monthly_hours.csv')
@@ -110,8 +134,10 @@ def main(csvfile):
     print 'wrote %s' % csvout
         
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
+    if len(sys.argv) == 3:
         csvfile = sys.argv[1]
+        resource_csvfile = sys.argv[2]
     else:
         csvfile = '/misc/yoda/www/plots/batch/padtimes/padtimes.csv'
-    main(csvfile)    
+        resource_csvfile = '/misc/yoda/www/plots/batch/padtimes/kpi_track.csv'
+    main(csvfile, resource_csvfile)    
