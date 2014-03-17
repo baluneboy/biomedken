@@ -8,6 +8,23 @@ import pandas as pd
 import datetime
 from pims.utils.pimsdateutil import hours_in_month
 
+# Each of below for a given resource for a given month (T is total hours for the given month)
+
+# DONE continuous group, resource NOT "cu" = 100 * D / T; where D is the number of hours in PAD files
+
+# TODO continuous group, resource IS  "cu" = 100 * X / T, where X is the number of records in the database in the CU Housekeeping Packet
+
+# TODO power_rack_dependent group, involves MSID related to each ER power
+
+# TODO payload_dependent group, resource IS "cir|fir", involves MSID related to SAMS power:
+#      - UFZF12RT7452J is IOP MP PWR CTRL SAMS for FIR (ES06), at offset word 53 (byte 106), 1 byte length
+#      - UFZF13RT7420J is IOP MP PWR CTRL SAMS for CIR (ES05), at offset word 53 (byte 106), 1 byte length
+
+# TODO payload_dependent group, resource IS "msg", involves MSID related to outlet power (1 of 2 possible outlets):
+#      - watching the MSG planning for which experiment is in, and then if they use SAMS, and then monitor the power outlet
+#        to know when they turned us on
+
+
 # filter and pivot to get aggregate sum of monthly hours
 def monthly_hours(df, s):
     """filter and pivot to get aggregate sum of monthly hours"""
