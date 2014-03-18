@@ -6,6 +6,7 @@ import csv
 import numpy as np
 import pandas as pd
 import datetime
+from cStringIO import StringIO
 from pims.utils.pimsdateutil import hours_in_month
 
 # Each of below for a given resource for a given month (T is total hours for the given month)
@@ -76,6 +77,73 @@ def resource_csv2dataframe(csvfile):
         labels = f.next().strip().split(',')
         df = pd.read_csv( csvfile )
     return df
+
+# normalize on/off (as one/zero) for CIR and FIR power on/off columns
+def normalize_cir_fir_power(v):
+    """normalize on/off (as one/zero) for CIR and FIR power on/off columns"""
+    if isinstance(v, float) and np.isnan(v):
+        return 0
+    elif v.lower().startswith('off') or v.lower().startswith('power off'):
+        return 0
+    elif v.lower().startswith('on') or v.lower().startswith('power on'):
+        return 1
+    else:
+        return np.nan
+        
+# read NRT List Request output (sto, tab delimited) file into dataframe
+def msg_cir_fir_sto2dataframe(stofile):
+    """read ascii sto file into dataframe"""
+    s = StringIO()
+    with open(stofile, 'r') as f:
+        # Read and ignore header lines
+        header = f.readline() # labels
+        s.write(header)
+        is_data = False
+        for line in f:
+            if line.startswith('#Start_Data'):
+                is_data = True
+            if line.startswith('#End_Data'):
+                is_data = False
+            if is_data and not line.startswith('#Start_Data'):
+                s.write(line)
+    s.seek(0) # "rewind" to the beginning of the StringIO object
+    df = pd.read_csv(s, sep='\t')
+    
+    # drop the unwanted "#Header" column
+    df = df.drop('#Header', 1)
+    column_labels = [ s.replace('Timestamp : Embedded GMT', 'GMT') for s in df.columns.tolist()]
+    df.columns = column_labels
+    
+    # drop Unnamed columns
+    for clabel in column_labels:
+        if clabel.startswith('Unnamed'):
+            df = df.drop(clabel, 1)
+
+    # use Jen's nomenclature to rename column labels    
+    msid_map = {
+        'ULZL02RT0471C': 'MSG_Outlet_2_Current',
+        'ULZL02RT0477J': 'MSG_Outlet_2_Status',
+        'UFZF07RT0114V': 'MSG_Outlet1_28V',
+        'UFZF07RT0118V': 'MSG_Outlet2_28V',
+        'UFZF07RT0121J': 'MSG_Outlet1_Status',
+        'UFZF07RT0125J': 'MSG_Outlet2_Status',
+        'UFZF07RT0046T': 'MSW_WV_Air_Temp',
+        'UFZF13RT7420J': 'TSH_ES05_CIR_Power_Status',
+        'UFZF12RT7452J': 'TSH_ES06_FIR_Power_Status',
+        }
+    for k, v in msid_map.iteritems():
+        df.rename(columns={k: v}, inplace=True)
+
+    # normalize on/off (as one/zero) for CIR and FIR columns
+    df.TSH_ES05_CIR_Power_Status = [ normalize_cir_fir_power(v) for v in df.TSH_ES05_CIR_Power_Status.values ]
+    df.TSH_ES06_FIR_Power_Status = [ normalize_cir_fir_power(v) for v in df.TSH_ES06_FIR_Power_Status.values ]
+
+    return df
+
+stofile = '/misc/yoda/www/plots/batch/padtimes/2014_032-062_msg_cir_fir.sto'
+df = msg_cir_fir_sto2dataframe(stofile)
+df.to_csv( stofile.replace('.sto','.csv') )
+raise SystemExit
 
 ## produce output csv with per-system monthly sensor hours totals & rolling means
 #def OLD_main(csvfile):
