@@ -17,6 +17,8 @@ def get_samsops_db_params(app_name):
 # Get sensitive authentication credentials for internal MySQL db query
 _HOST, _SCHEMA, _UNAME, _PASSWD = get_samsops_db_params('samsquery')
 
+#print _HOST, _SCHEMA; raise SystemExit
+
 class SimpleQueryAOS(object):
     """simple query for AOS/LOS"""
     def __init__(self, host, schema, uname, pword):
@@ -24,7 +26,8 @@ class SimpleQueryAOS(object):
         self.schema = schema
         self.uname = uname
         self.pword = pword        
-        self.query = 'select GSE_tiss_time , IF(GSE_aos_los =0, \\"LOS\\",\\"AOS\\") as aos_los from RT_ICU_gse_data;'
+        #self.query = 'select GSE_tiss_time , IF(GSE_aos_los =0, \\"LOS\\",\\"AOS\\") as aos_los from RT_ICU_gse_data;'
+        self.query = 'select ku_timestamp , IF(ku_aos_los_status =0, \\"LOS\\",\\"AOS\\") as aos_los from gse_packet order by ku_timestamp desc limit 1;'
         self.run_query()
 
     def __str__(self):
