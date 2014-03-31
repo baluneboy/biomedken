@@ -46,6 +46,19 @@ class EeStatusQuery(object):
         results, err = p.communicate()
         return results
 
+class CuStatusQuery(EeStatusQuery):
+    """workaround query for updating web page with CU status"""
+
+    def _get_query(self):
+        query = 'SELECT * FROM samsnew.cu_packet ORDER BY timestamp DESC LIMIT 11;'
+        return query
+
+class GseStatusQuery(EeStatusQuery):
+    """workaround query for updating web page with GSE status"""
+
+    def _get_query(self):
+        query = 'SELECT * FROM samsnew.gse_packet ORDER BY ku_timestamp DESC LIMIT 11;'
+        return query
 
 class SimpleQueryAOS(object):
     """simple query for AOS/LOS"""
@@ -80,47 +93,176 @@ class SimpleQueryAOS(object):
         self.header = 'class, gse_tiss_dtm, aos_los'
         self.gse_tiss_dtm = parser.parse(gse_tiss_time)
         self.aos_los = aos_los
-    
-def demo():
-    aos = SimpleQueryAOS(_HOST, _SCHEMA, _UNAME, _PASSWD)
-    print aos
 
-def workaroundRTtableEE(htmlFile):
-    ee_results = EeStatusQuery(_HOST, _SCHEMA, _UNAME, _PASSWD).run_query()
+def get_raw_dataframe(results):
     s = StringIO()
-    header = ee_results[0]
+    header = results[0]
     s.write(header)
-    for result in ee_results[1:]:
+    for result in results[1:]:
         s.write(result)
     s.seek(0) # "rewind" to the beginning of the StringIO object
     df = pd.read_csv( s, sep='\t' )
+    return df
+
+def get_processed_dataframe(params):
+    # get db query results
+    db_results = params['query_class'](_HOST, _SCHEMA, _UNAME, _PASSWD).run_query()
     
-    # drop unwanted columns
-    unwanted_columns = ['se_id_head0', 'se_id_head1', 'time_in_sec',
-                        'head0_tempX', 'head0_tempY', 'head0_tempZ',
-                        'head1_tempX', 'head1_tempY', 'head1_tempZ']                        
-                        
-    for uc in unwanted_columns:
+    # use db results to get raw dataframe
+    df = get_raw_dataframe(db_results)
+    
+    # drop unwanted columns from dataframe
+    for uc in params['unwanted_columns']:
         df = df.drop(uc, 1)
     
-    df_sorted = df.sort(['ee_id', 'timestamp'], ascending = [True, False])
+    # do some sorting (usually time desc)
+    df_sorted = df.sort(params['sort_columns'], ascending=params['sort_flags'])
+    df = df_sorted.groupby(params['group_column']).first().reset_index()
+    
+    # if needed, then do "trailing drop" too
+    if params['trailing_drop_columns']:
+        df = df.drop(params['trailing_drop_columns'], 1)
+    
+    return df
 
-    html = """<html>
+# Define dictionary to hold info for getting, processing, and formatting web page output
+GSE = {
+    'query_class'           : GseStatusQuery,
+    'unwanted_columns'      : [ 'sband_timestamp', 's_aos_los_status', 'sams_cu_cpu_temp',
+                                'sams_cu_case_max_temp', 'sams_cu_case_min_temp', 'sams_cu_gpu_temp',
+                                'sams_cu_hs_counter', 'msg_outlet2_current', 'msg_outlet2_status',
+                                'msg_plus28V_outlet1', 'msg_plus28V_outlet1_status', 'msg_plus28V_outlet2',
+                                'msg_plus28V_outlet2_status', 'msg_wv_air_temp'],
+    'sort_columns'          : ['ku_timestamp'],
+    'sort_flags'            : [False],
+    'group_column'          : 'sams_cu_identity',
+    'trailing_drop_columns' : ['sams_cu_identity'],
+    'caption'               : 'GSE',
+    'formatters'            : {'sams_cu_ecw':lambda x: "%d" % x}
+}
+
+CU = {
+    'query_class'           : CuStatusQuery,
+    'unwanted_columns'      : [ 'ram_total', 'swap_total', 'hdd_total', 'fan_speed',
+                                'ram_used', 'swap_used', 'hdd_used',
+                                'case_temp0', 'case_temp1', 'case_temp2',
+                                'case_temp3', 'case_temp4', 'case_temp5',
+                                'case_temp6', 'case_temp7', 'case_temp8'],
+    'sort_columns'          : ['cu_id', 'timestamp'],
+    'sort_flags'            : [True,    False],
+    'group_column'          : 'cu_id',
+    'trailing_drop_columns' : None,
+    'caption'               : 'Control Unit (CU)',
+    'formatters'            : {'cu_id':lambda x: "%9s" % x[-3:].replace('-', ' ')}
+}
+
+EE = {
+    'query_class'           : EeStatusQuery,
+    'unwanted_columns'      : [ 'se_id_head0', 'se_id_head1', 'time_in_sec',
+                                'head0_tempX', 'head0_tempY', 'head0_tempZ',
+                                'head1_tempX', 'head1_tempY', 'head1_tempZ'],
+    'sort_columns'          : ['ee_id', 'timestamp'],
+    'sort_flags'            : [True,    False],
+    'group_column'          : 'ee_id',
+    'trailing_drop_columns' : None,
+    'caption'               : 'Electronics Enclosures (EEs)',
+    'formatters'            : {'ee_id':lambda x: "%9s" % x[-3:].replace('-', ' ')}
+}
+
+# Workaround for db table where Dump2 is clobbering RealTime
+def workaroundRTtable(htmlFile):
+    """Workaround for db table where Dump2 is clobbering RealTime"""
+
+    HEADER = '''<!DOCTYPE html>
+        <html>
                 <head>
-                <meta http-equiv="refresh" content="30">
-                <title>SAMS EE Status</title>
+                    <meta http-equiv="refresh" content="15">
+                    <title>SAMS H&S</title>
+                <style>
+                
+                        updatetag
+                        {
+                        font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+                        color:black;
+                        text-align:left;
+                        font-size: 0.83em;                        
+                        }
+                        
+                        titletag
+                        {
+                        font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+                        color:black;
+                        font-weight: bold;
+                        font-size: 1.25em;                        
+                        text-align:left;
+                        }
+
+                        captiontag
+                        {
+                        font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+                        color:black;
+                        font-weight: bold;
+                        font-size: 1.1em;                        
+                        text-align:left;
+                        }
+
+                .df tbody tr:nth-child(even) {background: #CCC} tr:nth-child(odd) {background: #FFF}
+                        .df
+                        {
+                        font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+                        width:100%;
+                        border-collapse:collapse;
+                        }
+                        .df td, .df th 
+                        {
+                        font-size:0.9em;
+                        border:1px solid #123456;
+                        padding:3px 7px 2px 7px;
+                        }
+                        .df th 
+                        {
+                        font-size:1.0em;
+                        text-align:left;
+                        padding-top:5px;
+                        padding-bottom:4px;
+                        background-color:black;
+                        border:1px solid #FFFFFF;
+                        color:#ffffff;
+                        }
+                    </style>
                 </head>
                 <body>
-                During AOS, this page should update about once a minute.<br>"""
-                #Updated at GMT %s<br>""" % str(datetime.datetime.now())[0:19]
-    html += df_sorted.groupby('ee_id').first().reset_index().to_html(
-        formatters={
-                'ee_id':lambda x: "%9s" % x[-3:].replace('-', ' '),
-                'timestamp':lambda x: "%33s" % str(x),
-        }) + "</body></html>"
+            <titletag>SAMS Health and Status</titletag><br>
+            '''
+    HEADER += '<updatetag>updated at GMT %s</updatetag><br><br>' % str(datetime.datetime.now())[0:-7]
+    FOOTER = '''
+        </body>
+    </html>
+    '''
     
-    with open(htmlFile, 'w') as fo:
-        fo.write(html)
+    # write html file
+    with open(htmlFile, 'w') as f:
+
+        # write header
+        f.write(HEADER)
+
+        # write each table type
+        for d in [GSE, CU, EE]:
+            df = get_processed_dataframe(d)
+            f.write('<captiontag>%s</captiontag>' % d['caption'])
+            f.write(df.to_html(classes='df',
+                               formatters=d['formatters'],
+                               index=False
+                              )
+                   )
+            f.write('<br><br>')
+
+        # write footer
+        f.write(FOOTER)
+        
+def demo():
+    aos = SimpleQueryAOS(_HOST, _SCHEMA, _UNAME, _PASSWD)
+    print aos
 
 def demo3():
     buf = StringIO()
@@ -132,4 +274,4 @@ def demo3():
                 })
 
 if __name__ == "__main__":
-    workaroundRTtableEE('/misc/yoda/www/plots/user/sams/eetemp.html')
+    workaroundRTtable('/misc/yoda/www/plots/user/sams/eetemp.html')    
