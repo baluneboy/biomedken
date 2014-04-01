@@ -50,6 +50,7 @@ class CuStatusQuery(EeStatusQuery):
     """workaround query for updating web page with CU status"""
 
     def _get_query(self):
+        #query = 'SELECT * FROM samsnew.cu_packet_rt;' # does not work, but why?
         query = 'SELECT * FROM samsnew.cu_packet ORDER BY timestamp DESC LIMIT 11;'
         return query
 
@@ -57,7 +58,7 @@ class GseStatusQuery(EeStatusQuery):
     """workaround query for updating web page with GSE status"""
 
     def _get_query(self):
-        query = 'SELECT * FROM samsnew.gse_packet ORDER BY ku_timestamp DESC LIMIT 11;'
+        query = 'SELECT * FROM samsnew.gse_packet_rt;' # ORDER BY ku_timestamp DESC LIMIT 11;'
         return query
 
 class SimpleQueryAOS(object):
@@ -72,7 +73,7 @@ class SimpleQueryAOS(object):
 
     def _get_query(self):
         #query = 'select GSE_tiss_time , IF(GSE_aos_los =0, \\"LOS\\",\\"AOS\\") as aos_los from RT_ICU_gse_data;'
-        query = 'select ku_timestamp , IF(ku_aos_los_status =0, \\"LOS\\",\\"AOS\\") as aos_los from gse_packet order by ku_timestamp desc limit 1;'
+        query = 'select ku_timestamp , IF(ku_aos_los_status=0, \\"LOS\\",\\"AOS\\") as aos_los from gse_packet_rt;'
         return query
 
     def __str__(self):
@@ -122,7 +123,7 @@ def get_processed_dataframe(params):
     # if needed, then do "trailing drop" too
     if params['trailing_drop_columns']:
         df = df.drop(params['trailing_drop_columns'], 1)
-    
+    #print df
     return df
 
 # Define dictionary to hold info for getting, processing, and formatting web page output
@@ -132,8 +133,7 @@ GSE = {
                                 'sams_cu_case_max_temp', 'sams_cu_case_min_temp', 'sams_cu_gpu_temp',
                                 'sams_cu_hs_counter', 'msg_outlet2_current', 'msg_outlet2_status',
                                 'msg_plus28V_outlet1', 'msg_plus28V_outlet1_status', 'msg_plus28V_outlet2',
-                                'msg_plus28V_outlet2_status', 'msg_wv_air_temp', 'tsh_es05_cir_power_status',
-                                'tsh_es06_fir_power_status'],
+                                'msg_plus28V_outlet2_status', 'msg_wv_air_temp'],
     'sort_columns'          : ['ku_timestamp'],
     'sort_flags'            : [False],
     'group_column'          : 'sams_cu_identity',
