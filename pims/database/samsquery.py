@@ -7,6 +7,7 @@ from dateutil import parser
 from pims.config.conf import get_config
 import pandas as pd
 from cStringIO import StringIO
+import socket
 
 def get_samsops_db_params(app_name):
     cfg = get_config()
@@ -188,6 +189,14 @@ def workaroundRTtable(htmlFile):
                         text-align:left;
                         font-size: 0.83em;                        
                         }
+
+                        hosttag
+                        {
+                        font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+                        color:gray;
+                        text-align:left;
+                        font-size: 0.75em;                        
+                        }
                         
                         titletag
                         {
@@ -235,7 +244,8 @@ def workaroundRTtable(htmlFile):
                 <body>
             <titletag>SAMS Health and Status</titletag><br>
             '''
-    HEADER += '<updatetag>updated at GMT %s</updatetag><br><br>' % str(datetime.datetime.now())[0:-7]
+    HEADER += '<updatetag>updated at GMT %s</updatetag><br>' % str(datetime.datetime.now())[0:-7]
+    HEADER += '<hosttag>host: %s</hosttag><br><br>' % socket.gethostname()
     FOOTER = '''
         </body>
     </html>
