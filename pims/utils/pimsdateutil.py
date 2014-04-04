@@ -4,6 +4,7 @@ Date/time functions mostly for PIMS/PAD utility.
 """
 
 import os
+import re
 import datetime
 import time
 from dateutil import parser
@@ -53,6 +54,17 @@ def timestr_to_datetime(timestr):
     
     """
     return datetime.datetime.strptime(timestr,'%Y_%m_%d_%H_%M_%S.%f')
+
+# convert string like 2014:077:00:02:00 to datetime object
+def doytimestr_to_datetime(timestr):
+    """convert string like 2014:077:00:02:00 to datetime object"""
+    if not re.match('^\d{4}:\d{3}:\d{2}:\d{2}:(\d{2}\.\d{1,6}|\d{2})$', timestr):
+        raise ValueError('string does not match expected pattern')
+    if '.' in timestr:
+        fmt = '%Y:%j:%H:%M:%S.%f'
+    else:
+        fmt = '%Y:%j:%H:%M:%S'
+    return datetime.datetime.strptime(timestr, fmt)
 
 def format_datetime_as_pad_underscores(dtm):
     """

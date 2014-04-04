@@ -1,5 +1,6 @@
 import os
 import re
+import time
 from pims.files.base import File, UnrecognizedPimsFile
 from pims.patterns.handbookpdfs import is_unique_handbook_pdf_match
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN
@@ -72,6 +73,24 @@ def demo():
     fullfile_pattern = '(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_(?P<sensor>.*))/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.(?P=sensor)\.header\Z'
     for f in filter_filenames(dirpath, re.compile(fullfile_pattern).match):
         print f
+
+# remove files in folder that are older than numdays
+def remove_old_files(folder, numdays):
+    """remove files in folder that are older than numdays"""
+    now = time.time()
+    cutoff = now - (numdays * 86400)
+    files = os.listdir(folder)
+    for f in files:
+        fullfile = os.path.join(folder, f)
+        if os.path.isfile( fullfile ):
+            t = os.stat( fullfile )
+            c = t.st_ctime
+            # delete f if older than numdays
+            if c < cutoff:
+                print 'removing %s' % fullfile
+                #os.remove( fullfile )
+            else:
+                print 'keeping %s' % fullfile
 
 if __name__ == "__main__":
     demo()
