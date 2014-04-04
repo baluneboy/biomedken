@@ -7,24 +7,33 @@ import numpy as np
 import pandas as pd
 import datetime
 from cStringIO import StringIO
-from pims.utils.pimsdateutil import hours_in_month
+from pims.utils.pimsdateutil import hours_in_month, doytimestr_to_datetime
+
+#  Group,                 System,     Resource,   Formula
+#  ------------------------------------------------------------
+#  continuous,            sams,       121f03,     100 * D / T
+#  continuous,            sams,       121f04,     100 * D / T
+#  continuous,            sams,       cu,         100 * X / T
+#  continuous,            mams,       hirap,      100 * D / T
+#  continuous,            mams,       ossraw,     100 * D / T
+#  ------------------------------------------------------------
+#  power_rack_dependent,  sams,       121f05,     100 * D / R
+#  power_rack_dependent,  sams,       121f02,     100 * D / R
+#  ------------------------------------------------------------
+#  payload_dependent,     sams,       es03,       100 * D / P
+#  payload_dependent,     sams,       es05,       100 * D / P
+#  payload_dependent,     sams,       es06,       100 * D / P
 
 # Each of below for a given resource for a given month (T is total hours for the given month)
-
 # DONE continuous group, resource NOT "cu" = 100 * D / T; where D is the number of hours in PAD files
-
 # TODO continuous group, resource IS  "cu" = 100 * X / T, where X is the number of records in the database in the CU Housekeeping Packet
-
 # TODO power_rack_dependent group, involves MSID related to each ER power
-
 # TODO payload_dependent group, resource IS "cir|fir", involves MSID related to SAMS power:
 #      - UFZF12RT7452J is IOP MP PWR CTRL SAMS for FIR (ES06), at offset word 53 (byte 106), 1 byte length
 #      - UFZF13RT7420J is IOP MP PWR CTRL SAMS for CIR (ES05), at offset word 53 (byte 106), 1 byte length
-
 # TODO payload_dependent group, resource IS "msg", involves MSID related to outlet power (1 of 2 possible outlets):
 #      - watching the MSG planning for which experiment is in, and then if they use SAMS, and then monitor the power outlet
 #        to know when they turned us on
-
 
 # filter and pivot to get aggregate sum of monthly hours
 def monthly_hours(df, s):
@@ -140,11 +149,6 @@ def msg_cir_fir_sto2dataframe(stofile):
 
     return df
 
-stofile = '/misc/yoda/www/plots/batch/padtimes/2014_032-062_msg_cir_fir.sto'
-df = msg_cir_fir_sto2dataframe(stofile)
-df.to_csv( stofile.replace('.sto','.csv') )
-raise SystemExit
-
 ## produce output csv with per-system monthly sensor hours totals & rolling means
 #def OLD_main(csvfile):
 #    """produce output csv with per-system monthly sensor hours totals & rolling means"""
@@ -173,6 +177,47 @@ raise SystemExit
 #    csvout = csvfile.replace('.csv','_monthly.csv')
 #    monthly_hours_df.to_csv(csvout)
 #    print 'wrote %s' % csvout
+
+# convert sto file to dataframe, then process and write to csv
+def convert_sto2csv(stofile):
+    """convert sto file to dataframe, then process and write to csv"""
+    
+    # get dataframe from sto file
+    df = msg_cir_fir_sto2dataframe(stofile)
+
+    # convert like 2014:077:00:02:04 to datetimes, then to strings like 2014-03-18/077,00:02:04
+    df['date'] = [ doytimestr_to_datetime( doy_gmtstr ).date() for doy_gmtstr in df.GMT ]
+
+    # convert like 2014:077:00:02:04 to datetimes, then to strings like 2014-03-18/077,00:02:04
+    dtmstr = [ doytimestr_to_datetime( doy_gmtstr ).strftime('%Y-%m-%d/%j,%H:%M:%S') for doy_gmtstr in df.GMT ]
+    
+    # overwrite GMT columns
+    df['GMT'] = dtmstr
+
+    # separate CIR/FIR info
+    df_cir = df[df['status'] == 'S']
+    df_fir = df[df['status.1'] == 'S']
+       
+    # drop the unwanted columns
+    df_cir = df_cir.drop(['TSH_ES06_FIR_Power_Status', 'status.1'], 1)
+    
+    # pivot to aggregate daily sum for CIR es05 "payload_hours" column
+    grouped_cir = df_cir.groupby('date').aggregate(np.sum)
+    
+    # write CIR info to csv
+    df_cir.to_csv( stofile.replace('.sto','_CIR.csv') )
+    grouped_cir.to_csv( stofile.replace('.sto','_CIR_grouped.csv') )    
+    
+    # drop the unwanted columns
+    df_fir = df_fir.drop(['TSH_ES05_CIR_Power_Status', 'status'], 1)
+    df_fir.rename(columns={'status.1': 'status'}, inplace=True)
+    
+    # pivot to aggregate daily sum for FIR es06 "payload_hours" column
+    grouped_fir = df_fir.groupby('date').aggregate(np.sum)
+    
+    # write FIR info to csv
+    df_fir.to_csv( stofile.replace('.sto','_FIR.csv') )
+    grouped_fir.to_csv( stofile.replace('.sto','_FIR_grouped.csv') )  
 
 # produce output csv with per-system monthly sensor hours totals & rolling means
 def main(csvfile, resource_csvfile):
@@ -217,7 +262,13 @@ def main(csvfile, resource_csvfile):
     csvout = csvfile.replace('.csv','_monthly_hours.csv')
     df_monthly_hours.to_csv(csvout)
     print 'wrote %s' % csvout
-        
+
+#stofile = '/misc/yoda/www/plots/batch/padtimes/2014_032-062_msg_cir_fir.sto'
+stofile = '/misc/yoda/www/plots/batch/padtimes/2014_077-091_cir_fir_pwr_sams.sto'
+#stofile = '/misc/yoda/www/plots/batch/padtimes/2014_077-092_cir_fir_pwr_sams2min.sto'
+convert_sto2csv(stofile)
+raise SystemExit
+
 if __name__ == '__main__':
     if len(sys.argv) == 3:
         csvfile = sys.argv[1]
