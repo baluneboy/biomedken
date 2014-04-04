@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # 11/26/2003 - Jeff Grimmett (grimmtooth@softhome.net)
 
 import  wx
