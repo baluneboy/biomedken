@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 import websocket
 import json
 import sys
@@ -12,7 +13,6 @@ bstick = blinkstick.find_first()
 if bstick is None:
     sys.exit("BlinkStick not found...")
 
-
 def HTMLColorToRGB(colorstring):
     """ convert #RRGGBB to an (R, G, B) tuple """
     colorstring = colorstring.strip()
@@ -22,7 +22,6 @@ def HTMLColorToRGB(colorstring):
     r, g, b = colorstring[:2], colorstring[2:4], colorstring[4:]
     r, g, b = [int(n, 16) for n in (r, g, b)]
     return (r, g, b)
-
 
 def on_message(ws, message):
     global client_id
@@ -74,14 +73,11 @@ def on_message(ws, message):
          'clientId': client_id,
          'connectionType': 'websocket'}))
 
-
 def on_error(ws, error):
     print error
 
-
 def on_close(ws):
     print "### closed ###"
-
 
 def on_open(ws):
     ws.send(json.dumps(
@@ -89,8 +85,7 @@ def on_open(ws):
          'version': '1.0',
          'supportedConnectionTypes': ['long-polling', 'websocket']}))
 
-
-if __name__ == "__main__":
+def demo_web():
     # Set this to True for debugging purposes
     websocket.enableTrace(False)
     ws = websocket.WebSocketApp("ws://live.blinkstick.com:9292/faye",
@@ -98,5 +93,16 @@ if __name__ == "__main__":
                                 on_error=on_error,
                                 on_close=on_close)
     ws.on_open = on_open
+    ws.run_forever()    
 
-    ws.run_forever()
+def demo_kh():
+    bstick.turn_off()
+    for x in range(44):
+        bstick.set_random_color()
+        print bstick.get_serial() + " " + bstick.get_color(color_format="hex")
+        time.sleep(0.2)
+    bstick.turn_off()
+    print bstick.get_serial() + " turned off"
+
+if __name__ == "__main__":
+    demo_kh()
