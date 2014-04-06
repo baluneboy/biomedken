@@ -29,8 +29,6 @@ class SampleWindow(wx.PyWindow):
         else:
             self.bestsize = (80,25)
         self.SetSize(self.GetBestSize())
-        self.SetBackgroundColour('Yellow')
-        print self.GetBackgroundColour()
         
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -511,8 +509,19 @@ class MainFrame(wx.Frame):
         self.sizer.Fit(p)
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         self.Fit()
-        self.SetSize( (170, 128) )
+        self.SetSize( (196, 130) )
         self.SetPosition( (1680, 24) )
+        
+        # Use timer to drive a 'clock' in title
+        self.timer = wx.PyTimer(self.Notify)
+        self.timer.Start(1000)
+        self.Notify()
+
+    # Handles events from timer we started in __init__().
+    def Notify(self):
+        # update clock in title
+        t = eastern_time()
+        self.SetTitle( t.strftime('%H:%M:%S%p') )
 
     def OnCloseWindow(self, event):
         x, y = self.GetPosition() 
@@ -526,7 +535,6 @@ def run_stretch():
     title = eastern_time().strftime('%H:%M%p')
     app = wx.PySimpleApp()
     win = MainFrame(None, title, makeSimpleBoxPims)
-    #win.CentreOnParent(wx.BOTH)
     win.Show(True)
     app.MainLoop()    
 
