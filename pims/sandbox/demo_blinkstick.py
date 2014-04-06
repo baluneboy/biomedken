@@ -105,4 +105,5 @@ def demo_kh():
     print bstick.get_serial() + " turned off"
 
 if __name__ == "__main__":
+    #bstick.set_random_color(); time.sleep(2); bstick.turn_off(); raise SystemExit
     demo_kh()
