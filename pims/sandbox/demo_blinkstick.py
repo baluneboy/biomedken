@@ -97,10 +97,10 @@ def demo_web():
 
 def demo_kh():
     bstick.turn_off()
-    for x in range(44):
+    for x in range(20):
         bstick.set_random_color()
         print bstick.get_serial() + " " + bstick.get_color(color_format="hex")
-        time.sleep(0.2)
+        time.sleep(0.25)
     bstick.turn_off()
     print bstick.get_serial() + " turned off"
 
