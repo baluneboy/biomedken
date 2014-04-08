@@ -14,6 +14,13 @@ def eastern_time():
     return local_tz.localize(utc).astimezone( eastern )
 
 #----------------------------------------------------------------------
+class SimpleText(wx.StaticText):
+    """Simple text"""
+    def __init__(self, parent, text, pos=wx.DefaultPosition, size=wx.DefaultSize):
+        super(SimpleText, self).__init__(parent, -1, label=text,
+                                         pos=pos, size=size)
+
+#----------------------------------------------------------------------
 class SampleWindow(wx.PyWindow):
     """
     A simple window that is used as sizer items in the tests below to
@@ -67,7 +74,7 @@ def makeSimpleBoxPims(win):
     box = wx.BoxSizer(wx.VERTICAL)
     box.Add(SampleWindow(win, "AOS/LOS"), 0, wx.EXPAND)
     box.Add(SampleWindow(win, "GSE"), 0, wx.EXPAND)
-    box.Add(SampleWindow(win, "spare3"), 0, wx.EXPAND)
+    box.Add(SimpleText(win, "spare3"), 0, wx.EXPAND)
     box.Add(SampleWindow(win, "spare4"), 0, wx.EXPAND)
     box.Add(SampleWindow(win, "spare5"), 0, wx.EXPAND)
     
