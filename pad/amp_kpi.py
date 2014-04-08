@@ -11,19 +11,20 @@ from pims.utils.pimsdateutil import hours_in_month, doytimestr_to_datetime
 
 #  Group,                 System,     Resource,   Formula
 #  ------------------------------------------------------------
+#  continuous,            mams,       ossraw,     100 * D / T
+#  continuous,            mams,       hirap,      100 * D / T
 #  continuous,            sams,       121f03,     100 * D / T
 #  continuous,            sams,       121f04,     100 * D / T
 #  continuous,            sams,       cu,         100 * X / T
-#  continuous,            mams,       hirap,      100 * D / T
-#  continuous,            mams,       ossraw,     100 * D / T
 #  ------------------------------------------------------------
 #  power_rack_dependent,  sams,       121f05,     100 * D / R
 #  power_rack_dependent,  sams,       121f02,     100 * D / R
+#  power_rack_dependent,  sams,       121f08,     100 * D / R
 #  ------------------------------------------------------------
 #  payload_dependent,     sams,       es03,       100 * D / P
 #  payload_dependent,     sams,       es05,       100 * D / P
 #  payload_dependent,     sams,       es06,       100 * D / P
-
+#
 # Each of below for a given resource for a given month (T is total hours for the given month)
 # DONE continuous group, resource NOT "cu" = 100 * D / T; where D is the number of hours in PAD files
 # TODO continuous group, resource IS  "cu" = 100 * X / T, where X is the number of records in the database in the CU Housekeeping Packet
@@ -139,6 +140,11 @@ def msg_cir_fir_sto2dataframe(stofile):
         'UFZF07RT0046T': 'MSW_WV_Air_Temp',
         'UFZF13RT7420J': 'TSH_ES05_CIR_Power_Status',
         'UFZF12RT7452J': 'TSH_ES06_FIR_Power_Status',
+        'UEZE03RT1384C': 'ER3_Embedded_EE_Current',
+        'UEZE03RT1548J': 'ER3_EE_F04_Power_Status',
+        'UEZE04RT1394C': 'ER4_Drawer2_Current',
+        'UEZE04RT1608J': 'ER4_Drawer2_Power_Status',
+        'UEZE04RT1841J': 'ER4_Drawer2_Ethernet',
         }
     for k, v in msid_map.iteritems():
         df.rename(columns={k: v}, inplace=True)
@@ -149,34 +155,44 @@ def msg_cir_fir_sto2dataframe(stofile):
 
     return df
 
-## produce output csv with per-system monthly sensor hours totals & rolling means
-#def OLD_main(csvfile):
-#    """produce output csv with per-system monthly sensor hours totals & rolling means"""
-#    # read input CSV into big pd.DataFrame
-#    df = csv2dataframe(csvfile)
-#
-#    # systems' monthly hours (each a series from pivot) into dataframe
-#    systems_series = {'sams':None, 'mams':None}
-#    monthly_hours_df = monthly_hours_dataframe(df, systems_series)
-#    
-#    # pd.concat rolling means (most recent n months) into growing dataframe
-#    systems = list(monthly_hours_df.columns)
-#    original_mdf = monthly_hours_df.copy()
-#    num_months = [3, 6, 9]
-#    clip_value = 0.01 # threshold to clip tiny values with
-#    for n in num_months:
-#        roll_mean = pd.rolling_mean(original_mdf, window=n)
-#        # rolling mean can produce tiny values (very close to zero), so clip/replace with zeros
-#        for system in systems:
-#            roll_mean[system] = roll_mean[system].clip(clip_value, None)
-#            roll_mean.replace(to_replace=clip_value, value=0.0, inplace=True)
-#        roll_mean.columns = [ i + '-%d' % n for i in systems]
-#        monthly_hours_df = pd.concat([monthly_hours_df, roll_mean], axis=1)
-#    
-#    # save csv output file
-#    csvout = csvfile.replace('.csv','_monthly.csv')
-#    monthly_hours_df.to_csv(csvout)
-#    print 'wrote %s' % csvout
+# set diff as list
+def list_diff(a, b):
+    """set diff as list"""
+    b = set(b)
+    return [aa for aa in a if aa not in b]
+
+# return subset of dataframe that have status == 'S'
+def dataframe_subset(df, label, value_column, column_list):
+    """return subset of dataframe that have status == 'S'"""
+    # get and rename status column that corresponds to this value_column
+    status_column = column_list[ column_list.index(value_column) + 1 ]
+    df_sub = df[df[status_column] == 'S']
+    new_status_column = 'status.' + label
+    df_sub.rename(columns={status_column: new_status_column}, inplace=True)
+    # drop the unwanted columns
+    column_list.remove(status_column)
+    unwanted_columns = list_diff(column_list, [value_column, new_status_column])
+    unwanted_columns.remove('GMT')
+    df_sub = df_sub.drop(unwanted_columns, 1)
+    # return dataframe subset for this label
+    return df_sub
+
+# process for specific payload (either CIR or FIR for now)
+def process_cir_fir(df, label, value_column, column_list, stofile):
+    """process for specific payload (either CIR or FIR for now)"""
+    # new dataframe (subset) for this payload
+    df_payload = dataframe_subset(df, label, value_column, column_list)
+
+    # pivot to aggregate daily sum for "payload_hours" column
+    grouped_payload = df_payload.groupby('date').aggregate(np.sum)
+    
+    # write payload info to CSVs
+    upcase = label.upper()
+    df_payload.to_csv( stofile.replace('.sto', '_' + upcase + '.csv') )
+    grouped_payload.to_csv( stofile.replace('.sto', '_' + upcase + '_grouped.csv') )
+    
+    # return dataframe for payload and date grouped dataframe too
+    return df_payload, grouped_payload
 
 # convert sto file to dataframe, then process and write to csv
 def convert_sto2csv(stofile):
@@ -184,48 +200,40 @@ def convert_sto2csv(stofile):
     
     # get dataframe from sto file
     df = msg_cir_fir_sto2dataframe(stofile)
-
-    # convert like 2014:077:00:02:04 to datetimes, then to strings like 2014-03-18/077,00:02:04
+    column_list = df.columns.tolist()
+    df.to_csv(stofile.replace('.sto', '_from_dataframe.csv'))
+    
+    # convert like 2014:077:00:02:04 to datetimes
     df['date'] = [ doytimestr_to_datetime( doy_gmtstr ).date() for doy_gmtstr in df.GMT ]
 
-    # convert like 2014:077:00:02:04 to datetimes, then to strings like 2014-03-18/077,00:02:04
-    dtmstr = [ doytimestr_to_datetime( doy_gmtstr ).strftime('%Y-%m-%d/%j,%H:%M:%S') for doy_gmtstr in df.GMT ]
-    
-    # overwrite GMT columns
-    df['GMT'] = dtmstr
+    # convert datetimes to str and overwrite GMT with those strings
+    df['GMT'] = [ d.strftime('%Y-%m-%d/%j,%H:%M:%S') for d in df.date ]
 
-    # separate CIR/FIR info
-    df_cir = df[df['status'] == 'S']
-    df_fir = df[df['status.1'] == 'S']
-       
-    # drop the unwanted columns
-    df_cir = df_cir.drop(['TSH_ES06_FIR_Power_Status', 'status.1'], 1)
-    
-    # pivot to aggregate daily sum for CIR es05 "payload_hours" column
-    grouped_cir = df_cir.groupby('date').aggregate(np.sum)
-    
-    # write CIR info to csv
-    df_cir.to_csv( stofile.replace('.sto','_CIR.csv') )
-    grouped_cir.to_csv( stofile.replace('.sto','_CIR_grouped.csv') )    
-    
-    # drop the unwanted columns
-    df_fir = df_fir.drop(['TSH_ES05_CIR_Power_Status', 'status'], 1)
-    df_fir.rename(columns={'status.1': 'status'}, inplace=True)
-    
-    # pivot to aggregate daily sum for FIR es06 "payload_hours" column
-    grouped_fir = df_fir.groupby('date').aggregate(np.sum)
-    
-    # write FIR info to csv
-    df_fir.to_csv( stofile.replace('.sto','_FIR.csv') )
-    grouped_fir.to_csv( stofile.replace('.sto','_FIR_grouped.csv') )  
+    # new dataframe (subset) for CIR
+    df_cir, grouped_cir = process_cir_fir(df, 'cir', 'TSH_ES05_CIR_Power_Status', column_list, stofile)
 
-# produce output csv with per-system monthly sensor hours totals & rolling means
+    # new dataframe (subset) for FIR
+    df_fir, grouped_fir = process_cir_fir(df, 'fir', 'TSH_ES06_FIR_Power_Status', column_list, stofile)
+    
+    # new dataframe (subset) for ER3 (ER3_EE_F04_Power_Status == 'CLOSED')
+    print column_list
+    df_er3 = dataframe_subset(df, 'er3', 'ER3_EE_F04_Power_Status', column_list)
+    df_er3.to_csv( stofile.replace('.sto', '_er3.csv') )
+    print column_list
+
+    # new dataframe (subset) for ER4 (ER4_Drawer2_Power_Status == 'CLOSED')
+    df_er4 = dataframe_subset(df, 'er4', 'ER4_Drawer2_Power_Status', column_list)
+    df_er4.to_csv( stofile.replace('.sto', '_er4.csv') )
+
+# produce output csv with per-system monthly sensor hour totals
 def main(csvfile, resource_csvfile):
-    """produce output csv with per-system monthly sensor hours totals & rolling means"""
+    """produce output csv with per-system monthly sensor hour totals"""
     
     # read resource config csv file
     df_cfg = resource_csv2dataframe(resource_csvfile)
     regex_sensor_hours = '.*' + '_hours|.*'.join(df_cfg['Resource']) + '_hours'
+    
+    #print df_cfg; raise SystemExit
     
     # read input CSV into big pd.DataFrame
     df = csv2dataframe(csvfile)
@@ -252,22 +260,25 @@ def main(csvfile, resource_csvfile):
     # now we can append month_hours column
     df_monthly_hours['hours_in_month'] = pd.Series( hours, index=df_monthly_hours.index)
     
-    # iterate over columns (excluding hours_in_month) to get 100*sensor_hours/hours_in_month
+    # iterate over columns (above code helps exclude hours_in_month) to get 100*sensor_hours/hours_in_month
     for c in cols:
         pctstr = c + '_pct'
         pct = 100 * df_monthly_hours[c] / df_monthly_hours['hours_in_month']
-        df_monthly_hours[pctstr] = pd.Series( pct, index=df_monthly_hours.index)
+        df_monthly_hours[pctstr] = pd.Series( np.round(pct, decimals=0), index=df_monthly_hours.index)
     
     # save csv output file
     csvout = csvfile.replace('.csv','_monthly_hours.csv')
     df_monthly_hours.to_csv(csvout)
     print 'wrote %s' % csvout
 
-#stofile = '/misc/yoda/www/plots/batch/padtimes/2014_032-062_msg_cir_fir.sto'
-stofile = '/misc/yoda/www/plots/batch/padtimes/2014_077-091_cir_fir_pwr_sams.sto'
-#stofile = '/misc/yoda/www/plots/batch/padtimes/2014_077-092_cir_fir_pwr_sams2min.sto'
-convert_sto2csv(stofile)
-raise SystemExit
+def process_sto_file():
+    #stofile = '/misc/yoda/www/plots/batch/padtimes/2014_032-062_msg_cir_fir.sto'
+    #stofile = '/misc/yoda/www/plots/batch/padtimes/2014_077-091_cir_fir_pwr_sams.sto'
+    #stofile = '/misc/yoda/www/plots/batch/padtimes/2014_077-092_cir_fir_pwr_sams2min.sto'
+    stofile = '/misc/yoda/www/plots/user/sams/playback/er34_msg_cir_fir.sto'
+    convert_sto2csv(stofile)
+
+process_sto_file(); raise SystemExit
 
 if __name__ == '__main__':
     if len(sys.argv) == 3:
