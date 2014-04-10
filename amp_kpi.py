@@ -88,6 +88,18 @@ def resource_csv2dataframe(csvfile):
         df = pd.read_csv( csvfile )
     return df
 
+# generic normalize to get one/zero instead of on/off or closed/opened
+def normalize_generic(v, one_list, zero_list):
+    """generic normalize to get one/zero instead of on/off or closed/opened"""
+    if isinstance(v, float) and np.isnan(v):
+        return 0
+    elif v.lower() in zero_list:
+        return 0
+    elif v.lower() in one_list:
+        return 1
+    else:
+        return np.nan
+
 # normalize on/off (as one/zero) for CIR and FIR power on/off columns
 def normalize_cir_fir_power(v):
     """normalize on/off (as one/zero) for CIR and FIR power on/off columns"""
@@ -99,7 +111,7 @@ def normalize_cir_fir_power(v):
         return 1
     else:
         return np.nan
-        
+
 # read NRT List Request output (sto, tab delimited) file into dataframe
 def msg_cir_fir_sto2dataframe(stofile):
     """read ascii sto file into dataframe"""
@@ -169,11 +181,10 @@ def dataframe_subset(df, label, value_column, column_list):
     df_sub = df[df[status_column] == 'S']
     new_status_column = 'status.' + label
     df_sub.rename(columns={status_column: new_status_column}, inplace=True)
-    # drop the unwanted columns
-    column_list.remove(status_column)
-    unwanted_columns = list_diff(column_list, [value_column, new_status_column])
-    unwanted_columns.remove('GMT')
-    df_sub = df_sub.drop(unwanted_columns, 1)
+    # drop the unwanted columns in brute force fashion
+    for c in df_sub.columns:
+        if c not in ['GMT', 'date', value_column, new_status_column ]:
+            df_sub = df_sub.drop(c, 1)
     # return dataframe subset for this label
     return df_sub
 
@@ -216,14 +227,32 @@ def convert_sto2csv(stofile):
     df_fir, grouped_fir = process_cir_fir(df, 'fir', 'TSH_ES06_FIR_Power_Status', column_list, stofile)
     
     # new dataframe (subset) for ER3 (ER3_EE_F04_Power_Status == 'CLOSED')
-    print column_list
     df_er3 = dataframe_subset(df, 'er3', 'ER3_EE_F04_Power_Status', column_list)
+    
+    # normalize to change CLOSED to one, and OPENED to zero
+    zero_list = ['off', 'power off', 'opened']
+    one_list =  ['on' , 'power on' , 'closed']
+    df_er3.ER3_EE_F04_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er3.ER3_EE_F04_Power_Status.values ]        
+    
+    # pivot to aggregate daily sum for "rack hours" column
+    grouped_er3 = df_er3.groupby('date').aggregate(np.sum)
+    
+    # write CSV for ER3
     df_er3.to_csv( stofile.replace('.sto', '_er3.csv') )
-    print column_list
-
+    grouped_er3.to_csv( stofile.replace('.sto', '_ER3_grouped.csv') )
+    
     # new dataframe (subset) for ER4 (ER4_Drawer2_Power_Status == 'CLOSED')
     df_er4 = dataframe_subset(df, 'er4', 'ER4_Drawer2_Power_Status', column_list)
+    
+    # normalize to change CLOSED to one, and OPENED to zero
+    df_er4.ER4_Drawer2_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er4.ER4_Drawer2_Power_Status.values ]    
+    
+    # pivot to aggregate daily sum for "rack hours" column
+    grouped_er4 = df_er4.groupby('date').aggregate(np.sum)    
+    
+    # write CSV for ER4
     df_er4.to_csv( stofile.replace('.sto', '_er4.csv') )
+    grouped_er4.to_csv( stofile.replace('.sto', '_ER4_grouped.csv') )
 
 # produce output csv with per-system monthly sensor hour totals
 def main(csvfile, resource_csvfile):
