@@ -82,11 +82,6 @@ class CuDailyQuery(EeStatusQuery):
         query = "SELECT DATE(timestamp) as YMD, count(*)/3600.0 as Hours FROM cu_packet WHERE timestamp >= '%s' AND timestamp < '%s' GROUP BY YMD;" % (s1, s2)
         return query
 
-cud = CuDailyQuery(_HOST, _SCHEMA, _UNAME, _PASSWD, 2014, 3)
-res = cud.run_query()
-print res
-raise SystemExit
-
 class SimpleQueryAOS(object):
     """simple query for AOS/LOS"""
     def __init__(self, host, schema, uname, pword):

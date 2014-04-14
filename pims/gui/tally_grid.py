@@ -6,7 +6,7 @@ import wx.grid as  gridlib
 import numpy as np
 from dateutil import parser
 from datetime import timedelta
-from pims.utils.pimsdateutil import dtm2unix, format_datetime_as_pad_underscores, _2DAYSAGO
+from pims.utils.pimsdateutil import dtm2unix, format_datetime_as_pad_underscores, _2DAYSAGO, _5DAYSAGO
 from pims.utils.datetime_ranger import DateRange
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 #from pims.utils import pyperclip
@@ -118,7 +118,7 @@ class CheapPadHoursInputGrid(gridlib.Grid, PyWXGridEditMixin):
         self.rows = [
         #    row_label          default_value1
         #--------------------------------------------------
-            ('start',           _2DAYSAGO,           parser.parse),
+            ('start',           _5DAYSAGO,           parser.parse),
             ('stop',            _2DAYSAGO,           parser.parse),
             ('pattern',         self.pattern,           str),
             ('basepath',        '/misc/yoda/pub/pad',   str),
@@ -163,7 +163,7 @@ class RoadmapsInputGrid(CheapPadHoursInputGrid):
         self.rows = [
         #    row_label          default_value1
         #--------------------------------------------------
-            ('start',           _2DAYSAGO,           parser.parse),
+            ('start',           _5DAYSAGO,           parser.parse),
             ('stop',            _2DAYSAGO,           parser.parse),
             ('pattern',         self.pattern,                   str),
             ('basepath',        '/misc/yoda/www/plots/batch',   str),

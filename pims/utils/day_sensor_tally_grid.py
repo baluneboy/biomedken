@@ -9,7 +9,13 @@ import wx
 import sys
 import datetime
 from dateutil import parser
-from pyvttbl import DataFrame
+
+# FIXME use pandas DataFrame instead
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    from pyvttbl import DataFrame
+
 from datetime_ranger import DateRange
 from pims.utils.pimsdateutil import timestr_to_datetime
 from pims.gui.tally_grid import TallyFrame, CheapPadHoursInputGrid, TallyOutputGrid, run_main_loop
