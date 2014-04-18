@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 import os
-import pygtk
-pygtk.require('2.0')
+import pygtk; pygtk.require('2.0')
 import gtk
 import re
 from pims.patterns.dirnames import _HANDBOOKDIR_PATTERN
@@ -53,15 +52,18 @@ def main(curdir):
     if curdir.startswith('file:///'):
         curdir = curdir[7:]
 
-    # Verify curdir matches pattern (this works even in build subdir, a good thing)
+    # Verify curdir matches pattern (this works even in build subdir, which is a good thing)
     match = re.search( re.compile(_HANDBOOKDIR_PATTERN), curdir )
 
-    # Do branching based on in build subdir or source_dir
+    # THIS IS WHERE WE DO BRANCHING BASED ON...
+    # whether we are in the "build" subdir or the source_dir
     if match:
         #alert( match.string )
         if match.string.endswith('build'):
+            #alert( 'we are in build directory, so finalize')
             msg, hbe = finalize( os.path.dirname(curdir) )
         else:
+            #alert( 'we are in source_dir, so create build')
             msg, hbe = do_build(curdir)
     else:
         msg = 'ABORT: ignore non-hb dir'
