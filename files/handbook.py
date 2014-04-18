@@ -404,6 +404,10 @@ class HandbookEntry(object):
 
     def _get_files(self, pth, fname_pattern):
         """Get files that match filename pattern at path."""
+        return listdir_filename_pattern(pth, fname_pattern) 
+
+    def _get_files_dialog(self, pth, fname_pattern):
+        """Get files that match filename pattern at path with dialog."""
         # if ALL files have unique match (for mapping to class), then use as-is
         files = listdir_filename_pattern(pth, fname_pattern)
         dialog = HandbookFileDialog(files)
@@ -421,7 +425,7 @@ class HandbookEntry(object):
     def _get_handbook_files(self):
         """Get files that match pattern for handbook PDFs."""
         fname_pattern = hbpat._HANDBOOKPDF_PATTERN[3:] # get rid of ".*/"
-        return self._get_files(self.source_dir, fname_pattern)
+        return self._get_files_dialog(self.source_dir, fname_pattern)
 
     def process_pages(self):
         """Process the files found in source_dir."""

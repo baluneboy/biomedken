@@ -226,6 +226,10 @@ def convert_sto2csv(stofile):
     # new dataframe (subset) for FIR
     df_fir, grouped_fir = process_cir_fir(df, 'fir', 'TSH_ES06_FIR_Power_Status', column_list, stofile)
     
+    # FIXME
+    # - move zero_list and one_list up to here
+    # - refactor commonanilty for ER3, ER4, MSG1, and MSG2
+    
     # new dataframe (subset) for ER3 (ER3_EE_F04_Power_Status == 'CLOSED')
     df_er3 = dataframe_subset(df, 'er3', 'ER3_EE_F04_Power_Status', column_list)
     
@@ -254,6 +258,32 @@ def convert_sto2csv(stofile):
     df_er4.to_csv( stofile.replace('.sto', '_er4.csv') )
     grouped_er4.to_csv( stofile.replace('.sto', '_ER4_grouped.csv') )
 
+    # new dataframe (subset) for MSG1 (MSG_Outlet1_Status == 'ON')
+    df_msg1 = dataframe_subset(df, 'msg1', 'MSG_Outlet1_Status', column_list)
+    
+    # normalize to change CLOSED to one, and OPENED to zero
+    df_msg1.MSG_Outlet1_Status = [ normalize_generic(v, one_list, zero_list) for v in df_msg1.MSG_Outlet1_Status.values ]    
+    
+    # pivot to aggregate daily sum for "rack hours" column
+    grouped_msg1 = df_msg1.groupby('date').aggregate(np.sum)    
+    
+    # write CSV for MSG1
+    df_msg1.to_csv( stofile.replace('.sto', '_msg1.csv') )
+    grouped_msg1.to_csv( stofile.replace('.sto', '_MSG1_grouped.csv') )
+
+    # new dataframe (subset) for MSG2 (MSG_Outlet2_Status == 'ON')
+    df_msg2 = dataframe_subset(df, 'msg2', 'MSG_Outlet2_Status', column_list)
+    
+    # normalize to change CLOSED to one, and OPENED to zero
+    df_msg2.MSG_Outlet2_Status = [ normalize_generic(v, one_list, zero_list) for v in df_msg2.MSG_Outlet2_Status.values ]    
+    
+    # pivot to aggregate daily sum for "rack hours" column
+    grouped_msg2 = df_msg2.groupby('date').aggregate(np.sum)    
+    
+    # write CSV for MSG2
+    df_msg2.to_csv( stofile.replace('.sto', '_msg2.csv') )
+    grouped_msg2.to_csv( stofile.replace('.sto', '_MSG2_grouped.csv') )
+    
 # produce output csv with per-system monthly sensor hour totals
 def main(csvfile, resource_csvfile):
     """produce output csv with per-system monthly sensor hour totals"""
@@ -299,15 +329,6 @@ def main(csvfile, resource_csvfile):
     csvout = csvfile.replace('.csv','_monthly_hours.csv')
     df_monthly_hours.to_csv(csvout)
     print 'wrote %s' % csvout
-
-def process_sto_file():
-    #stofile = '/misc/yoda/www/plots/batch/padtimes/2014_032-062_msg_cir_fir.sto'
-    #stofile = '/misc/yoda/www/plots/batch/padtimes/2014_077-091_cir_fir_pwr_sams.sto'
-    #stofile = '/misc/yoda/www/plots/batch/padtimes/2014_077-092_cir_fir_pwr_sams2min.sto'
-    stofile = '/misc/yoda/www/plots/user/sams/playback/er34_msg_cir_fir.sto'
-    convert_sto2csv(stofile)
-
-process_sto_file(); raise SystemExit
 
 if __name__ == '__main__':
     if len(sys.argv) == 3:
