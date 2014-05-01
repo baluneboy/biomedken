@@ -63,19 +63,26 @@ class GseStatusQuery(EeStatusQuery):
         query = 'SELECT * FROM samsnew.gse_packet_rt;' # ORDER BY ku_timestamp DESC LIMIT 11;'
         return query
 
-class CuDailyQuery(EeStatusQuery):
-    """workaround query for updating web page with GSE status"""
+class ObsoleteCuDailyQuery(EeStatusQuery):
+    """query for daily GSE monitoring of CU"""
 
-    def __init__(self, host, schema, uname, pword, yr, mo):
+    def __init__(self, host, schema, uname, pword, d1, d2):
         self.host = host
         self.schema = schema
         self.uname = uname
         self.pword = pword
-        self.query = self._get_query(yr, mo)
-        
-    def _get_query(self, yr, mo):
-        d1 = datetime.datetime(yr, mo, 1)
-        d2 = d1 + relativedelta(months=1)
+        self.query = self._get_query(d1, d2)
+
+    def _get_query(self, d1, d2):
+        fmt = '%Y-%m-%d %H:%M:%S'
+        s1 = d1.strftime(fmt)
+        s2 = d2.strftime(fmt)
+        query = "SELECT DATE(timestamp) as YMD, count(*)/3600.0 as Hours FROM cu_packet WHERE timestamp >= '%s' AND timestamp < '%s' GROUP BY YMD;" % (s1, s2)
+        return query
+
+class ObsoleteRackDepDailyQuery(CuDailyQuery):
+
+    def _get_query(self, d1, d2):
         fmt = '%Y-%m-%d %H:%M:%S'
         s1 = d1.strftime(fmt)
         s2 = d2.strftime(fmt)
