@@ -360,6 +360,33 @@ def main():
 
     return 0
 
+def demo_hourly():
+
+    bstick = blinkstick.find_first()
+
+    # Do processing needed to update blinkstick [output how/where?]
+    #code goes here with status to [syslog?]
+    
+    # Get "state" of blinkstick from one of its two [registers?]
+    #code goes here with "old state" to [syslog?]
+    
+    # Turn blinkstick off
+    bstick.turn_off()
+    
+    # Update blinkstick with info from processing done "not long ago"
+    for x in range(5):
+        bstick.set_random_color()
+        print bstick.get_serial() + " " + bstick.get_color(color_format="hex")
+        time.sleep(0.5)
+    # with "new state" to [syslog?]
+        
+    # Restore "state" of blinkstick    
+    bstick.turn_off()
+    
+    # Log status
+    print bstick.get_serial() + " turned off"    
+
+demo_hourly(); raise SystemExit
 
 if __name__ == "__main__":
     #sys.exit(main())
