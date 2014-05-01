@@ -76,11 +76,11 @@ def get_day_files(day, batch_dir, log, ext):
 def get_day_jpgs(day, batch_dir, log):
     """Get list of ossbtmf roadmap JPGs for day."""
     qs_dir = os.path.join(batch_dir, 'Quasi-steady')
-    jpg_files = get_day_files(day, batch_dir, log, 'jpg')
+    return get_day_files(day, qs_dir, log, 'jpg')
 
 def get_day_pdfs(day, batch_dir, log):
     """Check for ossbtmf roadmap PDF files for day."""
-    pdf_files = get_day_files(day, batch_dir, log, 'pdf')
+    return get_day_files(day, batch_dir, log, 'pdf')
 
 def run_backfill(day, batch_dir, jpg_files, log):
     """Convert JPGs to PDFs and move the PDFs to batch dir."""
@@ -109,7 +109,7 @@ def backfill_ossbtmf_roadmaps(date_range, batch_dir, log):
     """
     log.info("Try backfill of ossbtmf roadmap PDFs for %s." % date_range)
 
-    # Loop backwards in time over days in date range
+    # Loop BACKWARDS in time over days in date range
     repair_years = set( (date_range.stop.year,) )
     num_days_backfilled = 0
     d = date_range.stop
@@ -124,6 +124,8 @@ def backfill_ossbtmf_roadmaps(date_range, batch_dir, log):
                 repair_years.add( d.year )
                 log.debug('Years %s' % repair_years)
                 num_days_backfilled += 1
+            else:
+                log.info('NO NEED TO BACKFILL FOR DAY %s' % d.date())
         d -= datetime.timedelta(days=1)
     
     log.info('Backfilled a total of %d days.' % num_days_backfilled)

@@ -4,6 +4,7 @@ import os
 import re
 import datetime
 from pims.utils.pimsdateutil import days_ago_to_date, days_ago_to_date_time
+from dateutil import parser
 
 class BaseRange(object):
     """ A class to handle date/time range(s). """
@@ -38,6 +39,13 @@ class BaseRange(object):
             return start, stop
         elif isinstance(start, basestring) and stop == None:
             return self._convert_pad_filename_to_start_stop(start)
+        elif isinstance(start, basestring) and isinstance(stop, basestring):
+            try:
+                start = parser.parse(start)
+                stop = parser.parse(stop)
+                return start, stop
+            except:
+                raise TypeError('start & stop both strings, but could not parse')
         else:
             raise TypeError('input start/stop signature is unexpected')
 

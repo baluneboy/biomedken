@@ -330,6 +330,20 @@ def main(csvfile, resource_csvfile):
     df_monthly_hours.to_csv(csvout)
     print 'wrote %s' % csvout
 
+def obsolete_demo_cu():
+    from pims.database.samsquery import ObsoleteCuDailyQuery, _HOST, _SCHEMA, _UNAME, _PASSWD
+    from pims.utils.datetime_ranger import DateRange
+    date_range = DateRange(start='2014-04-01', stop='2014-04-29')
+    a = CuDailyQuery(_HOST, _SCHEMA, _UNAME, _PASSWD, date_range.start, date_range.stop)
+    print a
+
+def obsolete_demo_rack_dep():
+    from pims.database.samsquery import ObsoleteRackDepDailyQuery, _HOST, _SCHEMA, _UNAME, _PASSWD
+    from pims.utils.datetime_ranger import DateRange
+    date_range = DateRange(start='2014-04-01', stop='2014-04-29')
+    a = RackDepDailyQuery(_HOST, _SCHEMA, _UNAME, _PASSWD, date_range.start, date_range.stop)
+    print a
+
 if __name__ == '__main__':
     if len(sys.argv) == 3:
         csvfile = sys.argv[1]
