@@ -95,13 +95,42 @@ def demo_web():
     ws.on_open = on_open
     ws.run_forever()    
 
+def demo_set_get_block_info(info_block1, info_block2):
+    
+    bstick = blinkstick.find_first()
+    
+    # set and get device info-block1 here
+    #bstick.set_info_block1(info_block1)
+    print bstick.get_info_block1()
+    
+    # set and get device info-block2 here
+    #bstick.set_info_block2(info_block2)
+    print bstick.get_info_block2()
+    
+demo_set_get_block_info("abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ"); raise SystemExit    
+
 def demo_kh():
+
+    # Do processing needed to update blinkstick [output how/where?]
+    #code goes here with status to [syslog?]
+    
+    # Get "state" of blinkstick from one of its two [registers?]
+    #code goes here with "old state" to [syslog?]
+    
+    # Turn blinkstick off
     bstick.turn_off()
-    for x in range(20):
+    
+    # Update blinkstick with info from processing done "not long ago"
+    for x in range(5):
         bstick.set_random_color()
         print bstick.get_serial() + " " + bstick.get_color(color_format="hex")
-        time.sleep(0.25)
+        time.sleep(0.5)
+    # with "new state" to [syslog?]
+        
+    # Restore "state" of blinkstick    
     bstick.turn_off()
+    
+    # Log status
     print bstick.get_serial() + " turned off"
 
 if __name__ == "__main__":
