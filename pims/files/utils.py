@@ -1,11 +1,28 @@
 import os
 import re
 import time
+import errno
 from pims.files.base import File, UnrecognizedPimsFile
 from pims.patterns.handbookpdfs import is_unique_handbook_pdf_match
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN
 from pims.utils.pimsdateutil import timestr_to_datetime
 from pims.strings.utils import remove_non_ascii
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
+# get most recent file along pth that ends with suffix
+def most_recent_file_with_suffix(pth, suffix):
+    """get most recent file along pth that ends with suffix"""
+    files = [ os.path.join(pth, f) for f in os.listdir(pth) if f.endswith(suffix) ]
+    files.sort(key=lambda x: os.path.getmtime(x))
+    return os.path.join(pth, files[-1])
 
 def overwrite_file_with_non_ascii_chars_removed(f):
     with open (f, "r") as myfile:

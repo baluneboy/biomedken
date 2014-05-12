@@ -1,13 +1,18 @@
 #!/usr/bin/env python
 
 import re
+import os
 import sys
 import csv
 import numpy as np
 import pandas as pd
 import datetime
 from cStringIO import StringIO
-from pims.utils.pimsdateutil import hours_in_month, doytimestr_to_datetime
+from pims.utils.pimsdateutil import hours_in_month, doytimestr_to_datetime, datestr_to_datetime
+from pims.files.utils import mkdir_p, most_recent_file_with_suffix
+from pims.database.samsquery import CuMonthlyQuery, _HOST, _SCHEMA, _UNAME, _PASSWD
+from pims.excel.modification import overwrite_last_row_with_totals
+from openpyxl.reader.excel import load_workbook
 
 #  Group,                 System,     Resource,   Formula
 #  ------------------------------------------------------------
@@ -167,6 +172,108 @@ def msg_cir_fir_sto2dataframe(stofile):
 
     return df
 
+
+# read NRT List Request output (sto, tab delimited) file into dataframe
+def emcs_sto2dataframe(stofile):
+    """read ascii sto file into dataframe"""
+    
+    s = StringIO()
+    with open(stofile, 'r') as f:
+        # Read and ignore header lines
+        header = f.readline() # labels
+        s.write(header)
+        is_data = False
+        for line in f:
+            if line.startswith('#Start_Data'):
+                is_data = True
+            if line.startswith('#End_Data'):
+                is_data = False
+            if is_data and not line.startswith('#Start_Data'):
+                s.write(line)
+    s.seek(0) # "rewind" to the beginning of the StringIO object
+    df = pd.read_csv(s, sep='\t')
+    
+    # drop the unwanted "#Header" column
+    df = df.drop('#Header', 1)
+    column_labels = [ s.replace('Timestamp : Embedded GMT', 'GMT') for s in df.columns.tolist()]
+    df.columns = column_labels
+    
+    # drop Unnamed columns
+    for clabel in column_labels:
+        if clabel.startswith('Unnamed'):
+            df = df.drop(clabel, 1)
+
+    # use nomenclature to rename column labels    
+    msid_map = {
+            'UEZE08RT1001J': 'HS_Caution_Warning',
+            'UEZE08RT1002J': 'HS_Cycle_Count',
+            'UEZE08RT1003C': 'HS_ACS_Pump_Current',
+            'UEZE08RT1004T': 'HS_ACS_TemperatureAcsSensorPEU',
+            'UEZE08RT1005T': 'HS_ACS_TemperatureAcsSensorCEU',
+            'UEZE08RT1006T': 'HS_TCS_TemperatureOTDAHX1',
+            'UEZE08RT1007T': 'HS_TCS_TemperatureOTDAHX2',
+            'UEZE08RT1008T': 'HS_TCS_TemperatureOTDAHX3',
+            'UEZE08RT1009T': 'HS_TCS_TemperatureColdPlate1',
+            'UEZE08RT1010T': 'HS_TCS_TemperatureColdPlate2',
+            'UEZE08RT1011T': 'HS_TCS_TemperatureOTDPEU1',
+            'UEZE08RT1012T': 'HS_TCS_TemperatureOTDPEU2',
+            'UEZE08RT1013T': 'HS_TCS_TemperatureCEU',
+            'UEZE08RT1014T': 'HS_TCS_TemperatureFan',
+            'UEZE08RT1015T': 'HS_DA_Temperature1',
+            'UEZE08RT1016T': 'HS_DA_Temperature2',
+            'UEZE08RT1017T': 'HS_DB_Temperature1',
+            'UEZE08RT1018T': 'HS_DB_Temperature2',
+            'UEZE08RT1019T': 'HS_SPLC_Temperature',
+            'UEZE08RT1020T': 'HS_VAS_Temperature',
+            'UEZE08RT1021T': 'HS_VCR_Temperature',
+            'UEZE08RT1022T': 'HS_DCDC_Temperature_EBox1',
+            'UEZE08RT1023T': 'HS_DCDC_Temperature_EBox2',
+            'UEZE08RT1024T': 'HS_DCDC_Temp RBLSS_Box1',
+            'UEZE08RT1025T': 'HS_DCDC_Temp RBLSS_Box2',
+            'UEZE08RT1026T': 'HS_EC1_Illumination_Temp',
+            'UEZE08RT1027T': 'HS_EC2_Illumination_Temp',
+            'UEZE08RT1028T': 'HS_EC3_Illumination_Temp',
+            'UEZE08RT1029T': 'HS_EC4_Illumination_Temp',
+            'UEZE08RT1030T': 'HS_DCDC_Temperature_Ebox1',
+            'UEZE08RT1031T': 'HS_DCDC_Temperature_EBox2',
+            'UEZE08RT1032T': 'HS_DCDC_Temp_RBLSS_Box1',
+            'UEZE08RT1033T': 'HS_DCDC_Temp_RBLSS_Box2',
+            'UEZE08RT1034T': 'HS_EC1_Illumination_Temp',
+            'UEZE08RT1035T': 'HS_EC2_Illumination_Temp',
+            'UEZE08RT1036T': 'HS_EC3_Illumination_Temp',
+            'UEZE08RT1037T': 'HS_EC4_Illumination_Temp',
+            'UEZE08RT1100J': 'Subset_ID',
+            'UEZE08RT1101J': 'PEP_Service_Request_Word',
+            'UEZE08RT1102J': 'PEP_Request_Supporting_Data',
+            'UEZE03RT1005U': 'ER3_Data_Cycle_Counter',
+            'UEZE03RT1389C': 'Unsign_28V_Output_18_Current_Locker3',
+            'UEZE03RT1390C': 'Unsign_28V_Output_19_Current_Locker4',
+            'UEZE03RT1391C': 'Unsign_28V_Output_20_Current_Locker7',
+            'UEZE03RT1392C': 'Unsign_28V_Output_21_Current_Locker8',
+            'UEZE03RT1393C': 'Unsign_28V_Output_22_Current_ISIS1)',
+            'UEZE03RT1578J': 'Chan_18_OP_State',
+            'UEZE03RT1584J': 'Chan_19_OP_State',
+            'UEZE03RT1590J': 'Chan_20_OP_State',
+            'UEZE03RT1596J': 'Chan_21_OP_State',
+            'UEZE03RT1602J': 'Chan_22_OP_State',
+            'UEZE03RT1840J': 'HRLC_PLD_Ether9_Active_Inactive',
+            'LADP20MDJ764J': 'PL92_Active_Flag',
+            'LADP20MDJ765J': 'PL92_HS_Data_Received'
+        }
+    for k, v in msid_map.iteritems():
+        df.rename(columns={k: v}, inplace=True)
+    
+    ## normalize on/off (as one/zero) for CIR and FIR columns
+    #df.TSH_ES05_CIR_Power_Status = [ normalize_cir_fir_power(v) for v in df.TSH_ES05_CIR_Power_Status.values ]
+    #df.TSH_ES06_FIR_Power_Status = [ normalize_cir_fir_power(v) for v in df.TSH_ES06_FIR_Power_Status.values ]
+
+    df.to_csv( stofile.replace('.sto', '.csv') )
+    return df
+
+df = emcs_sto2dataframe('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_Columbus_EMCS_Candidates/EMCSdata.sto')
+raise SystemExit
+
+
 # set diff as list
 def list_diff(a, b):
     """set diff as list"""
@@ -183,7 +290,7 @@ def dataframe_subset(df, label, value_column, column_list):
     df_sub.rename(columns={status_column: new_status_column}, inplace=True)
     # drop the unwanted columns in brute force fashion
     for c in df_sub.columns:
-        if c not in ['GMT', 'date', value_column, new_status_column ]:
+        if c not in ['GMT', 'Date', value_column, new_status_column ]:
             df_sub = df_sub.drop(c, 1)
     # return dataframe subset for this label
     return df_sub
@@ -195,12 +302,12 @@ def process_cir_fir(df, label, value_column, column_list, stofile):
     df_payload = dataframe_subset(df, label, value_column, column_list)
 
     # pivot to aggregate daily sum for "payload_hours" column
-    grouped_payload = df_payload.groupby('date').aggregate(np.sum)
+    grouped_payload = df_payload.groupby('Date').aggregate(np.sum)
     
-    # write payload info to CSVs
-    upcase = label.upper()
-    df_payload.to_csv( stofile.replace('.sto', '_' + upcase + '.csv') )
-    grouped_payload.to_csv( stofile.replace('.sto', '_' + upcase + '_grouped.csv') )
+    ## write payload info to CSVs
+    #upcase = label.upper()
+    #df_payload.to_csv( stofile.replace('.sto', '_' + upcase + '.csv') )
+    #grouped_payload.to_csv( stofile.replace('.sto', '_' + upcase + '_grouped.csv') )
     
     # return dataframe for payload and date grouped dataframe too
     return df_payload, grouped_payload
@@ -215,7 +322,7 @@ def convert_sto2csv(stofile):
     df.to_csv(stofile.replace('.sto', '_from_dataframe.csv'))
     
     # convert like 2014:077:00:02:04 to datetimes
-    df['date'] = [ doytimestr_to_datetime( doy_gmtstr ).date() for doy_gmtstr in df.GMT ]
+    df['Date'] = [ doytimestr_to_datetime( doy_gmtstr ).date() for doy_gmtstr in df.GMT ]
 
     # convert datetimes to str and overwrite GMT with those strings
     df['GMT'] = [ d.strftime('%Y-%m-%d/%j,%H:%M:%S') for d in df.date ]
@@ -239,7 +346,7 @@ def convert_sto2csv(stofile):
     df_er3.ER3_EE_F04_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er3.ER3_EE_F04_Power_Status.values ]        
     
     # pivot to aggregate daily sum for "rack hours" column
-    grouped_er3 = df_er3.groupby('date').aggregate(np.sum)
+    grouped_er3 = df_er3.groupby('Date').aggregate(np.sum)
     
     # write CSV for ER3
     df_er3.to_csv( stofile.replace('.sto', '_er3.csv') )
@@ -252,7 +359,7 @@ def convert_sto2csv(stofile):
     df_er4.ER4_Drawer2_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er4.ER4_Drawer2_Power_Status.values ]    
     
     # pivot to aggregate daily sum for "rack hours" column
-    grouped_er4 = df_er4.groupby('date').aggregate(np.sum)    
+    grouped_er4 = df_er4.groupby('Date').aggregate(np.sum)    
     
     # write CSV for ER4
     df_er4.to_csv( stofile.replace('.sto', '_er4.csv') )
@@ -265,7 +372,7 @@ def convert_sto2csv(stofile):
     df_msg1.MSG_Outlet1_Status = [ normalize_generic(v, one_list, zero_list) for v in df_msg1.MSG_Outlet1_Status.values ]    
     
     # pivot to aggregate daily sum for "rack hours" column
-    grouped_msg1 = df_msg1.groupby('date').aggregate(np.sum)    
+    grouped_msg1 = df_msg1.groupby('Date').aggregate(np.sum)    
     
     # write CSV for MSG1
     df_msg1.to_csv( stofile.replace('.sto', '_msg1.csv') )
@@ -278,11 +385,196 @@ def convert_sto2csv(stofile):
     df_msg2.MSG_Outlet2_Status = [ normalize_generic(v, one_list, zero_list) for v in df_msg2.MSG_Outlet2_Status.values ]    
     
     # pivot to aggregate daily sum for "rack hours" column
-    grouped_msg2 = df_msg2.groupby('date').aggregate(np.sum)    
+    grouped_msg2 = df_msg2.groupby('Date').aggregate(np.sum)    
     
     # write CSV for MSG2
     df_msg2.to_csv( stofile.replace('.sto', '_msg2.csv') )
     grouped_msg2.to_csv( stofile.replace('.sto', '_MSG2_grouped.csv') )
+
+# get dataframe with padtimes aggregate
+def get_padtimes_aggregate():
+    """get dataframe with padtimes aggregate"""
+    pass
+
+def demo_modify_existing():
+    wb = load_workbook(filename = r'/tmp/empty_book.xlsx')
+    ws = wb.get_sheet_by_name("ER3raw")
+    #ws.cell(row=0, column=0).delete()
+    print ws.cell('A19').value
+    #ws.cell('A19').value = '/</-/'
+    #wb.save(filename = r'/tmp/empty_book.xlsx')
+
+# convert most recent sto file to dataframe, then process and write to xlsx
+def convert_latest_sto2xlsx():
+    """convert most recent sto file to dataframe, then process and write to xlsx"""
+    
+    # get most recent sto file along default dir
+    stofile = most_recent_file_with_suffix('/misc/yoda/www/plots/batch/padtimes/NRT_sto_files', '.sto')
+
+    # check if xlsx exists already
+    xlsxfile = stofile.replace('.sto', '.xlsx').replace('padtimes/NRT_sto_files','padtimes')
+    if os.path.exists( xlsxfile ):
+        print "Abort: already have XLSX file %s for\nthe latest stofile = %s" % (xlsxfile, stofile)
+        return
+
+    # at this point, xlsx version does not exist, so convert most recent sto to xlsx
+    convert_sto2xlsx(stofile, xlsxfile)
+
+
+####################################################
+# MANUAL STEPS:
+#
+# 1. Run NRT List Request for GMT date range, using:
+#    -- hourly thinning = 3600
+#    -- name convention for sto file = YYYY_MM_kpi.sto
+# 
+# 2. Copy sto file from TReK to /misc/yoda/www/plots/batch/padtimes/NRT_sto_files/.
+# 
+# 3. Run python script:
+# /home/pims/dev/programs/python/pims/pad/amp_kpi.py convert_latest_sto2xlsx # need this one argument
+# 
+# 4. Create new sheet called "kpi"
+# 
+# 5. Save as "/misc/yoda/www/plots/batch/padtimes/YYYY_MM_kpi.xlsx"
+# 
+# 6. openpyxl to fill in cells for "kpi" sheet in following steps...
+# 
+# 7. Get GMT range formatted string into kpi sheet cell B1
+# 
+# 8. Numerators gleaned from column headings
+# 
+# 9. Denominators gleaned from columns headings
+# 
+# 10. Formatting
+
+# convert sto file to dataframe, then process and write to xlsx
+def convert_sto2xlsx(stofile, xlsxfile):
+    """convert sto file to dataframe, then process and write to xlsx"""
+    
+    # get dataframe from sto file
+    df = msg_cir_fir_sto2dataframe(stofile)
+    column_list = df.columns.tolist()
+    #df.to_csv(stofile.replace('.sto', '_from_dataframe.csv'))
+    
+    # convert like 2014:077:00:02:04 to datetimes
+    df['Date'] = [ doytimestr_to_datetime( doy_gmtstr ).date() for doy_gmtstr in df.GMT ]
+
+    # get date range from sto file
+    date_min = min(df['Date'])
+    date_max = max(df['Date'])
+
+    # convert datetimes to str and overwrite GMT with those strings
+    df['GMT'] = [ d.strftime('%Y-%m-%d/%j,%H:%M:%S') for d in df.Date ]
+
+    # new dataframe (subset) for CIR
+    df_cir, grouped_cir = process_cir_fir(df, 'cir', 'TSH_ES05_CIR_Power_Status', column_list, stofile)
+
+    # new dataframe (subset) for FIR
+    df_fir, grouped_fir = process_cir_fir(df, 'fir', 'TSH_ES06_FIR_Power_Status', column_list, stofile)
+    
+    # FIXME
+    # - move zero_list and one_list up to here
+    # - refactor commonanilty for ER3, ER4, MSG1, and MSG2
+    
+    # new dataframe (subset) for ER3 (ER3_EE_F04_Power_Status == 'CLOSED')
+    df_er3 = dataframe_subset(df, 'er3', 'ER3_EE_F04_Power_Status', column_list)
+    
+    # normalize to change CLOSED to one, and OPENED to zero
+    zero_list = ['off', 'power off', 'opened']
+    one_list =  ['on' , 'power on' , 'closed']
+    df_er3.ER3_EE_F04_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er3.ER3_EE_F04_Power_Status.values ]        
+    
+    # pivot to aggregate daily sum for "rack hours" column
+    grouped_er3 = df_er3.groupby('Date').aggregate(np.sum)
+    
+    # new dataframe (subset) for ER4 (ER4_Drawer2_Power_Status == 'CLOSED')
+    df_er4 = dataframe_subset(df, 'er4', 'ER4_Drawer2_Power_Status', column_list)
+    
+    # normalize to change CLOSED to one, and OPENED to zero
+    df_er4.ER4_Drawer2_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er4.ER4_Drawer2_Power_Status.values ]    
+    
+    # pivot to aggregate daily sum for "rack hours" column
+    grouped_er4 = df_er4.groupby('Date').aggregate(np.sum)    
+
+    # new dataframe (subset) for MSG1 (MSG_Outlet1_Status == 'ON')
+    df_msg1 = dataframe_subset(df, 'msg1', 'MSG_Outlet1_Status', column_list)
+    
+    # normalize to change CLOSED to one, and OPENED to zero
+    df_msg1.MSG_Outlet1_Status = [ normalize_generic(v, one_list, zero_list) for v in df_msg1.MSG_Outlet1_Status.values ]    
+    
+    # pivot to aggregate daily sum for "rack hours" column
+    grouped_msg1 = df_msg1.groupby('Date').aggregate(np.sum)    
+
+    # new dataframe (subset) for MSG2 (MSG_Outlet2_Status == 'ON')
+    df_msg2 = dataframe_subset(df, 'msg2', 'MSG_Outlet2_Status', column_list)
+    
+    # normalize to change CLOSED to one, and OPENED to zero
+    df_msg2.MSG_Outlet2_Status = [ normalize_generic(v, one_list, zero_list) for v in df_msg2.MSG_Outlet2_Status.values ]    
+    
+    # pivot to aggregate daily sum for "rack hours" column
+    grouped_msg2 = df_msg2.groupby('Date').aggregate(np.sum)    
+
+    # get dataframe with CU hour count info
+    cu = CuMonthlyQuery(_HOST, _SCHEMA, _UNAME, _PASSWD, date_min, date_max)
+    cu_querystr = cu._get_query(date_min, date_max)
+    s = StringIO()
+    s.write(str(cu))
+    s.seek(0) # "rewind" to the beginning of the StringIO object
+    df_cu = pd.read_csv(s, sep='\t', parse_dates=True, index_col = [0])
+    
+    # get dataframe for padtimes
+    df_tmp = pd.read_csv('/misc/yoda/www/plots/batch/padtimes/padtimes.csv', parse_dates=True, index_col = [0])
+    df_pad = df_tmp.filter(regex='Date|.*_hours')
+    
+    ## only keep rows for range from date_min to date_max
+    #df_pad = df_pad[(df_pad.Date >= date_min) & (df_pad.Date <= date_max)]
+
+    # create wall clock dataframe
+    df_wall_clock = grouped_er3.copy(deep=True)
+
+    # rename column to Wall_Clock
+    df_wall_clock.rename(columns={'ER3_EE_F04_Power_Status':  'Wall_Clock'}, inplace=True)
+    df_wall_clock['Wall_Clock'] = 24
+    
+    # merge dataframes and just add those on to df_pad
+    bamf_df = df_wall_clock.join([grouped_er3, grouped_er4, grouped_cir, grouped_fir, grouped_msg1, grouped_msg2, df_cu, df_pad])
+
+    # drop unwanted columns
+    unwanted_columns = ['mams_ossbtmf_hours', 'iss_radgse_hours', 'mma_0bba_hours', 'mma_0bbb_hours', 'mma_0bbc_hours', 'mma_0bbd_hours']
+    for uc in unwanted_columns:
+        bamf_df = bamf_df.drop(uc, 1)    
+
+    # Create a Pandas Excel writer using XlsxWriter as the engine.
+    writer = pd.ExcelWriter(xlsxfile, engine='xlsxwriter')
+
+    # Create kpi sheet for monthly percentages
+    df_cu.to_excel(writer, sheet_name='kpi', index=True)
+    
+    # Create sheets for dataframes
+    bamf_df.to_excel(writer, sheet_name='raw', index=True)
+    
+    #df_pad.to_excel(writer, sheet_name='PAD', index=True)
+    #df_cu.to_excel(writer, sheet_name='CU', index=True)
+    
+    #df_er3.to_excel(writer, sheet_name='ER3raw', index=False)
+    #grouped_er3.to_excel(writer, sheet_name='ER3', index=True)
+
+    #df_er4.to_excel(writer, sheet_name='ER4raw', index=False)
+    #grouped_er4.to_excel(writer, sheet_name='ER4', index=True)
+    
+    #df_msg1.to_excel(writer, sheet_name='MSG1raw', index=False)
+    #grouped_msg1.to_excel(writer, sheet_name='MSG1', index=True)
+
+    #df_msg2.to_excel(writer, sheet_name='MSG2raw', index=False)
+    #grouped_msg2.to_excel(writer, sheet_name='MSG2', index=True)
+
+    # Close the Pandas Excel writer and output the Excel file.
+    writer.save()
+    print 'wrote %s' % xlsxfile
+    
+    # Reckon GMT range and overwrite last row with totals; where last row is day 1 of next month
+    overwrite_last_row_with_totals(xlsxfile)
+    print 'modified %s with totals' % xlsxfile
     
 # produce output csv with per-system monthly sensor hour totals
 def main(csvfile, resource_csvfile):
@@ -330,25 +622,21 @@ def main(csvfile, resource_csvfile):
     df_monthly_hours.to_csv(csvout)
     print 'wrote %s' % csvout
 
-def obsolete_demo_cu():
-    from pims.database.samsquery import ObsoleteCuDailyQuery, _HOST, _SCHEMA, _UNAME, _PASSWD
-    from pims.utils.datetime_ranger import DateRange
-    date_range = DateRange(start='2014-04-01', stop='2014-04-29')
-    a = CuDailyQuery(_HOST, _SCHEMA, _UNAME, _PASSWD, date_range.start, date_range.stop)
-    print a
-
-def obsolete_demo_rack_dep():
-    from pims.database.samsquery import ObsoleteRackDepDailyQuery, _HOST, _SCHEMA, _UNAME, _PASSWD
-    from pims.utils.datetime_ranger import DateRange
-    date_range = DateRange(start='2014-04-01', stop='2014-04-29')
-    a = RackDepDailyQuery(_HOST, _SCHEMA, _UNAME, _PASSWD, date_range.start, date_range.stop)
-    print a
-
 if __name__ == '__main__':
-    if len(sys.argv) == 3:
+    
+    if len(sys.argv) == 2:
+        # special run, manually like: amp_kpi.py convert_latest_sto2xlsx
+        eval( sys.argv[1] + '()' )
+        raise SystemExit
+        
+    elif len(sys.argv) == 3:
+        # special input arg file locations (see else clause)
         csvfile = sys.argv[1]
         resource_csvfile = sys.argv[2]
+        
     else:
+        # typical run via cronjob
         csvfile = '/misc/yoda/www/plots/batch/padtimes/padtimes.csv'
         resource_csvfile = '/misc/yoda/www/plots/batch/padtimes/kpi_track.csv'
-    main(csvfile, resource_csvfile)    
+    
+    main(csvfile, resource_csvfile)
