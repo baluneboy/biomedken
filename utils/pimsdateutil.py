@@ -66,6 +66,14 @@ def doytimestr_to_datetime(timestr):
         fmt = '%Y:%j:%H:%M:%S'
     return datetime.datetime.strptime(timestr, fmt)
 
+# convert string like 2014-05-02 to datetime object
+def datestr_to_datetime(timestr):
+    """convert string like 2014-05-02 to datetime object"""
+    if not re.match('^\d{4}\-\d{2}\-\d{2}$', timestr):
+        raise ValueError('string does not match expected pattern')
+    fmt = '%Y-%m-%d'
+    return datetime.datetime.strptime(timestr, fmt)
+
 def format_datetime_as_pad_underscores(dtm):
     """
     Format datetime as underscore-delimited PAD string.

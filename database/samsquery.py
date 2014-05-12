@@ -56,15 +56,8 @@ class CuStatusQuery(EeStatusQuery):
         query = 'SELECT * FROM samsnew.cu_packet ORDER BY timestamp DESC LIMIT 11;'
         return query
 
-class GseStatusQuery(EeStatusQuery):
-    """workaround query for updating web page with GSE status"""
-
-    def _get_query(self):
-        query = 'SELECT * FROM samsnew.gse_packet_rt;' # ORDER BY ku_timestamp DESC LIMIT 11;'
-        return query
-
-class ObsoleteCuDailyQuery(EeStatusQuery):
-    """query for daily GSE monitoring of CU"""
+class CuMonthlyQuery(EeStatusQuery):
+    """monthly query for updating kpi wth CU status"""
 
     def __init__(self, host, schema, uname, pword, d1, d2):
         self.host = host
@@ -74,19 +67,18 @@ class ObsoleteCuDailyQuery(EeStatusQuery):
         self.query = self._get_query(d1, d2)
 
     def _get_query(self, d1, d2):
-        fmt = '%Y-%m-%d %H:%M:%S'
-        s1 = d1.strftime(fmt)
-        s2 = d2.strftime(fmt)
-        query = "SELECT DATE(timestamp) as YMD, count(*)/3600.0 as Hours FROM cu_packet WHERE timestamp >= '%s' AND timestamp < '%s' GROUP BY YMD;" % (s1, s2)
+        fmt = '%Y-%m-%d'
+        query = "SELECT DATE(timestamp) as Date, count(*)/3600.0 as sams_cu_hours FROM cu_packet"
+        query += " WHERE timestamp >= '%s' AND timestamp <= '%s' GROUP BY Date;"  % (
+                                                                        d1.strftime(fmt),
+                                                                        d2.strftime(fmt))
         return query
 
-class ObsoleteRackDepDailyQuery(CuDailyQuery):
+class GseStatusQuery(EeStatusQuery):
+    """workaround query for updating web page with GSE status"""
 
-    def _get_query(self, d1, d2):
-        fmt = '%Y-%m-%d %H:%M:%S'
-        s1 = d1.strftime(fmt)
-        s2 = d2.strftime(fmt)
-        query = "SELECT DATE(timestamp) as YMD, count(*)/3600.0 as Hours FROM cu_packet WHERE timestamp >= '%s' AND timestamp < '%s' GROUP BY YMD;" % (s1, s2)
+    def _get_query(self):
+        query = 'SELECT * FROM samsnew.gse_packet_rt;' # ORDER BY ku_timestamp DESC LIMIT 11;'
         return query
 
 class SimpleQueryAOS(object):
