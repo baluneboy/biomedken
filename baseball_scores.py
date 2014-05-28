@@ -32,7 +32,7 @@ def yesterday(league):
             away = visiting_tree.get('nickname')
             os.environ['TZ'] = 'US/Eastern'
             
-            # let's see what this gives as-is
+            # TODO see what this gives as-is without the "double time" deal
             start = int(time.mktime(time.strptime('%s %d' % (gamestate_tree.get('gametime'), yyyymmdd), '%I:%M %p %Y%m%d')))
             del os.environ['TZ']
 
@@ -52,9 +52,57 @@ def yesterday(league):
 
     return games
 
+def get_example_games():
+    return [
+        {'status': 'Final', 'league': 'MLB', 'start': 1401124200, 'home': 'Braves', 'away': 'Red Sox', 'clock': 'Final', 'away-score': '8', 'home-score': '6', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401124200, 'home': 'Mets', 'away': 'Pirates', 'clock': 'Final', 'away-score': '5', 'home-score': '3', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401124200, 'home': 'Mets', 'away': 'Pirates', 'clock': 'Final', 'away-score': '5', 'home-score': '3', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401125700, 'home': 'Nationals', 'away': 'Marlins', 'clock': 'Final', 'away-score': '3', 'home-score': '2', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401127800, 'home': 'White Sox', 'away': 'Indians', 'clock': 'Final', 'away-score': '2', 'home-score': '6', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401127800, 'home': 'Brewers', 'away': 'Orioles', 'clock': 'Final', 'away-score': '7', 'home-score': '6', 'clock-section': '10'},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401127800, 'home': 'Twins', 'away': 'Rangers', 'clock': 'Final', 'away-score':  '7', 'home-score': '2', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401134700, 'home': 'Athletics', 'away': 'Tigers', 'clock': 'Final', 'away-score': '0', 'home-score': '10', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401134700, 'home': 'Giants', 'away': 'Cubs', 'clock': 'Final', 'away-score': '8', 'home-score': '4', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401135000, 'home': 'Mariners', 'away': 'Angels', 'clock': 'Final', 'away-score': '1', 'home-score': '5', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401135300, 'home': 'Cardinals', 'away': 'Yankees', 'clock': 'Final', 'away-score': '6', 'home-score': '4', 'clock-section': '12'},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401138300, 'home': 'Phillies', 'away': 'Rockies', 'clock': 'Final', 'away-score': '0', 'home-score': '9', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401145620, 'home': 'Blue Jays', 'away': 'Rays', 'clock': 'Final', 'away-score': '5', 'home-score': '10', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401149400, 'home': 'Royals', 'away': 'Astros', 'clock': 'Final', 'away-score': '9', 'home-score': '2', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401149400, 'home': 'Dodgers', 'away': 'Reds', 'clock': 'Final', 'away-score': '3', 'home-score': '4', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': 1401149400, 'home': 'Diamondbacks', 'away': 'Padres', 'clock': 'Final', 'away-score': '5', 'home-score': '7', 'clock-section': ''},
+        ]    
+
+class MyColors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+
+def demo_colorize():
+    print MyColors.HEADER + "HEADER: No active frommets remain. Continue?" + MyColors.ENDC    
+    print MyColors.OKBLUE + "OKBLUE: No active frommets remain. Continue?" + MyColors.ENDC    
+    print MyColors.OKGREEN + "OKGREEN: No active frommets remain. Continue?" + MyColors.ENDC    
+    print MyColors.WARNING + "WARNING: No active frommets remain. Continue?" + MyColors.ENDC    
+    print MyColors.FAIL + "FAIL: No active frommets remain. Continue?" + MyColors.ENDC    
+
+#demo_colorize(); raise SystemExit
+
 if __name__ == "__main__":
     
-    leagues = ['MLB'] # could be: ['MLB', 'NFL', 'NBA', 'NHL']
-    for league in leagues:
-        print yesterday(league)
-        time.sleep( 10*(len(leagues)-1) ) # so website does not get mad at us
+    #leagues = ['MLB'] # could be: ['MLB', 'NFL', 'NBA', 'NHL']
+    #for league in leagues:
+    #    print yesterday(league)
+    #    time.sleep( 10*(len(leagues)-1) ) # so website does not get mad at us
+    
+    games = get_example_games()
+    for g in games:
+        if int(g['away-score']) < int(g['home-score']):
+            hcolor = MyColors.OKGREEN
+            acolor = '' #MyColors.FAIL
+        else:
+            hcolor = '' #MyColors.FAIL
+            acolor = MyColors.OKGREEN
+        print '\n%s%s %s%s' % (acolor, g['away'], g['away-score'], MyColors.ENDC) # FIXME LATER becomes %d for int scores
+        print '%s%s %s%s' % (hcolor, g['home'], g['home-score'], MyColors.ENDC) # FIXME LATER becomes %d for int scores
