@@ -32,7 +32,9 @@ def yesterday(league):
             away = visiting_tree.get('nickname')
             os.environ['TZ'] = 'US/Eastern'
             
-            # TODO see what this gives as-is without the "double time" deal
+            ## TODO see what this gives as-is without the "double time" deal
+            #print gamestate_tree.get('gametime')        # like "8:10 PM"
+            #print type(gamestate_tree.get('gametime'))  # str
             start = int(time.mktime(time.strptime('%s %d' % (gamestate_tree.get('gametime'), yyyymmdd), '%I:%M %p %Y%m%d')))
             del os.environ['TZ']
 
@@ -87,7 +89,7 @@ def demo_colorize():
     print MyColors.WARNING + "WARNING: No active frommets remain. Continue?" + MyColors.ENDC    
     print MyColors.FAIL + "FAIL: No active frommets remain. Continue?" + MyColors.ENDC    
 
-#demo_colorize(); raise SystemExit
+demo_colorize(); raise SystemExit
 
 if __name__ == "__main__":
     
@@ -95,7 +97,9 @@ if __name__ == "__main__":
     #for league in leagues:
     #    print yesterday(league)
     #    time.sleep( 10*(len(leagues)-1) ) # so website does not get mad at us
-    
+    #
+    #raise SystemExit
+
     games = get_example_games()
     for g in games:
         if int(g['away-score']) < int(g['home-score']):
