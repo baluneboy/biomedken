@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-import pytz
-import datetime
-import time
-import urllib2
-import json
 import os
+import time
+import json
+import pytz
+import urllib2
+import datetime
+from dateutil import parser
 import elementtree.ElementTree as ET
 
 #url = 'http://scores.nbcsports.msnbc.com/ticker/data/gamesMSNBC.js.asp?jsonp=true&sport=MLB&period=20140525'
@@ -14,7 +15,8 @@ url = 'http://scores.nbcsports.msnbc.com/ticker/data/gamesMSNBC.js.asp?jsonp=tru
 def yesterday(league):
 
     # one day ago
-    yyyymmdd = int((datetime.datetime.now(pytz.timezone('US/Eastern'))-datetime.timedelta(days=1)).strftime("%Y%m%d"))
+    yestday = datetime.datetime.now(pytz.timezone('US/Eastern'))-datetime.timedelta(days=1)
+    yyyymmdd = int(yestday.strftime("%Y%m%d"))
     games = []
 
     try:
@@ -32,10 +34,10 @@ def yesterday(league):
             away = visiting_tree.get('nickname')
             os.environ['TZ'] = 'US/Eastern'
             
-            ## TODO see what this gives as-is without the "double time" deal
             #print gamestate_tree.get('gametime')        # like "8:10 PM"
             #print type(gamestate_tree.get('gametime'))  # str
-            start = int(time.mktime(time.strptime('%s %d' % (gamestate_tree.get('gametime'), yyyymmdd), '%I:%M %p %Y%m%d')))
+            #start = int(time.mktime(time.strptime('%s %d' % (gamestate_tree.get('gametime'), yyyymmdd), '%I:%M %p %Y%m%d')))
+            start = parser.parse( yestday.strftime("%Y-%m-%d ") + gamestate_tree.get('gametime') )
             del os.environ['TZ']
 
             games.append({
@@ -89,7 +91,7 @@ def demo_colorize():
     print MyColors.WARNING + "WARNING: No active frommets remain. Continue?" + MyColors.ENDC    
     print MyColors.FAIL + "FAIL: No active frommets remain. Continue?" + MyColors.ENDC    
 
-demo_colorize(); raise SystemExit
+#demo_colorize(); raise SystemExit
 
 if __name__ == "__main__":
     
