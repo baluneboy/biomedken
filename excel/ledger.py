@@ -104,8 +104,13 @@ def add_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
         writer.sheets['zin'].write_formula(row, col + 3, amount_formula, money_format)
         row += 1
     
-    # Write deductions by copying "last pay stub's deductions"
-    # TODO just use negative values from dfz that correspond to previous_date?
+    # Write deductions
+    dfprevious = dfz[dfz['PayDate'] == previous_date]
+    #dfdeductions = dfprevious[dfprevious['Amount'] < 0]
+    dfremain = dfprevious[ dfprevious.Type != 'Regular' ]
+    dfremain = dfremain[ dfremain.Type != 'Holiday' ]
+    dfremain = dfremain[ dfremain.Type != 'Personal Leave' ]
+    # TODO how to iterate over dfremain's "rows" to do "row writing" like above?
 
     # Set formats
     writer.sheets['zin'].set_column('A:A', 12, date_format)
