@@ -3,6 +3,7 @@
 # TODO formulas on zin sheet to calculate deductions percentages of [after 401k]
 
 import os
+import sys
 import datetime
 import shutil
 import xlwt
@@ -136,6 +137,13 @@ def add_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
     # Close the Pandas Excel writer with save to Excel file
     writer.save()
 
+# ledger.py add_pay_stub # USES DEFAULT INPUT FILE
+# ledger.py add_pay_stub /home/pims/Documents/newexample.xlsx # USE CMD LINE INPUT FILE
 if __name__ == "__main__":
-    #add_pay_stub()
-    add_pay_stub(file_name='/home/pims/Documents/example.xlsx')
+    action = sys.argv[1]
+    if len(sys.argv) == 2:
+        input_file = '/home/pims/Documents/example.xlsx'
+    else:
+        input_file = sys.argv[2]
+    print 'Using input_file  %s' % input_file
+    eval(action + '(file_name="' + input_file + '")')
