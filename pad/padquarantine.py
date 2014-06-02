@@ -9,6 +9,7 @@ import shutil
 import subprocess
 from scipy import stats
 from pims.utils.pimsdateutil import datetime_to_ymd_path
+from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
 
 # get list of (file, rate) tuples sorted by rate
 def file_rate_tuples(r):
@@ -30,6 +31,17 @@ def grep_sample_rate(subdir):
     splitout = out.split('\n')[:-1] # split on newlines & get rid of very last trailing newline
     return splitout
 
+def bad_timestr(fullfilestr):
+    """grep to get file and sample rate in list"""
+    d1, d2 = pad_fullfilestr_to_start_stop(fullfilestr)
+    if not d1:
+        print 'bad start part in %s' % fullfilestr
+        return True
+    if not d2:
+        print 'bad stop part in %s' % fullfilestr
+        return True
+    return False
+
 # process single subdir to see if/what needs to be quarantined
 def process(subdir):
     """process single subdir to see if/what needs to be quarantined"""
@@ -44,8 +56,15 @@ def process(subdir):
     #print mode
     
     # get list to be quarantined (sample rate not equal to mode)
-    quarantined_list = [ t for t in my_list if t[1] != mode ]
+    quarantined_list_fs = [ t for t in my_list if t[1] != mode ]
     
+    # get another list to be quarantined (like more than 59 seconds in timestr)
+    quarantined_list_bad_timestr = [ t for t in my_list if bad_timestr(t[0]) ]
+    
+    # concat 2 lists
+    quarantined_list = quarantined_list_fs + quarantined_list_bad_timestr
+    print 'length of quarantined list is %d for %s' % (len(quarantined_list), subdir)
+        
     # if needed, then move to quarantined
     qdir = os.path.join(subdir, 'quarantined')
     if quarantined_list and not os.path.isdir(qdir):
