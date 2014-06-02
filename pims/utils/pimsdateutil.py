@@ -8,6 +8,7 @@ import re
 import datetime
 import time
 from dateutil import parser
+from warnings import warn
 
 MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY = range(7)
 
@@ -53,7 +54,11 @@ def timestr_to_datetime(timestr):
     datetime.datetime(2013, 1, 2, 0, 1, 2, 210000)
     
     """
-    return datetime.datetime.strptime(timestr,'%Y_%m_%d_%H_%M_%S.%f')
+    try:
+        d = datetime.datetime.strptime(timestr,'%Y_%m_%d_%H_%M_%S.%f')
+    except ValueError, e:
+        raise ValueError('%s is a bad timestr' % timestr)
+    return d
 
 # convert string like 2014:077:00:02:00 to datetime object
 def doytimestr_to_datetime(timestr):
@@ -73,6 +78,27 @@ def datestr_to_datetime(timestr):
         raise ValueError('string does not match expected pattern')
     fmt = '%Y-%m-%d'
     return datetime.datetime.strptime(timestr, fmt)
+
+# convert string like YODA_YMD_PATH/.../2014_05_31_20_49_60.000-2014_05_31_21_00_00.001.SENSOR to datetime object
+def pad_fullfilestr_to_start_stop(fullfilestr):
+    """convert pad fullfile string to datetime object"""
+    # get rid of header ext if there is one, and just work with basename
+    fstr = os.path.basename(fullfilestr.replace('.header', ''))
+    if not re.match('^\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3}.\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3}\..*$', fstr):
+        raise ValueError('basename str %s does not match expected pattern' % fstr)
+    [startstr, bigstr] = fstr.split(fstr[23])
+    stopstr = '.'.join(bigstr.split('.')[:-1])
+    try:
+        d1 = timestr_to_datetime(startstr)
+    except ValueError, e:
+        warn( 'startstr %s did not nicely convert to datetime in timestr_to_datetime' % startstr )
+        d1 = None
+    try:
+        d2 = timestr_to_datetime(stopstr)
+    except ValueError, e:
+        warn( 'stopstr %s did not nicely convert to datetime in timestr_to_datetime' % stopstr )
+        d2 = None
+    return d1, d2
 
 def format_datetime_as_pad_underscores(dtm):
     """
