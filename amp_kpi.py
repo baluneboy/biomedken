@@ -11,7 +11,7 @@ from cStringIO import StringIO
 from pims.utils.pimsdateutil import hours_in_month, doytimestr_to_datetime, datestr_to_datetime
 from pims.files.utils import mkdir_p, most_recent_file_with_suffix
 from pims.database.samsquery import CuMonthlyQuery, _HOST, _SCHEMA, _UNAME, _PASSWD
-from pims.excel.modification import overwrite_last_row_with_totals
+from pims.excel.modification import overwrite_last_row_with_totals, kpi_sheet_fill
 from openpyxl.reader.excel import load_workbook
 from xlsxwriter.utility import xl_rowcol_to_cell, xl_range
 
@@ -575,50 +575,14 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # Create sheets for dataframes
     bamf_df.to_excel(writer, sheet_name='raw', index=True)
     
-    ###########################################################################
-    # >> Use [openpyxl?] to fill in cells for "kpi" sheet in following steps...
-    # 
-    # Numerators gleaned from column headings
-    # Denominators gleaned from column headings
-    # Formatting
-
-    # Write dummy items for now
-    d1 = datetime.datetime.now()
-    d2 = datetime.datetime.now() + datetime.timedelta(days=30)
-    # Add formats to use
-    bold_format = writer.book.add_format({'bold': 1})
-    date_format = writer.book.add_format({'num_format': 'dd-mmm-yyyy'})
-    money_format = writer.book.add_format({'num_format': '+#0.00;[RED]-#0.00;#0.00'})
-    right_align_format = writer.book.add_format({'align': 'right'})
-    hour_format = writer.book.add_format({'num_format': '#0.0;[RED]-#0.0;0.0'})    
-    dummy_items = (
-        ['MAMS', 'continuous', 'OSS', 744.1, 744.2, 'Numerator blah blah'],
-        ['SAMS', 'continuous', 'CU',  744.3, 744.4, 'Numerator blah blah'],
-    )
-    row = 1
-    for system, group, resource, num, den, note2 in (dummy_items):
-        writer.sheets['kpi'].write_datetime(row, 0, d1, date_format)
-        writer.sheets['kpi'].write_datetime(row, 1, d2, date_format)
-        writer.sheets['kpi'].write_string(row,   2, system)
-        writer.sheets['kpi'].write_string(row,   3, group)
-        writer.sheets['kpi'].write_string(row,   4, resource)
-        writer.sheets['kpi'].write_number(row,   5, 100*num/den, money_format) # FIXME use formula
-        writer.sheets['kpi'].write_number(row,   6, num, hour_format)
-        writer.sheets['kpi'].write_number(row,   7, den, hour_format)
-        # for now, nothing goes in col idx=8 for "Note"
-        writer.sheets['kpi'].write_string(row,   9, note2)        
-        row += 1
-
     # Close the Pandas Excel writer and output the Excel file.
     writer.save()
     print 'wrote %s' % xlsxfile
 
     # Reckon GMT range and overwrite last row with totals; where last row is day 1 of next month
     # and write GMT range into kpi sheet cell B1
-    gmt_start, gmt_end = overwrite_last_row_with_totals(xlsxfile)
-    print 'reckoned %s\nmodified %s with totals' % (gmt_range_str, xlsxfile)
-    
-    # TODO here is where we do KPI sheet writing like we do overwrite_last_row_with_totals
+    overwrite_last_row_with_totals(xlsxfile)
+    print 'reckoned GMT range\nmodified %s with totals' % xlsxfile
     
 # produce output csv with per-system monthly sensor hour totals
 def main(csvfile, resource_csvfile):
