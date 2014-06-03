@@ -221,7 +221,7 @@ def mainLoop():
     print 'done'
 
 if __name__ == '__main__':
-    for p in sys.argv[1:]:      # parse command line
+    for p in sys.argv[1:]: # parse command line
         pair = split(p, '=', 1)
         if (2 != len(pair)):
             print 'bad parameter: %s' % p
