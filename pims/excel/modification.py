@@ -37,44 +37,47 @@ def reckon_month(ws):
     """if month GMT range okay, then overwrite last row with per-column totals"""
     
     if ws.cell('A2').value == 'Date':
-        first_gmt = ws.cell('A3').value
-        if first_gmt.day == 1:
-            last_day = calendar.monthrange(first_gmt.year, first_gmt.month)[1]
-            month_end = datetime.datetime(first_gmt.year, first_gmt.month, last_day)
+        gmt_start = ws.cell('A3').value
+        if gmt_start.day == 1:
+            last_day = calendar.monthrange(gmt_start.year, gmt_start.month)[1]
+            gmt_end = datetime.datetime(gmt_start.year, gmt_start.month, last_day)
             # go to bottom of Date column to get last GMT
             last_row = ws.get_highest_row()
             last_gmt = ws.cell('A' + str(last_row)).value
-            delta_days = (last_gmt - month_end).days
+            delta_days = (last_gmt - gmt_end).days
             if delta_days == 1:
-                print 'GMT range is %s through %s' % (first_gmt.strftime('%Y-%m-%d'), month_end.strftime('%Y-%m-%d'))
+                #gmt_range_str = 'GMT range is %s through %s' % (gmt_start.strftime('%Y-%m-%d'), gmt_end.strftime('%Y-%m-%d'))
                 ws.cell(row=(last_row - 1), column=0).value = 'TOTAL'
                 for c in range(ws.get_highest_column())[1:]:
                     letter = get_column_letter(c + 1)
                     formula_str = "=SUM(%s3:%s%d)" % (letter, letter, (last_row - 1))
                     ws.cell(row=(last_row - 1), column=c).value = formula_str
             else:
-                print 'Abort: last_gmt = %s is not <= 2 days delta from end of month = %s' % (last_gmt, month_end)
+                print 'Abort: last_gmt = %s is not <= 2 days delta from end of month = %s' % (last_gmt, gmt_end)
         else:
-            print 'first_gmt is not day one'
+            print 'gmt_start is not day one'
     else:
         print 'A2 is not Date'
         
-    return ws
+    return ws, gmt_start, gmt_end
 
 # reckon GMT range and overwrite last row with totals, if okay
 def overwrite_last_row_with_totals(xlsxfile):
     """reckon GMT range and overwrite last row with totals, if okay"""
     
-    # load workbook and get "raw" worksheet
+    # load workbook and get "raw" worksheet and "kpi" worksheet
     wb = load_workbook(filename = xlsxfile)
     ws = wb.get_sheet_by_name("raw")
     
     # check GMT range for month
-    ws = reckon_month(ws)  
+    ws, gmt_start, gmt_end = reckon_month(ws)
+    gmt_range_str = 'GMT range is %s through %s' % (gmt_start.strftime('%Y-%m-%d'), gmt_end.strftime('%Y-%m-%d'))
     ws.cell('A1').value = '/</-/'
     
     # save
     wb.save(filename = xlsxfile)
+    
+    return gmt_start, gmt_end
 
 def demo_create_write():
     wb = Workbook()
