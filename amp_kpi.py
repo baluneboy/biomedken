@@ -14,6 +14,35 @@ from pims.database.samsquery import CuMonthlyQuery, _HOST, _SCHEMA, _UNAME, _PAS
 from pims.excel.modification import overwrite_last_row_with_totals
 from openpyxl.reader.excel import load_workbook
 
+############################################################################################
+# PRELIMINARY STEPS:
+#
+# 1. Run EHS > Launchpad > NRT List Request for GMT day range, using:
+#    -- hourly thinning = 3600
+#    -- name convention for sto file = YYYY_MM_ddd_ddd_kpi.sto
+# 
+# 2. Copy sto file from TReK to /misc/yoda/www/plots/batch/padtimes/NRT_sto_files/
+# 
+# 3. Run following python script (NOTE: you need the one/only argument exactly as shown)
+#    /home/pims/dev/programs/python/pims/pad/amp_kpi.py convert_latest_sto2xlsx
+# 
+# 4. The above creates sheet called "kpi" in following XLSX file:
+#    /misc/yoda/www/plots/batch/padtimes/YYYY_MM_ddd_ddd_kpi.xlsx
+#
+############################################################################################
+# THESE NEXT STEPS ARE CURRENTLY DONE MANUALLY (with hints for automation included):
+#
+# 5. Use openpyxl to fill in cells for "kpi" sheet in following steps...
+# 
+# 6. Get GMT range formatted string into kpi sheet cell B1
+# 
+# 7. Numerators gleaned from column headings
+# 
+# 8. Denominators gleaned from columns headings
+# 
+# 9. Formatting
+
+
 #  Group,                 System,     Resource,   Formula
 #  ------------------------------------------------------------
 #  continuous,            mams,       ossraw,     100 * D / T
@@ -270,9 +299,8 @@ def emcs_sto2dataframe(stofile):
     df.to_csv( stofile.replace('.sto', '.csv') )
     return df
 
-df = emcs_sto2dataframe('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_Columbus_EMCS_Candidates/EMCSdata.sto')
-raise SystemExit
-
+#df = emcs_sto2dataframe('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_Columbus_EMCS_Candidates/EMCSdata.sto')
+#raise SystemExit
 
 # set diff as list
 def list_diff(a, b):
@@ -285,13 +313,24 @@ def dataframe_subset(df, label, value_column, column_list):
     """return subset of dataframe that have status == 'S'"""
     # get and rename status column that corresponds to this value_column
     status_column = column_list[ column_list.index(value_column) + 1 ]
-    df_sub = df[df[status_column] == 'S']
+
+    # return empty dataframe subset if status column is all NaNs
+    if np.all( pd.isnull( df[status_column] ) ):
+        print 'status column %s is ALL NaNs for %s' % (status_column, label)
+        df_sub = pd.DataFrame(columns=df.columns)
+    # otherwise, we want rows with "S" as our subset
+    else:
+        df_sub = df[df[status_column] == 'S']
+
+    # rename status column from like 'status.7' to like 'status.cir'
     new_status_column = 'status.' + label
     df_sub.rename(columns={status_column: new_status_column}, inplace=True)
+
     # drop the unwanted columns in brute force fashion
     for c in df_sub.columns:
         if c not in ['GMT', 'Date', value_column, new_status_column ]:
             df_sub = df_sub.drop(c, 1)
+
     # return dataframe subset for this label
     return df_sub
 
@@ -419,33 +458,6 @@ def convert_latest_sto2xlsx():
 
     # at this point, xlsx version does not exist, so convert most recent sto to xlsx
     convert_sto2xlsx(stofile, xlsxfile)
-
-
-####################################################
-# MANUAL STEPS:
-#
-# 1. Run NRT List Request for GMT date range, using:
-#    -- hourly thinning = 3600
-#    -- name convention for sto file = YYYY_MM_kpi.sto
-# 
-# 2. Copy sto file from TReK to /misc/yoda/www/plots/batch/padtimes/NRT_sto_files/.
-# 
-# 3. Run python script:
-# /home/pims/dev/programs/python/pims/pad/amp_kpi.py convert_latest_sto2xlsx # need this one argument
-# 
-# 4. Create new sheet called "kpi"
-# 
-# 5. Save as "/misc/yoda/www/plots/batch/padtimes/YYYY_MM_kpi.xlsx"
-# 
-# 6. openpyxl to fill in cells for "kpi" sheet in following steps...
-# 
-# 7. Get GMT range formatted string into kpi sheet cell B1
-# 
-# 8. Numerators gleaned from column headings
-# 
-# 9. Denominators gleaned from columns headings
-# 
-# 10. Formatting
 
 # convert sto file to dataframe, then process and write to xlsx
 def convert_sto2xlsx(stofile, xlsxfile):
@@ -630,7 +642,7 @@ if __name__ == '__main__':
         raise SystemExit
         
     elif len(sys.argv) == 3:
-        # special input arg file locations (see else clause)
+        # special input arg file locations (see else clause below)
         csvfile = sys.argv[1]
         resource_csvfile = sys.argv[2]
         
