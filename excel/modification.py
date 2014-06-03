@@ -65,14 +65,69 @@ def reckon_month(ws):
 def overwrite_last_row_with_totals(xlsxfile):
     """reckon GMT range and overwrite last row with totals, if okay"""
     
-    # load workbook and get "raw" worksheet and "kpi" worksheet
+    # load workbook and get "raw" and "kpi" worksheets
     wb = load_workbook(filename = xlsxfile)
     ws = wb.get_sheet_by_name("raw")
+    ws2 = wb.get_sheet_by_name("kpi")
     
     # check GMT range for month
     ws, gmt_start, gmt_end = reckon_month(ws)
-    gmt_range_str = 'GMT range is %s through %s' % (gmt_start.strftime('%Y-%m-%d'), gmt_end.strftime('%Y-%m-%d'))
     ws.cell('A1').value = '/</-/'
+    
+    ws2.cell('A2').value = gmt_start
+    ws2.cell('B2').value = gmt_end
+    r = 2
+    formula_str = "=B%d-A%d" % (r, r)
+    ws2.cell('F2').value = formula_str
+    
+    # save
+    wb.save(filename = xlsxfile)
+
+# kpi sheet fill
+def kpi_sheet_fill(xlsxfile, gmt_start, gmt_end):
+    """kpi sheet fill"""
+    
+    ############################################################################
+    ## >> Use [openpyxl?] to fill in cells for "kpi" sheet in following steps...
+    ## 
+    ## Numerators gleaned from column headings
+    ## Denominators gleaned from column headings
+    ## Formatting
+    #
+    ## Write dummy items for now
+    #d1 = datetime.datetime.now()
+    #d2 = datetime.datetime.now() + datetime.timedelta(days=30)
+    ## Add formats to use
+    #bold_format = writer.book.add_format({'bold': 1})
+    #date_format = writer.book.add_format({'num_format': 'dd-mmm-yyyy'})
+    #money_format = writer.book.add_format({'num_format': '+#0.00;[RED]-#0.00;#0.00'})
+    #right_align_format = writer.book.add_format({'align': 'right'})
+    #hour_format = writer.book.add_format({'num_format': '#0.0;[RED]-#0.0;0.0'})    
+    #dummy_items = (
+    #    ['MAMS', 'continuous', 'OSS', 744.1, 744.2, 'Numerator blah blah'],
+    #    ['SAMS', 'continuous', 'CU',  744.3, 744.4, 'Numerator blah blah'],
+    #)
+    #row = 1
+    #for system, group, resource, num, den, note2 in (dummy_items):
+    #    writer.sheets['kpi'].write_datetime(row, 0, d1, date_format)
+    #    writer.sheets['kpi'].write_datetime(row, 1, d2, date_format)
+    #    writer.sheets['kpi'].write_string(row,   2, system)
+    #    writer.sheets['kpi'].write_string(row,   3, group)
+    #    writer.sheets['kpi'].write_string(row,   4, resource)
+    #    writer.sheets['kpi'].write_number(row,   5, 100*num/den, money_format) # FIXME use formula
+    #    writer.sheets['kpi'].write_number(row,   6, num, hour_format)
+    #    writer.sheets['kpi'].write_number(row,   7, den, hour_format)
+    #    # for now, nothing goes in col idx=8 for "Note"
+    #    writer.sheets['kpi'].write_string(row,   9, note2)        
+    #    row += 1    
+    
+    # load workbook and get "raw" worksheet and "kpi" worksheet
+    wb = load_workbook(filename = xlsxfile)
+    ws = wb.get_sheet_by_name("kpi")
+    
+    # 
+    ws.cell('A2').value = gmt_start
+    ws.cell('B2').value = gmt_end
     
     # save
     wb.save(filename = xlsxfile)
