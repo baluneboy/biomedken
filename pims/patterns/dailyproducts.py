@@ -22,14 +22,21 @@ _PADHEADERFILES_PATTERN = _PADPATH_PATTERN + (
     "\.header\Z"                                                        # extension to finish
     )
 
+'(?P<ymdpath>/misc/yoda/www/plots/batch/year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2}))/(?P<start>(?P=year)_(?P=month)_(?P=day)_\d{2}(_\d{2}_\d{2}\.\d{3}|))_(?P<sensor>.*)_((?P<abbrev>.*)_roadmaps(?P<rate>.*)\.pdf|roadmap\.pdf)'
 ###############################################################################################################################
 #/misc/yoda/www/plots/batch/year2013/month09/day29/2013_09_29_00_00_00.000_121f03_spgs_roadmaps500.pdf
 _BATCHPATH_PATTERN = "(?P<ymdpath>%s/www/plots/batch/year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2}))" % _YODAPATH
 _BATCHROADMAPS_PATTERN = _BATCHPATH_PATTERN + (
-    "/(?P<start>(?P=year)_(?P=month)_(?P=day)_\d{2}_\d{2}_\d{2}\.\d{3})" # underscore-delimited dtm part of fname, then
-    "_(?P<sensor>.*)_(?P<abbrev>.*)_roadmaps(?P<rate>.*)"                # placeholders for sensor, plot type, rate, then
-    "\.pdf\Z"                                                            # pdf extension to finish
+    "/(?P<start>(?P=year)_(?P=month)_(?P=day)_\d{2}(_\d{2}_\d{2}\.\d{3}|))" # underscore-delimited dtm part of fname, then
+    "_(?P<sensor>.*)_((?P<abbrev>.*)_roadmaps(?P<rate>.*)|roadmap)"         # placeholders for sensor, plot type, rate, then
+    "\.pdf\Z"                                                               # pdf extension to finish
     )
+##_BATCHPATH_PATTERN = "(?P<ymdpath>%s/www/plots/batch/year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2}))" % _YODAPATH
+##_BATCHROADMAPS_PATTERN = _BATCHPATH_PATTERN + (
+##    "/(?P<start>(?P=year)_(?P=month)_(?P=day)_\d{2}_\d{2}_\d{2}\.\d{3})" # underscore-delimited dtm part of fname, then
+##    "_(?P<sensor>.*)_(?P<abbrev>.*)_roadmaps(?P<rate>.*)"                # placeholders for sensor, plot type, rate, then
+##    "\.pdf\Z"                                                            # pdf extension to finish
+##    )
 
 ###############################################################################################################################
 #/misc/yoda/tmp/ike/offline/batch/results/year2013/month11/day26/hirap/pcsa/2013_11_26_16_00_hirap_spgs+roadmaps.mat

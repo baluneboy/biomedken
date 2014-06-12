@@ -52,8 +52,13 @@ def timestr_to_datetime(timestr):
     
     >>> timestr_to_datetime('2013_01_02_00_01_02.210')
     datetime.datetime(2013, 1, 2, 0, 1, 2, 210000)
+
+    >>> timestr_to_datetime('2014_06_12_08')
+    datetime.datetime(2014, 6, 12, 8, 0)
     
     """
+    if len(timestr) == 13:
+        timestr += '_00_00.000'
     try:
         d = datetime.datetime.strptime(timestr,'%Y_%m_%d_%H_%M_%S.%f')
     except ValueError, e:
