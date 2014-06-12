@@ -460,6 +460,13 @@ def convert_latest_sto2xlsx():
     # at this point, xlsx version does not exist, so convert most recent sto to xlsx
     convert_sto2xlsx(stofile, xlsxfile)
 
+# read config info from xlsx file into dataframe
+def read_config_template(xlsx_file='/misc/yoda/www/plots/batch/padtimes/amp_kpi_config.xlsx'):
+    xl_file = pd.ExcelFile(xlsx_file)
+    #dfs = {sheet_name: xl_file.parse(sheet_name) for sheet_name in xl_file.sheet_names}
+    df_config = xl_file.parse('config')
+    return df_config
+
 # convert sto file to dataframe, then process and write to xlsx
 def convert_sto2xlsx(stofile, xlsxfile):
     """convert sto file to dataframe, then process and write to xlsx"""
@@ -539,9 +546,6 @@ def convert_sto2xlsx(stofile, xlsxfile):
     df_tmp = pd.read_csv('/misc/yoda/www/plots/batch/padtimes/padtimes.csv', parse_dates=True, index_col = [0])
     df_pad = df_tmp.filter(regex='Date|.*_hours')
     
-    ## only keep rows for range from date_min to date_max
-    #df_pad = df_pad[(df_pad.Date >= date_min) & (df_pad.Date <= date_max)]
-
     # create wall clock dataframe
     df_wall_clock = grouped_er3.copy(deep=True)
 
@@ -561,28 +565,20 @@ def convert_sto2xlsx(stofile, xlsxfile):
     writer = pd.ExcelWriter(xlsxfile, engine='xlsxwriter')
 
     # Create kpi sheet for monthly percentages
-    # NOTE: do as empty here to preserve ordering of sheets
-    df_empty = pd.DataFrame(
-        columns=['GMT Start', 'GMT End',
-                 'System', 'Group', 'Resource', 'KPI %',
-                 'Numerator', 'Denominator',
-                 'Note', 'Formula = 100 * Numerator/Denominator'
-                 ]
-        )
-    df_empty.to_excel(writer, sheet_name='kpi', index=False)
-    #df_cu.to_excel(writer, sheet_name='kpi', index=True)
+    df_config = read_config_template()
+    df_config.to_excel(writer, sheet_name='kpi', index=False)
     
     # Create sheets for dataframes
     bamf_df.to_excel(writer, sheet_name='raw', index=True)
     
     # Close the Pandas Excel writer and output the Excel file.
     writer.save()
-    print 'wrote %s' % xlsxfile
+    print 'wrote raw and kpi template sheets to %s' % xlsxfile
 
     # Reckon GMT range and overwrite last row with totals; where last row is day 1 of next month
     # and write GMT range into kpi sheet cell B1
-    overwrite_last_row_with_totals(xlsxfile)
-    print 'reckoned GMT range\nmodified %s with totals' % xlsxfile
+    overwrite_last_row_with_totals(xlsxfile, df_config, bamf_df)
+    print 'reckoned GMT range\nmodified and saved %s with formulas and totals' % xlsxfile
     
 # produce output csv with per-system monthly sensor hour totals
 def main(csvfile, resource_csvfile):
