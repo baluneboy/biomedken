@@ -2,19 +2,26 @@
 
 import datetime
 import pandas as pd
+import numpy as np
 
 file_name = '/home/pims/Documents/xactions.xlsx'
-file_name = '/home/pims/Documents/example.xlsx'
+file_name = '/misc/yoda/www/plots/user/cir/rmsgauge95th/samsdata_es05_f03.xlsx'
 xl_file = pd.ExcelFile(file_name)
 
 dfs = {sheet_name: xl_file.parse(sheet_name) for sheet_name in xl_file.sheet_names}
+df = dfs['Sheet1']
 
-dfx = dfs['xactions']
-dfz = dfs['zin']
-dfv = dfs['vars']
+# drop unwanted columns from dataframe
+unwanted_columns = [ 'xfpk_hz_1to30hz', 'yfpk_hz_1to30hz', 'zfpk_hz_1to30hz',
+                     'xfpk_hz_30to100hz', 'yfpk_hz_30to100hz', 'zfpk_hz_30to100hz',
+                     'tmax', 'vmax_mg', 'vmed_mg', 'v95p_mg', 'xmax_mg', 'ymax_mg', 'zmax_mg' ]
+for uc in unwanted_columns:
+    df = df.drop(uc, 1)
 
-new_row = pd.DataFrame([dict(PayDate=datetime.datetime.now().date(), Hours=80.0, Type='Regular', Amount=123.45), ])
-dfz = dfz.append(new_row, ignore_index=True)
+df_es05 = df[ df['sensor'] == 'es05' ]
+df_f03 = df[ df['sensor'] == 'f03' ]
 
-print dfz[-5:]
-print dfv
+pt = pd.pivot_table(df, rows=['sensor'], aggfunc=np.mean)
+writer = pd.ExcelWriter('/misc/yoda/www/plots/user/cir/rmsgauge95th/pivot.xlsx', engine='xlsxwriter')
+pt.to_excel(writer, sheet_name='pivot', index=True)
+writer.save()
