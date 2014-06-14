@@ -35,6 +35,9 @@ def yesterday(league):
     yestday = datetime.datetime.now(pytz.timezone('US/Eastern'))-datetime.timedelta(days=1)
     yyyymmdd = int(yestday.strftime("%Y%m%d"))
     games = []
+    
+    my_teams = ['Indians', 'Tigers']
+    my_games = []
 
     try:
         f = urllib2.urlopen(url % (league, yyyymmdd))
@@ -68,13 +71,17 @@ def yesterday(league):
               'clock': gamestate_tree.get('display_status1'),
               'clock-section': gamestate_tree.get('display_status2')
             })
+            
+            if ( home in my_teams ) or ( away in my_teams ):
+                my_games.append(games[-1])
+            
     except Exception, e:
         print e
 
-    return games
+    return my_games, games
 
 def get_example_games():
-    return [
+    games = [
         {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401124200), 'home': 'Braves', 'away': 'Red Sox', 'clock': 'Final', 'away-score': '8', 'home-score': '6', 'clock-section': ''},
         {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401124200), 'home': 'Mets', 'away': 'Pirates', 'clock': 'Final', 'away-score': '5', 'home-score': '3', 'clock-section': ''},
         {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401124200), 'home': 'Mets', 'away': 'Pirates', 'clock': 'Final', 'away-score': '5', 'home-score': '3', 'clock-section': ''},
@@ -91,7 +98,12 @@ def get_example_games():
         {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401149400), 'home': 'Royals', 'away': 'Astros', 'clock': 'Final', 'away-score': '9', 'home-score': '2', 'clock-section': ''},
         {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401149400), 'home': 'Dodgers', 'away': 'Reds', 'clock': 'Final', 'away-score': '3', 'home-score': '4', 'clock-section': ''},
         {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401149400), 'home': 'Diamondbacks', 'away': 'Padres', 'clock': 'Final', 'away-score': '5', 'home-score': '7', 'clock-section': ''},
-        ]    
+        ]
+    my_games = [
+        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401127800), 'home': 'White Sox', 'away': 'Indians', 'clock': 'Final', 'away-score': '2', 'home-score': '6', 'clock-section': ''},
+        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401134700), 'home': 'Athletics', 'away': 'Tigers', 'clock': 'Final', 'away-score': '0', 'home-score': '10', 'clock-section': ''},
+        ]
+    return my_games, games
 
 if __name__ == "__main__":
     
@@ -102,10 +114,9 @@ if __name__ == "__main__":
     #
     #raise SystemExit
 
-
-    #games = yesterday(['MLB'])
-    games = get_example_games()
-    for g in games:
+    my_games, games = yesterday(['MLB'])
+    #my_games, games = get_example_games()
+    for g in my_games:
         if int(g['away-score']) < int(g['home-score']):
             hcolor = MyColors.OKGREEN
             acolor = '' #MyColors.FAIL
