@@ -38,15 +38,18 @@ NCAA_BB = 'mens-college-basketball'
 
 def get_scores(league, team_filter=None):
 
+    my_teams = []
     scores = {}
     STRIP = "()1234567890 "
     if team_filter:
+        my_teams = team_filter.split(',')
         team_filter = team_filter.lower().split(',')
 
     try:
         #visit espn bottomline website to get scores as html page
-        url = 'http://sports.espn.go.com/'+league+'/bottomline/scores'
+        #url = 'http://sports.espn.go.com/'+league+'/bottomline/scores'
         #url = "file:///home/pims/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
+        url = "file:///Users/ken/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
         req = urllib2.Request(url)
         response = urllib2.urlopen(req)
         page = response.read()
@@ -110,11 +113,11 @@ def get_scores(league, team_filter=None):
         #print(str(e))
         raise e
 
-    return scores
+    return scores, my_teams
 
 def get_scores_as_list(team_filter):
-    scores = get_scores(MLB, team_filter)
-    return [ v for k,v in scores.iteritems() ]
+    scores, teams = get_scores(MLB, team_filter)
+    return [ v for k,v in scores.iteritems() ], teams
 
 def fmt_print(s):
     out = ''
@@ -126,14 +129,33 @@ def fmt_print(s):
 class BaseballScores(object):
     
     def __init__(self, team_filter='Cleveland,Detroit'):
-        self.scores = get_scores_as_list(team_filter=team_filter)
-        
+        self.scores, self.teams = get_scores_as_list(team_filter=team_filter)
+
+    #say Cleveland lost at Boston by a score of 10 to 3
+    #say Cleveland won at Boston by a score of 10 to 3
+    #say Cleveland beat Boston by a score of 10 to 3
+    #say Cleveland lost to Boston by a score of 10 to 3
+    # MYTEAM {lost at, won at, lost to, beat} OPPONENT by a score of MAX to MIN
+    def fmt_print(self, s):
+        out = ''
+        if 'FINAL' in s[4]:
+            s1 = int(s[1])
+            s3 = int(s[3])
+            if s1 > s3:
+                outcome = 'won'
+                suffix = 'by a score of %d - %d' % (s1, s3)
+            else:
+                outcome = 'lost'
+                suffix = 'by a score of %d - %d' % (s3, s1)                
+            out += '\n%s %s at %s %s' % ( s[0], outcome, s[2], suffix )
+        return out
+
     def __str__(self):
         s = ''
         for score in self.scores:
-            s += fmt_print(score)
+            s += self.fmt_print(score)
         return s
 
 if __name__ == "__main__":
-    bbs = BaseballScores()
-    print bbs
+    scores = BaseballScores()
+    print scores
