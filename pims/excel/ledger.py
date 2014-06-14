@@ -8,12 +8,13 @@ import datetime
 import shutil
 import xlwt
 import pandas as pd
+from collections import OrderedDict
 from xlsxwriter.utility import xl_rowcol_to_cell, xl_range
 
 sheets = {
     'xactions': ['Date', 'Where', 'Delta', 'Note'],
     'zin':      ['PayDate', 'Type', 'Hours', 'Amount'],
-    'vars':     ['Date', 'Variable', 'Value'],
+    'variables':     ['Date', 'Variable', 'Value'],
 }
 
 def demo_add_row_to_dataframe(dfz):
@@ -53,7 +54,7 @@ def add_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
     #       xlsxwriter write_formula on zin sheet later (below)
 
     # Create a Pandas Excel writer using XlsxWriter as the engine
-    # NOTE: we clobber original file because we have backed it up already!
+    # NOTE: we can clobber original file because we have backed it up already!
     writer = pd.ExcelWriter(file_name, engine='xlsxwriter')
 
     # Add formats to use
@@ -69,7 +70,7 @@ def add_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
 
     # New pay stub data
     dfz = dfs['zin']
-    dfv = dfs['vars']
+    dfv = dfs['variables']
     zin_hourly = max( dfv[ dfv.Variable == 'zin_hourly' ].Value )
     previous_date = max( dfz['PayDate'] )
     new_date = previous_date + datetime.timedelta(days=14)   
@@ -131,8 +132,8 @@ def add_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
     writer.sheets['xactions'].set_column('D:D', 9, right_align_format)
     writer.sheets['xactions'].freeze_panes(1, 0)
     writer.sheets['zin'].freeze_panes(1, 0)
-    writer.sheets['vars'].set_column('A:A', 12, date_format)
-    writer.sheets['vars'].set_column('B:B', 16, right_align_format)
+    writer.sheets['variables'].set_column('A:A', 12, date_format)
+    writer.sheets['variables'].set_column('B:B', 16, right_align_format)
 
     # Close the Pandas Excel writer with save to Excel file
     writer.save()
@@ -145,5 +146,8 @@ if __name__ == "__main__":
         input_file = '/home/pims/Documents/example.xlsx'
     else:
         input_file = sys.argv[2]
+    if not os.path.exists(input_file):
+        print 'Abort because input_file %s does not exist.' % input_file
+        sys.exit(-1)
     print 'Using input_file  %s' % input_file
     eval(action + '(file_name="' + input_file + '")')
