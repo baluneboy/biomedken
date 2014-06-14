@@ -1,128 +1,139 @@
 #!/usr/bin/env python
 
-import os
-import time
-import json
-import pytz
+#Created by Josh Fuerst
+# for question/bug reports please visit http://www.fuerstjh.com and submit through contact page.
+
+#only been tested on python 2.7
+#Currently if an error is encountered the API does not handle the exception it raises it to the caller.
+
+
+#******************* USAGE *******************
+
+#import espn_api
+#espn_api.get_scores(espn_api.NCAA_FB, 'Cincinnati, Ohio State')
+
+
+#****************** ABOUT ****************************
+
+#This API connects to ESPN bottomline and parses the page to get current game scores.
+#Just call the get_scores function passing in a league string (defined below)
+
+#The return value will be a dictionary of games. Each entry will have the following structure:
+        # {espn_game_id:[team1_name,team1_score,team2_name,team2_score,game_time]}
+
+#You can also pass in team_filter. This should be a comma separated string of the team names you wish to
+#get scores for
+#NOTE: the team names must appear as listed on espn bottomline. To see list run once with no filter
+
 import urllib2
-import datetime
-from dateutil import parser
-import elementtree.ElementTree as ET
+from urlparse import urlparse
 
-#url = 'http://scores.nbcsports.msnbc.com/ticker/data/gamesMSNBC.js.asp?jsonp=true&sport=MLB&period=20140525'
-url = 'http://scores.nbcsports.msnbc.com/ticker/data/gamesMSNBC.js.asp?jsonp=true&sport=%s&period=%d'
+# LEAGUE STRINGS
+NCAA_FB = 'ncf'
+NFL = 'nfl'
+MLB = 'mlb'
+NBA = 'nba'
+NHL = 'nhl'
+NCAA_BB = 'mens-college-basketball'
 
-class MyColors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
+def get_scores(league, team_filter=None):
 
-def demo_colorize():
-    print MyColors.HEADER + "HEADER: No active frommets remain. Continue?" + MyColors.ENDC    
-    print MyColors.OKBLUE + "OKBLUE: No active frommets remain. Continue?" + MyColors.ENDC    
-    print MyColors.OKGREEN + "OKGREEN: No active frommets remain. Continue?" + MyColors.ENDC    
-    print MyColors.WARNING + "WARNING: No active frommets remain. Continue?" + MyColors.ENDC    
-    print MyColors.FAIL + "FAIL: No active frommets remain. Continue?" + MyColors.ENDC    
-
-#demo_colorize(); raise SystemExit
-
-def yesterday(league):
-
-    # one day ago
-    yestday = datetime.datetime.now(pytz.timezone('US/Eastern'))-datetime.timedelta(days=1)
-    yyyymmdd = int(yestday.strftime("%Y%m%d"))
-    games = []
-    
-    my_teams = ['Indians', 'Tigers']
-    my_games = []
+    scores = {}
+    STRIP = "()1234567890 "
+    if team_filter:
+        team_filter = team_filter.lower().split(',')
 
     try:
-        f = urllib2.urlopen(url % (league, yyyymmdd))
-        jsonp = f.read()
-        f.close()
-        json_str = jsonp.replace('shsMSNBCTicker.loadGamesData(', '').replace(');', '')
-        json_parsed = json.loads(json_str)
-        for game_str in json_parsed.get('games', []):
-            game_tree = ET.XML(game_str)
-            visiting_tree = game_tree.find('visiting-team')
-            home_tree = game_tree.find('home-team')
-            gamestate_tree = game_tree.find('gamestate')
-            home = home_tree.get('nickname')
-            away = visiting_tree.get('nickname')
-            os.environ['TZ'] = 'US/Eastern'
-            
-            #print gamestate_tree.get('gametime')        # like "8:10 PM"
-            #print type(gamestate_tree.get('gametime'))  # str
-            #start = int(time.mktime(time.strptime('%s %d' % (gamestate_tree.get('gametime'), yyyymmdd), '%I:%M %p %Y%m%d')))
-            start = parser.parse( yestday.strftime("%Y-%m-%d ") + gamestate_tree.get('gametime') )
-            del os.environ['TZ']
+        #visit espn bottomline website to get scores as html page
+        url = 'http://sports.espn.go.com/'+league+'/bottomline/scores'
+        #url = "file:///home/pims/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
+        req = urllib2.Request(url)
+        response = urllib2.urlopen(req)
+        page = response.read()
 
-            games.append({
-              'league': league,
-              'start': start, # convert from unixtime since 1970 (seconds)
-              'home': home,
-              'away': away,
-              'home-score': int(home_tree.get('score')),
-              'away-score': int(visiting_tree.get('score')),
-              'status': gamestate_tree.get('status'), # is lower() final?
-              'clock': gamestate_tree.get('display_status1'),
-              'clock-section': gamestate_tree.get('display_status2')
-            })
-            
-            if ( home in my_teams ) or ( away in my_teams ):
-                my_games.append(games[-1])
-            
-    except Exception, e:
-        print e
+        #url decode the page and split into list
+        #data = urllib2.unquote(str(page)).split('&'+league+'_s_left')
+        data = urllib2.unquote(str(page)).split(league+'_s_left')
 
-    return my_games, games
+        for i in range(1,len(data)):
 
-def get_example_games():
-    games = [
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401124200), 'home': 'Braves', 'away': 'Red Sox', 'clock': 'Final', 'away-score': '8', 'home-score': '6', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401124200), 'home': 'Mets', 'away': 'Pirates', 'clock': 'Final', 'away-score': '5', 'home-score': '3', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401124200), 'home': 'Mets', 'away': 'Pirates', 'clock': 'Final', 'away-score': '5', 'home-score': '3', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401125700), 'home': 'Nationals', 'away': 'Marlins', 'clock': 'Final', 'away-score': '3', 'home-score': '2', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401127800), 'home': 'White Sox', 'away': 'Indians', 'clock': 'Final', 'away-score': '2', 'home-score': '6', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401127800), 'home': 'Brewers', 'away': 'Orioles', 'clock': 'Final', 'away-score': '7', 'home-score': '6', 'clock-section': '10'},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401127800), 'home': 'Twins', 'away': 'Rangers', 'clock': 'Final', 'away-score':  '7', 'home-score': '2', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401134700), 'home': 'Athletics', 'away': 'Tigers', 'clock': 'Final', 'away-score': '0', 'home-score': '10', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401134700), 'home': 'Giants', 'away': 'Cubs', 'clock': 'Final', 'away-score': '8', 'home-score': '4', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401135000), 'home': 'Mariners', 'away': 'Angels', 'clock': 'Final', 'away-score': '1', 'home-score': '5', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401135300), 'home': 'Cardinals', 'away': 'Yankees', 'clock': 'Final', 'away-score': '6', 'home-score': '4', 'clock-section': '12'},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401138300), 'home': 'Phillies', 'away': 'Rockies', 'clock': 'Final', 'away-score': '0', 'home-score': '9', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401145620), 'home': 'Blue Jays', 'away': 'Rays', 'clock': 'Final', 'away-score': '5', 'home-score': '10', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401149400), 'home': 'Royals', 'away': 'Astros', 'clock': 'Final', 'away-score': '9', 'home-score': '2', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401149400), 'home': 'Dodgers', 'away': 'Reds', 'clock': 'Final', 'away-score': '3', 'home-score': '4', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401149400), 'home': 'Diamondbacks', 'away': 'Padres', 'clock': 'Final', 'away-score': '5', 'home-score': '7', 'clock-section': ''},
-        ]
-    my_games = [
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401127800), 'home': 'White Sox', 'away': 'Indians', 'clock': 'Final', 'away-score': '2', 'home-score': '6', 'clock-section': ''},
-        {'status': 'Final', 'league': 'MLB', 'start': datetime.datetime.fromtimestamp(1401134700), 'home': 'Athletics', 'away': 'Tigers', 'clock': 'Final', 'away-score': '0', 'home-score': '10', 'clock-section': ''},
-        ]
-    return my_games, games
+            #get rid of junk at beginning of line, remove ^ which marks team with ball
+            main_str = data[i][data[i].find('=')+1:].replace('^','')
+    
+            #extract time, you can use the ( and ) to find time in string
+            time =  main_str[main_str.rfind('('):main_str.rfind(')')+1].strip()
+    
+            #extract score, it should be at start of line and go to the first (
+            score =  main_str[0:main_str.rfind('(')].strip()
+    
+            #extract espn gameID use the keyword gameId to find it
+            gameID = main_str[main_str.rfind('gameId')+7:].strip()
+    
+            if gameID == '':
+                #something unexpected happened
+                continue
+    
+            #split score string into each teams string
+            team1_name = ''
+            team1_score = '0'
+            team2_name = ''
+            team2_score = '0'
+    
+            if (' at ' not in score):
+                teams = score.split('  ')
+                team1_name = teams[0][0:teams[0].rfind(' ')].lstrip(STRIP)
+                team2_name = teams[1][0:teams[1].rfind(' ')].lstrip(STRIP)
+                team1_score = teams[0][teams[0].rfind(' ')+1:].strip()
+                team2_score = teams[1][teams[1].rfind(' ')+1:].strip()
+            else:
+                teams = score.split(' at ')
+                team1_name = teams[0].lstrip(STRIP)
+                team2_name = teams[1].lstrip(STRIP)
+    
+            #add to return dictionary
+            if not team_filter:
+                scores[gameID] = ['','','','','']
+                scores[gameID][0] = team1_name
+                scores[gameID][1] = team1_score
+                scores[gameID][2] = team2_name
+                scores[gameID][3] = team2_score
+                scores[gameID][4] = time
+            elif team1_name.lower() in team_filter or team2_name.lower() in team_filter:
+                scores[gameID] = ['','','','','']
+                scores[gameID][0] = team1_name
+                scores[gameID][1] = team1_score
+                scores[gameID][2] = team2_name
+                scores[gameID][3] = team2_score
+                scores[gameID][4] = time
+
+    except Exception as e:
+        #print(str(e))
+        raise e
+
+    return scores
+
+def get_scores_as_list(team_filter):
+    scores = get_scores(MLB, team_filter)
+    return [ v for k,v in scores.iteritems() ]
+
+def fmt_print(s):
+    out = ''
+    out += '\n%s\t%s' %( s[1], s[0] )
+    out += '\n%s\t%s %s' % (s[3], s[2], s[4])
+    out += '\n' + '-' * 55
+    return out
+
+class BaseballScores(object):
+    
+    def __init__(self, team_filter='Cleveland,Detroit'):
+        self.scores = get_scores_as_list(team_filter=team_filter)
+        
+    def __str__(self):
+        s = ''
+        for score in self.scores:
+            s += fmt_print(score)
+        return s
 
 if __name__ == "__main__":
-    
-    #leagues = ['MLB'] # could be: ['MLB', 'NFL', 'NBA', 'NHL']
-    #for league in leagues:
-    #    print yesterday(league)
-    #    time.sleep( 10*(len(leagues)-1) ) # so website does not get mad at us
-    #
-    #raise SystemExit
-
-    my_games, games = yesterday(['MLB'])
-    #my_games, games = get_example_games()
-    for g in my_games:
-        if int(g['away-score']) < int(g['home-score']):
-            hcolor = MyColors.OKGREEN
-            acolor = '' #MyColors.FAIL
-        else:
-            hcolor = '' #MyColors.FAIL
-            acolor = MyColors.OKGREEN
-        print '\n%s%s %s%s' % (acolor, g['away'], g['away-score'], MyColors.ENDC) # FIXME LATER becomes %d for int scores
-        print '%s%s %s%s' % (hcolor, g['home'], g['home-score'], MyColors.ENDC) # FIXME LATER becomes %d for int scores
-        print 'Started at %s' % g['start']
+    bbs = BaseballScores()
+    print bbs
