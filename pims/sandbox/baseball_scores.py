@@ -36,6 +36,24 @@ NBA = 'nba'
 NHL = 'nhl'
 NCAA_BB = 'mens-college-basketball'
 
+#class Team(object):
+#    
+#    def __init__(self, name, score):
+#        self.name = name
+#        self.score = score
+#    
+#class GameResults(object):
+#    
+#    def __init__(self, team1_name, team1_score, team2_name, team2_score, time):
+#        self.team1 = Team(team1_name, team1_score)
+#        self.team2 = Team(team2_name, team2_score)
+#        self.time = time
+#        
+#gr = GameResults('Parma', '6', 'Lakewood', '4', 'noon')
+#print gr.team1.name, gr.team1.score
+#print gr.team2.name, gr.team2.score, gr.time
+#raise SystemExit
+
 def get_scores(league, team_filter=None):
 
     my_teams = []
@@ -95,19 +113,9 @@ def get_scores(league, team_filter=None):
     
             #add to return dictionary
             if not team_filter:
-                scores[gameID] = ['','','','','']
-                scores[gameID][0] = team1_name
-                scores[gameID][1] = team1_score
-                scores[gameID][2] = team2_name
-                scores[gameID][3] = team2_score
-                scores[gameID][4] = time
+                scores[gameID] = (team1_name, team1_score, team2_name, team2_score, time)
             elif team1_name.lower() in team_filter or team2_name.lower() in team_filter:
-                scores[gameID] = ['','','','','']
-                scores[gameID][0] = team1_name
-                scores[gameID][1] = team1_score
-                scores[gameID][2] = team2_name
-                scores[gameID][3] = team2_score
-                scores[gameID][4] = time
+                scores[gameID] = (team1_name, team1_score, team2_name, team2_score, time)      
 
     except Exception as e:
         #print(str(e))
@@ -130,6 +138,8 @@ class BaseballScores(object):
     
     def __init__(self, team_filter='Cleveland,Detroit'):
         self.scores, self.teams = get_scores_as_list(team_filter=team_filter)
+        print self.scores
+        return
 
     #say Cleveland lost at Boston by a score of 10 to 3
     #say Cleveland won at Boston by a score of 10 to 3
@@ -158,4 +168,16 @@ class BaseballScores(object):
 
 if __name__ == "__main__":
     scores = BaseballScores()
+    print scores, '\n'
+    
+    #my_list=(['Cleveland', 12], ['Detroit', 1], ['Cleveland', 1], ['Detroit',79], ['Tampa', 6])
+    #print my_list
+    #custom_list=['Cleveland','Detroit','Tampa']
+    #sorted_list = sorted(my_list, key=lambda x: (custom_list.index(x[0]), x[1]))
+    #print sorted_list
+    
+    scores = [('Cleveland', '3', 'Boston', '10', '(FINAL)'), ('Minnesota', '2', 'Detroit', '0', '(FINAL)')]
     print scores
+    sort_order = ['Cleveland', 'Detroit', 'Minnesota', 'Boston']
+    sorted_scores = sorted( scores, key=lambda x: (sort_order.index(x[2]), x[0]) )
+    print sorted_scores
