@@ -65,9 +65,9 @@ def get_scores(league, team_filter=None):
 
     try:
         #visit espn bottomline website to get scores as html page
-        #url = 'http://sports.espn.go.com/'+league+'/bottomline/scores'
+        url = 'http://sports.espn.go.com/'+league+'/bottomline/scores'
         #url = "file:///home/pims/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
-        url = "file:///Users/ken/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
+        #url = "file:///Users/ken/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
         req = urllib2.Request(url)
         response = urllib2.urlopen(req)
         page = response.read()
@@ -166,6 +166,14 @@ class BaseballScores(object):
             s += self.fmt_print(score)
         return s
 
+##scores
+##[('Cleveland', '3', 'Boston', '2', '(FINAL - 11 INNINGS)'), ('Minnesota', '3', 'Detroit', '4', '(FINAL)')]
+##
+##print scores
+##Cleveland won at Boston by a score of 3 - 2
+##Minnesota lost at Detroit by a score of 4 - 3 
+
+
 if __name__ == "__main__":
     scores = BaseballScores()
     print scores, '\n'
@@ -176,6 +184,7 @@ if __name__ == "__main__":
     #sorted_list = sorted(my_list, key=lambda x: (custom_list.index(x[0]), x[1]))
     #print sorted_list
     
+    print "Sorting (Fake) Examples:"
     scores = [('Cleveland', '3', 'Boston', '10', '(FINAL)'), ('Minnesota', '2', 'Detroit', '0', '(FINAL)')]
     print scores
     sort_order = ['Cleveland', 'Detroit', 'Minnesota', 'Boston']
