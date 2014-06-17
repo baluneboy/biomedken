@@ -27,6 +27,8 @@
 
 import urllib2
 from urlparse import urlparse
+import pandas as pd
+from cStringIO import StringIO
 
 # LEAGUE STRINGS
 NCAA_FB = 'ncf'
@@ -56,22 +58,24 @@ NCAA_BB = 'mens-college-basketball'
 
 def get_scores(league, team_filter=None):
 
+    scores = StringIO()
     my_teams = []
-    scores = {}
     STRIP = "()1234567890 "
     if team_filter:
         my_teams = team_filter.split(',')
         team_filter = team_filter.lower().split(',')
 
+    scores.write('AwayTeam,AwayScore,HomeTeam,HomeScore,Time')
+
     try:
         #visit espn bottomline website to get scores as html page
-        url = 'http://sports.espn.go.com/'+league+'/bottomline/scores'
+        #url = 'http://sports.espn.go.com/'+league+'/bottomline/scores'
         #url = "file:///home/pims/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
-        #url = "file:///Users/ken/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
+        url = "file:///Users/ken/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
         req = urllib2.Request(url)
         response = urllib2.urlopen(req)
         page = response.read()
-
+        
         #url decode the page and split into list
         #data = urllib2.unquote(str(page)).split('&'+league+'_s_left')
         data = urllib2.unquote(str(page)).split(league+'_s_left')
@@ -111,21 +115,23 @@ def get_scores(league, team_filter=None):
                 team1_name = teams[0].lstrip(STRIP)
                 team2_name = teams[1].lstrip(STRIP)
     
-            #add to return dictionary
+            # add this score
             if not team_filter:
-                scores[gameID] = (team1_name, team1_score, team2_name, team2_score, time)
+                scores.write('\n%s,%s,%s,%s,%s' % ( team1_name, team1_score, team2_name, team2_score, time) )
             elif team1_name.lower() in team_filter or team2_name.lower() in team_filter:
-                scores[gameID] = (team1_name, team1_score, team2_name, team2_score, time)      
+                scores.write('\n%s,%s,%s,%s,%s' % ( team1_name, team1_score, team2_name, team2_score, time) )
 
     except Exception as e:
         #print(str(e))
         raise e
 
-    return scores, my_teams
+    scores.seek(0) # "rewind" to the beginning of the StringIO object
+    df_scores = pd.read_csv(scores)  
+    return df_scores, my_teams
 
 def get_scores_as_list(team_filter):
-    scores, teams = get_scores(MLB, team_filter)
-    return [ v for k,v in scores.iteritems() ], teams
+    df_scores, teams = get_scores(MLB, team_filter)
+    return df_scores, teams
 
 def fmt_print(s):
     out = ''
@@ -137,9 +143,7 @@ def fmt_print(s):
 class BaseballScores(object):
     
     def __init__(self, team_filter='Cleveland,Detroit'):
-        self.scores, self.teams = get_scores_as_list(team_filter=team_filter)
-        print self.scores
-        return
+        self.dataframe, self.teams = get_scores_as_list(team_filter=team_filter)
 
     #say Cleveland lost at Boston by a score of 10 to 3
     #say Cleveland won at Boston by a score of 10 to 3
@@ -147,8 +151,11 @@ class BaseballScores(object):
     #say Cleveland lost to Boston by a score of 10 to 3
     # MYTEAM {lost at, won at, lost to, beat} OPPONENT by a score of MAX to MIN
     def fmt_print(self, s):
+        print type(s)
+        print s
+        print '----'
         out = ''
-        if 'FINAL' in s[4]:
+        if 'FINAL' in s['Time']:
             s1 = int(s[1])
             s3 = int(s[3])
             if s1 > s3:
@@ -162,31 +169,16 @@ class BaseballScores(object):
 
     def __str__(self):
         s = ''
-        for score in self.scores:
+        for score in self.dataframe.iterrows():
             s += self.fmt_print(score)
         return s
 
-##scores
-##[('Cleveland', '3', 'Boston', '2', '(FINAL - 11 INNINGS)'), ('Minnesota', '3', 'Detroit', '4', '(FINAL)')]
-##
-##print scores
-##Cleveland won at Boston by a score of 3 - 2
-##Minnesota lost at Detroit by a score of 4 - 3 
-
-
 if __name__ == "__main__":
     scores = BaseballScores()
-    print scores, '\n'
-    
+    print scores.dataframe
+    pass
     #my_list=(['Cleveland', 12], ['Detroit', 1], ['Cleveland', 1], ['Detroit',79], ['Tampa', 6])
     #print my_list
     #custom_list=['Cleveland','Detroit','Tampa']
     #sorted_list = sorted(my_list, key=lambda x: (custom_list.index(x[0]), x[1]))
     #print sorted_list
-    
-    print "Sorting (Fake) Examples:"
-    scores = [('Cleveland', '3', 'Boston', '10', '(FINAL)'), ('Minnesota', '2', 'Detroit', '0', '(FINAL)')]
-    print scores
-    sort_order = ['Cleveland', 'Detroit', 'Minnesota', 'Boston']
-    sorted_scores = sorted( scores, key=lambda x: (sort_order.index(x[2]), x[0]) )
-    print sorted_scores
