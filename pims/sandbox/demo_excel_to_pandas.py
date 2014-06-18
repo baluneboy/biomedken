@@ -6,6 +6,7 @@ import numpy as np
 
 file_name = '/home/pims/Documents/xactions.xlsx'
 file_name = '/misc/yoda/www/plots/user/cir/rmsgauge95th/samsdata_es05_f03.xlsx'
+file_name = '/tmp/trash.xlsx'
 xl_file = pd.ExcelFile(file_name)
 
 dfs = {sheet_name: xl_file.parse(sheet_name) for sheet_name in xl_file.sheet_names}
