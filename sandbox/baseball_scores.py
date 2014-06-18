@@ -69,9 +69,9 @@ def get_scores(league, team_filter=None):
 
     try:
         #visit espn bottomline website to get scores as html page
-        #url = 'http://sports.espn.go.com/'+league+'/bottomline/scores'
+        url = 'http://sports.espn.go.com/'+league+'/bottomline/scores'
         #url = "file:///home/pims/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
-        url = "file:///Users/ken/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
+        #url = "file:///Users/ken/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
         req = urllib2.Request(url)
         response = urllib2.urlopen(req)
         page = response.read()
@@ -116,10 +116,11 @@ def get_scores(league, team_filter=None):
                 team2_name = teams[1].lstrip(STRIP)
     
             # add this score
-            if not team_filter:
-                scores.write('\n%s,%s,%s,%s,%s' % ( team1_name, team1_score, team2_name, team2_score, time) )
-            elif team1_name.lower() in team_filter or team2_name.lower() in team_filter:
-                scores.write('\n%s,%s,%s,%s,%s' % ( team1_name, team1_score, team2_name, team2_score, time) )
+            scores.write('\n%s,%s,%s,%s,%s' % ( team1_name, team1_score, team2_name, team2_score, time) )
+            #if not team_filter:
+            #    scores.write('\n%s,%s,%s,%s,%s' % ( team1_name, team1_score, team2_name, team2_score, time) )
+            #elif team1_name.lower() in team_filter or team2_name.lower() in team_filter:
+            #    scores.write('\n%s,%s,%s,%s,%s' % ( team1_name, team1_score, team2_name, team2_score, time) )
 
     except Exception as e:
         #print(str(e))
@@ -176,9 +177,20 @@ class BaseballScores(object):
 if __name__ == "__main__":
     scores = BaseballScores()
     print scores.dataframe
-    pass
-    #my_list=(['Cleveland', 12], ['Detroit', 1], ['Cleveland', 1], ['Detroit',79], ['Tampa', 6])
-    #print my_list
-    #custom_list=['Cleveland','Detroit','Tampa']
-    #sorted_list = sorted(my_list, key=lambda x: (custom_list.index(x[0]), x[1]))
-    #print sorted_list
+    
+#         AwayTeam  AwayScore     HomeTeam  HomeScore     Time
+#0       San Diego          1      Seattle          6  (FINAL)
+#1       LA Angels          9    Cleveland          3  (FINAL)
+#2         Toronto          1   NY Yankees          3  (FINAL)
+#3         Houston          5   Washington          6  (FINAL)
+#4      Cincinnati          6   Pittsburgh          5  (FINAL)
+#5     Kansas City         11      Detroit          4  (FINAL)
+#6       Minnesota          1       Boston          2  (FINAL)
+#7    Philadelphia          5      Atlanta          2  (FINAL)
+#8    Chicago Cubs          5        Miami          6  (FINAL)
+#9       Baltimore          7    Tampa Bay          5  (FINAL)
+#10  San Francisco          2  Chicago Sox          8  (FINAL)
+#11        NY Mets          2    St. Louis          5  (FINAL)
+#12      Milwaukee          7      Arizona          5  (FINAL)
+#13          Texas          6      Oakland         10  (FINAL)
+#14       Colorado          2   LA Dodgers          4  (FINAL)
