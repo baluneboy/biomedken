@@ -194,3 +194,22 @@ if __name__ == "__main__":
 #12      Milwaukee          7      Arizona          5  (FINAL)
 #13          Texas          6      Oakland         10  (FINAL)
 #14       Colorado          2   LA Dodgers          4  (FINAL)
+#
+#         AwayTeam  AwayScore     HomeTeam  HomeScore                  Time
+#0    Philadelphia         10      Atlanta          5               (FINAL)
+#1    Chicago Cubs          6        Miami          1               (FINAL)
+#2     Kansas City          2      Detroit          1               (FINAL)
+#3       Baltimore          2    Tampa Bay          0               (FINAL)
+#4       Minnesota          1       Boston          2  (FINAL - 10 INNINGS) ##########################
+#5         NY Mets          3    St. Louis          2               (FINAL)
+#6   San Francisco          6  Chicago Sox          7               (FINAL)
+#7           Texas          2      Oakland          4               (FINAL)
+#8       LA Angels          0    Cleveland          0           (POSTPONED) ##########################
+#9         Toronto          3   NY Yankees          7               (FINAL)
+#10        Houston          5   Washington          6               (FINAL)
+#11     Cincinnati         11   Pittsburgh          4               (FINAL)
+#12      Milwaukee          3      Arizona          4               (FINAL)
+#13       Colorado          0   LA Dodgers          8               (FINAL)
+#14        Seattle          1    San Diego          2               (FINAL)
+ 
+
