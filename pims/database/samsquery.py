@@ -24,6 +24,12 @@ _HOST, _SCHEMA, _UNAME, _PASSWD = get_samsops_db_params('samsquery')
 
 #print _HOST, _SCHEMA; raise SystemExit
 
+def get_cronjob():
+    cmd = 'crontab -l | grep samsquery.py'
+    p = subprocess.Popen([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    results, err = p.communicate()
+    return results.split('#')[1] # just return the comment
+
 class EeStatusQuery(object):
     """workaround query for updating web page with EE status"""
 
@@ -197,7 +203,7 @@ def workaroundRTtable(htmlFile):
     HEADER = '''<!DOCTYPE html>
         <html>
                 <head>
-                    <meta http-equiv="refresh" content="15">
+                    <meta http-equiv="refresh" content="60">
                     <title>SAMS H&S</title>
                 <style>
                 
@@ -264,31 +270,12 @@ def workaroundRTtable(htmlFile):
             <titletag>SAMS Health and Status</titletag><br>
             '''
     HEADER += '<updatetag>updated at GMT %s</updatetag><br>' % str(datetime.datetime.now())[0:-7]
-    HEADER += '<hosttag>host: %s</hosttag><br><br>' % socket.gethostname()
+    HEADER += '<hosttag>host: %s</hosttag><br>' % socket.gethostname()
+    HEADER += '<hosttag>cron: %s</hosttag><br><br>' % get_cronjob()
     FOOTER = '''
         </body>
     </html>
     '''
-    
-    ## write html file
-    #with open(htmlFile, 'w') as f:
-    #
-    #    # write header
-    #    f.write(HEADER)
-    #
-    #    # write each table type
-    #    for d in [GSE, CU, EE]:
-    #        df = get_processed_dataframe(d)
-    #        f.write('<captiontag>%s</captiontag>' % d['caption'])
-    #        f.write(df.to_html(classes='df',
-    #                           formatters=d['formatters'],
-    #                           index=False
-    #                          )
-    #               )
-    #        f.write('<br><br>')
-    #
-    #    # write footer
-    #    f.write(FOOTER)
 
     # write html to string
     s = ''
@@ -321,29 +308,6 @@ def demo3():
                 'p_value':lambda x: "*%f*" % x if x<0.05 else str(x),
                 'correlation':lambda x: "%3.1f" % x
                 })
-
-def demo4():
-    # Find the best implementation available on this platform
-    try:
-        from cStringIO import StringIO
-    except:
-        from StringIO import StringIO
-    
-    # Writing to a buffer
-    output = StringIO()
-    output.write('This goes into the buffer. ')
-    print >>output, 'And so does this.'
-    
-    # Retrieve the value written
-    print output.getvalue()
-    
-    output.close() # discard buffer memory
-    
-    # Initialize a read buffer
-    input = StringIO('Inital value for read buffer')
-    
-    # Read from the buffer
-    print input.read()    
 
 if __name__ == "__main__":
     workaroundRTtable('/misc/yoda/www/plots/user/sams/eetemp.html')    
