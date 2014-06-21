@@ -270,25 +270,44 @@ def workaroundRTtable(htmlFile):
     </html>
     '''
     
-    # write html file
-    with open(htmlFile, 'w') as f:
+    ## write html file
+    #with open(htmlFile, 'w') as f:
+    #
+    #    # write header
+    #    f.write(HEADER)
+    #
+    #    # write each table type
+    #    for d in [GSE, CU, EE]:
+    #        df = get_processed_dataframe(d)
+    #        f.write('<captiontag>%s</captiontag>' % d['caption'])
+    #        f.write(df.to_html(classes='df',
+    #                           formatters=d['formatters'],
+    #                           index=False
+    #                          )
+    #               )
+    #        f.write('<br><br>')
+    #
+    #    # write footer
+    #    f.write(FOOTER)
 
-        # write header
-        f.write(HEADER)
+    # write html to string
+    s = ''
+    s += HEADER
+    
+    # write each table type
+    for d in [GSE, CU, EE]:
+        df = get_processed_dataframe(d)
+        s += '<captiontag>%s</captiontag>' % d['caption']
+        s += df.to_html(classes='df', formatters=d['formatters'], index=False)
+        s += '<br><br>'
 
-        # write each table type
-        for d in [GSE, CU, EE]:
-            df = get_processed_dataframe(d)
-            f.write('<captiontag>%s</captiontag>' % d['caption'])
-            f.write(df.to_html(classes='df',
-                               formatters=d['formatters'],
-                               index=False
-                              )
-                   )
-            f.write('<br><br>')
-
-        # write footer
-        f.write(FOOTER)
+    # write footer
+    s += FOOTER
+    
+    # finally write the entire string to file
+    fo = open(htmlFile, 'w')
+    fo.write(s);
+    fo.close()    
         
 def demo():
     aos = SimpleQueryAOS(_HOST, _SCHEMA, _UNAME, _PASSWD)
@@ -302,6 +321,29 @@ def demo3():
                 'p_value':lambda x: "*%f*" % x if x<0.05 else str(x),
                 'correlation':lambda x: "%3.1f" % x
                 })
+
+def demo4():
+    # Find the best implementation available on this platform
+    try:
+        from cStringIO import StringIO
+    except:
+        from StringIO import StringIO
+    
+    # Writing to a buffer
+    output = StringIO()
+    output.write('This goes into the buffer. ')
+    print >>output, 'And so does this.'
+    
+    # Retrieve the value written
+    print output.getvalue()
+    
+    output.close() # discard buffer memory
+    
+    # Initialize a read buffer
+    input = StringIO('Inital value for read buffer')
+    
+    # Read from the buffer
+    print input.read()    
 
 if __name__ == "__main__":
     workaroundRTtable('/misc/yoda/www/plots/user/sams/eetemp.html')    
