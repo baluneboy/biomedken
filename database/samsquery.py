@@ -270,8 +270,7 @@ def workaroundRTtable(htmlFile):
             <titletag>SAMS Health and Status</titletag><br>
             '''
     HEADER += '<updatetag>updated at GMT %s</updatetag><br>' % str(datetime.datetime.now())[0:-7]
-    HEADER += '<hosttag>host: %s</hosttag><br>' % socket.gethostname()
-    HEADER += '<hosttag>cron: %s</hosttag><br><br>' % get_cronjob()
+    HEADER += '<hosttag>host: %s (%s)</hosttag><br><br>' % (socket.gethostname(), get_cronjob())
     FOOTER = '''
         </body>
     </html>
