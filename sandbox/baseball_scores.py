@@ -211,5 +211,21 @@ if __name__ == "__main__":
 #12      Milwaukee          3      Arizona          4               (FINAL)
 #13       Colorado          0   LA Dodgers          8               (FINAL)
 #14        Seattle          1    San Diego          2               (FINAL)
- 
-
+ #
+#        AwayTeam  AwayScore    HomeTeam  HomeScore                  Time
+#0      LA Angels          3   Cleveland          5  (FINAL - 10 INNINGS)
+#1     Cincinnati          3  Pittsburgh          3            (BOT 12TH)
+#2    Kansas City          1     Detroit          2               (FINAL)
+#3      Milwaukee          3     Arizona          1             (TOP 6TH)
+#4        Seattle          0   San Diego          0          (6:40 PM ET)
+#5        Atlanta          0  Washington          0          (7:05 PM ET)
+#6        Toronto          0  NY Yankees          0          (7:05 PM ET)
+#7        NY Mets          0       Miami          0          (7:10 PM ET)
+#8        Houston          0   Tampa Bay          0          (7:10 PM ET)
+#9    Chicago Sox          0   Minnesota          0          (8:10 PM ET)
+#10  Philadelphia          0   St. Louis          0          (8:15 PM ET)
+#11        Boston          0     Oakland          0         (10:05 PM ET)
+#
+#say Cleveland lost to Detroit 6 4 in an away game.
+#say Cleveland beat Detroit 6 4 in a home game.
+#say TEAM1 { lost to | beat } TEAM2 MAXSCORE MINSCORE in { an away | a home } game.
