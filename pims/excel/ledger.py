@@ -143,7 +143,7 @@ def add_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
 if __name__ == "__main__":
     action = sys.argv[1]
     if len(sys.argv) == 2:
-        input_file = '/home/pims/Documents/example.xlsx'
+        input_file = '/home/pims/Documents/ledger.xlsx'
     else:
         input_file = sys.argv[2]
     if not os.path.exists(input_file):
