@@ -1,6 +1,18 @@
 #!/usr/bin/python
 
 from PIL import Image
+import urllib, cStringIO
+
+def demo_read_url(URL):
+    imfile = cStringIO.StringIO(urllib.urlopen(URL).read())
+    img = Image.open(imfile)
+    imfile_out = '/tmp/out.png'
+    w, h = img.size
+    img.crop((0, 0, w, h-160)).save( imfile_out, "PNG" )
+    print 'wrote %s' % imfile_out
+    
+demo_read_url('http://pims.grc.nasa.gov/plots/sams/121f08/121f08.jpg')
+raise SystemExit
 
 def resize_and_crop(img_path, modified_path, size, crop_type='top'):
     """
