@@ -38,23 +38,47 @@ NBA = 'nba'
 NHL = 'nhl'
 NCAA_BB = 'mens-college-basketball'
 
-#class Team(object):
-#    
-#    def __init__(self, name, score):
-#        self.name = name
-#        self.score = score
-#    
-#class GameResults(object):
-#    
-#    def __init__(self, team1_name, team1_score, team2_name, team2_score, time):
-#        self.team1 = Team(team1_name, team1_score)
-#        self.team2 = Team(team2_name, team2_score)
-#        self.time = time
-#        
-#gr = GameResults('Parma', '6', 'Lakewood', '4', 'noon')
-#print gr.team1.name, gr.team1.score
-#print gr.team2.name, gr.team2.score, gr.time
-#raise SystemExit
+SORT_ORDER = [
+    'Cleveland',
+    'Detroit',
+    'Kansas City',
+    'Chicago Sox',
+    'Minnesota',
+    'NY Yankees',
+    'LA Angels',
+    'Cincinnati',
+    'Pittsburgh',
+    'Seattle',
+    'San Diego',
+    'Toronto',
+    'Houston',
+    'Washington',
+    'Boston',
+    'Philadelphia',
+    'Atlanta',
+    'Chicago Cubs',
+    'Miami',
+    'Baltimore',
+    'Tampa Bay',
+    'San Francisco',
+    'NY Mets',
+    'St. Louis',
+    'Milwaukee',
+    'Arizona',
+    'Texas',
+    'Oakland',
+    'Colorado',
+    'LA Dodgers',
+    ]
+
+# FIXME for sorting teams and getting word order corrected
+#say TEAM1 { lost to | beat } TEAM2 MAXSCORE MINSCORE in { an away | a home } game.
+def get_words(away_team, away_score, home_team, home_score):
+    if home_score > away_score:
+        s = '%s { beat } %s %d %d in { a home } game.' % (home_team, away_team, home_score, away_score)
+    else:
+        s = '%s { lost to } %s %d %d in { a home } game.' % (home_team, away_team, away_score, home_score)
+    return s
 
 def get_scores(league, team_filter=None):
 
@@ -69,8 +93,8 @@ def get_scores(league, team_filter=None):
 
     try:
         #visit espn bottomline website to get scores as html page
-        url = 'http://sports.espn.go.com/'+league+'/bottomline/scores'
-        #url = "file:///home/pims/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
+        #url = 'http://sports.espn.go.com/'+league+'/bottomline/scores'
+        url = "file:///home/pims/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
         #url = "file:///Users/ken/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
         req = urllib2.Request(url)
         response = urllib2.urlopen(req)
@@ -146,11 +170,6 @@ class BaseballScores(object):
     def __init__(self, team_filter='Cleveland,Detroit'):
         self.dataframe, self.teams = get_scores_as_list(team_filter=team_filter)
 
-    #say Cleveland lost at Boston by a score of 10 to 3
-    #say Cleveland won at Boston by a score of 10 to 3
-    #say Cleveland beat Boston by a score of 10 to 3
-    #say Cleveland lost to Boston by a score of 10 to 3
-    # MYTEAM {lost at, won at, lost to, beat} OPPONENT by a score of MAX to MIN
     def fmt_print(self, s):
         print type(s)
         print s
@@ -176,7 +195,10 @@ class BaseballScores(object):
 
 if __name__ == "__main__":
     scores = BaseballScores()
-    print scores.dataframe
+    df = scores.dataframe
+    df['words'] = map(get_words, df["AwayTeam"], df["AwayScore"], df["HomeTeam"], df["HomeScore"])
+    print df
+    
     
 #         AwayTeam  AwayScore     HomeTeam  HomeScore     Time
 #0       San Diego          1      Seattle          6  (FINAL)
@@ -229,3 +251,4 @@ if __name__ == "__main__":
 #say Cleveland lost to Detroit 6 4 in an away game.
 #say Cleveland beat Detroit 6 4 in a home game.
 #say TEAM1 { lost to | beat } TEAM2 MAXSCORE MINSCORE in { an away | a home } game.
+#where TEAM# is by sort order
