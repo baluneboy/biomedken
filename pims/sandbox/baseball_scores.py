@@ -38,7 +38,8 @@ NBA = 'nba'
 NHL = 'nhl'
 NCAA_BB = 'mens-college-basketball'
 
-SORT_ORDER = [
+# FIXME pythonic way to get sort_order
+my_order = [
     'Cleveland',
     'Detroit',
     'Kansas City',
@@ -70,6 +71,8 @@ SORT_ORDER = [
     'Colorado',
     'LA Dodgers',
     ]
+my_dict = dict( enumerate(my_order) )
+sort_order = dict((value, key) for key, value in my_dict.iteritems())
 
 # FIXME for sorting teams and getting word order corrected
 #say TEAM1 { lost to | beat } TEAM2 MAXSCORE MINSCORE in { an away | a home } game.
@@ -93,8 +96,8 @@ def get_scores(league, team_filter=None):
 
     try:
         #visit espn bottomline website to get scores as html page
-        #url = 'http://sports.espn.go.com/'+league+'/bottomline/scores'
-        url = "file:///home/pims/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
+        url = 'http://sports.espn.go.com/'+league+'/bottomline/scores'
+        #url = "file:///home/pims/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
         #url = "file:///Users/ken/dev/programs/python/pims/sandbox/data/test_espn_scores.html"
         req = urllib2.Request(url)
         response = urllib2.urlopen(req)
@@ -197,8 +200,9 @@ if __name__ == "__main__":
     scores = BaseballScores()
     df = scores.dataframe
     df['words'] = map(get_words, df["AwayTeam"], df["AwayScore"], df["HomeTeam"], df["HomeScore"])
+    df['is_reversed'] = (df['HomeTeam'].map(sort_order) - df['AwayTeam'].map(sort_order)) > 0
     print df
-    
+
     
 #         AwayTeam  AwayScore     HomeTeam  HomeScore     Time
 #0       San Diego          1      Seattle          6  (FINAL)
