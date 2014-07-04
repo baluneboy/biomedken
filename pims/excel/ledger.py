@@ -23,7 +23,7 @@ def demo_add_row_to_dataframe(dfz):
     print dfz[-5:]
 
 # return dict of dataframes, one for each sheet in Excel file
-def load_previous(file_name):
+def backup_and_load(file_name):
     """return dict of dataframes, one for each sheet in Excel file"""
 
     # Backup previous Excel file
@@ -31,44 +31,48 @@ def load_previous(file_name):
     backup_file = file_name.replace('.xlsx', suffix + '.xlsx')
     if os.path.exists(backup_file):
         raise('Abort because backup file %s already exists' % backup_file)
+    print 'writing backup file    %s' % backup_file
     shutil.copy(file_name, backup_file)
-    if os.path.isfile(backup_file):
-        print "Wrote backup file %s" % backup_file
-    else:
+    if not os.path.isfile(backup_file):
         raise('Something went wrong with creating backup file %s' % backup_file)
 
     # Read Excel file into dict of dataframes
+    print 'getting dataframe from %s' % file_name
     excel_file = pd.ExcelFile(file_name)
     dfs = {sheet_name: excel_file.parse(sheet_name) for sheet_name in excel_file.sheet_names}
 
     # Return dict of dataframes
     return dfs
 
-def add_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
+# FIXME this function has to rewrite other sheets too :(
+# append typical pay stub to zin sheet
+def append_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
+    """append typical pay stub to zin sheet"""
 
-    # Backup, then load previous Excel file into dict of dataframes
-    dfs = load_previous(file_name)
+    # backup and load previous Excel file into dict of dataframes
+    dfs = backup_and_load(file_name)
 
     # NOTE: could not find good way to add new, formulaic rows, so...
     #       instead of working from dataframe for new pay stub, use...
     #       xlsxwriter write_formula on zin sheet later (below)
 
-    # Create a Pandas Excel writer using XlsxWriter as the engine
+    # create a Pandas Excel writer [should we be using XlsxWriter as the engine?]
     # NOTE: we can clobber original file because we have backed it up already!
-    writer = pd.ExcelWriter(file_name, engine='xlsxwriter')
+    #writer = pd.ExcelWriter(file_name, engine='xlsxwriter')
+    writer = pd.ExcelWriter(file_name)    
 
-    # Add formats to use
+    # add formats to use
     bold_format = writer.book.add_format({'bold': 1})
     date_format = writer.book.add_format({'num_format': 'dd-mmm-yyyy'})
     money_format = writer.book.add_format({'num_format': '+#0.00;[RED]-#0.00;#0.00'})
     right_align_format = writer.book.add_format({'align': 'right'})
     hour_format = writer.book.add_format({'num_format': '#0.0;[RED]-#0.0;0.0'})
 
-    # Create a sheet for each DataFrame
+    # create a sheet for each DataFrame and write pre-existing data
     for sheet_name, column_order in sheets.iteritems():
-        dfs[sheet_name].to_excel(writer, sheet_name=sheet_name, cols=column_order, index=False)
+        dfs[sheet_name].to_excel(writer, sheet_name=sheet_name, columns=column_order, index=False)
 
-    # New pay stub data
+    # new pay stub data
     dfz = dfs['zin']
     dfv = dfs['variables']
     zin_hourly = max( dfv[ dfv.Variable == 'zin_hourly' ].Value )
@@ -81,12 +85,12 @@ def add_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
         ['Personal Leave',      0],
     )    
 
-    # Start from the first cell below the last row
+    # start from the first cell below the last row
     row = len(dfs['zin']) + 1
     col = 0
     first_row = row
     
-    # Write hourly items (Regular, Holiday, Personal Leave)
+    # write hourly items (Regular, Holiday, Personal Leave)
     for my_type, hours in (hour_items):
         hours_cell = xl_rowcol_to_cell(row, 2)
         amount_formula = '=%s*%f' % (hours_cell, zin_hourly)
@@ -96,7 +100,7 @@ def add_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
         writer.sheets['zin'].write_formula(row, col + 3, amount_formula, money_format)
         row += 1
     
-    # Write deductions & remaining rows by iteration
+    # write deductions & remaining rows by iteration
     dfprevious = dfz[dfz['PayDate'] == previous_date]
     dfdeductions = dfprevious[dfprevious['Amount'] < 0]
     #dfnonhourstuff = dfprevious[ dfprevious.Type != 'Regular' ]
@@ -113,7 +117,7 @@ def add_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
         row += 1
     last_row = row - 1
 
-    # Write VERIFY ZERO SUM formula as last row of new pay stub
+    # write VERIFY ZERO SUM formula as last row of new pay stub
     verify_cell_range = xl_range(first_row, 3, last_row, 3)
     verify_formula = '=SUM(%s)' % verify_cell_range
     writer.sheets['zin'].write_datetime(row, col + 0, new_date, date_format)
@@ -121,7 +125,7 @@ def add_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
     writer.sheets['zin'].write_number(row, col + 2, 0.0, hour_format)
     writer.sheets['zin'].write_formula(row, col + 3, verify_formula, money_format)
 
-    # Set formats
+    # format
     writer.sheets['zin'].set_column('A:A', 12, date_format)
     writer.sheets['zin'].set_column('B:B', 16, right_align_format)
     writer.sheets['zin'].set_column('C:C', 9, hour_format)
@@ -135,19 +139,32 @@ def add_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
     writer.sheets['variables'].set_column('A:A', 12, date_format)
     writer.sheets['variables'].set_column('B:B', 16, right_align_format)
 
-    # Close the Pandas Excel writer with save to Excel file
+    # close the Pandas Excel writer with save to Excel file
     writer.save()
 
-# ledger.py add_pay_stub # USES DEFAULT INPUT FILE
-# ledger.py add_pay_stub /home/pims/Documents/newexample.xlsx # USE CMD LINE INPUT FILE
+#dfs1 = backup_and_load('/home/pims/Documents/zin.xlsx')
+#raise SystemExit
+
 if __name__ == "__main__":
-    action = sys.argv[1]
-    if len(sys.argv) == 2:
-        input_file = '/home/pims/Documents/ledger.xlsx'
-    else:
+    
+    # deal with input args
+    if len(sys.argv) == 1:
+        action = 'append_pay_stub'
+        input_file = '/home/pims/Documents/example.xlsx'
+    elif len(sys.argv) == 2:
+        action = sys.argv[1]
+        input_file = '/home/pims/Documents/example.xlsx'
+    elif len(sys.argv) == 3:
+        action = sys.argv[1]
         input_file = sys.argv[2]
+    else:
+        raise Exception('Unhandled number of input arguments.')
+    
+    # verify input file exists
     if not os.path.exists(input_file):
         print 'Abort because input_file %s does not exist.' % input_file
         sys.exit(-1)
-    print 'Using input_file  %s' % input_file
+    print 'starting "%s" action with input_file "%s"' % (action, input_file)
+    
+    # do action with input file
     eval(action + '(file_name="' + input_file + '")')
