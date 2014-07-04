@@ -12,9 +12,12 @@ from collections import OrderedDict
 from xlsxwriter.utility import xl_rowcol_to_cell, xl_range
 
 sheets = {
-    'xactions': ['Date', 'Where', 'Delta', 'Note'],
-    'zin':      ['PayDate', 'Type', 'Hours', 'Amount'],
-    'variables':     ['Date', 'Variable', 'Value'],
+    # sheet:        column_order
+    'xactions':     ['Date', 'Where', 'Delta', 'Note'],
+    'zin':          ['PayDate', 'Type', 'Hours', 'Amount', 'Percent'],
+    'variables':    ['Date', 'Variable', 'Value'],
+    'stub':         ['PayDate', 'Type', 'Hours', 'Amount', 'Percent', 'Category', 'Subcat'],
+    'zinhist':      ['PayDate', 'CheckNum', 'GrossPay', 'NetPay1', 'NetPay2', 'NetPay3', 'Net', 'Hourly', 'DaysDelta'],
 }
 
 def demo_add_row_to_dataframe(dfz):
@@ -85,7 +88,7 @@ def append_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
         ['Personal Leave',      0],
     )    
 
-    # start from the first cell below the last row
+    # start one row below the bottom row
     row = len(dfs['zin']) + 1
     col = 0
     first_row = row
