@@ -59,16 +59,21 @@ def append_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
     date_format = writer.book.add_format({'num_format': 'dd-mmm-yyyy'})
     money_format = writer.book.add_format({'num_format': '+#0.00;[RED]-#0.00;#0.00'})
     right_align_format = writer.book.add_format({'align': 'right'})
-    hour_format = writer.book.add_format({'num_format': '#0.0;[RED]-#0.0;0.0'})
+    hour_format = writer.book.add_format({'num_format': '#0.00;[RED]-#0.00;0.00'})
 
-    # create a sheet for each DataFrame and write pre-existing data
+    ##########################################################################################
+    # WRITE PREVIOUS STUBS    
+    # Create a sheet for each DataFrame and write pre-existing data
     for sheet_name in dfs.keys():
         dfs[sheet_name].to_excel(writer, sheet_name=sheet_name, index=False)
 
-    # new pay stub data
+    ##########################################################################################
+    # WRITE NEW STUB
+    
     dfz = dfs['zin']
     dfv = dfs['variables']
     zin_hourly = max( dfv[ dfv.Variable == 'zin_hourly' ].Value )
+    zin_leave_accrue = max( dfv[ dfv.Variable == 'zin_leave_accrue' ].Value )
     previous_date = max( dfz['PayDate'] )
     new_date = previous_date + datetime.timedelta(days=14)
 
@@ -77,7 +82,7 @@ def append_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
         ['Holiday',             0],
         ['Personal Leave',      0],
     )
-
+    
     # start one row below the bottom row
     row = len(dfs['zin']) + 1
     col = 0
@@ -93,15 +98,15 @@ def append_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
         writer.sheets['zin'].write_formula(row, col + 3, amount_formula, money_format)
         row += 1
 
-    # write deductions & remaining rows by iteration
-    dfprevious = dfz[dfz['PayDate'] == previous_date]
-    dfdeductions = dfprevious[dfprevious['Amount'] < 0]
-    #dfnonhourstuff = dfprevious[ dfprevious.Type != 'Regular' ]
+    # write deductions & most new rows by iteration
+    df_previous = dfz[dfz['PayDate'] == previous_date]
+    df_deductions = df_previous[df_previous['Amount'] < 0]
+    #dfnonhourstuff = df_previous[ df_previous.Type != 'Regular' ]
     #dfnonhourstuff = dfnonhourstuff[ dfnonhourstuff.Type != 'Holiday' ]
     #dfnonhourstuff = dfnonhourstuff[ dfnonhourstuff.Type != 'Personal Leave' ]
 
     # iterate over row tuples of (idx, PayDate, Type, Hours, Amount)
-    for r in dfdeductions.iterrows():
+    for r in df_deductions.iterrows():
         #print r[1].PayDate, r[1].Type, r[1].Hours, r[1].Amount
         writer.sheets['zin'].write_datetime(row, col + 0, new_date, date_format)
         writer.sheets['zin'].write_string(row, col + 1, r[1].Type)
@@ -120,10 +125,12 @@ def append_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
     
     # write "Pers Leave Bal" formula as the last row of new pay stub
     row += 1
+    leave_hours_cell = xl_rowcol_to_cell(first_row - 1, 3)
+    leave_formula = '=%s+%f' % (leave_hours_cell, zin_leave_accrue)    
     writer.sheets['zin'].write_datetime(row, col + 0, new_date, date_format)
     writer.sheets['zin'].write_string(row, col + 1, 'Pers Leave Bal', bold_format)
-    writer.sheets['zin'].write_number(row, col + 2, 0.0, hour_format)
-    writer.sheets['zin'].write_formula(row, col + 3, '=0-0', money_format)
+    writer.sheets['zin'].write_number(row, col + 2, zin_leave_accrue, hour_format)
+    writer.sheets['zin'].write_formula(row, col + 3, leave_formula, money_format)
 
     # format
     writer.sheets['zin'].set_column('A:A', 12, date_format)
@@ -134,11 +141,12 @@ def append_pay_stub(file_name='/home/pims/Documents/ledger.xlsx'):
     writer.sheets['xactions'].set_column('B:B', 6, right_align_format)
     writer.sheets['xactions'].set_column('C:C', 9, money_format)
     writer.sheets['xactions'].set_column('D:D', 9, right_align_format)
-    writer.sheets['xactions'].freeze_panes(1, 0)
-    writer.sheets['zin'].freeze_panes(1, 0)
     writer.sheets['variables'].set_column('A:A', 12, date_format)
     writer.sheets['variables'].set_column('B:B', 16, right_align_format)
-
+    writer.sheets['xactions'].freeze_panes(1, 0)
+    writer.sheets['zin'].freeze_panes(1, 0)
+    writer.sheets['zinhist'].freeze_panes(1, 0)
+    
     # close the Pandas Excel writer with save to Excel file
     writer.save()
 
