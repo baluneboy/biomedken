@@ -89,6 +89,9 @@ class PadProcessChain(object):
         substream.filter(self.filter_params['type'],
                          freq=self.filter_params['freq'],
                          zerophase=self.filter_params['zerophase'])
+        #substream.filter('bandpass',
+        #                 freqmin=112.0, freqmax=116.0,
+        #                 zerophase=True)     
 
     # 4. this is how we apply interval func (RMS) to analysis_interval's worth of data
     def apply_interval_func(self, substream):
