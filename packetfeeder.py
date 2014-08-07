@@ -1534,7 +1534,7 @@ def strip_chart():
                           detrend_type='demean',
                           filter_params={'type':'lowpass',
                                          'freq':5.0,
-                                         'zerophase':True},
+                                         'zerophase':True},                       
                           interval_params={'type':IntervalRMS,
                                            'analysis_interval':rt_params['time.analysis_interval']},
                           axes='xyz',
