@@ -330,11 +330,11 @@ class ValidateTimeInterval(object):
 #################################################################################################
 # FIXME get at least key values below from XLS spreadsheet immune to Excel auto-format weirdness
 
-# FIXME these were probably set for debug and testing, but you change to what you like:
-OLAP =   9 # seconds overlap of analysis_intervals
-ANIN =  10 # seconds for analysis_interval
-PLTS = 600 # seconds for plot_span
-EXTR =   2 # count for extra_intervals
+# FIXME these were probably set for debug and testing, but you change to what makes sense in general:
+OLAP =    9  #   9 seconds overlap of analysis_intervals
+ANIN =   10  #  10 seconds for analysis_interval
+PLTS =  600  # 600 seconds for plot_span
+EXTR =    2  #   2 count for extra_intervals
 #MAXT = int( EXTR * ANIN + PLTS ) # seconds max for real-time trace
 
 # a map from key -> value, converter
