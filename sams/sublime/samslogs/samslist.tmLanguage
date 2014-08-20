@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>comment</key>
+	<string></string>
+	<key>fileTypes</key>
+	<array>
+		<string>samslist</string>
+	</array>
+	<key>foldingStartMarker</key>
+	<string>\(</string>
+	<key>foldingStopMarker</key>
+	<string>\)</string>
+	<key>keyEquivalent</key>
+	<string>^~L</string>
+	<key>name</key>
+	<string>samslist</string>
+	<key>patterns</key>
+	<array>
+		<dict>
+			<key>match</key>
+			<string>.*generic_client tshes.*$\n</string>
+			<key>name</key>
+			<string>tsh.generic_client.samslist</string>
+		</dict>
+		<dict>
+			<key>match</key>
+			<string>.*generic_client 121.*$\n</string>
+			<key>name</key>
+			<string>se.generic_client.samslist</string>
+		</dict>
+		<dict>
+			<key>match</key>
+			<string>.*generic_client 122.*$\n</string>
+			<key>name</key>
+			<string>ee.generic_client.samslist</string>
+		</dict>
+		<dict>
+			<key>match</key>
+			<string>.*(/usr/local/bin/cumain -d|/usr/sbin/rarpd -e -v|/usr/local/bin/(cu_state_monitor|RIC_manager|telemetry_downlinker) -d).*$\n</string>
+			<key>name</key>
+			<string>need.process.samslist</string>
+		</dict>			
+		<dict>
+			<key>match</key>
+			<string>.*\d+\s+\d+\s+\d+\s+\d{2}\%.*$\n</string>
+			<key>name</key>
+			<string>big.use_percent.samslist</string>
+		</dict>
+		<dict>
+			<key>match</key>
+			<string>.*\d+\s+\d+\s+\d+\s+\d{1}\%.*$\n</string>
+			<key>name</key>
+			<string>small.use_percent.samslist</string>
+		</dict>					
+	</array>
+	<key>scopeName</key>
+	<string>source.samslist</string>
+	<key>uuid</key>
+	<string>1d60787a-9ed4-41cb-8c4f-685dab32e0e1</string>
+</dict>
+</plist>
+/usr/local/bin/cu_state_monitor -d
