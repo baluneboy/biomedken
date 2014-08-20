@@ -23,12 +23,13 @@ from recipes_fileutils import fileAgeDays
 ##################################################################################################################################
 # GLOB PATTERN                                           REGEXP TO PARSE SENSOR                       SUFFIX FOR HTML  STEPMINUTES
 _GLOB_PATS = [
-('/misc/yoda/www/plots/sams/121f0*/121f0*.jpg',         '/misc/yoda/www/plots/sams/(.*)/.*',         '',               30 ),
-('/misc/yoda/www/plots/sams/es0*/es0*.jpg',             '/misc/yoda/www/plots/sams/(.*)/.*',         '',               30 ),
-('/misc/yoda/www/plots/sams/laible/121f0*/121f0*.jpg',  '/misc/yoda/www/plots/sams/laible/(.*)/.*',  'ten',            30 ),
-('/misc/yoda/www/plots/oss/osstmf/ML_OSSTMF.jpg',       '/misc/yoda/www/plots/oss/(.*)/.*',          '',               30 ),
-('/misc/yoda/www/plots/sams/hirap/hirap.jpg',           '/misc/yoda/www/plots/sams/(.*)/.*',         '',               30 ),
-('/misc/yoda/www/plots/sams/121f0*/intrms_*.png',       '/misc/yoda/www/plots/sams/(.*)/.*',         'rms',             5 ),
+('/misc/yoda/www/plots/sams/121f0*/121f0*.jpg',         '/misc/yoda/www/plots/sams/(.*)/.*',            '',               30 ),
+('/misc/yoda/www/plots/sams/es0*/es0*.jpg',             '/misc/yoda/www/plots/sams/(.*)/.*',            '',               30 ),
+('/misc/yoda/www/plots/sams/laible/121f0*/121f0*.jpg',  '/misc/yoda/www/plots/sams/laible/(.*)/.*',     'ten',            30 ),
+('/misc/yoda/www/plots/oss/osstmf/ML_OSSTMF.jpg',       '/misc/yoda/www/plots/oss/(.*)/.*',             '',               30 ),
+('/misc/yoda/www/plots/sams/hirap/hirap.jpg',           '/misc/yoda/www/plots/sams/(.*)/.*',            '',               30 ),
+('/misc/yoda/www/plots/sams/121f0*/intrms_*.png',       '/misc/yoda/www/plots/sams/(.*)/.*',            'rms',             5 ),
+#('/misc/yoda/www/plots/sams/cirfanmon/es05/es05.jpg',   '/misc/yoda/www/plots/sams/cirfanmon/(.*)/.*',  'cirfanmon',       5 ),
 ]
 
 def getRecentlySnappedSensors(stepMinutes=30, minutesOld=60):
