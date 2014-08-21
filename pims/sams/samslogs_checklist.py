@@ -55,6 +55,8 @@ __date__   = "$19-Dec-2011$"
 # Thanks
 # Jen
 
+MINPCT = 50 # FIXME make this more like 75
+
 # dict for SAMS CU processes and count of each
 sams_procs = {
     '/usr/local/bin/RIC_manager -d':          1,
@@ -78,14 +80,13 @@ def grade_command(c):
     if c in sams_procs.keys():
         return '#SAMSLISTOKAY'
     else:
-        return None
+        return 0
 
 # give each Use% a grade
 def grade_use_percent(p):
-    pmin = 39 # FIXME make this more like 50
-    if p < pmin:
+    if p < MINPCT:
         return '#SAMSLISTGOOD'
-    elif p >= pmin and p < 75:
+    elif p >= MINPCT and p < 75:
         return '#SAMSLISTOKAY'
     else:
         return '#SAMSLISTBAD'
@@ -115,7 +116,11 @@ def OBSOLETErewrite_input_file_with_line_ending_tags(input_file):
 def summarize_samslist(input_file):
     """summarize samslist text file based on revisions to Jen's checklist"""
     #print 'Summary processing on %s' % input_file
-
+    
+    # FIXME do graceful check of output_file exist/rename/whatever
+    output_file = input_file.replace('.txt', '_summary.txt')
+    out = StringIO()
+    
     procs = StringIO()
     start_str = 'UID'
     found_start = False
@@ -149,15 +154,23 @@ def summarize_samslist(input_file):
         dfss = df_procs[df_procs['CMD'].str.contains(p)]
         dfcount = len(dfss)
         if c != dfcount:
-            proc_summary_str += 'NOTE: %s count is %d, which IS NOT desired count of %d #SAMSLISTBAD\n' % (p, dfcount, c)   
+            proc_summary_str += 'NOTE: %s HAS COUNT OF %d, WHICH IS NOT THE DESIRED COUNT OF %d #SAMSLISTBAD\n' % (p, dfcount, c)   
     formatters = [
         ('PID',    lambda x: '%d' % x),
         ('CMD',    lambda x: '%44s' % str(x))
         ]
     df_procs['Grade'] = df_procs.apply(lambda row: grade_command(row['CMD']), axis=1)
-    print '# PROCESS GRADES #'
-    if proc_summary_str: print proc_summary_str.rstrip('\n')
-    print df_procs.to_string(formatters=dict(formatters)) 
+    
+    out.write('# PROCESS GRADES #\n')
+    if proc_summary_str:
+        out.write( proc_summary_str ) # keep trailing newline char
+    else:
+        # empty string (a good thing)
+        out.write( 'NOTE: All %d processes matched their expected counts. #SAMSLISTGOOD\n' % len(sams_procs) )
+
+    # FIXME we use weak method to set Grade to zero to signify it's not graded (and won't show up in output)
+    df_procs = df_procs[df_procs.Grade != 0]
+    out.write( df_procs.to_string(formatters=dict(formatters)) + '\n' )
     
     # pick up line enum where we left off with procs (above) in terms of line numbers...
     mounts = StringIO()
@@ -190,8 +203,19 @@ def summarize_samslist(input_file):
                                         'Available' : make_int,
                                         '1K-blocks' : make_int})
     df_mounts['Grade'] = df_mounts.apply(lambda row: grade_use_percent(row['Use%']), axis=1)
-    print '\n# DISK USAGE GRADES #'
-    print df_mounts.to_string()    
+
+    out.write( '\n# DISK USAGE GRADES #\n' )
+    if max(df_mounts['Use%']) <= MINPCT:
+        out.write( 'NOTE: The max disk use percentage is at or below the threshold value of %d. #SAMSLISTGOOD\n' % MINPCT )    
+    else:
+        out.write( 'NOTE: The max disk use percentage is above the threshold value of %d. #SAMSLISTBAD\n' % MINPCT )    
+    out.write( df_mounts.to_string() )
+
+    # now write it all to output file
+    with open(output_file, 'w') as fout:
+        fout.write( out.getvalue() )
+    
+    return output_file
 
 # get lastest samslist txt filename  
 def get_latest_samslist_file(dirpath):
@@ -233,5 +257,5 @@ if __name__ == '__main__':
         print 'ABORT, no samslist text file could be identified from given input arg'
         raise SystemExit
     
-    summarize_samslist(samslist_file)
-    
+    summary_file = summarize_samslist(samslist_file)
+    print 'wrote summary file %s' % summary_file
