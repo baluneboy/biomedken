@@ -15,6 +15,7 @@ import datetime
 from argparse import ArgumentParser
 from recipes_fileutils import filter_filenames
 from pims.files.utils import most_recent_file_with_suffix
+from pims.sams.samslogs_checklist import get_latest_samslist_file, summarize_samslist
 
 major_version = 1
 minor_version = 1
@@ -257,11 +258,13 @@ if __name__ == '__main__':
     dirpath = os.path.splitext(tgzFile)[0]
     pattern = '.*\.gz$'
     gunzip_walker(dirpath, pattern)
-    
     print 'done unzipping'
-    
+
+    # Now get latest samslist file and apply revised JK checklist on it
     dirpath = '/misc/yoda/secure/%d_downlink' % datetime.datetime.today().year
-    #samslist_file = get_latest_samslist_file(dirpath)
+    samslist_file = get_latest_samslist_file(dirpath)   
+    summary_file = summarize_samslist(samslist_file)
+    print 'wrote summary file %s' % summary_file
     
     # Now open FOLDER using sublime
     #if len(sys.argv) == 1:

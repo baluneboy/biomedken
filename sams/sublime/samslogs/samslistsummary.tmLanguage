@@ -15,45 +15,33 @@
 	<key>keyEquivalent</key>
 	<string>^~L</string>
 	<key>name</key>
-	<string>samslist</string>
+	<string>samslistsummary</string>
 	<key>patterns</key>
 	<array>
 		<dict>
 			<key>match</key>
-			<string>.*generic_client tshes.*$\n</string>
+			<string>.*\#SAMSLISTBAD$</string>
 			<key>name</key>
-			<string>tsh.generic_client.samslist</string>
+			<string>line.red.bold.samslist</string>
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>.*generic_client 121.*$\n</string>
+			<string>.*\#SAMSLISTGOOD$</string>
 			<key>name</key>
-			<string>se.generic_client.samslist</string>
+			<string>line.green.bold.samslist</string>
+		</dict>	
+		<dict>
+			<key>match</key>
+			<string>.*\#SAMSLISTOKAY$</string>
+			<key>name</key>
+			<string>line.yellow.bold.samslist</string>
+		</dict>						
+		<dict>
+			<key>match</key>
+			<string>.*None$</string>
+			<key>name</key>
+			<string>comment.line.none.samslist</string>
 		</dict>
-		<dict>
-			<key>match</key>
-			<string>.*generic_client 122.*$\n</string>
-			<key>name</key>
-			<string>ee.generic_client.samslist</string>
-		</dict>
-		<dict>
-			<key>match</key>
-			<string>.*(/usr/local/bin/cumain -d|/usr/sbin/rarpd -e -v|/usr/local/bin/(cu_state_monitor|RIC_manager|telemetry_downlinker) -d).*$\n</string>
-			<key>name</key>
-			<string>need.process.samslist</string>
-		</dict>			
-		<dict>
-			<key>match</key>
-			<string>.*\d+\s+\d+\s+\d+\s+\d{2}\%.*$\n</string>
-			<key>name</key>
-			<string>big.use_percent.samslist</string>
-		</dict>
-		<dict>
-			<key>match</key>
-			<string>.*\d+\s+\d+\s+\d+\s+\d{1}\%.*$\n</string>
-			<key>name</key>
-			<string>small.use_percent.samslist</string>
-		</dict>					
 	</array>
 	<key>scopeName</key>
 	<string>source.samslist</string>
