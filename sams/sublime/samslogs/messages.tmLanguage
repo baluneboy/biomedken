@@ -173,6 +173,12 @@
 </dict>
 </plist>
 
+<!--
+2013-10-21T21:43:03.419604+00:00 icu-f01 Cumain v2.00[3108]: Creating generic_client for accel...
+2013-10-30T17:13:45.318461+00:00 icu-f01 Cumain v2.00[2305]: Command line chunk [generic_client 122-f01 ee122-f01 9805] (37 chars)
+2013-08-22T16:14:16.383857+00:00 icu-f01 Cumain v2.00[26066]: Command [generic_client 121-s01 ee122-s03 9803] completed successfully.
+2013-10-30T17:13:45.324552+00:00 icu-f01 Cumain v2.00[31053]: Executed command line [generic_client 122-f01 ee122-f01 9805]
+-->
 
 <!--
 TIME icu-f01 CSM v1.0[DSTAR]: sending ECW DSTAR

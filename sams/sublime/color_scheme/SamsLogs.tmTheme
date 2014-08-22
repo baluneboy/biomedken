@@ -96,6 +96,19 @@
 		</dict>
 		<dict>
 			<key>name</key>
+			<string>Italic Blue Line</string>
+			<key>scope</key>
+			<string>line.blue.italic</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>italic</string>
+				<key>foreground</key>
+				<string>#428BDD</string>
+			</dict>
+		</dict>		
+		<dict>
+			<key>name</key>
 			<string>Id EE</string>
 			<key>scope</key>
 			<string>id.ee</string>
