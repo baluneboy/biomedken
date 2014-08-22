@@ -35,7 +35,13 @@
 			<string>.*\#SAMSLISTOKAY$</string>
 			<key>name</key>
 			<string>line.yellow.bold.samslist</string>
-		</dict>						
+		</dict>
+		<dict>
+			<key>match</key>
+			<string>^# [A-Z ]+ #$</string>
+			<key>name</key>
+			<string>line.blue.italic.samslist</string>
+		</dict>					
 		<dict>
 			<key>match</key>
 			<string>.*None$</string>

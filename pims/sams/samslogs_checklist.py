@@ -55,7 +55,7 @@ __date__   = "$19-Dec-2011$"
 # Thanks
 # Jen
 
-MINPCT = 50 # FIXME make this more like 75
+MINPCT = 50 # FIXME make this more like 75 maybe?
 
 # dict for SAMS CU processes and count of each
 sams_procs = {
@@ -65,6 +65,8 @@ sams_procs = {
     '/usr/sbin/rarpd -e -v':                  1,
     '/usr/local/bin/cumain -d':               2,
 }
+
+
 
 def white_strip(text):
     try:
