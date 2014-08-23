@@ -18,41 +18,47 @@
 	<string>samslist</string>
 	<key>patterns</key>
 	<array>
+		<!-- TSH GENERIC CLIENTS -->		
 		<dict>
 			<key>match</key>
 			<string>.*generic_client tshes.*$\n</string>
 			<key>name</key>
 			<string>tsh.generic_client.samslist</string>
 		</dict>
+		<!-- SE GENERIC CLIENTS -->				
 		<dict>
 			<key>match</key>
 			<string>.*generic_client 121.*$\n</string>
 			<key>name</key>
 			<string>se.generic_client.samslist</string>
 		</dict>
+		<!-- EE GENERIC CLIENTS -->				
 		<dict>
 			<key>match</key>
 			<string>.*generic_client 122.*$\n</string>
 			<key>name</key>
 			<string>ee.generic_client.samslist</string>
 		</dict>
+		<!-- NEEDED PROCESSES ARE GREEN BOLD LINES -->
 		<dict>
 			<key>match</key>
 			<string>.*(/usr/local/bin/cumain -d|/usr/sbin/rarpd -e -v|/usr/local/bin/(cu_state_monitor|RIC_manager|telemetry_downlinker) -d).*$\n</string>
 			<key>name</key>
-			<string>need.process.samslist</string>
-		</dict>			
+			<string>line.green.bold.samslist</string>
+		</dict>		
+		<!-- BIG USE PERCENTAGE ARE RED BOLD LINES -->		
 		<dict>
 			<key>match</key>
 			<string>.*\d+\s+\d+\s+\d+\s+\d{2}\%.*$\n</string>
 			<key>name</key>
-			<string>big.use_percent.samslist</string>
+			<string>line.red.bold.samslist</string>
 		</dict>
+		<!-- SMALL USE PERCENTAGE ARE GREEN BOLD LINES -->				
 		<dict>
 			<key>match</key>
 			<string>.*\d+\s+\d+\s+\d+\s+\d{1}\%.*$\n</string>
 			<key>name</key>
-			<string>small.use_percent.samslist</string>
+			<string>line.green.bold.samslist</string>
 		</dict>					
 	</array>
 	<key>scopeName</key>

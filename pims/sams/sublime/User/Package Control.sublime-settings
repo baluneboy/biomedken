@@ -7,6 +7,7 @@
 		"HighlightWords",
 		"LineEndings",
 		"Package Control",
-		"SchemeCycler"
+		"SchemeCycler",
+		"WordHighlight"
 	]
 }
