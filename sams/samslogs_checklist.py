@@ -120,7 +120,7 @@ def summarize_samslist(input_file):
     #print 'Summary processing on %s' % input_file
     
     # FIXME do graceful check of output_file exist/rename/whatever
-    output_file = input_file.replace('.txt', '_summary.txt')
+    output_file = input_file.replace('samslist', 'summary_samslist')
     out = StringIO()
     
     procs = StringIO()

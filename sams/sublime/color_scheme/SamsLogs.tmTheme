@@ -149,10 +149,36 @@
 			<string>tsh.generic_client</string>
 			<key>settings</key>
 			<dict>
+				<key>fontStyle</key>
+				<string> bold</string>				
 				<key>foreground</key>
-				<string>#b888cc</string>
+				<string>#975dff</string>
 			</dict>
-		</dict>					
+		</dict>	
+		<dict>
+			<key>name</key>
+			<string>SE Generic Client</string>
+			<key>scope</key>
+			<string>se.generic_client</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#6d50d4</string>
+			</dict>
+		</dict>		
+		<dict>
+			<key>name</key>
+			<string>EE Generic Client</string>
+			<key>scope</key>
+			<string>ee.generic_client</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string> bold</string>					
+				<key>foreground</key>
+				<string>#6d50d4</string>
+			</dict>
+		</dict>							
 		<dict>
 			<key>name</key>
 			<string>String</string>
