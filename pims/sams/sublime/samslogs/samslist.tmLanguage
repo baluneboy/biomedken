@@ -59,6 +59,13 @@
 			<string>.*\d+\s+\d+\s+\d+\s+\d{1}\%.*$\n</string>
 			<key>name</key>
 			<string>line.green.bold.samslist</string>
+		</dict>			
+		<!-- RSH ARE GRAY DIM -->				
+		<dict>
+			<key>match</key>
+			<string>^(root\s+\d+\s+\d+\s+\d+\s+\w+\s+\?\s+\d{2}:\d{2}:\d{2}\s+(/usr/local/bin/daemon rsh ee122.*|rsh ee122.*|sh -c rsh ee122.*|\[rsh\] .defunct.)).*$\n</string>
+			<key>name</key>
+			<string>comment.line.samslist</string>
 		</dict>					
 	</array>
 	<key>scopeName</key>
