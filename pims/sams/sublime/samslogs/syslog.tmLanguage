@@ -7,10 +7,6 @@
 	<key>fileTypes</key>
 	<array>
 		<string>syslog</string>
-		<string>cl</string>
-		<string>l</string>
-		<string>mud</string>
-		<string>el</string>
 	</array>
 	<key>foldingStartMarker</key>
 	<string>\(</string>
@@ -22,141 +18,88 @@
 	<string>syslog</string>
 	<key>patterns</key>
 	<array>
+		
+		<!-- CREW DISPLAY ARE DIMMED COMMENT LINES -->				
 		<dict>
-			<key>captures</key>
-			<dict>
-				<key>1</key>
-				<dict>
-					<key>name</key>
-					<string>punctuation.definition.comment.syslog</string>
-				</dict>
-			</dict>
 			<key>match</key>
-			<!-- COMMENT -->
 			<string>((\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}.\d{2}:\d{2} icu-f01 CRON\[\d+\]:)|(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}.\d{2}:\d{2} icu-f01 Generic_client.*CONNECT FAILED\-\-crew display)).*$\n?</string>
 			<key>name</key>
-			<string>comment.line.semicolon.syslog</string>
-		</dict>
+			<string>comment.line.syslog</string>
+		</dict>		
+		
+		<!-- MAIN PROCESS LINES ARE META FUNCTION CODED WITH CAPTURES AT 2 & 4 -->
 		<dict>
 			<key>captures</key>
 			<dict>
-				<key>2</key>
+				<!-- YYYY-MM-DD PART -->
+				<key>1</key>
 				<dict>
 					<key>name</key>
 					<string>storage.type.function-type.syslog</string>
 				</dict>
-				<key>4</key>
+				<!-- T SEP -->
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>tsh.generic_client.syslog</string>
+				</dict>				
+				<!-- hh:mm:ss PART -->
+				<key>3</key>
 				<dict>
 					<key>name</key>
 					<string>entity.name.function.syslog</string>
 				</dict>
+				<!-- PROCESS AND VERSION PART -->
+				<key>4</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.function-type.syslog</string>
+				</dict>			
+				<!-- PROCESS AND VERSION PART -->
+				<key>5</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.function-type.syslog</string>
+				</dict>	
 			</dict>
 			<key>match</key>
-			<!-- META FUNCTION -->
-			<!-- <string>(\b(icu-f01)\b)(\s+)((\w|\-|\!|\?)*)</string> -->
-			<string>(\b(icu-f01)\b)(\s+)((Cumain|Generic_client|Telem|RIC_mgr)\sv2\.00)</string>
+			<string>^(\d{4}-\d{2}-\d{2})(T)(\d{2}:\d{2}:\d{2})\.\d{6}.\d{2}:\d{2} icu-f01\s+((Cumain|Generic_client|Telem|RIC_mgr)\sv2\.00)</string>
 			<key>name</key>
 			<string>meta.function.syslog</string>
-		</dict>
-		<dict>
-			<key>captures</key>
-			<dict>
-				<key>1</key>
-				<dict>
-					<key>name</key>
-					<string>punctuation.definition.constant.syslog</string>
-				</dict>
-			</dict>
-			<key>match</key>
-			<string>(#)(\w|[\\+-=&lt;&gt;'"&amp;#])+</string>
-			<key>name</key>
-			<string>constant.character.syslog</string>
-		</dict>
-		<dict>
-			<key>captures</key>
-			<dict>
-				<key>1</key>
-				<dict>
-					<key>name</key>
-					<string>punctuation.definition.variable.syslog</string>
-				</dict>
-				<key>3</key>
-				<dict>
-					<key>name</key>
-					<string>punctuation.definition.variable.syslog</string>
-				</dict>
-			</dict>
-			<key>match</key>
-			<string>(\*)(\S*)(\*)</string>
-			<key>name</key>
-			<string>variable.other.global.syslog</string>
-		</dict>
+		</dict>	
+		
+		<!-- WAITING, QUITTING, AND HASTA_LA_VISTA WORDS (NOT LINES) ARE CODED AS KEYWORD CONTROL -->
 		<dict>
 			<key>match</key>
-			<!-- KEYWORD CONTROL -->
-			<!-- <string>^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2}\.\d{6}.\d{2}:\d{2})|No input.*Waiting 240 more|HASTA_LA_VISTA_BABY|(?i:fail|error)</string> -->
 			<string>No (input|connection).*(Waiting 240 more|QUITTING|Quitting)|HASTA_LA_VISTA_BABY|Saying goodbye now|(?i:fail|error|bad)</string>
 			<key>name</key>
 			<string>keyword.control.syslog</string>
 		</dict>
+		
+		<!-- SAMS EQUIPMENT DESIGNATORS ARE CODED AS CONSTANTS [PURPLE?] -->
 		<dict>
 			<key>match</key>
-			<!-- KEYWORD OPERATOR -->
-			<string>\b(?i:eq|kernel)\b</string>
-			<key>name</key>
-			<string>keyword.operator.syslog</string>
-		</dict>
-		<dict>
-			<key>match</key>
-			<string>(?i:PURPLE|tshes-0\d|12(1|2)\-f0\d)\b</string>
+			<string>(?i:tshes-0\d|12(1|2)\-f0\d)\b</string>
 			<key>name</key>
 			<string>constant.language.syslog</string>
 		</dict>
+		
+		<!-- ICU-F01 IS CODED AS SUPPORT FUNCTION -->
 		<dict>
 			<key>match</key>
 			<string>\bicu-f01\b</string>
 			<key>name</key>
 			<string>support.function.syslog</string>
 		</dict>
+		
+		<!-- TSHES-0x IS CODED AS CONSTANT NUMERIC -->		
 		<dict>
 			<key>match</key>
 			<string>\btshes-0\d\b</string>
 			<key>name</key>
 			<string>constant.numeric.syslog</string>
 		</dict>
-		<dict>
-			<key>begin</key>
-			<string>^\d{4}</string>
-			<key>beginCaptures</key>
-			<dict>
-				<key>0</key>
-				<dict>
-					<key>name</key>
-					<string>punctuation.definition.string.begin.syslog</string>
-				</dict>
-			</dict>
-			<key>end</key>
-			<string>T</string>
-			<key>endCaptures</key>
-			<dict>
-				<key>0</key>
-				<dict>
-					<key>name</key>
-					<string>punctuation.definition.string.end.syslog</string>
-				</dict>
-			</dict>
-			<key>name</key>
-			<string>string.quoted.double.syslog</string>
-			<key>patterns</key>
-			<array>
-				<dict>
-					<key>match</key>
-					<string>\\.</string>
-					<key>name</key>
-					<string>constant.character.escape.syslog</string>
-				</dict>
-			</array>
-		</dict>
+	
 	</array>
 	<key>scopeName</key>
 	<string>source.syslog</string>
