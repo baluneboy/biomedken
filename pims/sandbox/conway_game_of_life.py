@@ -5,8 +5,10 @@
 #Game Of Life
 #the life automaton with some optimizations (nothing huge)
 
-import pygame,sys
+import sys
+import pygame
 from pygame.locals import *
+
 def update(screen, m ,ons, size, dimx, dimy):
     new_m = [[0 for i in xrange(dimy)] for j in xrange(dimx)]
     more_ons = []

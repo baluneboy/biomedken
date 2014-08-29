@@ -1,3 +1,3 @@
 """
-Space Acceleration Measurement System (SAMS).
+The sams folder.
 """
