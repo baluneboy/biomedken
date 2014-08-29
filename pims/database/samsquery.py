@@ -300,13 +300,28 @@ def demo():
     print aos
 
 def demo3():
-    buf = StringIO()
     df = pd.DataFrame({'correlation':[0.5, 0.1,0.9], 'p_value':[0.1,0.8,0.01]})
-    df.to_html('/tmp/trash2.html',
+    df.to_html('/tmp/trash3.html',
                formatters={
                 'p_value':lambda x: "*%f*" % x if x<0.05 else str(x),
                 'correlation':lambda x: "%3.1f" % x
                 })
+
+def pval_fmt(x):
+    if x < 0.05:
+        s = '<span style="color: red; font-weight: bold">%.3f</span>' % x
+    elif x >= 0.05 and x < 0.1:
+        s = '<span style="color: red;">%.3f</span>' % x
+    else:
+        s = '%.3f' % x
+    return s
+
+def demo_conditional_cell_formatting():
+    buf = StringIO()
+    #significant = lambda x: '<span style="color: red;">%.3f</span>' % x if x<0.05 else str(x)
+    significant = lambda x: pval_fmt(x)
+    df = pd.DataFrame({'correlation':[0.5, 0.1, 0.9], 'p_value':[0.1, 0.08, 0.01]})
+    df.to_html('/tmp/trash4.html', formatters={'p_value': significant}, escape=False)    
 
 if __name__ == "__main__":
     workaroundRTtable('/misc/yoda/www/plots/user/sams/eetemp.html')    
