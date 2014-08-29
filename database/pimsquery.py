@@ -147,6 +147,8 @@ class CoordQueryAsDataFrame(object):
 # try to do all connecting through this function to handle exceptions
 # plugable 0-argument function to be called when idling. It can return true to stop idling. 
 add_idle_function = None
+def mysql_con(host='localhost', user=_UNAME, passwd=_PASSWD, db=_SCHEMA):
+    return Connection(host=host, user=user, passwd=passwd, db=db)
 def add_idle(idle_function):
     global add_idle_function
     add_idle_function = idle_function
