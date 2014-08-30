@@ -307,21 +307,83 @@ def demo3():
                 'correlation':lambda x: "%3.1f" % x
                 })
 
-def pval_fmt(x):
-    if x < 0.05:
-        s = '<span style="color: red; font-weight: bold">%.3f</span>' % x
-    elif x >= 0.05 and x < 0.1:
-        s = '<span style="color: red;">%.3f</span>' % x
-    else:
-        s = '%.3f' % x
+# function to format percentages
+def percentage_fmt(x):
+    """function to format percentages"""
+    if x < 50:               s = '<span style="color: red">%.1f</span>' % x
+    elif x >= 50 and x < 75: s = '<span style="color: blue;">%.1f</span>' % x
+    else:                    s = '%.1f' % x
+    return s
+
+# function to format hourlies
+def hourly_fmt(x):
+    """function to format hourlies"""
+    d = pd.to_datetime(x)
+    all_balls = d.minute == 0 and d.second == 0 and d.microsecond == 0
+    if all_balls: s = '%s' % x
+    else:         s = '<span style="color: red;">%s</span>' % x
     return s
 
 def demo_conditional_cell_formatting():
     buf = StringIO()
-    #significant = lambda x: '<span style="color: red;">%.3f</span>' % x if x<0.05 else str(x)
-    significant = lambda x: pval_fmt(x)
-    df = pd.DataFrame({'correlation':[0.5, 0.1, 0.9], 'p_value':[0.1, 0.08, 0.01]})
-    df.to_html('/tmp/trash4.html', formatters={'p_value': significant}, escape=False)    
+    
+    sensor = '121f04'
+    df1 = pd.DataFrame(
+        {'hour':[
+        '2014-08-30 01:23:45.123',
+        '2014-08-30 02:23:45.123',
+        '2014-08-30 03:00:00.000',
+        '2014-08-30 03:00:00.123',
+        '2014-08-30 01:23:45.123'],
+        'pct':  [0,        25,    50,    75,   100],
+        'pkts': [28800, 28799, 12000, 28800, 24123]})
+    df1.rename(columns={'pct': sensor + '<br>%', 'pkts': sensor + '<br>pkts'}, inplace=True)
+    
+    sensor = '121f02'
+    df2 = pd.DataFrame(
+        {'hour':[
+        '2014-08-30 01:23:45.123',
+        '2014-08-30 03:00:00.000',
+        '2014-08-30 04:00:00.000'],
+        'pct':  [   11,     22,     99],
+        'pkts': [28800,  28800,  24123]})
+    df2.rename(columns={'pct': sensor + '<br>%', 'pkts': sensor + '<br>pkts'}, inplace=True)
+    
+    sensor = '121f03'
+    df3 = pd.DataFrame(
+        {'hour':[
+        '2014-08-30 01:23:45.123',
+        '2014-08-30 03:00:00.000',
+        '2014-08-30 04:00:00.000'],
+        'pct':  [0,        25,    50],
+        'pkts': [28800, 28800, 24123]})
+    df3.rename(columns={'pct': sensor + '<br>%', 'pkts': sensor + '<br>pkts'}, inplace=True)
+    
+    sensor = '121f05'
+    df4 = pd.DataFrame(
+        {'hour':[
+        '2014-08-30 01:23:59.123',
+        '2014-08-30 02:00:00.000',
+        '2014-08-30 04:00:00.000'],
+        'pct':  [0,        25,    50],
+        'pkts': [28800, 28800, 24123]})
+    df4.rename(columns={'pct': sensor + '<br>%', 'pkts': sensor + '<br>pkts'}, inplace=True)
+    
+    df_merged = pd.merge(df1, df2, how='outer')
+    for df in [df3, df4]:
+        df_merged = pd.merge(df_merged, df, how='outer')
+    df_merged.sort(columns=['hour'], inplace=True)
+    
+    df_merged.to_html(buf, formatters={
+        'hour': hourly_fmt,
+        '121f04<br>%': percentage_fmt,
+        '121f04<br>%': percentage_fmt,
+        }, escape=False, index=False, na_rep='nan')
+    s = buf.getvalue()
+    with open("/tmp/trash4.html", "w") as html_file:
+        html_file.write( s.replace('nan', '') )
+
+#demo_conditional_cell_formatting(); raise SystemExit
 
 if __name__ == "__main__":
     workaroundRTtable('/misc/yoda/www/plots/user/sams/eetemp.html')    
