@@ -13,6 +13,7 @@ import MySQLdb
 # - iterate over list of sensors
 # - better way to get expected packets per second (SAMS/MAMS HiRAP, SampleRate, what else)
 # - some form of pivot table to show results
+# - allow more than 23 hours of history (the GROUP BY in MySQL call mucks this up othewise)
 
 # input parameters
 defaults = {
@@ -20,7 +21,7 @@ defaults = {
 'packets_per_sec':  '8',            # expected value for this sensor for this gap check period
 'host':             'tweek',        # like tweek for 121f03
 'min_pct':          '0',            # show hourly periods with pkt count < min_pct (USE ZERO TO SHOW ALL)
-'hours_ago':        '24',           # start checking this many hours ago
+'hours_ago':        '23',           # start checking this many hours ago
 }
 parameters = defaults.copy()
 
@@ -76,6 +77,8 @@ class DatabaseGaps(object):
         query =  'SELECT FROM_UNIXTIME(time) as "hour", '
         query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "pct", '
         query += 'COUNT(*) as "pkts" from %s ' % self.sensor
+        #query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "%s_pct", ' % self.sensor
+        #query += 'COUNT(*) as "%s_pkts" from %s ' % (self.sensor, self.sensor)
         query += 'WHERE FROM_UNIXTIME(time) >= "%s" ' % self.start.strftime('%Y-%m-%d %H:%M:%S')
         query += 'AND FROM_UNIXTIME(time) < "%s" ' % self.stop.strftime('%Y-%m-%d %H:%M:%S')
         query += "GROUP BY DATE_FORMAT(FROM_UNIXTIME(time), '%H') ORDER BY time;"
@@ -99,7 +102,10 @@ def params_okay():
     """Not really checking for reasonableness of parameters entered on command line."""
     parameters['packets_per_sec'] = float(parameters['packets_per_sec'])
     parameters['min_pct'] = float(parameters['min_pct'])
-    parameters['hours_ago'] = float(parameters['hours_ago'])
+    parameters['hours_ago'] = int(parameters['hours_ago'])
+    if parameters['hours_ago'] > 23:
+        print 'FIXME: currently MySQL GROUP BY mucks up queries longer than 23 hours ago'
+        return False
     return True
 
 def print_usage():
