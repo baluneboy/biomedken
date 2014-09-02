@@ -15,37 +15,52 @@ import MySQLdb
 # - some form of pivot table to show results
 # - allow more than 23 hours of history (the GROUP BY in MySQL call mucks this up othewise)
 
-# input parameters
+#### input parameters
+###defaults = {
+###'sensor':           '121f03',       # sensor = table name
+###'packets_per_sec':  '8',            # expected value for this sensor for this gap check period
+###'host':             'tweek',        # like tweek for 121f03
+###'min_pct':          '0',            # show hourly periods with pkt count < min_pct (USE ZERO TO SHOW ALL)
+###'hours_ago':        '23',           # start checking this many hours ago
+###}
+
+# defaults
 defaults = {
-'sensor':           '121f03',       # sensor = table name
-'packets_per_sec':  '8',            # expected value for this sensor for this gap check period
-'host':             'tweek',        # like tweek for 121f03
-'min_pct':          '0',            # show hourly periods with pkt count < min_pct (USE ZERO TO SHOW ALL)
-'hours_ago':        '23',           # start checking this many hours ago
+'sensorhosts': [
+    ('121f02',  'kenny'),
+    ('121f03',  'tweek'),
+    ('121f04',  'mr-hankey'),
+    ('121f05',  'chef'),
+    ('121f08',  'timmeh'),
+    ('es03',    'butters'),
+    ('es05',    'ike'),
+    ('es06',    'butters')
+    ],          
+'packets_per_sec':  '8',    # expected value for this sensor for this gap check period
+'min_pct':          '0',    # show hourly periods with pkt count < min_pct (USE ZERO TO SHOW ALL)
+'hours_ago':        '23',   # start checking this many hours ago
 }
 parameters = defaults.copy()
-
-# dataframe formatters (for db query to dataframe)
-_formatters = [
-('pct',   lambda x: ' %3d%%' % x),
-('pkts',  lambda x: ' %d' % x)
-]
-DF_FORMATTERS = dict(_formatters)
 
 class DatabaseGaps(object):
     """
     Info on database gaps given sensor (i.e. table), host, and expected packets per second.
     """
-    def __init__(self, sensor, packets_per_sec, hours_ago=12, host='localhost', min_pct=99.9):
+    def __init__(self, sensor='121f03', host='tweek', packets_per_sec=8, hours_ago=23, min_pct=0):
         """Initialize."""
         self.sensor = sensor
+        self.host = host
         self.packets_per_sec = packets_per_sec
         self.hours_ago = hours_ago
         self.expect_packet_count = self.packets_per_sec * 3600.0 # count for one hour's worth          
-        self.host = host
         self.min_pct = min_pct
         self.start, self.stop = self._get_times()
         self.dataframe = None
+        # dataframe formatters (for db query to dataframe)
+        self.formatters = dict([
+        ('%s pct'  % self.sensor,   lambda x: ' %3d%%' % x),
+        ('%s pkts' % self.sensor,   lambda x: ' %d' % x)
+        ])
 
     def __str__(self):
         s = ''
@@ -59,7 +74,7 @@ class DatabaseGaps(object):
         s += 'stop  = %s' % self.stop
         if self.dataframe:
             s += 'dataframe...\n'
-            s += self.dataframe.to_string(formatters=DF_FORMATTERS, index=False)
+            s += self.dataframe.to_string(formatters=self.formatters, index=False)
         else:
             s += 'no dataframe (yet)'
         return s
@@ -75,10 +90,10 @@ class DatabaseGaps(object):
     def _dataframe_query(self):
         """count number of packets expected for hourly chunks""" 
         query =  'SELECT FROM_UNIXTIME(time) as "hour", '
-        query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "pct", '
-        query += 'COUNT(*) as "pkts" from %s ' % self.sensor
-        #query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "%s_pct", ' % self.sensor
-        #query += 'COUNT(*) as "%s_pkts" from %s ' % (self.sensor, self.sensor)
+        #query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "pct", '
+        #query += 'COUNT(*) as "pkts" from %s ' % self.sensor
+        query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "%s pct", ' % self.sensor
+        query += 'COUNT(*) as "%s pkts" from %s ' % (self.sensor, self.sensor)
         query += 'WHERE FROM_UNIXTIME(time) >= "%s" ' % self.start.strftime('%Y-%m-%d %H:%M:%S')
         query += 'AND FROM_UNIXTIME(time) < "%s" ' % self.stop.strftime('%Y-%m-%d %H:%M:%S')
         query += "GROUP BY DATE_FORMAT(FROM_UNIXTIME(time), '%H') ORDER BY time;"
@@ -100,6 +115,12 @@ class DatabaseGaps(object):
 
 def params_okay():
     """Not really checking for reasonableness of parameters entered on command line."""
+    # check if sensorhosts not an input argument (list)
+    if not isinstance(parameters['sensorhosts'], list):
+        # first, split sensorhosts, each pairing separated by commas
+        tmp = parameters['sensorhosts'].split(',')
+        # next, split each pairing into tuple of (sensor, host)
+        parameters['sensorhosts'] = [ tuple(i.split('_')) for i in tmp ]
     parameters['packets_per_sec'] = float(parameters['packets_per_sec'])
     parameters['min_pct'] = float(parameters['min_pct'])
     parameters['hours_ago'] = int(parameters['hours_ago'])
@@ -128,30 +149,31 @@ def main(argv):
             parameters[pair[0]] = pair[1]
     else:
         if params_okay():
-
-            try:
-                # first, get ALL info on gaps
-                dbgaps = DatabaseGaps(
-                    sensor=parameters['sensor'],
-                    packets_per_sec=parameters['packets_per_sec'],
-                    host=parameters['host'],
-                    min_pct=parameters['min_pct'],
-                    hours_ago=parameters['hours_ago'],
-                    )
-                dbgaps._dataframe_query()
-                # filter using min_pct
-                df_gaps = dbgaps.filt_min_pct()
-                # get result into string
-                msg = df_gaps.to_string(formatters=DF_FORMATTERS, index=False)
-
-            except Exception as e:
-                msg = "Exception %s" % e.message
-
-            print msg or 'done'
+            
+            for sensor, host in parameters['sensorhosts']:
+                print sensor, host
+                try:
+                    # first, get all info on gaps
+                    dbgaps = DatabaseGaps(
+                        sensor=sensor,
+                        host=host,
+                        packets_per_sec=parameters['packets_per_sec'],
+                        min_pct=parameters['min_pct'],
+                        hours_ago=parameters['hours_ago'],
+                        )
+                    dbgaps._dataframe_query()
+                    # filter using min_pct
+                    df_gaps = dbgaps.filt_min_pct()
+                    # get result into string
+                    msg = df_gaps.to_string(formatters=DF_FORMATTERS, index=False)
+    
+                except Exception as e:
+                    msg = "Exception %s" % e.message
+    
+                print msg or 'done'
             return 0
 
     print_usage()  
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
-    
