@@ -383,7 +383,5 @@ def demo_conditional_cell_formatting():
     with open("/tmp/trash4.html", "w") as html_file:
         html_file.write( s.replace('nan', '') )
 
-#demo_conditional_cell_formatting(); raise SystemExit
-
 if __name__ == "__main__":
     workaroundRTtable('/misc/yoda/www/plots/user/sams/eetemp.html')    
