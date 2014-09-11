@@ -17,6 +17,26 @@ MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY = range(7)
 
 _DAY = datetime.timedelta(1)
 
+def timedelta_hours(td):
+    """Return timedelta in hours.
+    
+    >>> d1 = datetime.datetime(1991,9,12,12,0,0,0)
+    >>> d2 = datetime.datetime(2014,9,12,12,0,0,0)
+    >>> timedelta_hours( d2 - d1  )
+    201624.0
+    """
+    return td.days * 24 + td.seconds/3600.0
+
+def days_hours_minutes(td):
+    """Return timedelta in days, hours, minutes.
+    
+    >>> d1 = datetime.datetime(1991,9,12,12,0,0,0)
+    >>> d2 = datetime.datetime(2014,9,12,12,0,0,0)
+    >>> days_hours_minutes( d2 - d1  )
+    (8401, 0, 0)
+    """
+    return td.days, td.seconds//3600, (td.seconds//60)%60
+
 def floor_ten_minutes(t):
     """Return datetime rounded down (floored) to nearest 10-minute mark.
     

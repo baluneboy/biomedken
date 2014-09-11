@@ -29,16 +29,45 @@ import math
 import pickle
 from MySQLdb import *
 import traceback
+from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
 
-from pims.lib.tools import OrderedSet
+#Copying file: 2014_09_01_16_32_39.000+2014_09_01_17_32_39.000.0bbd
+print pad_fullfilestr_to_start_stop('Copying file: 2014_09_01_16_32_39.000+2014_09_01_17_32_39.000.0bbd'); raise SystemExit
 
-s = OrderedSet()
-s.add( ('one','a') )
-s.add( ('one','b') )
-s.add( ('one','a') )
-s.add( ('one','c') )
-print list(s)
-raise SystemExit
+class JaxaSensorCounter(object):
+    
+    def __init__(self):
+        self.days = set()
+        self.file_count = 0
+        
+    def __str__(self):
+        s = ''
+        for day in self.days:
+            s += '%s\n' % day
+        s += 'count = %d' % self.count
+        return s
+    
+    def _add(self, start_day, stop_day):
+        self.days.add(start_day)
+        self.days.add(stop_day)
+        self.file_count += 1
+        
+class JaxaSummary(object):
+    
+    def __init__(self):
+        self.sensors = dict()
+    
+    def __str__(self):
+        s = 'wtf'
+        return s
+    
+    def add_file(self, fname):
+        sensor, start_day, stop_day = parse_pad_filename(fname)
+        if sensor not in self.sensors:
+            self.sensors[sensor] = JaxaSensorCounter()
+        self.sensors[sensor]._add(start_day, stop_day)
+    
+jsummary = JaxaSummary()
 
 #Instantiate logging
 log = InitLogging()

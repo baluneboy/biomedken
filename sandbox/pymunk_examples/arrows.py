@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Showcase of flying arrows that can stick to objects in a somewhat 
 realistic looking way.
 """
