@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """This example spawns (bouncing) balls randomly on a L-shape constructed of 
 two segment shapes. Not interactive.
 """
@@ -28,7 +29,7 @@ space.gravity = (0.0, -900.0)
 ## Balls
 balls = []
    
-### walls
+### Walls
 static_body = pm.Body()
 static_lines = [pm.Segment(static_body, (111.0, 280.0), (407.0, 246.0), 0.0)
                 ,pm.Segment(static_body, (407.0, 246.0), (407.0, 343.0), 0.0)
@@ -83,7 +84,7 @@ while running:
         pv2 = body.position + line.b.rotated(body.angle)
         p1 = to_pygame(pv1)
         p2 = to_pygame(pv2)
-        pygame.draw.lines(screen, THECOLORS["lightgray"], False, [p1,p2])
+        pygame.draw.lines(screen, THECOLORS["black"], False, [p1,p2])
         
     ### Update physics
     dt = 1.0/60.0
