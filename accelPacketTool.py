@@ -5,22 +5,29 @@
 # - better handling of iteration when limit > 1...
 #   for now, depend on user to pipe results through more (or less)
 
-# SAMS Header (44 bytes)
+############
+# N O T E S:
+#-----------------------------------------------------------------
+### START SAMS PACKET ######################################
+## Header Part of Packet (44 bytes):
 # 16 bytes EHS Primary Header
-# 12 bytes     Secondary Header (PDSS or EHS?)
+# 12 bytes     Secondary Header [called PDSS or EHS?]
 #  6 bytes CCSDS Primary Header
 # 10 bytes CCSDS Secondary Header
-# -------------------------------
-# Payload Data Zone
-###########################################################
-# MAMS Header (60 bytes)
+# --  --  --  --  --  --  --  --  --  --  --  --  --  --  --
+## Payload Part of Packet (the remaining bytes):
+# ~1200 bytes in the "Data Zone"
+#
+### START HiRAP PACKET ######################################
+## Header Part of Packet (60 bytes):
 # 16 bytes EXPRESS Header
 # 16 bytes EHS Primary Header
-# 12 bytes     Secondary Header (PDSS or EHS?)
+# 12 bytes     Secondary Header [called PDSS or EHS?]
 #  6 bytes CCSDS Primary Header
 # 10 bytes CCSDS Secondary Header
-# -------------------------------
-# Payload Data Zone
+# --  --  --  --  --  --  --  --  --  --  --  --  --  --  --
+## Payload Part of Packet (the remaining bytes):
+# ~XXXX bytes in the "Data Zone"
 
 import sys
 from accelPacket import *
@@ -84,19 +91,19 @@ def get_ccsds_sequence(hdr):
 # EXAMPLES:
 #
 # SAMS SE
-# accelPacketTool.py 121f02 kenny desc 1
+# accelPacketTool.py 121f02 kenny desc 1 details
 #
 # SAMS TSH
-# accelPacketTool.py es05 ike asc 1
+# accelPacketTool.py es05 ike asc 1 utimes
 #
 # MAMS OSS
-# accelPacketTool.py oss stan desc 1
+# accelPacketTool.py oss stan desc 1 details
 #
 # MAMS OSS BESTTMF
-# accelPacketTool.py besttmf stan desc 1
+# accelPacketTool.py besttmf stan desc 1 utimes
 #
 # MAMS HiRAP
-# accelPacketTool.py hirap towelie desc 1
+# accelPacketTool.py hirap towelie desc 1 details
 
 # iterate over db query results to show pertinent packet details (and header too)
 if __name__ == '__main__':
@@ -132,6 +139,7 @@ if __name__ == '__main__':
             print '-'*80
             print hhex
             
+            # NOTE:
             # the code above should work regardless of bogus records that might
             # trip up the code below that depends on recognizable packet content
             
@@ -149,13 +157,13 @@ if __name__ == '__main__':
                 print "t:{0:>9.4f}  xmg:{1:9.4f}  ymg:{2:9.4f}  zmg:{3:9.4f}".format(t, x/1e-3, y/1e-3, z/1e-3)
 
         # show sams2 utime part of packet
-        ctime, fhex = get_ccsds_time(h)
-        #print fhex, float.fromhex(fhex)
-        coarse_time = UnixToHumanTime(ctime)
-        ccsds_seq = get_ccsds_sequence(h)
+        ccsds_coarse_time, ccsds_fine_time_hex = get_ccsds_time(h)
+        #print ccsds_fine_time_hex, float.fromhex(ccsds_fine_time_hex)
+        ccsds_coarse_time_human = UnixToHumanTime(ccsds_coarse_time)
+        ccsds_sequence_counter = get_ccsds_sequence(h)
         #utime_hex = p[36:44].encode('hex')
         utime = get_utime(p)
         #vcdu_count_hex = h[17:20].encode('hex')
-        #print '%06d,%s,0x%s,%8d,0x%s,%s,%s' % (ccsds_seq, UnixToHumanTime(utime), utime_hex, int(vcdu_count_hex, 16), vcdu_count_hex, table, coarse_time)
-        #print 'ccsds_seq:%05d, ccsds_coarse_time:%s, pkt_time:%s, pkt_utime_hex:0x%s, table:%s' % (ccsds_seq, coarse_time, UnixToHumanTime(utime), utime_hex, table)
-        print 'ccsds_seq:%05d, ccsds_coarse_time:%s, pkt_time:%s, table:%s' % (ccsds_seq, coarse_time, UnixToHumanTime(utime), table)
+        #print '%06d,%s,0x%s,%8d,0x%s,%s,%s' % (ccsds_sequence_counter, UnixToHumanTime(utime), utime_hex, int(vcdu_count_hex, 16), vcdu_count_hex, table, ccsds_coarse_time_human)
+        #print 'ccsds_sequence_counter:%05d, ccsds_coarse_time:%s, pkt_time:%s, pkt_utime_hex:0x%s, table:%s' % (ccsds_sequence_counter, ccsds_coarse_time_human, UnixToHumanTime(utime), utime_hex, table)
+        print 'ccsds_sequence_counter:%05d, ccsds_coarse_time:%s, pkt_time:%s, table:%s' % (ccsds_sequence_counter, ccsds_coarse_time_human, UnixToHumanTime(utime), table)
