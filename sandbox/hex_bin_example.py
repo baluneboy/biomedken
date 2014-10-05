@@ -33,10 +33,10 @@ def demo_pack_unpack(ut, endianness='network'):
     fracsec, sec = math.modf(ut)
     usec = fracsec*1000000.0
     print 'unix time : %.3f (ORIGINAL)' % ut
-    print 'ut_secpart: %s' % format(int(sec), '#034b'),  # 32 bits  + 2 placeholders for "0b" prefix
-    print '(hex: %s)' % format(int(sec), '#x')           #  8 bytes + 2 placeholders for "0x" prefix
-    print 'utusecpart: %s' % format(int(usec), '#034b'), # 32 bits  + 2 placeholders for "0b" prefix
-    print '(hex: %s)' % format(int(usec), '#010x')       #  8 bytes + 2 placeholders for "0x" prefix
+    print 'ut part #1: %s' % format(int(sec), '#034b'),  # 32 bits  + 2 placeholders for "0b" prefix
+    print '(hex: %s for sec part)' % format(int(sec), '#x')           #  8 bytes + 2 placeholders for "0x" prefix
+    print 'ut part #2: %s' % format(int(usec), '#034b'), # 32 bits  + 2 placeholders for "0b" prefix
+    print '(hex: %s for usec part)' % format(int(usec), '#010x')       #  8 bytes + 2 placeholders for "0x" prefix
     b = show_pack('II', (int(sec), int(usec)), en=endianness) # 2nd arg for values is always a tuple
     
     # verify that b works like what is expected in Ted's code
@@ -44,11 +44,10 @@ def demo_pack_unpack(ut, endianness='network'):
     sec1, usec1 = struct.unpack(en_prefix + 'II', b) # endianness refix to specify byte ordering of unpack
     print 'human time: %s (ORIGINAL)' % UnixToHumanTime(ut)
     print 'human time: %s (AFTER PACK-UNPACK)' % UnixToHumanTime( sec1 + usec1/1000000.0 )
-    print
 
 if __name__ == "__main__":
     ut = HumanToUnixTime(2014, 10, 04, 12, 34, 56, 0.789)
     demo_pack_unpack(ut)
     
-    for fine_bin in range(0, 256):
-        print '%03d %0.3f' %(fine_bin, fine_bin/2.0**8)
+    #for fine_bin in range(0, 256):
+    #    print '%03d %0.3f' %(fine_bin, fine_bin/2.0**8)
