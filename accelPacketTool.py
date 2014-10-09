@@ -63,8 +63,11 @@ def packetDump(packet):
         start = start + size
     return hex.rstrip('\n'), ln  
 
-def get_utime(pkt):
-    sec, usec = struct.unpack('II', pkt[36:44])
+def get_utime(pkt, which='se'):
+    if which == 'se':
+        sec, usec = struct.unpack('II', pkt[36:44])
+    elif which == 'tsh':
+        sec, usec = struct.unpack('!II', pkt[64:72]) # ! for network byte order
     return sec + usec/1000000.0
 
 def get_bcd2utime(pkt):
@@ -95,118 +98,224 @@ def get_ccsds_sequence(hdr):
     my_hexdata = b31.encode('hex') + b32.encode('hex')
     #print my_hexdata
     scale = 16 # for hexadecimal
-    num_of_bits = 16 # total bits
     #print int(my_hexdata, scale)
     #print bin(int(my_hexdata, scale))
     #print bin(int(my_hexdata, scale))[2:]
+    ##num_of_bits = 16 # total bits
     ##print bin(int(my_hexdata, scale))[2:].zfill(num_of_bits)
     ##print bin(int(my_hexdata, scale) & VALUE_MASK)
     return int(my_hexdata, scale) & VALUE_MASK
+
+# default packet query has limit of 1 and desc time order
+class DefaultPacketQuery(object):
+    """default packet query has limit of 1 and desc time order"""
+    
+    def __init__(self, host, table, order='DESC', limit=1):
+        self.host = host
+        self.table = table
+        self.order = order
+        self.limit = limit
+        self.set_querystr()
+
+    def __str__(self):
+        return '%s (%s)' % (self.__class__.__name__, self.querystr)
+
+    def set_querystr(self):
+        self.querystr = 'SELECT * FROM %s ORDER BY time %s LIMIT %s;' % (self.table, self.order, self.limit)       
+
+    def get_results(self):
+        return sqlConnect(self.querystr, self.host)
+
+# custom packet query
+class CustomQuery(DefaultPacketQuery):
+    """custom packet query"""
+    
+    def __init__(self, host, table, where_clause='WHERE time > 0', order_clause='ORDER BY time DESC', limit_clause='LIMIT 2'):
+        self.host = host
+        self.table = table
+        self.order = None
+        self.limit = None
+        self.where_clause = where_clause
+        self.order_clause = order_clause
+        self.limit_clause = limit_clause
+        self.set_querystr()
+
+    def set_querystr(self):
+        self.querystr = 'SELECT * FROM %s %s %s %s;' % (self.table, self.where_clause, self.order_clause, self.limit_clause)       
+
+# SAMS SE half-sec foursome query
+class SamsSeHalfSecFoursomeQuery(DefaultPacketQuery):
+    """
+    SAMS SE half-sec foursome query has limit of 12
+    -- should show 3 examples of KMAC's pattern of 4 pkts/half-sec = 4 pkts per CCSDS counter foursome
+    ---> ccsds_time clusters of 4 with same time and with clusters a half second apart
+    ---> ccsds_sequence_counter foursomes with monotonically decreasing (by exactly one) within each foursome
+    """
+
+    def __init__(self, host, table, order='DESC', limit=12):
+        super(SamsSeHalfSecFoursomeQuery, self).__init__(host, table, order=order, limit=limit)
+
+# SAMS TSH one-sec eightsome query
+class SamsTshOneSecEightsomeQuery(DefaultPacketQuery):
+    """
+    SAMS TSH one-sec eightsome query has limit of 16
+    -- should show 2 examples of TSH pattern of 8 pkts/sec = 8 pkts per CCSDS counter eightsome
+    ---> ccsds_time clusters of 4 or 8 with same time and with clusters a multiple of 4msec apart
+    ---> ccsds_sequence_counter eightsomes with monotonically decreasing (by exactly one) within each eightsome
+    """
+
+    def __init__(self, host, table, order='DESC', limit=24):
+        super(SamsTshOneSecEightsomeQuery, self).__init__(host, table, order=order, limit=limit)
+
+# "start, length" query has ascending order with special limit to imply "start at rec" and "give me this many records"
+class StartLenQuery(DefaultPacketQuery):
+    """Like SELECT * FROM 121f04 ORDER BY time ASC LIMIT 2, 3; # ASC & LIMIT imply start at rec (2+1) and give me 3 results"""
+
+    def __init__(self, host, table, start, length):
+        self.host = host
+        self.table = table
+        self.order = 'ASC'
+        self.limit = '%d, %d' % ( (start-1) , length ) # zero is 1st rec
+        self.set_querystr()
+
+class PacketInspector(object):
+    
+    def __init__(self, host, table, query, details=True):
+        self.host = host
+        self.table = table
+        self.query = query
+        self.details = details
+        self.results = None
+
+    def __str__(self):
+        s = '%s: use %s' % (self.__class__.__name__, self.query)
+        if self.details:
+            s += ' with details.'
+        else:
+            s += ' without details.'
+        return s
+
+    def do_query(self):
+        self.results = self.query.get_results()
+
+    # FIXME this is where we left off with non-class version of code
+    #       include method to get this into DataFrame too?
+    def show_results_awkwardly(self):
+        # NOTE:
+        # results[0] is time
+        # results[1] is packet blob
+        # results[2] is type
+        # results[3] is header blob
+        print self
+        for t, p, k, h in self.results:
+    
+            # get CCSDS header time and sequence counter
+            ccsds_coarse_time, ccsds_fine_time_hex, ccsds_fine_time = get_ccsds_time(h)
+            ccsds_time_human = UnixToHumanTime(ccsds_coarse_time + ccsds_fine_time)
+            ccsds_sequence_counter = get_ccsds_sequence(h)
+            
+            if self.details:
+                print '='*88
+                print 'The 4 columns in %s table are:' % self.table
+                print '(1) time: %s' % UnixToHumanTime( t )
+                print '(2) type: %d' % k
+                
+                phex, plen = packetDump(p)
+                print '(3) packet (hex dump of %d bytes)' % plen
+                print '-'*80
+                print phex
+                print '-'*80
+                
+                hhex, hlen = packetDump(h)
+                print '(4) header (hex dump of %d bytes)' % hlen
+                print '-'*80
+                print hhex
+                print '-'*80
+                
+                # NOTE:
+                # the code above should work regardless of bogus records that might
+                # trip up the code below that depends on recognizable packet content
+                
+                # guess packet and print details parsed from the packet blob
+                pkt = guessPacket(p)
+                if pkt.type == 'unknown':
+                    print '??? UNKNOWN PACKET TYPE'
+                    print '======================='
+                    print 'db column time:', UnixToHumanTime( t ), '(%.4f)' % t
+                    print '   packet time:'
+                    print 'packet endTime:'
+                    print '          name:'
+                    print '          rate:'
+                    print '       samples:'
+                    #print 'measurementsPerSample:', pkt.measurementsPerSample()
+                    utime = None
+                    htime = 'unknown'
+                else:
+                    print 'db column time:', UnixToHumanTime( t ), '(%.4f)' % t
+                    print '   packet time:', UnixToHumanTime( pkt.time() )
+                    print 'packet endTime:', UnixToHumanTime( pkt.endTime() )
+                    print '          name:', pkt.name()
+                    print '          rate:', pkt.rate()
+                    print '       samples:', pkt.samples()
+                    #print 'measurementsPerSample:', pkt.measurementsPerSample()
+                    utime = pkt.time()
+                    htime = UnixToHumanTime( utime )
+                    for t,x,y,z in pkt.txyz():
+                        print "tsec:{0:>9.4f}  xmg:{1:9.4f}  ymg:{2:9.4f}  zmg:{3:9.4f}".format(t, x/1e-3, y/1e-3, z/1e-3)
+    
+            elif self.table == 'hirap':
+                utime = get_bcd2utime(p) # for hirap, it's BCD time in packet
+                htime = UnixToHumanTime( utime )
+            
+            elif self.table.startswith('121f0'):
+                #utime_hex = p[36:44].encode('hex')
+                utime = get_utime(p) # for sams2 it's unixtime (sec, usec) in packet
+                htime = UnixToHumanTime( utime )     
+
+            elif self.table.startswith('es0'):
+                utime = get_utime(p, which='tsh') # for sams2 tsh it's again unixtime (sec, usec) in diff part of packet
+                htime = UnixToHumanTime( utime ) 
+    
+            else:
+                htime = 'NoHandler4ThisTableName'
+    
+            # FIXME put this above details and improve handling of details versus utimes form of output
+            print 'ccsds_time:%s, ccsds_sequence_counter:%05d, pkt_time:%s, table:%s' % (ccsds_time_human, ccsds_sequence_counter, htime, self.table)
     
 # ----------------------------------------------------------------------
 # EXAMPLES:
 #
 # SAMS SE
-# accelPacketTool.py 121f02 kenny desc 1 details
-#
-# SAMS TSH
-# accelPacketTool.py es05 ike asc 1 utimes
-#
-# MAMS OSS
-# accelPacketTool.py oss stan desc 1 details
-#
-# MAMS OSS BESTTMF
-# accelPacketTool.py besttmf stan desc 1 utimes
-#
-# MAMS HiRAP
-# accelPacketTool.py hirap towelie desc 1 details
+# accelPacketTool.py kenny 121f02
+# accelPacketTool.py ike es05
 
 # iterate over db query results to show pertinent packet details (and header too)
 if __name__ == '__main__':
     """iterate over db query results to show pertinent packet details (and header too)"""
+      
+    # input parameters
+    host = sys.argv[1]  # LIKE kenny
+    table = sys.argv[2] # LIKE 121f02
+    details = False
     
-    # get inputs
-    table = sys.argv[1] # db table name (like 121f02)
-    host =  sys.argv[2] # db host name (like kenny)
-    order = sys.argv[3] # 'asc' or 'desc' for query's "order by time" clause
-    limit = sys.argv[4] # integer for query's "limit" clause
-    which = sys.argv[5] # 'details' or 'utimes' from packets
+    # create query object (without actually running the query)
+    if table.startswith('121f0'):
+        query = SamsSeHalfSecFoursomeQuery(host, table)
+
+    elif table.startswith('es0'):
+        query = SamsTshOneSecEightsomeQuery(host, table)
+
+    elif table == 'hirap':
+        # FIXME is hirap just a case where ccsds_seq is "mostly or nearly contiguous"?
+        query = StartLenQuery(host, table, 1, 245) # does it show pattern at rec ~80, ~160, and ~240?
+        query = CustomQuery(host, table, where_clause='WHERE time > unix_timestamp("2014-10-09 18:00:00")', order_clause='ORDER BY time DESC', limit_clause='LIMIT 2')
+
+    else:
+        query = DefaultPacketQuery(host, table) 
     
-    # get query results
-    results = sqlConnect('select * from %s order by time %s limit %s' % (table, order, limit), host)
-    #results = sqlConnect('select * from %s where time < unix_timestamp("2014-10-07 03:45:00") and time > unix_timestamp("2014-10-07 03:43:00") order by time %s limit %s' % (table, order, limit), host)
-    #results = sqlConnect('select * from %s where time < unix_timestamp("2014-10-07 03:44:30") and time > unix_timestamp("2014-10-07 03:44:29") order by time %s limit %s' % (table, order, limit), host)
-
-    # iterate over results
-    # NOTE: results[0] = time, results[1] = packet blob, results[2] = type, results[3] = header blob
-    for t, p, k, h in results:
-
-        # get CCSDS header time and sequence counter
-        ccsds_coarse_time, ccsds_fine_time_hex, ccsds_fine_time = get_ccsds_time(h)
-        ccsds_time_human = UnixToHumanTime(ccsds_coarse_time + ccsds_fine_time)
-        ccsds_sequence_counter = get_ccsds_sequence(h)
-        
-        if which == 'details':
-            print '='*80
-            print 'The 4 columns in %s db table are:' % table
-            print '(1) time: %s' % UnixToHumanTime( t )
-            print '(2) type: %d\n' % k
-            
-            phex, plen = packetDump(p)
-            print '(3) packet (hex dump of %d bytes)' % plen
-            print '-'*80
-            print phex
-            
-            hhex, hlen = packetDump(h)
-            print '(4) header (hex dump of %d bytes)' % hlen
-            print '-'*80
-            print hhex
-            
-            # NOTE:
-            # the code above should work regardless of bogus records that might
-            # trip up the code below that depends on recognizable packet content
-            
-            # guess packet and print details parsed from the packet blob
-            pkt = guessPacket(p)
-            if pkt.type == 'unknown':
-                print '??? UNKNOWN PACKET TYPE'
-                print '======================='
-                print 'db column time:', UnixToHumanTime( t ), '(%.4f)' % t
-                print '   packet time:'
-                print 'packet endTime:'
-                print '          name:'
-                print '          rate:'
-                print '       samples:'
-                #print 'measurementsPerSample:', pkt.measurementsPerSample()
-                utime = None
-                htime = 'unknown'
-                print '          txyz:'
-            else:
-                print 'db column time:', UnixToHumanTime( t ), '(%.4f)' % t
-                print '   packet time:', UnixToHumanTime( pkt.time() )
-                print 'packet endTime:', UnixToHumanTime( pkt.endTime() )
-                print '          name:', pkt.name()
-                print '          rate:', pkt.rate()
-                print '       samples:', pkt.samples()
-                #print 'measurementsPerSample:', pkt.measurementsPerSample()
-                utime = pkt.time()
-                htime = UnixToHumanTime( utime )
-                print 'txyz:'
-                for t,x,y,z in pkt.txyz():
-                    print "t:{0:>9.4f}  xmg:{1:9.4f}  ymg:{2:9.4f}  zmg:{3:9.4f}".format(t, x/1e-3, y/1e-3, z/1e-3)
-
-        elif table == 'hirap':
-            utime = get_bcd2utime(p) # for hirap, it's BCD time in packet
-            htime = UnixToHumanTime( utime )
-        
-        elif table.startswith('121f0') or table.startswith('es0'):
-            #utime_hex = p[36:44].encode('hex')
-            utime = get_utime(p) # for sams2 it's unixtime (sec, usec) in packet
-            htime = UnixToHumanTime( utime )     
-
-        else:
-            htime = 'NoHandler4ThisTableName'
-
-        # FIXME put this above details and improve handling of details versus utimes form of output            
-        print 'ccsds_time:%s, ccsds_sequence_counter:%05d, pkt_time:%s, table:%s' % (ccsds_time_human, ccsds_sequence_counter, htime, table)
-            
+    # create packet inspector object using query object as input
+    pkt_inspector = PacketInspector(host, table, query=query, details=details)
+    
+    # now run the query and show results
+    pkt_inspector.do_query()
+    pkt_inspector.show_results_awkwardly()
