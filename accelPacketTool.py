@@ -5,29 +5,32 @@
 # - better handling of iteration when limit > 1...
 #   for now, depend on user to pipe results through more (or less)
 
-############
-# N O T E S:
-#-----------------------------------------------------------------
-### START SAMS PACKET ######################################
+#----------------------------------------------------------
+# Notes from PGUID Document KMAC sent me:
+#----------------------------------------------------------
+#
+# START SAMS PACKET #######################################
 ## Header Part of Packet (44 bytes):
 # 16 bytes EHS Primary Header
 # 12 bytes     Secondary Header [called PDSS or EHS?]
 #  6 bytes CCSDS Primary Header
 # 10 bytes CCSDS Secondary Header
-# --  --  --  --  --  --  --  --  --  --  --  --  --  --  --
+# --  --  --  --  --  --  --  --  --  --  --  --  --  --
 ## Payload Part of Packet (the remaining bytes):
 # ~1200 bytes in the "Data Zone"
+# END SAMS PACKET #########################################
 #
-### START HiRAP PACKET ######################################
+# START HiRAP PACKET ######################################
 ## Header Part of Packet (60 bytes):
 # 16 bytes EXPRESS Header
 # 16 bytes EHS Primary Header
 # 12 bytes     Secondary Header [called PDSS or EHS?]
 #  6 bytes CCSDS Primary Header
 # 10 bytes CCSDS Secondary Header
-# --  --  --  --  --  --  --  --  --  --  --  --  --  --  --
+# --  --  --  --  --  --  --  --  --  --  --  --  --  --
 ## Payload Part of Packet (the remaining bytes):
-# ~XXXX bytes in the "Data Zone"
+# 1172 bytes in the "Data Zone" (HiRAP ALWAYS 1172 BYTES)
+# END HiRAP PACKET ########################################
 
 import sys
 from accelPacket import *
@@ -58,11 +61,23 @@ def packetDump(packet):
         line = line + asc + '"\n'  
         hex = hex + line
         start = start + size
-    return hex, ln  
+    return hex.rstrip('\n'), ln  
 
 def get_utime(pkt):
     sec, usec = struct.unpack('II', pkt[36:44])
     return sec + usec/1000000.0
+
+def get_bcd2utime(pkt):
+    century = BCD(pkt[0])
+    year =    BCD(pkt[1]) + 100*century
+    month =   BCD(pkt[2])
+    day =     BCD(pkt[3])
+    hour =    BCD(pkt[4])
+    minute =  BCD(pkt[5])
+    second =  BCD(pkt[6])
+    millisec = struct.unpack('h', pkt[8:10])[0]
+    millisec = millisec & 0xffff
+    return HumanToUnixTime(month, day, year, hour, minute, second, millisec/1000.0)
 
 def get_ccsds_time(hdr):
     UTIME1980 = 315964800.0
@@ -71,7 +86,8 @@ def get_ccsds_time(hdr):
     fine_hex = b39.encode('hex')
     scale = 16 # for hexadecimal
     coarse = int(coarse_hex, scale) + UTIME1980
-    return coarse, fine_hex
+    fine = float(int(fine_hex, scale)) / (2.0**8)
+    return coarse, fine_hex, fine
 
 def get_ccsds_sequence(hdr):
     VALUE_MASK = 0x0FFF
@@ -86,7 +102,7 @@ def get_ccsds_sequence(hdr):
     ##print bin(int(my_hexdata, scale))[2:].zfill(num_of_bits)
     ##print bin(int(my_hexdata, scale) & VALUE_MASK)
     return int(my_hexdata, scale) & VALUE_MASK
-
+    
 # ----------------------------------------------------------------------
 # EXAMPLES:
 #
@@ -118,14 +134,21 @@ if __name__ == '__main__':
     
     # get query results
     results = sqlConnect('select * from %s order by time %s limit %s' % (table, order, limit), host)
-    #results = sqlConnect('select * from %s where time < unix_timestamp("2014-09-26 02:48:24") order by time %s limit %s' % (table, order, limit), host)
+    #results = sqlConnect('select * from %s where time < unix_timestamp("2014-10-07 03:45:00") and time > unix_timestamp("2014-10-07 03:43:00") order by time %s limit %s' % (table, order, limit), host)
+    #results = sqlConnect('select * from %s where time < unix_timestamp("2014-10-07 03:44:30") and time > unix_timestamp("2014-10-07 03:44:29") order by time %s limit %s' % (table, order, limit), host)
 
     # iterate over results
     # NOTE: results[0] = time, results[1] = packet blob, results[2] = type, results[3] = header blob
     for t, p, k, h in results:
+
+        # get CCSDS header time and sequence counter
+        ccsds_coarse_time, ccsds_fine_time_hex, ccsds_fine_time = get_ccsds_time(h)
+        ccsds_time_human = UnixToHumanTime(ccsds_coarse_time + ccsds_fine_time)
+        ccsds_sequence_counter = get_ccsds_sequence(h)
         
-        if 'details' == which:
-            print '\nThe 4 db columns are:'
+        if which == 'details':
+            print '='*80
+            print 'The 4 columns in %s db table are:' % table
             print '(1) time: %s' % UnixToHumanTime( t )
             print '(2) type: %d\n' % k
             
@@ -145,25 +168,45 @@ if __name__ == '__main__':
             
             # guess packet and print details parsed from the packet blob
             pkt = guessPacket(p)
-            print 'db column time:', UnixToHumanTime( t )
-            print '   packet time:', UnixToHumanTime( pkt.time() )
-            print 'packet endTime:', UnixToHumanTime( pkt.endTime() )
-            print '          name:', pkt.name()
-            print '          rate:', pkt.rate()
-            print '       samples:', pkt.samples()
-            #print 'measurementsPerSample:', pkt.measurementsPerSample()
-            print 'txyz:'
-            for t,x,y,z in pkt.txyz():
-                print "t:{0:>9.4f}  xmg:{1:9.4f}  ymg:{2:9.4f}  zmg:{3:9.4f}".format(t, x/1e-3, y/1e-3, z/1e-3)
+            if pkt.type == 'unknown':
+                print '??? UNKNOWN PACKET TYPE'
+                print '======================='
+                print 'db column time:', UnixToHumanTime( t ), '(%.4f)' % t
+                print '   packet time:'
+                print 'packet endTime:'
+                print '          name:'
+                print '          rate:'
+                print '       samples:'
+                #print 'measurementsPerSample:', pkt.measurementsPerSample()
+                utime = None
+                htime = 'unknown'
+                print '          txyz:'
+            else:
+                print 'db column time:', UnixToHumanTime( t ), '(%.4f)' % t
+                print '   packet time:', UnixToHumanTime( pkt.time() )
+                print 'packet endTime:', UnixToHumanTime( pkt.endTime() )
+                print '          name:', pkt.name()
+                print '          rate:', pkt.rate()
+                print '       samples:', pkt.samples()
+                #print 'measurementsPerSample:', pkt.measurementsPerSample()
+                utime = pkt.time()
+                htime = UnixToHumanTime( utime )
+                print 'txyz:'
+                for t,x,y,z in pkt.txyz():
+                    print "t:{0:>9.4f}  xmg:{1:9.4f}  ymg:{2:9.4f}  zmg:{3:9.4f}".format(t, x/1e-3, y/1e-3, z/1e-3)
 
-        # show sams2 utime part of packet
-        ccsds_coarse_time, ccsds_fine_time_hex = get_ccsds_time(h)
-        #print ccsds_fine_time_hex, float.fromhex(ccsds_fine_time_hex)
-        ccsds_coarse_time_human = UnixToHumanTime(ccsds_coarse_time)
-        ccsds_sequence_counter = get_ccsds_sequence(h)
-        #utime_hex = p[36:44].encode('hex')
-        utime = get_utime(p)
-        #vcdu_count_hex = h[17:20].encode('hex')
-        #print '%06d,%s,0x%s,%8d,0x%s,%s,%s' % (ccsds_sequence_counter, UnixToHumanTime(utime), utime_hex, int(vcdu_count_hex, 16), vcdu_count_hex, table, ccsds_coarse_time_human)
-        #print 'ccsds_sequence_counter:%05d, ccsds_coarse_time:%s, pkt_time:%s, pkt_utime_hex:0x%s, table:%s' % (ccsds_sequence_counter, ccsds_coarse_time_human, UnixToHumanTime(utime), utime_hex, table)
-        print 'ccsds_sequence_counter:%05d, ccsds_coarse_time:%s, pkt_time:%s, table:%s' % (ccsds_sequence_counter, ccsds_coarse_time_human, UnixToHumanTime(utime), table)
+        elif table == 'hirap':
+            utime = get_bcd2utime(p) # for hirap, it's BCD time in packet
+            htime = UnixToHumanTime( utime )
+        
+        elif table.startswith('121f0') or table.startswith('es0'):
+            #utime_hex = p[36:44].encode('hex')
+            utime = get_utime(p) # for sams2 it's unixtime (sec, usec) in packet
+            htime = UnixToHumanTime( utime )     
+
+        else:
+            htime = 'NoHandler4ThisTableName'
+
+        # FIXME put this above details and improve handling of details versus utimes form of output            
+        print 'ccsds_time:%s, ccsds_sequence_counter:%05d, pkt_time:%s, table:%s' % (ccsds_time_human, ccsds_sequence_counter, htime, table)
+            
