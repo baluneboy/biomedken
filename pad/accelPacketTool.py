@@ -106,8 +106,66 @@ def get_ccsds_sequence(hdr):
     ##print bin(int(my_hexdata, scale) & VALUE_MASK)
     return int(my_hexdata, scale) & VALUE_MASK
 
+# general query
+class GeneralQuery(object):
+    """general query"""
+    
+    def __init__(self, host, table, query_suffix):
+        self.host = host
+        self.table = table
+        self.query_suffix = query_suffix
+        self.set_querystr()
+
+    def __str__(self):
+        return '%s (%s)' % (self.__class__.__name__, self.querystr)
+
+    def set_querystr(self):
+        self.querystr = 'SELECT * FROM %s %s;' % (self.table, self.query_suffix)       
+
+    def get_results(self):
+        return sqlConnect(self.querystr, self.host)
+
+# default query has limit of 1 and desc time order
+class DefaultQuery(GeneralQuery):
+    """default query has limit of 1 and desc time order"""
+    
+    def __init__(self, host, table):
+        super(DefaultQuery, self).__init__(host, table, query_suffix='ORDER BY time DESC LIMIT 1')
+
+# SAMS SE half-sec foursome query
+class SamsSeHalfSecFoursomeQuery(GeneralQuery):
+    """
+    SAMS SE half-sec foursome query has limit of 12
+    -- should show 3 examples of KMAC's pattern of 4 pkts/half-sec = 4 pkts per CCSDS counter foursome
+    ---> ccsds_time clusters of 4 with same time and with clusters a half second apart
+    ---> ccsds_sequence_counter foursomes with monotonically decreasing (by exactly one) within each foursome
+    """
+
+    def __init__(self, host, table):
+        super(SamsSeHalfSecFoursomeQuery, self).__init__(host, table, query_suffix = 'ORDER BY time DESC LIMIT 12')
+
+# SAMS TSH one-sec eightsome query
+class SamsTshOneSecEightsomeQuery(GeneralQuery):
+    """
+    SAMS TSH one-sec eightsome query has limit of 24
+    -- should show 2 examples of TSH pattern of 8 pkts/sec = 8 pkts per CCSDS counter eightsome
+    ---> ccsds_time clusters of 4 or 8 with same time and with clusters a multiple of 4msec apart
+    ---> ccsds_sequence_counter eightsomes with monotonically decreasing (by exactly one) within each eightsome
+    """
+
+    def __init__(self, host, table):
+        super(SamsTshOneSecEightsomeQuery, self).__init__(host, table, query_suffix = 'ORDER BY time DESC LIMIT 24')
+
+# "start, length" query has ascending order with special limit to imply "start at rec" and "give me this many records"
+class StartLenAscendQuery(GeneralQuery):
+    """Like SELECT * FROM 121f04 ORDER BY time ASC LIMIT 2, 3; # ASC & LIMIT imply start at rec (2+1) and give me 3 results"""
+
+    def __init__(self, host, table, start, length):
+        suffix = 'ORDER BY time ASC LIMIT %d, %d' % ( (start-1) , length ) # zero is 1st rec
+        super(StartLenAscendQuery, self).__init__(host, table, query_suffix = suffix)
+
 # default packet query has limit of 1 and desc time order
-class DefaultPacketQuery(object):
+class OLDDefaultPacketQuery(object):
     """default packet query has limit of 1 and desc time order"""
     
     def __init__(self, host, table, order='DESC', limit=1):
@@ -127,7 +185,7 @@ class DefaultPacketQuery(object):
         return sqlConnect(self.querystr, self.host)
 
 # custom packet query
-class CustomQuery(DefaultPacketQuery):
+class OLDCustomQuery(DefaultPacketQuery):
     """custom packet query"""
     
     def __init__(self, host, table, where_clause='WHERE time > 0', order_clause='ORDER BY time DESC', limit_clause='LIMIT 2'):
@@ -144,7 +202,7 @@ class CustomQuery(DefaultPacketQuery):
         self.querystr = 'SELECT * FROM %s %s %s %s;' % (self.table, self.where_clause, self.order_clause, self.limit_clause)       
 
 # SAMS SE half-sec foursome query
-class SamsSeHalfSecFoursomeQuery(DefaultPacketQuery):
+class OLDSamsSeHalfSecFoursomeQuery(DefaultPacketQuery):
     """
     SAMS SE half-sec foursome query has limit of 12
     -- should show 3 examples of KMAC's pattern of 4 pkts/half-sec = 4 pkts per CCSDS counter foursome
@@ -156,7 +214,7 @@ class SamsSeHalfSecFoursomeQuery(DefaultPacketQuery):
         super(SamsSeHalfSecFoursomeQuery, self).__init__(host, table, order=order, limit=limit)
 
 # SAMS TSH one-sec eightsome query
-class SamsTshOneSecEightsomeQuery(DefaultPacketQuery):
+class OLDSamsTshOneSecEightsomeQuery(DefaultPacketQuery):
     """
     SAMS TSH one-sec eightsome query has limit of 16
     -- should show 2 examples of TSH pattern of 8 pkts/sec = 8 pkts per CCSDS counter eightsome
@@ -168,7 +226,7 @@ class SamsTshOneSecEightsomeQuery(DefaultPacketQuery):
         super(SamsTshOneSecEightsomeQuery, self).__init__(host, table, order=order, limit=limit)
 
 # "start, length" query has ascending order with special limit to imply "start at rec" and "give me this many records"
-class StartLenQuery(DefaultPacketQuery):
+class OLDStartLenQuery(DefaultPacketQuery):
     """Like SELECT * FROM 121f04 ORDER BY time ASC LIMIT 2, 3; # ASC & LIMIT imply start at rec (2+1) and give me 3 results"""
 
     def __init__(self, host, table, start, length):
