@@ -14,6 +14,7 @@ __all__ = [
     '_ABBREVS',
     '_PSD3ROADMAPPDF_PATTERN',
     '_GVT3PDF_PATTERN',
+    '_CHIMPDF_PATTERN',
     '_CVFSROADMAPPDF_PATTERN',
     '_RVTXPDF_PATTERN',
     ]
@@ -154,7 +155,6 @@ _PSD3ROADMAPPDF_PATTERN = (
 
 #/tmp/1qualify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf
 #-----------------------------------------------------------------------------
-#.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>\w*)(?P<axis>.)_(?P<notes>.*)\.pdf\Z
 _GVT3PDF_PATTERN = (
     ".*/"                                       # path at the start, then
     "(?P<page>\d{1})"                           # a digit, then
@@ -163,7 +163,24 @@ _GVT3PDF_PATTERN = (
     "(?P<timestr>.*)"                           # timestr, then    
     "_"                                         # underscore, then
     "(?P<sensor>.*)"                            # sensor, then
-    "_(?P<plot_type>gvt)"                       # underscore spg, then
+    "_(?P<plot_type>gvt)"                       # underscore gvt, then
+    "(?P<axis>.)"                               # axis, then
+    "_(?P<notes>.*)"                            # notes, then
+    "\.pdf\Z"                                   # extension to finish
+    )
+
+#/tmp/1qualify_2011_05_19_18_18_00_121f03006_chim_rodent_research_install.pdf
+#-----------------------------------------------------------------------------
+#.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>chi)(?P<axis>.)_(?P<notes>.*)\.pdf\Z
+_CHIMPDF_PATTERN = (
+    ".*/"                                       # path at the start, then
+    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
+    "_"                                         # underscore, then
+    "(?P<timestr>.*)"                           # timestr, then    
+    "_"                                         # underscore, then
+    "(?P<sensor>.*)"                            # sensor, then
+    "_(?P<plot_type>chi)"                       # underscore chi, then
     "(?P<axis>.)"                               # axis, then
     "_(?P<notes>.*)"                            # notes, then
     "\.pdf\Z"                                   # extension to finish
@@ -203,6 +220,7 @@ _PLOTTYPES = {
     'cvf':   'Cumulative RMS vs. Frequency',
     'ist':   'Interval Stat',
     'rvt':   'RMS vs. Time',    
+    'chi':   'Cumulative Histogram',    
     '':      'empty',
 }
 
@@ -264,7 +282,7 @@ def is_unique_handbook_pdf_match(fname):
     if num_matches == 1:
         return True
     else:
-        print num_matches
+        #print num_matches
         return False
 
 if __name__ == "__main__":
@@ -272,6 +290,7 @@ if __name__ == "__main__":
     #demo_hbfpat(); raise SystemExit
 
     files = [
+        '/tmp/9quantify_2014_09_25_08_30_00_121f08006_chim_compare_rodent_research_install.pdf',
         '/tmp/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf',
         '/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf',
         '/tmp/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf',

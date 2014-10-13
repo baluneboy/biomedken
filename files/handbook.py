@@ -187,6 +187,16 @@ class Gvt3Pdf(SpgxRoadmapPdf):
 
     def _get_plot_type(self): return hbpat._PLOTTYPES['gvt']
 
+class ChimPdf(SpgxRoadmapPdf):
+    """
+    CHI MAG PDF handbook file like this example:
+    /tmp/9quantify_2014_09_25_08_30_00_121f08006_chim_compare_rodent_research_install.pdf
+    """
+    def __init__(self, name, pattern=hbpat._CHIMPDF_PATTERN, show_warnings=False):
+        super(ChimPdf, self).__init__(name, pattern, show_warnings=show_warnings)
+
+    def _get_plot_type(self): return hbpat._PLOTTYPES['chi']
+
 class CvfsRoadmapPdf(SpgxRoadmapPdf):
     """
     Cumulative RMS vs. frequency (sum) PDF handbook file like this example:
