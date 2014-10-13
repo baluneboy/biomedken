@@ -34,6 +34,9 @@
 
 import os
 import sys
+import datetime
+import pandas as pd
+from binascii import hexlify, unhexlify
 from accelPacket import *
 
 # input parameters
@@ -95,7 +98,8 @@ def get_ccsds_time(hdr):
     scale = 16 # for hexadecimal
     coarse = int(coarse_hex, scale) + UTIME1980
     fine = float(int(fine_hex, scale)) / (2.0**8)
-    return coarse, fine_hex, fine
+    #return coarse, fine_hex, fine
+    return datetime.datetime.fromtimestamp( coarse + fine )
 
 # get CCSDS sequence counter from header part of packet
 def get_ccsds_sequence(hdr):
@@ -193,7 +197,33 @@ class PacketInspector(object):
     def do_query(self):
         self.results = self.query.get_results()
 
-    def get_utime(self, pkt):
+    def get_results_dataframe(self):
+        # create raw dataframe
+        df = pd.DataFrame( list(self.results), columns='t,p,k,h'.split(','))
+        
+        # put data in more desirable form
+        df['ccsds_time'] = df['h'].map(get_ccsds_time)
+        df['ccsds_sequence'] = df['h'].map(get_ccsds_sequence)
+        df['db_time'] = df['t'].map(datetime.datetime.fromtimestamp)
+        df['pkt_hex'] = df['p'].map(hexlify)
+        df['hdr_hex'] = df['h'].map(hexlify)
+        df['pkt_time'] = df['p'].map(self.get_pkt_time)
+        df['pkt_type'] = df['k'].map(int)
+        df['pkt_obj'] = df['p'].map(guessPacket)
+        df['pkt_len'] = df['p'].map(len)
+        df['hdr_len'] = df['h'].map(len)
+        df['host'] = self.host
+        df['table'] = self.table
+        
+        # drop unwanted columns from original raw dataframe
+        df = df.drop(['t','p','k','h'], 1)
+        
+        # sort order
+        df.sort(['ccsds_sequence', 'ccsds_time'], ascending=[True, True], inplace=True)
+        
+        return df
+
+    def get_pkt_time(self, pkt):
         
         if self.table.startswith('121f0'):
             sec, usec = struct.unpack('II', pkt[36:44])
@@ -201,7 +231,7 @@ class PacketInspector(object):
         elif self.table.startswith('es0'):
             sec, usec = struct.unpack('!II', pkt[64:72]) # ! for network byte order
         
-        elif self.table == 'NOThirap':
+        elif self.table == 'hirap':
             century = BCD(pkt[0])
             year =    BCD(pkt[1]) + 100*century
             month =   BCD(pkt[2])
@@ -216,7 +246,7 @@ class PacketInspector(object):
         else:
             return None
         
-        return sec + usec/1000000.0
+        return datetime.datetime.fromtimestamp( sec + usec/1000000.0 )
 
     # FIXME this is where we left off with non-class version of code
     #       include method to get this into DataFrame too?
@@ -230,8 +260,10 @@ class PacketInspector(object):
         for t, p, k, h in self.results:
     
             # get CCSDS header time and sequence counter
-            ccsds_coarse_time, ccsds_fine_time_hex, ccsds_fine_time = get_ccsds_time(h)
-            ccsds_time_human = UnixToHumanTime(ccsds_coarse_time + ccsds_fine_time)
+            #ccsds_coarse_time, ccsds_fine_time_hex, ccsds_fine_time = get_ccsds_time(h)
+            #ccsds_time_human = UnixToHumanTime(ccsds_coarse_time + ccsds_fine_time)
+            ccsds_time = get_ccsds_time(h)
+            ccsds_time_human = UnixToHumanTime(ccsds_time)
             ccsds_sequence_counter = get_ccsds_sequence(h)
             
             # FIXME for details and one-liner type output, how about hex(pkt), hex(hdr), and min/mean/max for t, x, y, z
@@ -285,7 +317,7 @@ class PacketInspector(object):
                         print "tsec:{0:>9.4f}  xmg:{1:9.4f}  ymg:{2:9.4f}  zmg:{3:9.4f}".format(t, x/1e-3, y/1e-3, z/1e-3)
 
             else:
-                utime = self.get_utime(p)
+                utime = self.get_pkt_time(p)
                 if utime:
                     pkt_time_human = UnixToHumanTime(utime)
                 else:
@@ -318,7 +350,9 @@ def query_and_display():
     
     # now run the query and display results
     pkt_inspector.do_query()
-    pkt_inspector.display_results_awkwardly()
+    df = pkt_inspector.get_results_dataframe()
+    print df
+    #pkt_inspector.display_results_awkwardly()
     
 # check for reasonableness of parameters
 def params_ok():
