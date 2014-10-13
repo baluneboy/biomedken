@@ -32,7 +32,7 @@ class StringBufferPackage(object):
     
     def __str__(self):
         s = '-'*33 + '\n'
-        s += 'Format    : "%s" (endianness prefix "%s" for %s byte ordering)\n' % (self.format, ENDIANNESS[self.byteorder], self.byteorder)
+        s += 'Format    : "%s" (endianness prefix is "%s" for "%s" byte ordering)\n' % (self.format, ENDIANNESS[self.byteorder], self.byteorder)
         if self.ispacked:
             s += 'AfterPack : %s (hex fmt packed-into buffer with "%s" byte ordering)\n' % (hexlify(self.strbuf.raw), self.byteorder)
             s += 'Original  : %s\n' % str(self.values)
@@ -45,7 +45,7 @@ class StringBufferPackage(object):
 def show_pack(fmt, values, en='network'):
     fmt = ENDIANNESS[en] + ' ' + fmt
     s = struct.Struct(fmt)
-    print 'Format    : "%s" (endianness prefix "%s" for %s byte ordering)' % (fmt, ENDIANNESS[en], en)
+    print 'Format    : "%s" (endianness prefix is "%s" for "%s" byte ordering)' % (fmt, ENDIANNESS[en], en)
     b = ctypes.create_string_buffer(s.size)
     print 'BeforePack:', hexlify(b.raw), '(hex fmt pre-allocated, empty buffer)'
     s.pack_into(b, 0, *values)
@@ -56,13 +56,13 @@ def show_pack(fmt, values, en='network'):
 
 def demo_pack_unpack(ut, endianness='network'):
 
-    print 'human time: %s (ORIGINAL)' % UnixToHumanTime(ut)
+    print 'human time: %s (ORIGINAL)' % UnixToHumanTime(ut), '=',
     fracsec, sec = math.modf(ut)
     usec = fracsec*1000000.0
-    print 'unix time : %.3f (ORIGINAL)' % ut
-    print 'ut part #1: %s' % format(int(sec), '#034b'),  # 32 bits  + 2 placeholders for "0b" prefix
+    print 'unix time of %.3f' % ut
+    print 'unix time1: %s' % format(int(sec), '#034b'),  # 32 bits  + 2 placeholders for "0b" prefix
     print '(hex: %s for sec part)' % format(int(sec), '#x')           #  8 bytes + 2 placeholders for "0x" prefix
-    print 'ut part #2: %s' % format(int(usec), '#034b'), # 32 bits  + 2 placeholders for "0b" prefix
+    print 'unix time2: %s' % format(int(usec), '#034b'), # 32 bits  + 2 placeholders for "0b" prefix
     print '(hex: %s for usec part)' % format(int(usec), '#010x')       #  8 bytes + 2 placeholders for "0x" prefix   
 
     # old demo way to do this
