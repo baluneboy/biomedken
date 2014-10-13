@@ -41,14 +41,13 @@ from accelPacket import *
 
 # input parameters
 defaults = {
-'table':    '121f04',   # table name (i.e. sensor)
-'host':     None,       # db host (use None for dict look-up)
-'details':  'False',    # True to get more details; otherwise False
+'db_tables':    None,       # use None for defaults
+'details':      'False',    # True to get more details; otherwise False
 }
 parameters = defaults.copy()
 
-# dict for host look-up
-db_hosts = {
+# default dict for host look-up
+DB_TABLES = {
     '121f02': 'kenny',
     '121f03': 'tweek',
     '121f04': 'mr-hankey',
@@ -327,86 +326,92 @@ class PacketInspector(object):
             print 'ccsds_time:%s, ccsds_sequence_counter:%05d, pkt_time:%s, table:%s' % (ccsds_time_human, ccsds_sequence_counter, pkt_time_human, self.table)
 
 # use parameters to inspect packets in db table
-def query_and_display():
+def query_and_display(table, host, details):
     """use parameters to inspect packets in db table"""
     
     # create query object (without actually running the query)
-    if parameters['table'].startswith('121f0'):
-        query = SamsSeHalfSecFoursomeQuery(parameters['host'], parameters['table'])
+    if table.startswith('121f0'):
+        query = SamsSeHalfSecFoursomeQuery(host, table)
 
-    elif parameters['table'].startswith('es0'):
-        query = SamsTshOneSecEightsomeQuery(parameters['host'], parameters['table'])
+    elif table.startswith('es0'):
+        query = SamsTshOneSecEightsomeQuery(host, table)
 
-    elif parameters['table'] == 'hirap':
+    elif table == 'hirap':
         # FIXME is hirap just a case where ccsds_seq is "mostly or nearly contiguous"?
-        query = StartLenAscendQuery(parameters['host'], parameters['table'], 1, 245) # does it show pattern at rec ~80, ~160, and ~240?
-        query = GeneralQuery(parameters['host'], parameters['table'], 'WHERE time > unix_timestamp("2014-10-09 18:00:00") ORDER BY time ASC LIMIT 2')
+        query = StartLenAscendQuery(host, table, 1, 245) # does it show pattern at rec ~80, ~160, and ~240?
+        query = GeneralQuery(host, table, 'WHERE time > unix_timestamp("2014-10-09 18:00:00") ORDER BY time ASC LIMIT 2')
 
     else:
-        query = DefaultPacketQuery(parameters['host'], parameters['table']) 
+        query = DefaultPacketQuery(host, table) 
     
     # create packet inspector object using query object as input
-    pkt_inspector = PacketInspector(parameters['host'], parameters['table'], query=query, details=parameters['details'])
+    pkt_inspector = PacketInspector(host, table, query=query, details=details)
     
     # now run the query and display results
     pkt_inspector.do_query()
     df = pkt_inspector.get_results_dataframe()
-    print df
+    return df
     #pkt_inspector.display_results_awkwardly()
     
 # check for reasonableness of parameters
 def params_ok():
     """check for reasonableness of parameters"""    
-
-    # input parameters
-    if not parameters['host']:
-        # attempt dict look-up for host
-        parameters['host'] = db_hosts.get( parameters['table'] )
     
-    # should have non-None host at this point
-    if not parameters['host']:
-        print 'could not look up host for db table = %s' % parameters['table']
-        return False
-    
-    details = eval( parameters['details'] )
-    if not isinstance(details, bool):
-        print 'details = %s did not eval to a bool' % parameters['details']
-        return False
+    if parameters['details'].lower() in ['true', 'yes', '1']:
+        parameters['details'] = True
+    elif parameters['details'].lower() in ['false', 'no', '0']:
+        parameters['details'] = False
     else:
-        parameters['details'] = details
+        print 'unrecognized input for details = %s, so set details=False' % parameters['details']
+        parameters['details'] = False
+
+    if not parameters['db_tables']:
+        parameters['db_tables'] = DB_TABLES
+
+    # FIXME ideally, check for tables on hosts in pre-cursory fashion here
 
     return True # params are OK; otherwise, we returned False above
 
 # print short description of how to run the program
 def print_usage():
     """print short description of how to run the program"""
-    print 'usage: %s [options]' % os.path.abspath(__file__)
-    print '       options (and default values) are:'
-    for i in defaults.keys():
-        print '\t%s=%s' % (i, defaults[i])
+    print 'USAGE:    %s [options]' % os.path.abspath(__file__)
+    print 'EXAMPLE1: %s # FOR DEFAULTS' % os.path.abspath(__file__)
+    print 'EXAMPLE2: %s 121f03=tweek hirap=towelie details=False # TWO SMALL SETS' % os.path.abspath(__file__)
+    print 'EXAMPLE3: %s 121f03=tweek details=True # ONE DETAILED SET' % os.path.abspath(__file__)
+    print 'EXAMPLE4: %s details=True # SHOWS MAX INFO' % os.path.abspath(__file__)
     
 # iterate over db query results to show pertinent packet details (and header info when details=True)
 def main(argv):
     """iterate over db query results to show pertinent packet details (and header info when details=True)"""
     # parse command line
-    for p in sys.argv[1:]:
-        pair = p.split('=')
-        if (2 != len(pair)):
-            print 'bad parameter: %s' % p
-            break
-        else:
-            parameters[pair[0]] = pair[1]
-    else:
-        if params_ok():
-            query_and_display()
-            return 0
+    args = dict([arg.split('=') for arg in sys.argv[1:]])
+    if 'details' in args:    
+        parameters['details'] = args['details']
+        del( args['details'] )
+    db_tables = args
+    parameters['db_tables'] = db_tables
+
+    if params_ok():
+        print parameters
+        sensor_tables = parameters['db_tables']
+        df_cat = pd.DataFrame()
+        for sensor, host in sensor_tables.iteritems():
+            df_cat = pd.concat( [df_cat, query_and_display(sensor, host, parameters['details'])] )
+            
+        # sort by CCSDS sequence, then CCSDS time
+        df_cat.sort(['ccsds_sequence', 'ccsds_time'], ascending=[True, True], inplace=True)
+        print df_cat
+
+        return 0
+
     print_usage()  
 
 # ----------------------------------------------------------------------
 # EXAMPLES:
-# accelPacketTool.py host=kenny table=121f02 details=False
-# accelPacketTool.py table=hirap
-# accelPacketTool.py
+# accelPacketTool.py 121f02=kenny 121f03=tweek details=False
+# accelPacketTool.py details=True
+# accelPacketTool.py details=False
 # ----------------------------------------------------------------------
 if __name__ == '__main__':
     sys.exit( main(sys.argv) )
