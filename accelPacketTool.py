@@ -395,6 +395,8 @@ def main(argv):
     if params_ok():
         print parameters
         sensor_tables = parameters['db_tables']
+        
+        # FIXME a class that contains multiple PacketInspector objects (to add, sort, etc. those)
         df_cat = pd.DataFrame()
         for sensor, host in sensor_tables.iteritems():
             df_cat = pd.concat( [df_cat, query_and_display(sensor, host, parameters['details'])] )
