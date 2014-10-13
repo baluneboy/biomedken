@@ -2,8 +2,8 @@
 # $Id$
 
 # TODO
-# - smart defaults to get a fix on expected CCSDS pattern (mostly sequence counter)
-# - better handling use iterator for pulse mode
+# - smart defaults and those to look for expected CCSDS pattern (mostly sequence counter)
+# - better handling use iterator for pulse mode for TBD display handler
 
 #----------------------------------------------------------
 # Notes from PGUID Document KMAC sent me:
@@ -32,8 +32,30 @@
 # 1172 bytes in the "Data Zone" (HiRAP ALWAYS 1172 BYTES)
 # END HiRAP PACKET ########################################
 
+import os
 import sys
 from accelPacket import *
+
+# input parameters
+defaults = {
+'table':    '121f04',   # table name (i.e. sensor)
+'host':     None,       # db host (use None for dict look-up)
+'details':  'False',    # True to get more details; otherwise False
+}
+parameters = defaults.copy()
+
+# dict for host look-up
+db_hosts = {
+    '121f02': 'kenny',
+    '121f03': 'tweek',
+    '121f04': 'mr-hankey',
+    '121f05': 'chef',
+    '121f08': 'timmeh',    
+    'es03':   'ike',    
+    'es05':   'ike',    
+    'es06':   'butters',
+    'hirap':  'towelie', 
+}
 
 # hex dump of packet (or header)
 def packetDump(packet):
@@ -63,7 +85,9 @@ def packetDump(packet):
         start = start + size
     return hex.rstrip('\n'), ln  
 
+# get CCSDS time from header part of packet
 def get_ccsds_time(hdr):
+    """get CCSDS time from header part of packet"""
     UTIME1980 = 315964800.0
     b35, b36, b37, b38, b39 = struct.unpack('ccccc', hdr[34:39])
     coarse_hex = b35.encode('hex') + b36.encode('hex') + b37.encode('hex') + b38.encode('hex')
@@ -73,7 +97,9 @@ def get_ccsds_time(hdr):
     fine = float(int(fine_hex, scale)) / (2.0**8)
     return coarse, fine_hex, fine
 
+# get CCSDS sequence counter from header part of packet
 def get_ccsds_sequence(hdr):
+    """get CCSDS sequence counter from header part of packet"""
     VALUE_MASK = 0x0FFF
     b31, b32 = struct.unpack('cc', hdr[30:32])
     my_hexdata = b31.encode('hex') + b32.encode('hex')
@@ -98,7 +124,7 @@ class GeneralQuery(object):
         self.set_querystr()
 
     def __str__(self):
-        return '%s (%s)' % (self.__class__.__name__, self.querystr)
+        return '%s (%s) on %s' % (self.__class__.__name__, self.querystr, self.host)
 
     def set_querystr(self):
         self.querystr = 'SELECT * FROM %s %s;' % (self.table, self.query_suffix)       
@@ -144,7 +170,6 @@ class StartLenAscendQuery(GeneralQuery):
     def __init__(self, host, table, start, length):
         suffix = 'ORDER BY time ASC LIMIT %d, %d' % ( (start-1) , length ) # zero is 1st rec
         super(StartLenAscendQuery, self).__init__(host, table, query_suffix = suffix)
-###        self.set_querystr()
 
 # packet inspector for having good look at accel db packets
 class PacketInspector(object):
@@ -195,7 +220,7 @@ class PacketInspector(object):
 
     # FIXME this is where we left off with non-class version of code
     #       include method to get this into DataFrame too?
-    def show_results_awkwardly(self):
+    def display_results_awkwardly(self):
         # NOTE:
         # results[0] is time
         # results[1] is packet blob
@@ -209,6 +234,7 @@ class PacketInspector(object):
             ccsds_time_human = UnixToHumanTime(ccsds_coarse_time + ccsds_fine_time)
             ccsds_sequence_counter = get_ccsds_sequence(h)
             
+            # FIXME for details and one-liner type output, how about hex(pkt), hex(hdr), and min/mean/max for t, x, y, z
             if self.details:
                 print '='*88
                 print 'The 4 columns in %s table are:' % self.table
@@ -244,7 +270,7 @@ class PacketInspector(object):
                     print '       samples:'
                     #print 'measurementsPerSample:', pkt.measurementsPerSample()
                     utime = None
-                    htime = 'unknown'
+                    pkt_time_human = 'unknown'
                 else:
                     print 'db column time:', UnixToHumanTime( t ), '(%.4f)' % t
                     print '   packet time:', UnixToHumanTime( pkt.time() )
@@ -254,71 +280,99 @@ class PacketInspector(object):
                     print '       samples:', pkt.samples()
                     #print 'measurementsPerSample:', pkt.measurementsPerSample()
                     utime = pkt.time()
-                    htime = UnixToHumanTime( utime )
+                    pkt_time_human = UnixToHumanTime( utime )
                     for t,x,y,z in pkt.txyz():
                         print "tsec:{0:>9.4f}  xmg:{1:9.4f}  ymg:{2:9.4f}  zmg:{3:9.4f}".format(t, x/1e-3, y/1e-3, z/1e-3)
-    
-            #elif self.table == 'hirap':
-            #    #utime = get_bcd2utime(p) # for hirap, it's BCD time in packet
-            #    utime = get_utime(p, which='hirap') # for hirap, it's BCD time in packet 
-            #    htime = UnixToHumanTime( utime )
-            #
-            #elif self.table.startswith('121f0'):
-            #    #utime_hex = p[36:44].encode('hex')
-            #    utime = get_utime(p, which='se') # for sams2 it's unixtime (sec, usec) in packet
-            #    htime = UnixToHumanTime( utime )     
-            #
-            #elif self.table.startswith('es0'):
-            #    utime = get_utime(p, which='tsh') # for sams2 tsh it's again unixtime (sec, usec) in diff part of packet
-            #    htime = UnixToHumanTime( utime ) 
-            #
-            #else:
-            #    htime = 'NoHandler4ThisTableName'
-            
+
             else:
                 utime = self.get_utime(p)
                 if utime:
-                    htime = UnixToHumanTime(utime)
+                    pkt_time_human = UnixToHumanTime(utime)
                 else:
-                    htime = 'NoHandler4ThisTableName'
+                    pkt_time_human = 'NoHandler4ThisTableName'
     
             # FIXME put this above details and improve handling of details versus utimes form of output
-            print 'ccsds_time:%s, ccsds_sequence_counter:%05d, pkt_time:%s, table:%s' % (ccsds_time_human, ccsds_sequence_counter, htime, self.table)
-    
-# ----------------------------------------------------------------------
-# EXAMPLES:
-#
-# SAMS SE
-# accelPacketTool.py kenny 121f02
-# accelPacketTool.py ike es05
-#
-# iterate over db query results to show pertinent packet details (and header info when details=True)
-if __name__ == '__main__':
-    """iterate over db query results to show pertinent packet details (with header info when details=True)"""
-      
-    # input parameters
-    host = sys.argv[1]  # LIKE kenny
-    table = sys.argv[2] # LIKE 121f02
-    details = False
+            print 'ccsds_time:%s, ccsds_sequence_counter:%05d, pkt_time:%s, table:%s' % (ccsds_time_human, ccsds_sequence_counter, pkt_time_human, self.table)
+
+# use parameters to inspect packets in db table
+def query_and_display():
+    """use parameters to inspect packets in db table"""
     
     # create query object (without actually running the query)
-    if table.startswith('121f0'):
-        query = SamsSeHalfSecFoursomeQuery(host, table)
+    if parameters['table'].startswith('121f0'):
+        query = SamsSeHalfSecFoursomeQuery(parameters['host'], parameters['table'])
 
-    elif table.startswith('es0'):
-        query = SamsTshOneSecEightsomeQuery(host, table)
+    elif parameters['table'].startswith('es0'):
+        query = SamsTshOneSecEightsomeQuery(parameters['host'], parameters['table'])
 
-    elif table == 'hirap':
+    elif parameters['table'] == 'hirap':
         # FIXME is hirap just a case where ccsds_seq is "mostly or nearly contiguous"?
-        query = StartLenAscendQuery(host, table, 1, 245) # does it show pattern at rec ~80, ~160, and ~240?
-        query = GeneralQuery(host, table, 'WHERE time > unix_timestamp("2014-10-09 18:00:00") ORDER BY time ASC LIMIT 2')
+        query = StartLenAscendQuery(parameters['host'], parameters['table'], 1, 245) # does it show pattern at rec ~80, ~160, and ~240?
+        query = GeneralQuery(parameters['host'], parameters['table'], 'WHERE time > unix_timestamp("2014-10-09 18:00:00") ORDER BY time ASC LIMIT 2')
 
     else:
-        query = DefaultPacketQuery(host, table) 
+        query = DefaultPacketQuery(parameters['host'], parameters['table']) 
     
     # create packet inspector object using query object as input
-    pkt_inspector = PacketInspector(host, table, query=query, details=details)
+    pkt_inspector = PacketInspector(parameters['host'], parameters['table'], query=query, details=parameters['details'])
     
-    # now run the query and show results
+    # now run the query and display results
     pkt_inspector.do_query()
-    pkt_inspector.show_results_awkwardly()
+    pkt_inspector.display_results_awkwardly()
+    
+# check for reasonableness of parameters
+def params_ok():
+    """check for reasonableness of parameters"""    
+
+    # input parameters
+    if not parameters['host']:
+        # attempt dict look-up for host
+        parameters['host'] = db_hosts.get( parameters['table'] )
+    
+    # should have non-None host at this point
+    if not parameters['host']:
+        print 'could not look up host for db table = %s' % parameters['table']
+        return False
+    
+    details = eval( parameters['details'] )
+    if not isinstance(details, bool):
+        print 'details = %s did not eval to a bool' % parameters['details']
+        return False
+    else:
+        parameters['details'] = details
+
+    return True # params are OK; otherwise, we returned False above
+
+# print short description of how to run the program
+def print_usage():
+    """print short description of how to run the program"""
+    print 'usage: %s [options]' % os.path.abspath(__file__)
+    print '       options (and default values) are:'
+    for i in defaults.keys():
+        print '\t%s=%s' % (i, defaults[i])
+    
+# iterate over db query results to show pertinent packet details (and header info when details=True)
+def main(argv):
+    """iterate over db query results to show pertinent packet details (and header info when details=True)"""
+    # parse command line
+    for p in sys.argv[1:]:
+        pair = p.split('=')
+        if (2 != len(pair)):
+            print 'bad parameter: %s' % p
+            break
+        else:
+            parameters[pair[0]] = pair[1]
+    else:
+        if params_ok():
+            query_and_display()
+            return 0
+    print_usage()  
+
+# ----------------------------------------------------------------------
+# EXAMPLES:
+# accelPacketTool.py host=kenny table=121f02 details=False
+# accelPacketTool.py table=hirap
+# accelPacketTool.py
+# ----------------------------------------------------------------------
+if __name__ == '__main__':
+    sys.exit( main(sys.argv) )
