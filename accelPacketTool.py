@@ -35,6 +35,7 @@
 import os
 import sys
 import datetime
+import numpy as np
 import pandas as pd
 from binascii import hexlify, unhexlify
 from accelPacket import *
@@ -380,7 +381,7 @@ def print_usage():
     print 'EXAMPLE2: %s 121f03=tweek hirap=towelie details=False # TWO SMALL SETS' % os.path.abspath(__file__)
     print 'EXAMPLE3: %s 121f03=tweek details=True # ONE DETAILED SET' % os.path.abspath(__file__)
     print 'EXAMPLE4: %s details=True # SHOWS MAX INFO' % os.path.abspath(__file__)
-    
+
 # iterate over db query results to show pertinent packet details (and header info when details=True)
 def main(argv):
     """iterate over db query results to show pertinent packet details (and header info when details=True)"""
@@ -403,6 +404,15 @@ def main(argv):
             
         # sort by CCSDS sequence, then CCSDS time
         df_cat.sort(['ccsds_sequence', 'ccsds_time'], ascending=[True, True], inplace=True)
+        df_cat.reset_index(inplace=True, drop=True)
+        
+        df_cat['ccsds_sequence_delta'] = (df_cat['ccsds_sequence']-df_cat['ccsds_sequence'].shift()).fillna(np.NaN)
+        df_cat['ccsds_time_delta'] = (df_cat['ccsds_time']-df_cat['ccsds_time'].shift()).fillna(np.NaN)
+        
+        # FIXME to get sec delta, SOMEHOW need to convert via pd.Timestamp( np.datetime64('2012-05-01T01:00:00.000000') )
+        #print pd.Timestamp( np.datetime64('2012-05-01T01:00:00.000000') )
+        #df_cat['ccsds_sec_delta'] = df_cat['ccsds_time_delta'].map(tdelta2sec)
+        
         print df_cat
 
         return 0
