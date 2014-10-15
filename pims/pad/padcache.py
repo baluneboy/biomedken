@@ -189,13 +189,10 @@ class PimsDayCache(object):
     def __str__(self):
         return "cache for " + str(self.date) + ", sensorSubDirRx = " + str(self.sensorSubDirRx) + ", numHeaders = " + str(len(self.headerFiles))
 
-    def OLDgetHeaderList(self):
-        # FIXME this unwisely changes regular expression to glob pattern YIKES!
-        sensorGlobPattern = self.sensorSubDirRx.replace('.*','*')
-        self.hdrGlobPat = os.path.join(self.padPath, self.ymd, sensorGlobPattern, '*.header')
-        return glob.glob(self.hdrGlobPat)
-
     def getHeaderList(self):
+        ##sensorGlobPattern = self.sensorSubDirRx.replace('.*','*')
+        ##self.hdrGlobPat = os.path.join(self.padPath, self.ymd, sensorGlobPattern, '*.header')
+        ##return glob.glob(self.hdrGlobPat)
         self.hdrRxPat = os.path.join(self.padPath, self.ymd, self.sensorSubDirRx, '*.header')
         predicate = re.compile(self.hdrRxPat).match
         hdr_files = [ f for f in filter_filenames( os.path.join(self.padPath, self.ymd), predicate ) ]
@@ -559,7 +556,7 @@ def demo1():
     print pdc
 
 #demo1()
-#print 'NOW GET RID OF DEMO LINES!'
+#print 'NOW GET RID OF DEMO LINES NEAR if __name__ == "__main__"'
 #raise SystemExit
 
 if __name__ == '__main__':
