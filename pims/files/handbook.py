@@ -162,6 +162,12 @@ class RvtxPdf(SpgxRoadmapPdf):
     def __init__(self, name, pattern=hbpat._RVTXPDF_PATTERN, show_warnings=False):
         super(RvtxPdf, self).__init__(name, pattern, show_warnings=show_warnings)
     
+    ##def _get_pdfjam_cmd(self):
+    ##    xoffset, yoffset = -4.10, 1.0
+    ##    scale = 0.85
+    ##    orient = 'landscape'
+    ##    return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)    
+    
     def _get_plot_type(self): return hbpat._PLOTTYPES['rvt']
 
 class PcsaRoadmapPdf(SpgxRoadmapPdf):
