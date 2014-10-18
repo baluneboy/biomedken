@@ -20,39 +20,46 @@ To end, hit Control-C.
 # To do: add features until it has the same functionality as watch(1);
 # then compare code size and development time.
 
-import os
+# Modified by Ken Hrovat: "Guido...re-use of run...c'mon man!"
+
 import sys
 import time
 import curses
+import subprocess # Guido used popen from os module
 
+# run command # FIXME DANGER using shell=True, user could inject harmful commands!
+def run(cmd):
+    """run command"""
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+    stdout, stderr = proc.communicate()
+    if stderr:
+        sys.exit(stderr)
+    return stdout
+
+# loop to repeat run of command 
 def main():
+    """loop to repeat run of command"""
     if not sys.argv[1:]:
         print __doc__
         sys.exit(0)
     cmd = " ".join(sys.argv[1:])
-    p = os.popen(cmd, "r")
-    text = p.read()
-    sts = p.close()
-    if sts:
-        print >>sys.stderr, "Exit code:", sts
-        sys.exit(sts)
+    text = run(cmd)
     w = curses.initscr()
     try:
         while True:
             w.erase()
             try:
-                w.addstr(text)
+                w.addstr(0, 0, text)
+                w.addstr(0, 30, text, curses.A_REVERSE)
+                w.addstr(text, curses.A_BOLD)
+                w.addstr(text, curses.A_UNDERLINE)
             except curses.error:
                 pass
             w.refresh()
             time.sleep(1)
-            p = os.popen(cmd, "r")
-            text = p.read()
-            sts = p.close()
-            if sts:
-                print >>sys.stderr, "Exit code:", sts
-                sys.exit(sts)
+            text = run(cmd)
     finally:
         curses.endwin()
 
-main()
+if __name__ == "__main__":
+    main()
