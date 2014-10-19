@@ -1,11 +1,12 @@
 """
-Example Binary File parser.
+A silly example for binary file parser.
 
 Author: Kenneth Hrovat
 Creation date: 2014-10-18
 """
 
-from hachoir_core.field import FieldSet, UInt8, Character, String, Parser
+from hachoir_parser import Parser
+from hachoir_core.field import FieldSet, UInt8, Character, String
 from hachoir_core.stream import StringInputStream, LITTLE_ENDIAN
 
 def displayTree(parent):
@@ -30,7 +31,7 @@ class BinaryRozFile(Parser):
         "id": "roz",
         "category": "misc",
         "file_ext": ("roz",),
-        "min_size": 0*8, # FIXME
+        "min_size": 1*8, # FIXME
         "description": "A very Rozzie file.",
     }
 
@@ -45,7 +46,12 @@ class BinaryRozFile(Parser):
         for index in range(self["count"].value):
             yield Entry(self, "point[]")
 
+#print 'BinaryRozFile here'
 #data = b"ROZ\3s\0e\2X\0"
 #stream = StringInputStream(data)
 #root = BinaryRozFile(stream)
 #displayTree(root)
+
+#if __name__ == "__main__":
+#    from hachoir_parser import HachoirParser
+#    print issubclass(BinaryRozFile, HachoirParser)
