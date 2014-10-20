@@ -49,8 +49,9 @@ def main():
         while True:
             w.erase()
             try:
-                w.addstr(0, 0, text)
-                w.addstr(0, 30, text, curses.A_REVERSE)
+                w.addstr(0, 0, "Ctrl-C to quit")
+                w.addstr(1, 0, text)
+                w.addstr(1, 30, text, curses.A_REVERSE)
                 w.addstr(text, curses.A_BOLD)
                 w.addstr(text, curses.A_UNDERLINE)
             except curses.error:
