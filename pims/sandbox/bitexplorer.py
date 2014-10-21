@@ -1,5 +1,11 @@
 #!/usr/bin/python
 
+# STEPS FOR NEW FORMAT DEFINITION:
+# 1. make definition like /home/pims/dev/programs/python/pims/sandbox/example_hachoir_roz.py
+# 2. cd /usr/lib/pymodules/python2.7/hachoir_parser/misc
+# 3. sudo ln -s /home/pims/dev/programs/python/pims/sandbox/example_hachoir_roz.py example_roz.py
+# 4. add import for new class def as line in: sudo vi /usr/share/pyshared/hachoir_parser/misc/__init__.py
+
 import sys
 from optparse import OptionGroup, OptionParser
 from hachoir_core.cmd_line import (getHachoirOptions, configureHachoir, unicodeFilename)
@@ -13,7 +19,6 @@ import hachoir_core
 def displayVersion(*args):
     print _("Hachoir urwid version %s") % VERSION
     print _("Hachoir library version %s") % hachoir_core.__version__
-    print
     print _("Website: %s") % WEBSITE
     sys.exit(0)
 
@@ -22,7 +27,7 @@ def displayParserList(*args):
     sys.exit(0)
 
 def parseOptions():
-    parser = OptionParser(usage="%prog [options] filename")
+    parser = OptionParser(usage="%prog [options]")
 
     common = OptionGroup(parser, "Urwid", _("Option of urwid explorer"))
     common.add_option("--preload", help=_("Number of fields to preload at each read"),
@@ -84,7 +89,7 @@ def main():
     configureHachoir(values)
 
     # Open file and create parser
-    filename = 'dbquerystuff'
+    filename = 'placeholder4dbQueryStuff'
     parser, err = openParser(values.parser, filename, values.offset, values.size)
     if err:
         print err
@@ -101,4 +106,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

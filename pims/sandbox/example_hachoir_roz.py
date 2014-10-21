@@ -32,7 +32,7 @@ class BinaryRozFile(Parser):
         "category": "misc",
         "file_ext": ("roz",),
         "min_size": 1*8, # FIXME
-        "description": "A very Rozzie file.",
+        "description": "A roz file.",
     }
 
     def validate(self):
@@ -44,7 +44,7 @@ class BinaryRozFile(Parser):
         yield String(self, "signature", 3, charset="ASCII")
         yield UInt8(self, "count")
         for index in range(self["count"].value):
-            yield Entry(self, "point[]")
+            yield  Entry(self, "point[]")
 
 #print 'BinaryRozFile here'
 #data = b"ROZ\3s\0e\2X\0"
