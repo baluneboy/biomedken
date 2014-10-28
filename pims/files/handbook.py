@@ -183,6 +183,12 @@ class Psd3RoadmapPdf(SpgxRoadmapPdf):
 
     def _get_plot_type(self): return hbpat._PLOTTYPES['psd']
 
+    def _get_pdfjam_cmd(self):
+        xoffset, yoffset = -4.25, 1.0
+        scale = 0.82
+        orient = 'landscape'
+        return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
+
 class Gvt3Pdf(SpgxRoadmapPdf):
     """
     GVT XYZ PDF handbook file like this example:
