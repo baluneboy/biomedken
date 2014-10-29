@@ -4,6 +4,13 @@ import sys
 import aifc
 import struct
 import numpy as np
+import matplotlib.pyplot as plt
+
+def normalize(v):
+    norm = np.linalg.norm(v, ord=2)
+    if norm == 0: 
+       return v
+    return v / norm
 
 # Ted Wright's original bin2asc routine was like this...
 def ted_write(filename, columns=4):
@@ -23,24 +30,38 @@ def ted_write(filename, columns=4):
 def array_fromfile(filename, columns=4, out_dtype=np.float32):
     """return 2d numpy array read from input filename"""
     with open(filename, "rb") as f: 
-        A = np.fromfile(f, dtype=np.float32) # file is 32-bit float "singles"
+        A = np.fromfile(f, dtype=np.float32) # accel file: 32-bit float "singles"
     B = np.reshape(A, (-1, columns))
     if B.dtype == out_dtype:
         return B
     return B.astype(out_dtype)
 
 def demo_convert_zaxis(filename):
+
+    # read data from file
     B = array_fromfile(filename)
+
+    # demean each column
     M = B.mean(axis=0)
-    C = B - M[np.newaxis, :]    
-    data = C[:, -1] # Z-axis is last axis
+    C = B - M[np.newaxis, :]
+   
+    # just work with z-axis for now
+    data = C[:, -1] # z-axis is last column
+
+    # normalize to range -32768:32767
+    data = normalize(data) * 30e4
+    data = data.astype(np.int16)
+    data = data.byteswap().newbyteorder()
+
+    #plt.plot(data)
+    #plt.show()
+    
+    # convert data to string for aifc to work write
     strdata = data.tostring()
-    print len(data)
-    print len(strdata)
     gn = '/tmp/delombard.aiff'
     print "Writing", gn
     g = aifc.open(gn, 'w')
-    sampwidth = 4
+    sampwidth = 2
     #nchannels, sampwidth, framerate, nframes, comptype, compname
     g.setparams((1, sampwidth, 142, len(data), 'NONE', 'not compressed'))
     g.writeframes(strdata)
@@ -75,9 +96,10 @@ def demo2():
 
 if __name__ == '__main__':
     
-    fname = '/home/pims/dev/programs/python/pims/sandbox/data/2014_10_22_09_36_36.324-2014_10_22_09_37_35.317.121f03006'
+    fname = '/Users/ken/dev/programs/python/pims/sandbox/data/2014_10_22_09_36_36.324-2014_10_22_09_37_35.317.121f03006'
     
-    #demo_convert_zaxis(fname)
+    demo_convert_zaxis(fname)
+    raise SystemExit
     
     a = array_fromfile(fname, columns=4, out_dtype=np.float32)
     
