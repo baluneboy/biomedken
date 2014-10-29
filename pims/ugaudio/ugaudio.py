@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+
+"""USAGE: ugaudio [ demo | <filename> | <filenames> ]
+
+This simple program attempts to convert acceleration data files (PAD files) into
+AIFF audio files.
+
+Given zero input arguments, this program shows this help text and quits.
+
+Given multiple input arguments, this program attempts to read each as an
+acceleration (PAD) data file named <filename> and convert its contents to an
+AIFF audio file named <filename.aiff>.
+
+Given the input argument "demo" [no quotes], this program generates its own
+(fake) acceleration (PAD) data and treats that as it would given one input
+argument, which is described below.
+
+Given one input argument, this program takes that as an acceleration (PAD) data
+file named <filename> and does the following with its contents:
+(1) produce plot of the demeaned acceleration data
+(2) write AIFF audio file named <filename.aiff>
+
+User settings are in settings.py. You should probably SAVE THE ORIGINAL VERSION
+of the settings.py file in case something gets messed up.
+
+"""
+
+# Author: Ken Hrovat
+# Disclaimer: this project deserves more time than I am able to give it
+# FIXME - this code should be much more graceful in handling the unexpected
+
+import sys
+
+# get inputs and run
+def main():
+    """get inputs and run"""
+    if not sys.argv[1:]:
+        print __doc__
+        
+    elif sys.argv[1].lower() == 'demo':
+        from pims.ugaudio.demo import demo_chirp
+        print 'demo mode'
+        demo_chirp()
+        
+    elif len(sys.argv) == 2:
+        # FIXME this is just doing another demo with filename as input
+        from pims.ugaudio.demo import demo_convert_zaxis
+        print 'one file mode'
+        filename = sys.argv[1]    
+        demo_convert_zaxis(filename, fs=44100)
+        
+    else:
+        # FIXME this is just doing another demo with filenames as inputs
+        from pims.ugaudio.demo import demo_convert_zaxis
+        print 'batch files mode'
+        for filename in sys.argv[1:]:
+            demo_convert_zaxis(filename, fs=44100)
+        
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()

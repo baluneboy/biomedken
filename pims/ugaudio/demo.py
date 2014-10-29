@@ -33,14 +33,14 @@ def demo_convert_zaxis(filename, fs=500):
     # convert data to string for aifc to work write
     strdata = data.tostring()
     gn = '/tmp/delombard.aiff'
-    print "Writing", gn
+    print "writing", gn,
     g = aifc.open(gn, 'w')
     sampwidth = 2
     #nchannels, sampwidth, framerate, nframes, comptype, compname
     g.setparams((1, sampwidth, fs, len(data), 'NONE', 'not compressed'))
     g.writeframes(strdata)
     g.close()
-    print 'Done'
+    print 'done'
 
 def demo_chirp(fs=44100):
 
@@ -64,14 +64,14 @@ def demo_chirp(fs=44100):
     # convert data to string for aifc to work write
     strdata = data.tostring()
     gn = '/tmp/delombard.aiff'
-    print "Writing", gn
+    print "writing", gn,
     g = aifc.open(gn, 'w')
     sampwidth = 2
     #nchannels, sampwidth, framerate, nframes, comptype, compname
     g.setparams((1, sampwidth, fs, len(data), 'NONE', 'not compressed'))
     g.writeframes(strdata)
     g.close()
-    print 'Done'
+    print 'done'
     
 def demo_showparams():
     fn = '/home/pims/Music/bzz.aiff'
