@@ -102,8 +102,8 @@ if __name__ == '__main__':
     #raise SystemExit
     
     fname = '/misc/yoda/pub/pad/year2014/month10/day22/sams2_accel_121f02/2014_10_22_23_44_02.923+2014_10_22_23_54_02.938.121f02'
-    fname = '/home/pims/dev/programs/python/pims/ugaudio/samples/chirp44k.pad'    
-    demo_convert_zaxis(fname, fs=11025)    
+    fname = '/home/pims/dev/programs/python/pims/ugaudio/samples/test.pad'    
+    demo_convert_zaxis(fname, fs=44100)    
     raise SystemExit
         
     demo_chirp()
