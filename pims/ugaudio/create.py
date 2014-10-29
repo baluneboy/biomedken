@@ -10,3 +10,8 @@ def get_chirp():
     y = chirp(t, f0=200, f1=2000, t1=1, method='linear')
     w = np.hanning(len(y))
     return w*y
+
+# write PAD file (just data, no header)
+def write_pad(filename):
+    wy = get_chirp()
+    wy.astype('float32').tofile(filename)
