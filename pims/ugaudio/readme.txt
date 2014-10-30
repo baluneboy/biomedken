@@ -1,0 +1,1 @@
+There are many important considerations and tradeoffs that come with converting acceleration data into human audible sound (vibrations).  Perhaps most importantly is the filtering done by the human hearing system.  I have heard that humans can hear sound in the frequency range from 20 to 20 kHz; possibly/probably less range for some humans.

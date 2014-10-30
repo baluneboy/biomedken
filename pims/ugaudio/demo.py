@@ -33,7 +33,7 @@ def demo_convert_zaxis(filename, fs=500):
     # convert data to string for aifc to work write
     strdata = data.tostring()
     gn = '/tmp/delombard.aiff'
-    print "writing", gn,
+    print "writing", gn
     g = aifc.open(gn, 'w')
     sampwidth = 2
     #nchannels, sampwidth, framerate, nframes, comptype, compname
@@ -64,7 +64,7 @@ def demo_chirp(fs=44100):
     # convert data to string for aifc to work write
     strdata = data.tostring()
     gn = '/tmp/delombard.aiff'
-    print "writing", gn,
+    print "writing", gn
     g = aifc.open(gn, 'w')
     sampwidth = 2
     #nchannels, sampwidth, framerate, nframes, comptype, compname

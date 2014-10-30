@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-"""USAGE: ugaudio [ demo | <filename> | <filenames> ]
+"""
+USAGE: ugaudio [ demo | <filename> | <filenames> ]
+
+SEE the readme.txt file for important considerations and disclaimers.
 
 This simple program attempts to convert acceleration data files (PAD files) into
 AIFF audio files.
@@ -22,7 +25,6 @@ file named <filename> and does the following with its contents:
 
 User settings are in settings.py. You should probably SAVE THE ORIGINAL VERSION
 of the settings.py file in case something gets messed up.
-
 """
 
 # Author: Ken Hrovat
@@ -34,21 +36,26 @@ import sys
 # get inputs and run
 def main():
     """get inputs and run"""
+    
+    # no input args, so just show doc
     if not sys.argv[1:]:
         print __doc__
-        
+    
+    # demo
     elif sys.argv[1].lower() == 'demo':
         from pims.ugaudio.demo import demo_chirp
         print 'demo mode'
         demo_chirp()
-        
+    
+    # one file mode
     elif len(sys.argv) == 2:
         # FIXME this is just doing another demo with filename as input
         from pims.ugaudio.demo import demo_convert_zaxis
         print 'one file mode'
         filename = sys.argv[1]    
         demo_convert_zaxis(filename, fs=44100)
-        
+    
+    # batch files mode
     else:
         # FIXME this is just doing another demo with filenames as inputs
         from pims.ugaudio.demo import demo_convert_zaxis
