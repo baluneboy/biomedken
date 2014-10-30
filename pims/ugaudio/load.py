@@ -18,9 +18,9 @@ def ted_write(filename, columns=4):
             print
     sys.stdout.close()
 
-# return 2d numpy array read from input filename
+# return 2d numpy array read from filename input
 def array_fromfile(filename, columns=4, out_dtype=np.float32):
-    """return 2d numpy array read from input filename"""
+    """return 2d numpy array read from filename input"""
     with open(filename, "rb") as f: 
         A = np.fromfile(f, dtype=np.float32) # accel file: 32-bit float "singles"
     B = np.reshape(A, (-1, columns))

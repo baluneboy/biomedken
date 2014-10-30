@@ -49,19 +49,17 @@ def main():
     
     # one file mode
     elif len(sys.argv) == 2:
-        # FIXME this is just doing another demo with filename as input
-        from pims.ugaudio.demo import demo_convert_zaxis
+        from pims.ugaudio.convert import convert
         print 'one file mode'
         filename = sys.argv[1]    
-        demo_convert_zaxis(filename, fs=44100)
+        convert(filename, plot=True)
     
     # batch files mode
     else:
-        # FIXME this is just doing another demo with filenames as inputs
-        from pims.ugaudio.demo import demo_convert_zaxis
+        from pims.ugaudio.convert import convert
         print 'batch files mode'
         for filename in sys.argv[1:]:
-            demo_convert_zaxis(filename, fs=44100)
+            convert(filename, plot=False)
         
     sys.exit(0)
 
