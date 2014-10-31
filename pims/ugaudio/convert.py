@@ -2,6 +2,7 @@
 
 """
 This module does conversion from acceleration data file to AIFF audio file.
+Optionally, it produces acceleration data plot in PNG file too.
 """
 
 # Author: Ken Hrovat
@@ -17,7 +18,7 @@ def convert(filename, plot=False):
 
     if plot:
         png_file = filename + '.png'
-        print 'convert %s to %s' % (filename, aiff_file)
-        print 'produce acceleration plot in %s' % png_file
+        print 'converted & saved %s' % aiff_file
+        print 'plotted accel. in %s' % png_file
     else:
-        print 'convert %s to %s' % (filename, aiff_file)
+        print 'converted & saved %s' % aiff_file
