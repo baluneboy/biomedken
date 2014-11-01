@@ -4,7 +4,7 @@ import aifc
 import numpy as np
 import matplotlib.pyplot as plt
 from pims.ugaudio.load import array_fromfile
-from pims.ugaudio.create import get_chirp
+from pims.ugaudio.create import get_chirp, create_from_aiff
 from pims.ugaudio.signal import normalize
 
 def demo_convert_zaxis(filename, fs=500):
@@ -75,24 +75,8 @@ def demo_chirp(fs=44100):
     # plot data
     png_file = '/tmp/delombard.png'   
     print 'wrote accel plot %s FIXME: NOT YET' % png_file    
-    
-def demo_showparams():
-    fn = '/home/pims/Music/bzz.aiff'
-    f = aifc.open(fn, 'r')
-    print "Reading", fn
-    print "nchannels =", f.getnchannels()   # 1 is mono: x, y, z, or sum [all after demean]
-    print "nframes   =", f.getnframes()     # nframes is number of rows in np array
-    print "sampwidth =", f.getsampwidth()   # use 4 (not 2)
-    print "framerate =", f.getframerate()   # sample rate, fs = 500 for fc = 200 Hz
-    print "comptype  =", f.getcomptype()    # 'NONE'
-    print "compname  =", f.getcompname()    # 'not compressed'
-    print f.getparams()
-    while 1:
-        data = f.readframes(1024)
-        if not data:
-            break
-    f.close()
-    print "Done."
+
+#create_from_aiff('/tmp/trash2.aiff'); raise SystemExit
 
 if __name__ == '__main__':
 
