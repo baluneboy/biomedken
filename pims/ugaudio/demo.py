@@ -63,15 +63,18 @@ def demo_chirp(fs=44100):
     
     # convert data to string for aifc to work write
     strdata = data.tostring()
-    gn = '/tmp/delombard.aiff'
-    print "writing", gn
-    g = aifc.open(gn, 'w')
+    aiff_file = '/tmp/delombard.aiff'
+    g = aifc.open(aiff_file, 'w')
     sampwidth = 2
     #nchannels, sampwidth, framerate, nframes, comptype, compname
     g.setparams((1, sampwidth, fs, len(data), 'NONE', 'not compressed'))
     g.writeframes(strdata)
     g.close()
-    print 'done'
+    print 'wrote sound file %s' % aiff_file
+    
+    # plot data
+    png_file = '/tmp/delombard.png'   
+    print 'wrote accel plot %s FIXME: NOT YET' % png_file    
     
 def demo_showparams():
     fn = '/home/pims/Music/bzz.aiff'

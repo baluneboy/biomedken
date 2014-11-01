@@ -32,7 +32,6 @@ of the settings.py file in case something gets messed up.
 # FIXME - this code should be much more graceful in handling the unexpected
 
 import sys
-from pims.ugaudio.load import is_pad
 from pims.ugaudio.demo import demo_chirp
 from pims.ugaudio.convert import convert
 
@@ -49,21 +48,19 @@ def main():
         print 'demo mode'
         demo_chirp()
     
-    # one file mode: both sound and plot file outputs for input file
+    # one file mode: both sound and plot file outputs for 1 input file
     elif len(sys.argv) == 2:
         print 'one file mode'
-        filename = sys.argv[1]    
+        filename = sys.argv[1]
         convert(filename, plot=True)
     
     # batch files mode: only sound file output for each input file
     else:
         print 'batch files mode'
         for filename in sys.argv[1:]:
-            if is_pad(filename):
-                convert(filename, plot=False)
-            else:
-                print 'ignore non-pad file %s' % filename
-        
+            convert(filename, plot=False)
+    
+    print 'done'
     sys.exit(0)
 
 if __name__ == "__main__":
