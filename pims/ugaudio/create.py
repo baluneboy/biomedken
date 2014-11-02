@@ -13,12 +13,13 @@ def get_chirp():
     w = np.hanning(len(y))
     return w*y
 
-# write PAD file (just data, no header)
+# write PAD file (just data, no header file)
 def write_chirp_pad(filename):
     wy = get_chirp()
     wy.astype('float32').tofile(filename)
 
-def write_aiff_pad(fname):
+# FIXME this probably does not work fully as expected
+def aiff2pad(fname):
     pad_file = fname + '.pad'
     y = create_from_aiff(fname)
     print len(y)
@@ -47,4 +48,4 @@ def create_from_aiff(aiff_file):
     #plt.show()
     return np.fromstring(data, np.short).byteswap()
 
-write_aiff_pad('/tmp/trash2.aiff')
+aiff2pad('/tmp/trash2.aiff')
