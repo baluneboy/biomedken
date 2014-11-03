@@ -36,6 +36,7 @@ of the settings.py file in case something gets messed up.
 import sys
 from pims.ugaudio.demo import demo_chirp
 from pims.ugaudio.convert import convert
+from pims.ugaudio.settings import params_ok, parameters
 
 # get inputs and run
 def main():
@@ -44,6 +45,10 @@ def main():
     # no input args, so just show doc
     if not sys.argv[1:]:
         print __doc__
+    
+    # verify parameters
+    elif not params_ok():
+        print 'bad parameter(s), so exit'
     
     # demo
     elif sys.argv[1].lower() == 'demo':
