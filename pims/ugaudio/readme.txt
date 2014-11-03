@@ -1,6 +1,8 @@
-There are many important considerations and tradeoffs that come with converting
+There are important considerations and tradeoffs that come with converting
 acceleration data into sound (vibrations) audible to humans. Perhaps the most
 important consideration is the human hearing system and its limitations.
 
-Some have said that humans can hear sound in the frequency range from about 20
-to 20 kHz.  More likely, some humans have a narrower and/or offset pass-band.
+Wikipedia suggests that humans can hear sound in the frequency range (pass-band)
+from about 20 to 20 kHz. Some humans likely have a narrower or truncated
+pass-band.
+

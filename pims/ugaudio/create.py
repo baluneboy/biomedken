@@ -8,10 +8,13 @@ from scipy.signal import chirp
 # generate a tapered linear chirp
 def get_chirp():
     """generate a tapered linear chirp"""
-    t = np.linspace(0, 1, 44100)
-    y = chirp(t, f0=200, f1=2000, t1=1, method='linear')
-    w = np.hanning(len(y))
-    return w*y
+    t = np.linspace(0, 1, 88200)
+    y = chirp(t, f0=20, f1=2000, t1=0.9, method='linear')
+    #w = np.hanning(len(y))
+    #return w*y
+    plt.plot(t, y)
+    plt.show()
+    return y
 
 # write PAD file (just data, no header file)
 def write_chirp_pad(filename):
@@ -49,3 +52,5 @@ def create_from_aiff(aiff_file):
     return np.fromstring(data, np.short).byteswap()
 
 #aiff2pad('/tmp/trash2.aiff')
+
+write_chirp_pad('/tmp/chirp.pad')
