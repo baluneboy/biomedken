@@ -54,13 +54,13 @@ def main():
     elif len(sys.argv) == 2:
         print 'one file mode'
         filename = sys.argv[1]
-        convert(filename, samplerate=None, axis='z', plot=True)
+        convert(filename, samplerate=None, axis='s', plot=True)
     
     # batch files mode: only sound file output for each input file
     else:
         print 'batch files mode'
         for filename in sys.argv[1:]:
-            convert(filename, samplerate=None, axis='x', plot=False)
+            convert(filename, samplerate=None, axis='s', plot=False)
     
     sys.exit(0)
 

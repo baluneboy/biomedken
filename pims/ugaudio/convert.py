@@ -42,11 +42,14 @@ def convert(filename, samplerate=None, axis='z', plot=False):
     M = B.mean(axis=0)
     C = B - M[np.newaxis, :]
 
+    # FIXME how to use numpy when axis is 's' for 'sum'
+    
     # determine axis
     ax = axis.lower()
     if ax == 'x':   data = C[:, -3] # x-axis is 3rd last column
-    elif ax == 'y': data = C[:, -2] # x-axis is 2nd last column
-    elif ax == 'z': data = C[:, -1] # x-axis is the last column
+    elif ax == 'y': data = C[:, -2] # y-axis is 2nd last column
+    elif ax == 'z': data = C[:, -1] # z-axis is the last column
+    elif ax == 's': data = C[:, 1::].sum(axis=1) # sum(x+y+z)
     else:
         print 'unhandled axis "%s", so just use z-axis' % axis
         ax = 'z'
