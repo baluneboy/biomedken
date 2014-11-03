@@ -8,7 +8,6 @@ Optionally, it produces acceleration data plot in PNG file too.
 # Author: Ken Hrovat
 # Disclaimer: this code can probably be improved in many ways
 
-import sys
 import aifc
 import numpy as np
 from pims.ugaudio.pad import PadFile
@@ -41,9 +40,7 @@ def convert(filename, samplerate=None, axis='s', plot=False):
     # demean each column
     M = B.mean(axis=0)
     C = B - M[np.newaxis, :]
-
-    # FIXME how to use numpy when axis is 's' for 'sum'
-    
+   
     # determine axis
     for ax in axis.lower():
         if ax == 'x':   data = C[:, -3] # x-axis is 3rd last column
@@ -51,9 +48,8 @@ def convert(filename, samplerate=None, axis='s', plot=False):
         elif ax == 'z': data = C[:, -1] # z-axis is the last column
         elif ax == 's': data = C[:, 1::].sum(axis=1) # sum(x+y+z)
         else:
-            print 'unhandled axis "%s", so just use z-axis' % axis
-            ax = 'z'
-            data = C[:, -1] # just use z-axis in this case
+            print 'unhandled axis "%s", so exit' % ax
+            break
     
         # plot demeaned accel data (if plot is to be produced)
         if plot:
