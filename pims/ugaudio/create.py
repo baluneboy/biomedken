@@ -48,4 +48,4 @@ def create_from_aiff(aiff_file):
     #plt.show()
     return np.fromstring(data, np.short).byteswap()
 
-aiff2pad('/tmp/trash2.aiff')
+#aiff2pad('/tmp/trash2.aiff')

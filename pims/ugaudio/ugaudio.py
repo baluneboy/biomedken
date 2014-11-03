@@ -3,7 +3,7 @@
 """
 USAGE: ugaudio [ demo | <filename> | <filenames> ]
 
-SEE the readme.txt file for important considerations and disclaimers.
+SEE the readme.txt file for some important considerations and disclaimers.
 
 This simple program attempts to convert acceleration data files (PAD files) into
 AIFF audio files.
@@ -12,7 +12,7 @@ Given zero input arguments, this program shows this help text and quits.
 
 Given multiple input arguments, this program attempts to read each as an
 acceleration (PAD) data file named <filename> and convert its contents to an
-AIFF audio file named <filename.aiff>.
+AIFF audio file named <filenameX.aiff>; where X designates which axis.
 
 Given the input argument "demo" [no quotes], this program generates its own
 (fake) acceleration (PAD) data and treats that as it would given one input
@@ -20,8 +20,8 @@ argument, which is described below.
 
 Given one input argument, this program takes that as an acceleration (PAD) data
 file named <filename> and does the following with its contents:
-(1) produce plot of the demeaned acceleration data
-(2) write AIFF audio file named <filename.aiff>
+(1) produce plot of the demeaned acceleration data <filenameX.png>
+(2) write AIFF audio file named <filenameX.aiff>; where X designates which axis
 
 User settings are in settings.py. You should probably SAVE THE ORIGINAL VERSION
 of the settings.py file in case something gets messed up.
@@ -30,6 +30,8 @@ of the settings.py file in case something gets messed up.
 # Author: Ken Hrovat
 # Disclaimer: this project deserves more time than I am able to give it
 # FIXME - this code should be much more graceful in handling the unexpected
+
+# TODO settings.py for samplerate, axis, and plot defaults and overrides
 
 import sys
 from pims.ugaudio.demo import demo_chirp
@@ -52,15 +54,14 @@ def main():
     elif len(sys.argv) == 2:
         print 'one file mode'
         filename = sys.argv[1]
-        convert(filename, plot=True)
+        convert(filename, samplerate=None, axis='z', plot=True)
     
     # batch files mode: only sound file output for each input file
     else:
         print 'batch files mode'
         for filename in sys.argv[1:]:
-            convert(filename, plot=False)
+            convert(filename, samplerate=None, axis='x', plot=False)
     
-    print 'done'
     sys.exit(0)
 
 if __name__ == "__main__":

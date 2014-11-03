@@ -19,9 +19,8 @@ def demo_convert_zaxis(filename, fs=500):
     # just work with z-axis for now
     data = C[:, -1] # z-axis is last column
 
-    # normalize to range -32768:32767 (actually, use -32767:32767)
-    #data = normalize(data) * 327670.0
-    data = normalize(data) * 32767.0
+    # normalize to range -32768:32767 (actually, use -32000:32000)
+    data = normalize(data) * 32000.0
     
     # data conditioning
     data = data.astype(np.int16) # not sure why we need this...maybe aifc assumptions
@@ -50,8 +49,8 @@ def demo_chirp(fs=44100):
     # demean signal
     data = y - y.mean(axis=0)
 
-    # normalize to range -32768:32767 (actually, use -32767:32767)
-    data = data * 32767.0
+    # normalize to range -32768:32767 (actually, use -32000:32000)
+    data = data * 32000.0
     
     # data conditioning
     data = data.astype(np.int16) # not sure why we need this...maybe aifc assumptions
