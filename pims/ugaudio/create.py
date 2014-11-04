@@ -53,4 +53,4 @@ def create_from_aiff(aiff_file):
 
 #aiff2pad('/tmp/trash2.aiff')
 
-write_chirp_pad('/tmp/chirp.pad')
+#write_chirp_pad('/tmp/chirp.pad')

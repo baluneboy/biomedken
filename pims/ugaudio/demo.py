@@ -40,6 +40,3 @@ def demo_chirp(fs=44100):
     # plot data
     png_file = '/tmp/delombard.png'   
     print 'wrote accel plot %s FIXME: NOT YET' % png_file    
-
-if __name__ == '__main__':
-    demo_chirp()
