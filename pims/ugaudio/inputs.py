@@ -40,7 +40,7 @@ python ugaudio.py -m plot filename
 # convert PAD files to AIFFs; use rate of 22050 sa/sec, & produce PNGs for accel plots
 python ugaudio.py -m plot -r 22050 filename1 filename2
 
-INPUT ARGUMENTS:
+INPUT ARGUMENTS (see "usage" on first line above):
 """
 
 # Author: Ken Hrovat
@@ -58,36 +58,42 @@ class MyParser(argparse.ArgumentParser):
     def error(self, message):
         sys.stderr.write('error: %s\n' % message)
         self.print_help()
-        sys.exit(2)
-#    print 'const_collection =', results.const_collection
+        sys.exit(1)
 
-# parse input arguments
-def parse_args():
-    parser = MyParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('-m', default="aiff", choices=['aiff', 'plot', 'demo'], help="which mode to use")
-    parser.add_argument('-r', type=int, default=0, help="integer > 0 for sample rate to override default")
-    parser.add_argument('files', nargs='*', help="file(s) to process")
-    args = parser.parse_args()
-    
-    # no input args, so just print help
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(1)    
-
-    # turn arg switches into vars
-    mode = args.m
-    rate = args.r
-    files = args.files
-    
-    # courtesy output
+# courtesy echo arguments
+def show_args(mode, axis, rate, files):
+    """courtesy echo arguments"""
     if not mode == 'demo':
         print "mode = %s," % mode,
         if rate:
             print "sample rate = {} sa/sec,".format(rate),
         else:
             print "sample rate = native,",
-        print "file count = %d" % len(files)
+        print "axis = %s," % axis,
+        print "file argument count = %d" % len(files)
+        if len(files) == 0:
+            print "It looks like you neglected to include file(s) as command line arguments."
+            print "No PAD-like file argument(s), so nothing to do.  Try no arguments for help."
+            print "Bye for now."
+            sys.exit(3)
     else:
         print "mode = %s" % mode
+    
+    print '~' * 80
 
-    return mode, rate, files
+# parse input arguments
+def parse_args():
+    parser = MyParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('-m', default="aiff", choices=['aiff', 'plot', 'demo'], help="which mode to use")
+    parser.add_argument('-a', default="s", choices=['x', 'y', 'z', 's'], help="which axis to use (s for sum)")
+    parser.add_argument('-r', type=int, default=0, help="integer R > 0 is sample rate to override native")
+    parser.add_argument('files', nargs='*', help="file(s) to process")
+    args = parser.parse_args()
+    
+    # no input args, so just print help
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(2)
+
+    # return arguments: (m)ode, (a)xis, (r)ate, and files
+    return args.m, args.a, args.r, args.files

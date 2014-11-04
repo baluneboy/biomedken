@@ -35,11 +35,11 @@ class PadFile(object):
     def __str__(self):
         bname = os.path.basename(self.filename)
         if self.ispad:
-            return '%s object named %s (%.3f sa/sec)' % (self.__class__.__name__, bname, self.samplerate)
+            return 'a %s named %s (native rate = %.3f sa/sec)' % (self.__class__.__name__, bname, self.samplerate)
         elif self.exists:
-            return 'non-%s object named %s (file exists)' % (self.__class__.__name__, bname)
+            return 'a non-%s named %s (this file exists)' % (self.__class__.__name__, bname)
         else:
-            return 'non-%s object named %s (file does not exist)' % (self.__class__.__name__, self.filename)            
+            return 'a non-%s object named %s (this file does not exist)' % (self.__class__.__name__, self.filename)            
     
     # loose check for pad file
     def is_pad(self):
@@ -101,16 +101,18 @@ class PadFile(object):
             return self._reckon_rate()
     
     # convert designated axis to aiff and maybe plot too
-    def convert(self, samplerate=None, axis='s', plot=False):
+    def convert(self, rate=None, axis='s', plot=False):
         """convert designated axis to aiff and maybe plot too"""
     
         # check loosely if pad file
         if not self.ispad:
-            print 'ignore %s' % str(self)
             return
     
-        if not samplerate:
+        # get sample rate
+        if not rate:
             samplerate = self.samplerate
+        else:
+            samplerate = rate
             
         #print self
                 
@@ -128,15 +130,13 @@ class PadFile(object):
             elif ax == 'z': data = C[:, -1] # z-axis is the last column
             elif ax == 's': data = C[:, 1::].sum(axis=1) # sum(x+y+z)
             else:
-                print 'unhandled axis "%s", so exit' % ax
-                break
+                raise Exception( 'unhandled axis "%s"' % ax )
         
-            # plot demeaned accel data (if plot is to be produced)
+            # maybe plot demeaned accel data
             if plot:
                 png_file = self.filename + ax + '.png'
                 plt.plot(data)
                 plt.savefig(png_file)
-                print 'wrote accel plot %s' % png_file
                 
             # normalize to range -32768:32767 (actually, use -32000:32000)
             data = normalize(data) * 32000.0
@@ -154,4 +154,3 @@ class PadFile(object):
             g.setparams((1, sampwidth, samplerate, len(data), 'NONE', 'not compressed'))
             g.writeframes(strdata)
             g.close()
-            print 'wrote sound file %s' % aiff_file
