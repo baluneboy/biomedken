@@ -34,6 +34,7 @@ file named <filename> and does the following with its contents:
 # FIXME - this code should be much more graceful in handling the unexpected
 
 import sys
+from pims.ugaudio.pad import PadFile
 from pims.ugaudio.demo import demo_chirp
 from pims.ugaudio.convert import convert
 
@@ -54,12 +55,14 @@ def main():
     elif len(sys.argv) == 2:
         print 'one file mode'
         filename = sys.argv[1]
+        pad_file = PadFile(filename)
         convert(filename, samplerate=None, axis='xyzs', plot=True)
     
     # batch files mode: only sound file output for each input file
     else:
         print 'batch files mode'
         for filename in sys.argv[1:]:
+            pad_file = PadFile(filename)
             convert(filename)
     
     sys.exit(0)
