@@ -62,3 +62,9 @@ fwrite(fid, x.',	'int16');	% column-major, which interleaves chans
 
 % close
 fclose(fid);
+
+function nr = nRows(x)
+nr = size(x, 1);
+
+function nc = nCols(x)
+nc = size(x, 2);

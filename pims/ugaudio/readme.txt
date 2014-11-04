@@ -6,3 +6,5 @@ Wikipedia suggests that humans can hear sound in the frequency range (pass-band)
 from about 20 to 20 kHz. Some humans likely have a narrower or truncated
 pass-band.
 
+Finally, an acknowledgement to my neighbors who may have heard a few strange
+chirps and squeaks coming from my general direction during testing of this code.
