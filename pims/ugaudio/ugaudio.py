@@ -130,18 +130,27 @@ def TOOparse_args():
 
 def parse_args():
     parser = MyParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-        
-    parser.add_argument('-s', default="closed", choices=['closed', 'wontfix', 'notabug'], help="bug status")
-     
-    parser.add_argument('bugnum', type=int, help="bug number to be statused")
-     
-    parser.add_argument('message', nargs='*', help="optional message")
-     
+    parser.add_argument('-m', default="aiff", choices=['aiff', 'plot', 'demo'], help="which mode to use")
+    parser.add_argument('-r', type=int, default=0, help="integer > 0 for sample rate to override default")
+    parser.add_argument('files', nargs='*', help="file(s)")
     args = parser.parse_args()
-     
-    print("~ Bug Num: {}".format(args.bugnum))
-    print("~ Status : {}".format(args.s))
-    print("~ Message: {}".format(" ".join(args.message)))    
+    
+    # no input args, so just show doc help
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)    
+
+    if not args.m == 'demo':
+        print "mode = %s," % args.m,
+        if args.r:
+            print "sample rate = {} sa/sec,".format(args.r),
+        else:
+            print "sample rate = native,",
+        print "file count = %d" % len(args.files)
+    else:
+        print "mode = %s," % args.m
+
+    print 'next'
     
 # get inputs and run
 def main():
