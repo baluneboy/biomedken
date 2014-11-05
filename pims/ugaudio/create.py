@@ -10,11 +10,8 @@ def get_chirp():
     """generate a tapered linear chirp"""
     t = np.linspace(0, 1, 88200)
     y = chirp(t, f0=20, f1=2000, t1=0.9, method='linear')
-    #w = np.hanning(len(y))
-    #return w*y
-    plt.plot(t, y)
-    plt.show()
-    return y
+    w = np.hanning(len(y))
+    return w*y
 
 # write PAD file (just data, no header file)
 def write_chirp_pad(filename):
@@ -46,9 +43,6 @@ def create_from_aiff(aiff_file):
             break
         data += newdata
     f.close()
-    #print y
-    #plt.plot(y)
-    #plt.show()
     return np.fromstring(data, np.short).byteswap()
 
 #aiff2pad('/tmp/trash2.aiff')

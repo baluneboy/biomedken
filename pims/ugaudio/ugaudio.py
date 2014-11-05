@@ -38,7 +38,9 @@ def main():
                 msg = 'failed'
         else:
             msg = 'not attempted'
-        print 'file arg %d %s: conversion %s' % (i + 1, pad_file, msg)
+
+        # show one-liner for each conversion (attempted, succeeded, or failed)
+        print '%d. %s: conversion %s' % (i + 1, pad_file, msg)
 
     sys.exit(0)
 

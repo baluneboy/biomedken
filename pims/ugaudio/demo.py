@@ -21,10 +21,6 @@ def demo_chirp(fs=44100):
     # data conditioning
     data = data.astype(np.int16) # not sure why we need this...maybe aifc assumptions
     data = data.byteswap().newbyteorder() # need this on mac osx and linux (windows?)
-
-    #plt.plot(data)
-    #plt.show()
-    #raise SystemExit
     
     # convert data to string for aifc to work write
     strdata = data.tostring()
@@ -39,4 +35,6 @@ def demo_chirp(fs=44100):
     
     # plot data
     png_file = '/tmp/delombard.png'   
-    print 'wrote accel plot %s FIXME: NOT YET' % png_file    
+    plt.plot(data)
+    plt.savefig(png_file)    
+    print 'wrote accel plot %s' % png_file    

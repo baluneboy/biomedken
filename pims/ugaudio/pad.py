@@ -35,11 +35,12 @@ class PadFile(object):
     def __str__(self):
         bname = os.path.basename(self.filename)
         if self.ispad:
-            return 'a %s named %s (native rate = %.3f sa/sec)' % (self.__class__.__name__, bname, self.samplerate)
+            #return '%s named %s (native rate = %.3f sa/sec)' % (self.__class__.__name__, bname, self.samplerate)
+            return '%s, native rate = %.3f sa/sec' % (bname, self.samplerate)
         elif self.exists:
-            return 'a non-%s named %s (this file exists)' % (self.__class__.__name__, bname)
+            return '%s (non-%s)' % (bname, self.__class__.__name__)
         else:
-            return 'a non-%s object named %s (this file does not exist)' % (self.__class__.__name__, self.filename)            
+            return '%s (non-file)' % bname
     
     # loose check for pad file
     def is_pad(self):
@@ -100,6 +101,10 @@ class PadFile(object):
         else:
             return self._reckon_rate()
     
+    # TODO: include other parts of processing chain (taper, filter, pitch shifting, frequency shifting)
+    # TODO: with processing chain, you should grow an encoded message to echo and use as outfile suffix:
+    #       like RATFS would be nstfs would be native rate, s-axis, tapered, filtered, shifted
+    #       or   RATFS would be NxTfS would be Not native rate, x-axis, Not tapered, filtered, Not shifted
     # convert designated axis to aiff and maybe plot too
     def convert(self, rate=None, axis='s', plot=False):
         """convert designated axis to aiff and maybe plot too"""
