@@ -193,9 +193,12 @@ class PimsDayCache(object):
         ##sensorGlobPattern = self.sensorSubDirRx.replace('.*','*')
         ##self.hdrGlobPat = os.path.join(self.padPath, self.ymd, sensorGlobPattern, '*.header')
         ##return glob.glob(self.hdrGlobPat)
-        self.hdrRxPat = os.path.join(self.padPath, self.ymd, self.sensorSubDirRx, '*.header')
+
+        # FIXME why does next line to reject quarantined NOT WORK?
+        #self.hdrRxPat = os.path.join(self.padPath, self.ymd, self.sensorSubDirRx, '(?!quarantined.*$).*\.header$')
+        self.hdrRxPat = os.path.join(self.padPath, self.ymd, self.sensorSubDirRx, '.*\.header')
         predicate = re.compile(self.hdrRxPat).match
-        hdr_files = [ f for f in filter_filenames( os.path.join(self.padPath, self.ymd), predicate ) ]
+        hdr_files = [ f for f in filter_filenames( os.path.join(self.padPath, self.ymd), predicate ) if 'quarantined' not in f ]
         return hdr_files
 
     def getSensorList(self):

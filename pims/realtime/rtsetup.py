@@ -407,10 +407,11 @@ default_params = {
     'pw.maxFileTime'            : [600.0,  validate_float], # maximum time span for a PAD file (0 means no limit)
     'pw.additionalHeader'       : ['\"\"',            str], # additional XML to put in header.
                                                             #   in order to prevent confusion in the shell and command parser,
-                                                            #   represent XML with: ' ' replaced by '#', tab by '~', CR by '~~'    
-    
-
+                                                            #   represent XML with: ' ' replaced by '#', tab by '~', CR by '~~'       
 }
+#default_params['paths.snap_path'] = [
+#    default_params['/misc/yoda/www/plots/sams/'] + default_params['pw.tables'], validate_path_exists
+#    ]
 
 def check_defaults():
     rt = default_params
