@@ -2,6 +2,33 @@
 version = '$Id$'
 # Adapted from Ted Wright's packetWriter.py,v 1.22 2004-11-29 20:00:04 pims
 
+# FIXME the input parameter handling is horrific here, so overhaul it
+#
+# FIXME this program will not properly initialize when there is LOS, fix this
+#       THE FOLLOWING IS WHAT WE GET (I THINK TRYING TO DETREND NOTHING?)
+#Traceback (most recent call last):
+#  File "/home/pims/dev/programs/python/pims/pad/packetfeeder.py", line 1605, in <module>
+#    run( strip_chart )
+#  File "/home/pims/dev/programs/python/pims/pad/packetfeeder.py", line 1598, in run
+#    func(*args, **kwargs)
+#  File "/home/pims/dev/programs/python/pims/pad/packetfeeder.py", line 1574, in strip_chart
+#    app.frame = GraphFrame(datagen, 'title', log, rt_params) # NOTE: log & rt_params from globals
+#  File "/home/pims/dev/programs/python/pims/gui/stripchart.py", line 366, in __init__
+#    self.datagen.next(self.step_callback) # this appends first several values to self.data's deque
+#  File "/home/pims/dev/programs/python/pims/pad/packetfeeder.py", line 616, in next
+#    self.writePacket(p)
+#  File "/home/pims/dev/programs/python/pims/pad/packetfeeder.py", line 309, in writePacket
+#    self.append(packet)
+#  File "/home/pims/dev/programs/python/pims/pad/packetfeeder.py", line 888, in append
+#    self.append_process_packet_data(atxyzs, packetStart, packet.contiguous(self.lastPacket))
+#  File "/home/pims/dev/programs/python/pims/pad/packetfeeder.py", line 729, in append_process_packet_data
+#    self.process_chain.detrend(substream) # ppc #substream.detrend(type='demean')
+#  File "/home/pims/dev/programs/python/pims/pad/processchain.py", line 85, in detrend
+#    substream.detrend(type=self.detrend_type)
+#  File "/usr/lib/python2.7/dist-packages/obspy/core/util/decorator.py", line 231, in new_func
+#    raise NotImplementedError(msg)
+#NotImplementedError: Trace with masked values found. This is not supported for this operation. Try the split() method on Trace/Stream to produce a Stream with unmasked Traces.
+
 # TODO rename rtsetup.py's "verbose dot" params to "log dot" so to not clobber matplotlibrc
 # TODO track down all references to maxsec, particularly PARAMETERS global as "maxsec_rttrace"
 #      because it seems PARAMETERS['maxsec_rttrace'] points nowhere yet referenced somewhere?
@@ -45,8 +72,8 @@ from obspy.core.trace import Stats
 import inspect
 
 def get_line():
-    callerframerecord = inspect.stack()[1]    # 0 represents this line
-                                              # 1 represents line at caller
+    callerframerecord = inspect.stack()[1]    # index 0 for this line
+                                              # index 1 for line at caller
     frame = callerframerecord[0]
     info = inspect.getframeinfo(frame)
     #print info.filename                       # __FILE__     -> Test.py
@@ -1394,10 +1421,10 @@ def parameters_ok():
     PARAMETERS['maxsec_trace'] = int( rt_params['time.extra_intervals'] * rt_params['time.analysis_interval'] + rt_params['time.plot_span'] )
 
     # FIXME this is quick fix kludge for ESA support to "fix" hard-coded 121f05 JAXA support
-    #PARAMETERS['path.snap_path'] = os.path.join('/misc/yoda/www/plots/sams', PARAMETERS['tables'])
-    #if not os.path.exists(PARAMETERS['path.snap_path']):
-    #    log.error('path %s does not exist' % PARAMETERS['path.snap_path'])
-    #    return 0
+    rt_params['paths.snap_path'] = os.path.join('/misc/yoda/www/plots/sams', PARAMETERS['tables'])
+    if not os.path.exists(rt_params['paths.snap_path']):
+        log.error('path %s does not exist' % rt_params['paths.snap_path'])
+        return 0
 
     return 1
 
