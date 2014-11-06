@@ -1393,6 +1393,12 @@ def parameters_ok():
     # FIXME just introduce calculated parameter out of the blue like this here!?
     PARAMETERS['maxsec_trace'] = int( rt_params['time.extra_intervals'] * rt_params['time.analysis_interval'] + rt_params['time.plot_span'] )
 
+    # FIXME this is quick fix kludge for ESA support to "fix" hard-coded 121f05 JAXA support
+    #PARAMETERS['path.snap_path'] = os.path.join('/misc/yoda/www/plots/sams', PARAMETERS['tables'])
+    #if not os.path.exists(PARAMETERS['path.snap_path']):
+    #    log.error('path %s does not exist' % PARAMETERS['path.snap_path'])
+    #    return 0
+
     return 1
 
 # print usage
