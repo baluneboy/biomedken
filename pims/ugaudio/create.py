@@ -5,6 +5,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import chirp
 
+# just a quick dirty demo to write pad file (FIXME)
+def demo_write_pad_file():
+    from pims.ugaudio.load import array_fromfile
+    values = [ [0.0, -1.2, 1.3, -1.4], [1.0, 2.2, -2.3, 2.4] ]
+    a = np.array(values, dtype='float32')
+    a.tofile('/tmp/out.bin')
+    b = array_fromfile('/tmp/out.bin')
+    print b
+
 # generate a tapered linear chirp
 def get_chirp():
     """generate a tapered linear chirp"""
@@ -13,7 +22,7 @@ def get_chirp():
     w = np.hanning(len(y))
     return w*y
 
-# write PAD file (just data, no header file)
+# write PAD file (just data file, no header file)
 def write_chirp_pad(filename):
     wy = get_chirp()
     wy.astype('float32').tofile(filename)
