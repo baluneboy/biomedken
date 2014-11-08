@@ -27,4 +27,4 @@ def array_fromfile(filename, columns=4, out_dtype=np.float32):
     if B.dtype == out_dtype:
         return B
     return B.astype(out_dtype)
-    
+

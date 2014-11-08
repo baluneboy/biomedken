@@ -14,7 +14,7 @@ import aifc
 import struct
 import numpy as np
 from pims.ugaudio.load import array_fromfile
-from pims.ugaudio.signal import normalize
+from pims.ugaudio.signal import normalize, my_taper
 import matplotlib.pyplot as plt
 
 # class for loosely managing PAD files
@@ -102,11 +102,11 @@ class PadFile(object):
             return self._reckon_rate()
     
     # TODO: include other parts of processing chain (taper, filter, pitch shifting, frequency shifting)
-    # TODO: with processing chain, you should grow an encoded message to echo and use as outfile suffix:
-    #       like RATFS would be nstfs would be native rate, s-axis, tapered, filtered, shifted
-    #       or   RATFS would be NxTfS would be Not native rate, x-axis, Not tapered, filtered, Not shifted
+    
+    # TODO: with processing chain, you should grow an encoded message to echo
+    
     # convert designated axis to aiff and maybe plot too
-    def convert(self, rate=None, axis='s', plot=False):
+    def convert(self, rate=None, axis='s', plot=False, taper=0):
         """convert designated axis to aiff and maybe plot too"""
     
         # check loosely if pad file
@@ -118,8 +118,6 @@ class PadFile(object):
             samplerate = self.samplerate
         else:
             samplerate = rate
-            
-        #print self
                 
         # read data from file
         B = array_fromfile(self.filename)
@@ -129,22 +127,28 @@ class PadFile(object):
         C = B - M[np.newaxis, :]
        
         # determine axis
+        if axis == '4': axis = 'xyzs'
         for ax in axis.lower():
-            if ax == 'x':   data = C[:, -3] # x-axis is 3rd last column
+            if ax == 'x': data = C[:, -3] # x-axis is 3rd last column
             elif ax == 'y': data = C[:, -2] # y-axis is 2nd last column
             elif ax == 'z': data = C[:, -1] # z-axis is the last column
             elif ax == 's': data = C[:, 1::].sum(axis=1) # sum(x+y+z)
             else:
                 raise Exception( 'unhandled axis "%s"' % ax )
-        
+            stub = self.filename + ax
+            
             # maybe plot demeaned accel data
             if plot:
-                png_file = self.filename + ax + '.png'
+                png_file = stub + '.png'
                 plt.plot(data)
                 plt.savefig(png_file)
-                
+            
             # normalize to range -32768:32767 (actually, use -32000:32000)
             data = normalize(data) * 32000.0
+            
+            # taper signal, if requested
+            if taper > 0:
+                data = my_taper(data, samplerate, taper/1000.0)
         
             # data conditioning
             data = data.astype(np.int16) # not sure why we need this...maybe aifc assumptions
@@ -152,7 +156,7 @@ class PadFile(object):
         
             # convert data to string for aifc to work write
             strdata = data.tostring()
-            aiff_file = self.filename + ax + '.aiff'
+            aiff_file = stub + '.aiff'
             g = aifc.open(aiff_file, 'w')
             sampwidth = 2 # we get this value based on data type (np.int16)
             #         nchans, sampwidth, framerate, nframes, comptype, compname

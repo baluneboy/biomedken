@@ -61,7 +61,7 @@ class MyParser(argparse.ArgumentParser):
         sys.exit(1)
 
 # courtesy echo arguments
-def show_args(mode, axis, rate, files):
+def show_args(mode, axis, rate, taper, files):
     """courtesy echo arguments"""
     if not mode == 'demo':
         print "mode = %s," % mode,
@@ -70,6 +70,7 @@ def show_args(mode, axis, rate, files):
         else:
             print "sample rate = native,",
         print "axis = %s," % axis,
+        print "taper = %sms," % str(taper),
         print "file argument count = %d" % len(files)
         if len(files) == 0:
             print "It looks like you neglected to include file(s) as command line arguments."
@@ -84,9 +85,11 @@ def show_args(mode, axis, rate, files):
 # parse input arguments
 def parse_args():
     parser = MyParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('-m', default="aiff", choices=['aiff', 'plot', 'demo'], help="which mode to use")
-    parser.add_argument('-a', default="s", choices=['x', 'y', 'z', 's'], help="which axis to use (s for sum)")
-    parser.add_argument('-r', type=int, default=0, help="integer R > 0 is sample rate to override native")
+    parser.add_argument('-m', default="aiff", choices=['aiff', 'plot', 'demo'], help="mode")
+    parser.add_argument('-a', default="s", choices=['x', 'y', 'z', 's', '4'], help="axis (s for sum, 4 for all)")
+    parser.add_argument('-r', type=int, default=0, help="integer R > 0 for sample rate to override native")
+    parser.add_argument('-t', type=int, default=0, help="integer T > 0 for milliseconds of taper")
+    #parser.add_argument('-t', action='store_true', default=False, help="taper ends?")
     parser.add_argument('files', nargs='*', help="file(s) to process")
     args = parser.parse_args()
     
@@ -95,5 +98,5 @@ def parse_args():
         parser.print_help()
         sys.exit(2)
 
-    # return arguments: (m)ode, (a)xis, (r)ate, and files
-    return args.m, args.a, args.r, args.files
+    # return arguments: (m)ode, (a)xis, (r)ate, (t)aper, and files
+    return args.m, args.a, args.r, args.t, args.files
