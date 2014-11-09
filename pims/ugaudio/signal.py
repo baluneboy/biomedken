@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import copy
 import numpy as np
 from scipy.signal import hann
 
@@ -20,9 +21,10 @@ def my_taper(a, fs, t):
         N = len(a)//3
         #print N, len(a), len(a)//3
     w = hann(2*N+1)
-    a[0:N+1] *= w[0:N+1]
-    a[-N-1:] *= w[-N-1:]
-    return a
+    b = a.copy()
+    b[0:N+1] *= w[0:N+1]
+    b[-N-1:] *= w[-N-1:]
+    return b
 
 # return time array (helpful to plot versus time)
 def timearray(y, fs):
