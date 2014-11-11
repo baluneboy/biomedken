@@ -17,7 +17,8 @@ def demo_write_pad_file():
 # generate a tapered linear chirp
 def get_chirp():
     """generate a tapered linear chirp"""
-    t = np.linspace(0, 1, 88200)
+    t = np.linspace(0, 1, 88200, endpoint=False)
+    #print t[0:3], t[1]
     y = chirp(t, f0=20, f1=2000, t1=0.9, method='linear')
     w = np.hanning(len(y))
     return w*y
@@ -26,6 +27,11 @@ def get_chirp():
 def write_chirp_pad(filename):
     wy = get_chirp()
     wy.astype('float32').tofile(filename)
+
+# write rogue PAD file (used for testing, no header file)
+def write_rogue_pad_file(values, filename):
+    a = np.array(values, dtype='float32')
+    a.tofile(filename)
 
 # FIXME this may not work fully as expected
 def aiff2pad(fname):

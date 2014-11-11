@@ -73,6 +73,7 @@ class PadFile(object):
         """reckon sample rate from time step in data file"""
         
         with open(self.filename, 'rb') as f:
+            # FIXME THIS IS ONLY VALID WITH 4-COLUMN PAD FILES (LIKE SAMS, NOT MAMS OSS)
             # PAD files use relative time in seconds with t1 = 0 and next time starting
             # at byte 16, so seek to that position
             f.seek(4*4)
