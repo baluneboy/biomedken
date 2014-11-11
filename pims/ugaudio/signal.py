@@ -2,7 +2,32 @@
 
 import copy
 import numpy as np
+import warnings
 from scipy.signal import hann
+
+# return signal of length numpts with alternating integers: +value, -value, +value,...
+class AlternateIntegers(object):
+    """
+    return signal of length numpts with alternating integers: +value, -value, +value,...
+    used as simple signal for test purposes
+    """
+    
+    def __init__(self, value=9, numpts=5):
+        self.value = value
+        self.numpts = numpts
+        self.signal = self.alternate_integers()
+        
+        idxmid = numpts // 2
+        if numpts % 2 == 0:
+            self.idx_midpts = [idxmid-1, idxmid]
+        else:
+            self.idx_midpts = [idxmid]
+
+    def alternate_integers(self):
+        x = np.empty((self.numpts,), int)
+        x[::2]  = +self.value
+        x[1::2] = -self.value
+        return x
 
 # normalize amplitude of the signal
 def normalize(a):
@@ -12,18 +37,35 @@ def normalize(a):
         return a
     return a / sf
 
-# taper signal at both ends
+# return numpts; at most, this is one-third of signal duration
+def clip_at_third(sig, fs, t):
+    """return numpts; at most, this is one-third of signal duration"""
+    # number of pts to taper (maybe)
+    Ndesired = int(fs * t)
+    
+    # ensure that taper is, at most, a third of signal duration
+    third = len(sig) // 3
+    if Ndesired > third:
+        Nactual = third
+        warnings.warn( 'Desired taper %d pts > ~one-third (%d pts) of signal. Just tapering a third of signal duration.' % (Ndesired, Nactual), RuntimeWarning )
+    else:
+        Nactual = Ndesired
+    #print Ndesired, Nactual, len(sig), third
+    return Nactual
+
+# taper signal for first & last t seconds
 def my_taper(a, fs, t):
-    """taper signal for first/last t seconds"""
-    N = int(fs * t)
-    if (N + 1) > len(a)//3:
-        print 'Oops, you are trying to taper too much.  We will only taper about one-third of signal duration.'
-        N = len(a)//3
-        #print N, len(a), len(a)//3
+    """taper signal for first & last t seconds"""
+    # number of pts to taper (at most, one-third of signal)
+    N = clip_at_third(a, fs, t)
+    
+    # use portion of hann (w) to do the tapering
     w = hann(2*N+1)
+    
+    # work on signal copy, leave input alone
     b = a.copy()
-    b[0:N+1] *= w[0:N+1]
-    b[-N-1:] *= w[-N-1:]
+    b[0:N] *= w[0:N]
+    b[-N:] *= w[-N:]
     return b
 
 # return time array (helpful to plot versus time)

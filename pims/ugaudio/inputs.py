@@ -52,6 +52,14 @@ import argparse
 
 # /misc/yoda/pub/pad/year2014/month10/day09/sams2_accel_121f04/2014_10_09_13_32_23.772+2014_10_09_13_34_02.623.121f04
 
+# check for non-negative value
+def check_nonnegative(value):
+    """check for non-negative value"""
+    ivalue = int(value)
+    if ivalue < 0:
+         raise argparse.ArgumentTypeError("%s is an invalid non-negative int value" % value)
+    return ivalue
+
 # class to override argparse error message
 class MyParser(argparse.ArgumentParser):
     """class to override argparse error message"""
@@ -87,8 +95,8 @@ def parse_args():
     parser = MyParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('-m', default="aiff", choices=['aiff', 'plot', 'demo'], help="mode")
     parser.add_argument('-a', default="s", choices=['x', 'y', 'z', 's', '4'], help="axis (s for sum, 4 for all)")
-    parser.add_argument('-r', type=int, default=0, help="integer R > 0 for sample rate to override native")
-    parser.add_argument('-t', type=int, default=0, help="integer T > 0 for milliseconds of taper")
+    parser.add_argument('-r', default=0, type=check_nonnegative, help="integer R > 0 for sample rate to override native (r=0 for native)")
+    parser.add_argument('-t', default=0, type=check_nonnegative, help="integer T > 0 for milliseconds of taper (t=0 for no tapering)")
     #parser.add_argument('-t', action='store_true', default=False, help="taper ends?")
     parser.add_argument('files', nargs='*', help="file(s) to process")
     args = parser.parse_args()

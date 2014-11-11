@@ -27,7 +27,7 @@ def write_chirp_pad(filename):
     wy = get_chirp()
     wy.astype('float32').tofile(filename)
 
-# FIXME this probably does not work fully as expected
+# FIXME this may not work fully as expected
 def aiff2pad(fname):
     pad_file = fname + '.pad'
     y = create_from_aiff(fname)
