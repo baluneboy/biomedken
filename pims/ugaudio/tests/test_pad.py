@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
 import os
+import aifc
 import unittest
 import numpy as np
+from numpy.testing import assert_array_equal
 import tempfile
-from pims.ugaudio.create import write_chirp_pad, write_rogue_pad_file
+from pims.ugaudio.create import write_chirp_pad, write_rogue_pad_file, create_from_aiff
 from pims.ugaudio.pad import PadFile
+from pims.ugaudio.load import aiff_load
 
 class SignalTestCase(unittest.TestCase):
     """
@@ -28,21 +31,10 @@ class SignalTestCase(unittest.TestCase):
         with open(self.pad_header_filename, 'w') as hf:
             hf.write("one\n<SampleRate>%f</SampleRate>\n3" % self.dummyrate)
         
-        # create rogue pad file (without header file)
-        values = [
-            [0.0, -1.2,  9.9, -1.4],
-            [1.0,  2.2, -9.9,  2.4],
-            [2.0, -3.2,  9.9, -3.4],
-            [3.0,  4.2, -9.9,  4.4],
-            [4.0, -5.2,  9.9, 55.4],
-            [5.0,  6.2, -9.9,  6.4],
-            [6.0, -7.2,  9.9, -7.4],
-            [7.0,  8.2, -9.9,  8.4],
-            [8.0, -9.2,  9.9, -9.4],
-            ]    
+        # create rogue pad file (without header file)  
         self.rogue_file_object = tempfile.NamedTemporaryFile(delete=False)
         self.rogue_filename = self.rogue_file_object.name
-        write_rogue_pad_file(values, self.rogue_filename)
+        write_rogue_pad_file(self.rogue_filename)
         self.rogue_file_object.close()
         
         # create bad, dummy pad file
@@ -87,7 +79,7 @@ class SignalTestCase(unittest.TestCase):
         header_file = good_pad_file.headerfile
         self.assertTrue( os.path.exists(header_file) )
         
-        # test its dummy sample rate
+        # test it's got dummy sample rate
         self.assertEqual( good_pad_file.samplerate, self.dummyrate )
 
     def test_get_samplerate_without_header_file(self):
@@ -104,15 +96,37 @@ class SignalTestCase(unittest.TestCase):
         # test its dummy sample rate
         self.assertEqual( rogue_pad_file.samplerate, 1.0 )
 
-    @unittest.skip("not implemented yet")       
     def test_convert_with_defaults(self):
         """
         Tests the convert method with defaults.
         That is, at native rate, s-axis, no plot, and no taper.
         """
-        # 
-        raise Exception('not implemented yet')
 
+        # convert simple rogue pad file to aiff
+        rogue_pad_file = PadFile(self.rogue_filename)
+        rogue_pad_file.convert()
+        
+        # get array from aiff file
+        s = aiff_load( rogue_pad_file.filename + 's.aiff' )
+        assert_array_equal(s, np.array([-2268, 10127, -9559, 17418, -16851, 24709, -24142, 32000, -31433]) )
+
+    #@unittest.skip("not implemented yet")
+    def test_convert_new_rate(self):
+        """
+        Tests the convert method with new rate instead of default.
+        """
+        # convert simple rogue pad file to aiff
+        new_rate = 22050
+        rogue_pad_file = PadFile(self.rogue_filename)
+        rogue_pad_file.convert(rate=new_rate)
+        
+        # get array from aiff file
+        aiff_file = rogue_pad_file.filename + 's.aiff'
+        f = aifc.open(aiff_file, 'r')
+        aiff_rate = f.getframerate()
+        f.close()
+        self.assertEqual(new_rate, aiff_rate)
+        
 def suite():
     return unittest.makeSuite(SignalTestCase, 'test')
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import aifc
 import struct
 import numpy as np
 
@@ -28,3 +29,24 @@ def array_fromfile(filename, columns=4, out_dtype=np.float32):
         return B
     return B.astype(out_dtype)
 
+# load data from aiff file
+def aiff_load(aiff_file, verbose=False):
+    """return array loaded from aiff file"""
+    f = aifc.open(aiff_file, 'r')
+    if verbose:
+        print "Reading", aiff_file
+        print "nchannels =", f.getnchannels()   # 1 is mono: x, y, z, or sum [all after demean]
+        print "nframes   =", f.getnframes()     # nframes is number of rows in np array
+        print "sampwidth =", f.getsampwidth()   # use 4 (not 2)
+        print "framerate =", f.getframerate()   # sample rate, fs = 500 for fc = 200 Hz
+        print "comptype  =", f.getcomptype()    # 'NONE'
+        print "compname  =", f.getcompname()    # 'not compressed'
+        print f.getparams()
+    data = ''
+    while True:
+        newdata = f.readframes(512)
+        if not newdata:
+            break
+        data += newdata
+    f.close()
+    return np.fromstring(data, np.short).byteswap()

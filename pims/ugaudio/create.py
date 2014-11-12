@@ -4,6 +4,7 @@ import aifc
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import chirp
+from pims.ugaudio.load import aiff_load
 
 # just a quick dirty demo to write pad file (FIXME)
 def demo_write_pad_file():
@@ -29,7 +30,18 @@ def write_chirp_pad(filename):
     wy.astype('float32').tofile(filename)
 
 # write rogue PAD file (used for testing, no header file)
-def write_rogue_pad_file(values, filename):
+def write_rogue_pad_file(filename):
+    values = [
+        [0.0, -1.2,  9.9, -9.9],
+        [1.0,  2.2, -9.9,  9.9],
+        [2.0, -3.2,  9.9, -9.9],
+        [3.0,  4.2, -9.9,  9.9],
+        [4.0, -5.2,  9.9, -9.9],
+        [5.0,  6.2, -9.9,  9.9],
+        [6.0, -7.2,  9.9, -9.9],
+        [7.0,  8.2, -9.9,  9.9],
+        [8.0, -9.2,  9.9, -9.9],
+        ]      
     a = np.array(values, dtype='float32')
     a.tofile(filename)
 
@@ -42,23 +54,7 @@ def aiff2pad(fname):
     print 'wrote PAD file %s' % pad_file
 
 def create_from_aiff(aiff_file):
-    f = aifc.open(aiff_file, 'r')
-    print "Reading", aiff_file
-    print "nchannels =", f.getnchannels()   # 1 is mono: x, y, z, or sum [all after demean]
-    print "nframes   =", f.getnframes()     # nframes is number of rows in np array
-    print "sampwidth =", f.getsampwidth()   # use 4 (not 2)
-    print "framerate =", f.getframerate()   # sample rate, fs = 500 for fc = 200 Hz
-    print "comptype  =", f.getcomptype()    # 'NONE'
-    print "compname  =", f.getcompname()    # 'not compressed'
-    print f.getparams()
-    data = ''
-    while True:
-        newdata = f.readframes(512)
-        if not newdata:
-            break
-        data += newdata
-    f.close()
-    return np.fromstring(data, np.short).byteswap()
+    return aiff_load(aiff_file, verbose=True)
 
 #aiff2pad('/tmp/trash2.aiff')
 

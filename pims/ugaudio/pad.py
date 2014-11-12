@@ -152,6 +152,7 @@ class PadFile(object):
                 data = my_taper(data, samplerate, taper/1000.0)
         
             # data conditioning
+            data = np.rint(data) # round to nearest integer
             data = data.astype(np.int16) # not sure why we need this...maybe aifc assumptions
             data = data.byteswap().newbyteorder() # need this on mac osx and linux (windows?)
         
