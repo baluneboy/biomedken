@@ -1,43 +1,37 @@
 #!/usr/bin/env python
 
 """
-For some important considerations and disclaimers, see the readme.txt file.
+For important considerations and disclaimers, see the readme.txt file.
 
 This program attempts to convert PIMS acceleration data (PAD) files into AIFF
-audio files, and possibly plot the demeaned acceleration data too (see below).
+audio files, and it can plot the demeaned acceleration data too.
 
 Given zero input arguments, this program shows this help text and quits.
 
-Given multiple input arguments, this program attempts to read each as an
-acceleration (PAD) data file named <filename> and convert its contents to an
+Given multiple input filename arguments, this program attempts to read each as
+an acceleration (PAD) data file named <filename> and convert its contents to an
 AIFF audio file with suffix "s.aiff"; where s designates sum(x+y+z) axis data.
+You can change the default behavior with input argument options for mode, axis,
+rate, taper.
 
-Given the input argument "demo" [no quotes], this program generates its own
-(fake) acceleration (PAD) data and treats that as it would given one input
-argument, which is described below.
-
-Given one input argument, this program takes that as an acceleration (PAD) data
-file named <filename> and does the following with its contents:
-(1) produce 4 plots of the demeaned acceleration data:
-    1. <filenamex.png> for X-axis
-    2. <filenamey.png> for Y-axis
-    3. <filenamez.png> for Z-axis
-    4. <filenames.png> for sum(x+y+z)
-(2) write 4 AIFF audio files named similar to the PNG plot files above except with
-    the extension "aiff" instead of "png"
+Conversion filenames: given a valid PAD file named <filename> with plot mode
+selected, this program produces a plot of the demeaned acceleration data for the
+axis selected, e.g. <filenamex.png> for X-axis. Also, it always attempts to
+write an AIFF audio file named similar to the PNG plot files above except with
+the extension "aiff" instead of "png".
     
 EXAMPLES:
 
-# run simple demo
+# to run simple demo
 python ugaudio.py -m demo
 
-# convert a PAD file to AIFF
+# to convert a PAD file to AIFF
 python ugaudio.py filename
 
-# convert a PAD file to AIFF and produce PNG for accel plot too
+# to convert a PAD file to AIFF and produce PNG for demeaned accel plot too
 python ugaudio.py -m plot filename
 
-# convert PAD files to AIFFs; use rate of 22050 sa/sec, & produce PNGs for accel plots
+# to convert PAD files to AIFFs using new rate of 22050 sa/sec & produce PNGs for accel plots
 python ugaudio.py -m plot -r 22050 filename1 filename2
 
 INPUT ARGUMENTS (see "usage" on first line above):
@@ -93,11 +87,10 @@ def show_args(mode, axis, rate, taper, files):
 # parse input arguments
 def parse_args():
     parser = MyParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('-m', default="aiff", choices=['aiff', 'plot', 'demo'], help="mode")
-    parser.add_argument('-a', default="s", choices=['x', 'y', 'z', 's', '4'], help="axis (s for sum, 4 for all)")
-    parser.add_argument('-r', default=0, type=check_nonnegative, help="integer R > 0 for sample rate to override native (r=0 for native)")
-    parser.add_argument('-t', default=0, type=check_nonnegative, help="integer T > 0 for milliseconds of taper (t=0 for no tapering)")
-    #parser.add_argument('-t', action='store_true', default=False, help="taper ends?")
+    parser.add_argument('-m', default="aiff", choices=['aiff', 'plot', 'demo'], help="mode choice")
+    parser.add_argument('-a', default="s", choices=['x', 'y', 'z', 's', '4'], help="axis; default is s (for sum), use 4 to do all")
+    parser.add_argument('-r', default=0, type=check_nonnegative, help="integer R > 0 for sample rate to override native; default R=0 for native rate")
+    parser.add_argument('-t', default=0, type=check_nonnegative, help="integer T > 0 for milliseconds of taper; default T=0 for no tapering")
     parser.add_argument('files', nargs='*', help="file(s) to process")
     args = parser.parse_args()
     
