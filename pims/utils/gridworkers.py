@@ -158,7 +158,7 @@ def pads():
     output_grid = CheapPadHoursOutputGrid #RoadmapsOutputGrid
     # launch app
     app = wx.App(False)
-    frame = MainFrame(log, input_grid, grid_worker, output_grid)
+    frame = MainFrame(log, "PADS", input_grid, grid_worker, output_grid)
     frame.Show()
     app.MainLoop()
 
@@ -170,7 +170,7 @@ def roadmaps():
     output_grid = RoadmapsOutputGrid
     # launch app
     app = wx.App(False)
-    frame = MainFrame(log, input_grid, grid_worker, output_grid)
+    frame = MainFrame(log, "ROADMAPS", input_grid, grid_worker, output_grid)
     frame.Show()
     app.MainLoop()
 

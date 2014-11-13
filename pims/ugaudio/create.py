@@ -2,18 +2,28 @@
 
 import aifc
 import numpy as np
+import tempfile
 import matplotlib.pyplot as plt
 from scipy.signal import chirp
-from pims.ugaudio.load import aiff_load
+from pims.ugaudio.load import aiff_load, array_fromfile
 
-# just a quick dirty demo to write pad file (FIXME)
-def demo_write_pad_file():
-    from pims.ugaudio.load import array_fromfile
-    values = [ [0.0, -1.2, 1.3, -1.4], [1.0, 2.2, -2.3, 2.4] ]
+# quick demo to write 4-column PAD file
+def demo_write_pad_file(fname):
+    """quick demo to write 4-column PAD file"""
+    values = [
+        [0.0, -1.2,  1.3, -1.4],
+        [1.0,  2.2, -2.3,  2.4]
+        ]
     a = np.array(values, dtype='float32')
-    a.tofile('/tmp/out.bin')
-    b = array_fromfile('/tmp/out.bin')
-    print b
+    a.tofile(fname)
+
+# quick demo to read 4-column PAD file   
+def demo_write_read_pad_file():
+    """quick demo to read 4-column PAD file"""    
+    fname = '/tmp/out.bin'
+    demo_write_pad_file(fname)
+    a = array_fromfile(fname)
+    print a
 
 # generate a tapered linear chirp
 def get_chirp():
@@ -24,13 +34,15 @@ def get_chirp():
     w = np.hanning(len(y))
     return w*y
 
-# write PAD file (just data file, no header file)
+# write PAD file for chirp (just data file, no header file)
 def write_chirp_pad(filename):
+    """write PAD file for chirp (just data file, no header file)"""
     wy = get_chirp()
     wy.astype('float32').tofile(filename)
 
 # write rogue PAD file (used for testing, no header file)
 def write_rogue_pad_file(filename):
+    """write rogue PAD file (used for testing, no header file)"""
     values = [
         [0.0, -1.2,  9.9, -9.9],
         [1.0,  2.2, -9.9,  9.9],
@@ -53,9 +65,6 @@ def aiff2pad(fname):
     y[0:30264].astype('float32').tofile(pad_file)
     print 'wrote PAD file %s' % pad_file
 
+# FIXME this was just convenient wrapper find/replace create_from_aiff with aiff_load
 def create_from_aiff(aiff_file):
     return aiff_load(aiff_file, verbose=True)
-
-#aiff2pad('/tmp/trash2.aiff')
-
-#write_chirp_pad('/tmp/chirp.pad')

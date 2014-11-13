@@ -138,6 +138,9 @@ class OutputPanel(wx.Panel):
  
         self.pause_btn = wx.Button(self, label="Pause")
         self.pause_btn.Bind(wx.EVT_BUTTON, self.on_pause)
+        #self.pause_btn = wx.Button(self, label="Continue")
+        #self.pause_btn.Bind(wx.EVT_BUTTON, self.on_continue)
+        
         self.control_sizer.Add(self.pause_btn, 0, wx.LEFT|wx.ALL, 5)
  
         self.process_btn = wx.Button(self, label="Process Selected Cells")
@@ -204,8 +207,9 @@ class MainFrame(wx.Frame):
     SB_LEFT = 0
     SB_RIGHT = 1
     
-    def __init__(self, log, input_grid, grid_worker, output_grid):
-        wx.Frame.__init__(self, None, wx.ID_ANY, 'Main Frame Title')
+    def __init__(self, log, main_title, input_grid, grid_worker, output_grid):
+        self.main_title = main_title
+        wx.Frame.__init__(self, None, wx.ID_ANY, main_title + " Input Panel")
  
         self.SetPosition( (1850, 22) )
         self.SetSize( (1558, 955) )
@@ -264,7 +268,7 @@ class MainFrame(wx.Frame):
             item.SetItemLabel("Go Input Panel")
         
         if self.input_panel.IsShown():
-            self.SetTitle("Output Panel")
+            self.SetTitle(self.main_title + " Output Panel")
             self.input_panel.Hide()
             self.output_panel.Show()
             self.sizer.Layout()
@@ -275,7 +279,7 @@ class MainFrame(wx.Frame):
             except:
                 pass
         else:
-            self.SetTitle("Input Panel")
+            self.SetTitle(self.main_title + " Input Panel")
             self.input_panel.Show()
             self.output_panel.Hide()
             
