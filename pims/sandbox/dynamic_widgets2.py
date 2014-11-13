@@ -1,4 +1,4 @@
-#!/usr/bin/evn python
+#!/usr/bin/env python
 import wx
 import wx.grid as gridlib
 from wx.lib.pubsub import Publisher
