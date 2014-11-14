@@ -9,10 +9,14 @@ import datetime
 import shutil
 import glob
 import re
+import calendar
+from calendar import month_name
 from HTMLgen import *
 from collections import OrderedDict
 from pims.realtime.buffer_move import main as cleanBuffer
 from recipes_fileutils import fileAgeDays
+from dateutil.relativedelta import relativedelta
+from pims.files.utils import listdir_filename_pattern
 # http://pims.grc.nasa.gov/plots/sams/121f05/intrms_10sec_5hz.html
 # Linux command for future reference:
 # find /misc/yoda/www/plots/sams -mindepth 2 -maxdepth 2 -type f -mmin -60 -name "*.jpg" -exec ls -l --full-time {} \; | grep -v "/interesting/"
@@ -85,8 +89,100 @@ def nextFiveMinutes(d):
         dtm += datetime.timedelta(minutes=5)
         yield (dtm)
 
+# return True if input describes date within last 2 days
+def within2days(theyear, themonth, day):
+    theday = datetime.date(theyear, themonth, day)
+    today = datetime.date.today()
+    return relativedelta(today, theday).days <= 1
+
 def timeStampedSensorName(dtm, sensor):
     return dtm.strftime('%Y_%m_%d_%H_%M_') + sensor + '.jpg'
+
+# return HTML code for calendar tables for this and last month
+def get_html_calendar_tables_last2months(basepath='/misc/yoda/www/plots/user/buffer'):
+    """return HTML code for calendar tables for this and last month"""
+    today = datetime.date.today()
+    this_month = datetime.date(today.year, today.month, 1)
+    eom = this_month - relativedelta(days=1)
+    prev_month = datetime.date(eom.year, eom.month, 1)
+    
+    intrmsCal = IntRmsCalendar(calendar.SUNDAY)
+    last_month = intrmsCal.formatmonth(prev_month.year, prev_month.month, basepath)
+    this_month = intrmsCal.formatmonth(this_month.year, this_month.month, basepath)
+    
+    both_months = this_month + '<br>' + last_month
+    return both_months
+
+# this creates web page of links for past just one day (every 5 min)
+def createIntRMSHTML(basepath, theyear, themonth, day, files):
+
+    # Build html filename and link
+    htmlname = '%d_%02d_%02d_intrms.html' % (theyear, themonth, day)
+    link = 'http://pims.grc.nasa.gov/plots/user/buffer/intrms/' + htmlname
+    htmlfile = os.path.join(basepath, 'intrms', htmlname)
+
+    # Create HTML doc with title and heading
+    doc = createDoc('PIMS Near Real-Time Interval RMS Screenshots')
+
+    # Use files to get list of sensors
+    regexPatString = '.*_(?P<sensor>.*rms)\.jpg$'
+    regex = re.compile(regexPatString)
+    sensorSuperset = list(set( [m.group(1) for m in [regex.match(f) for f in files] if m] ))
+    
+    # Append ~2-day buffer links
+    theday = datetime.date(theyear, themonth, day)
+    dc1 = DayContainerFive(day=theday, sensorSuperset=sensorSuperset)
+    doc.append(dc1)
+
+    doc.append(HR())
+
+    # Write to output HTML file
+    doc.write(htmlfile)
+    
+    return link
+
+class IntRmsCalendar(calendar.HTMLCalendar):
+    
+    def formatmonth(self, theyear, themonth, basepath, withyear=True):
+        """return a formatted month as a table"""
+        self.theyear = theyear
+        self.themonth = themonth
+        self.basepath = basepath
+        v = []
+        a = v.append
+        a('<table border="4" cellpadding="2" cellspacing="2" class="month">')
+        a('\n')
+        a(self.formatmonthname(theyear, themonth, withyear=withyear))
+        a('\n')
+        a(self.formatweekheader())
+        a('\n')
+        for week in self.monthdays2calendar(theyear, themonth):
+            a(self.formatweek(week))
+            a('\n')
+        a('</table>')
+        a('\n')
+        return ''.join(v)
+        
+    def formatday(self, day, weekday):
+        """return a day as a table cell"""
+        # check for rms.jpg files on this day
+        if day == 0:
+            return '<td class="noday">&nbsp;</td>' # day outside month
+        else:
+            fname_pat = '%d_%02d_%02d_.*rms.jpg' % (self.theyear, self.themonth, day)
+            recentpath = os.path.join(self.basepath, 'recent')
+            files = listdir_filename_pattern(self.basepath, fname_pat) + listdir_filename_pattern(recentpath, fname_pat)
+            
+            # no hyperlink for this day...
+            if not files:
+                return '<td class="%s">%d</td>' % (self.cssclasses[weekday], day)
+            # ... or within last 2 days (because legacy code gives those already)
+            if within2days(self.theyear, self.themonth, day):
+                return '<td class="%s">%d</td>' % (self.cssclasses[weekday], day)
+            
+            # create intrms.html page for this day
+            link = createIntRMSHTML(self.basepath, self.theyear, self.themonth, day, files)
+            return '<td class="%s"><a href="%s">%d</a></td>' % (self.cssclasses[weekday], link, day)
 
 # class for every 30 minutes
 class SensorContainer(Container):
@@ -124,8 +220,11 @@ class SensorContainerFive(SensorContainer):
             twelfth = [n.next() for i in range(0,24)]
             for h in twelfth:
                 linkPath = os.path.join('/misc/yoda/www/plots/user/buffer/' + timeStampedSensorName(h, self.sensor))
+                linkPathRecent = os.path.join('/misc/yoda/www/plots/user/buffer/recent/' + timeStampedSensorName(h, self.sensor))
                 if os.path.exists(linkPath):
                     self.append(Href('http://pims.grc.nasa.gov/plots/user/buffer/' + timeStampedSensorName(h, self.sensor), h.strftime('%H:%M')))
+                elif os.path.exists(linkPathRecent):
+                    self.append(Href('http://pims.grc.nasa.gov/plots/user/buffer/recent/' + timeStampedSensorName(h, self.sensor), h.strftime('%H:%M')))
                 else:
                     self.append(Text(h.strftime('%H:%M')))
             self.append(BR(1))
@@ -188,7 +287,7 @@ def otherLinksTable(clean_msg):
 def updateIndexHTML(clean_msg, sensorSuperset):
 
     # Create HTML doc with title and heading
-    doc = createDoc('PIMS ~2-Day Buffer for Real-Time Screenshots')
+    doc = createDoc('PIMS ~30-Day Buffer for Real-Time Screenshots')
 
     # Append disclaimer
     doc.append(disclaimer())
@@ -213,21 +312,28 @@ def updateIndexHTML(clean_msg, sensorSuperset):
     # Write to output HTML file    
     doc.write("/misc/yoda/www/plots/user/buffer/index.html")
 
+# this creates web page of links for past 2 days (every 5 min) and...
+# calendar tables for this + last month
 def updateRMSHTML(clean_msg, sensorSuperset):
 
     # Create HTML doc with title and heading
-    doc = createDoc('PIMS ~2-Days of Near Real-Time Interval RMS Screenshots')
+    doc = createDoc('PIMS ~30-Days of Near Real-Time Interval RMS Screenshots')
 
     # Append ~2-day buffer links
     today = datetime.date.today()
     dc1 = DayContainerFive(day=today, sensorSuperset=sensorSuperset)
     doc.append(dc1)
-  
+    
     yesterday = datetime.date.today() - datetime.timedelta(days=1)  
     dc2 = DayContainerFive(day=yesterday, sensorSuperset=sensorSuperset)
     doc.append(dc2)
-
+    
     doc.append(HR())
+    doc.append('<br>')
+    
+    # Append this and last month calendar tables
+    cals = get_html_calendar_tables_last2months()
+    doc.append(cals)
 
     # Write to output HTML file
     doc.write("/misc/yoda/www/plots/user/buffer/intrms.html")
