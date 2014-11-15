@@ -11,9 +11,9 @@ python -m unittest discover -s . -p 'test_*.py' -v
 # Some other, higher-level testing that you might consider:
 # ------------------------------------------------------------------------------
 # Scenario #1: given a linear chirp with amplitude and frequency ranges that are
-#              representative of the ISS vibratory microgravity environment, we
-#              should expect a portion of that signal (below 20 Hz and perhaps
-#              even higher than that) to be inaudible
+#              representative of the loudest ISS vibratory microgravity
+#              environment, we should expect a portion of that signal (below 20
+#              Hz and perhaps even higher than that) to be inaudible
 #
 # 1. Create linear chirp signal (described above) and save as acceleration file:
 command goes here

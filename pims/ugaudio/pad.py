@@ -36,7 +36,7 @@ class PadFile(object):
         bname = os.path.basename(self.filename)
         if self.ispad:
             #return '%s named %s (native rate = %.3f sa/sec)' % (self.__class__.__name__, bname, self.samplerate)
-            return '%s, native rate = %.3f sa/sec' % (bname, self.samplerate)
+            return '%s, native rate = %.2f sa/sec' % (bname, self.samplerate)
         elif self.exists:
             return '%s (non-%s)' % (bname, self.__class__.__name__)
         else:

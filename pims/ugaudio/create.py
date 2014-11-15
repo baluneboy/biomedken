@@ -68,3 +68,23 @@ def aiff2pad(fname):
 # FIXME this was just convenient wrapper find/replace create_from_aiff with aiff_load
 def create_from_aiff(aiff_file):
     return aiff_load(aiff_file, verbose=True)
+
+def scenario1():
+    """
+    generate a linear chirp with amplitude and frequency ranges that are
+    representative of the loudest International Space Station's vibratory
+    microgravity environment, we should expect a portion of that signal (below
+    20 Hz and perhaps even a bit higher than that) to be inaudible; one
+    world-renowned microgravity data analyst I know either has high-pass
+    filtering ears with a pass-band starting at about 40 Hz or, the poor guy
+    used speakers that did not reproduce good bass -- it's all about that bass
+    """
+    t = np.linspace(0, 20, 11025*20, endpoint=False)
+    x = 1e-6*chirp(t, f0=0.1, f1=200, t1=19.5, method='linear')
+    y = 5e-4*chirp(t, f0=0.1, f1=200, t1=19.5, method='linear')
+    z = 1e-3*chirp(t, f0=0.1, f1=200, t1=19.5, method='linear')
+    data = np.c_[ t, x, y, z ]
+    data.astype('float32').tofile('/Users/ken/dev/programs/python/pims/ugaudio/samples/scenario1.pad')
+    print 'done'
+
+#scenario1()

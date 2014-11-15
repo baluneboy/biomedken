@@ -5,54 +5,100 @@ import calendar
 from calendar import month_name
 import datetime
 from dateutil.relativedelta import relativedelta
+from HTMLgen import *
 
-class IntRmsCalendar(calendar.HTMLCalendar):
+def createDoc(title):
+    " Create HTML document with heading. "
+    heading = title + ' (updated at GMT %s)' % datetime.datetime.now().strftime("%d-%b-%Y/%H:%M:%S")
+    doc = SimpleDocument(title=title)
+    doc.append( Heading(3, heading) )
+    return doc
+
+class MyRmsCalendar(calendar.HTMLCalendar):
     
-    def formatmonth(self, theyear, themonth, basepath, sensor, withyear=True):
-        """return a formatted month as a table"""
-        self.theyear = theyear
-        self.themonth = themonth
+    # return iterator for one day every N minutes
+    def iterminutes(self, everyN):
+        """return iterator for one day every N minutes"""
+        for i in [''] + ['%02d' % i for i in range(0, 60, everyN)]:
+            yield i
+            
+    # return a minute name as a table header
+    def formatminutes(self, m):
+        """return a minute name as a table header"""
+        if not m:
+            return '<th class="noday">%s</th>' % m
+        else:
+            return '<th class="noday">%sm</th>' % m
+        
+    # return a hour's minute entry
+    def formathourmin(self, h, m):
+        """return a hour's minute entry"""
+        if not m:
+            return '<th>%02dh</th>' % h
+        else:
+            return '<td>%02d:%02d</td>' % (h, int(m))
+        
+    # return day name as table row
+    def formatdayname(self, theyear, themonth, theday, withyear=True):
+        """return day name as table row"""
+        s = 'GMT %d-%02d-%02d' % (theyear, themonth, theday)
+        v = 60 / self.everyN
+        return '<tr><th colspan="%d" class="month">%s</th></tr>' % (v + 1, s)
+    
+    # return a header for minutes (everyN) as a table row
+    def formatminuteheader(self):
+        """return a header for a week as a table row"""
+        s = ''.join(self.formatminutes(i) for i in self.iterminutes(self.everyN))
+        return '<tr>%s</tr>' % s    
+
+    #  return a complete hour as a table row
+    def formathour(self, h):
+        """return a complete hour as a table row"""
+        s = ''.join(self.formathourmin(h, i) for i in self.iterminutes(self.everyN))
+        return '<tr>%s</tr>' % s    
+    
+    # return a formatted day as a table   
+    def formatdayeveryNmin(self, theday, basepath, sensor, everyN):
+        """return a formatted day as a table"""
+        self.theday = theday
         self.basepath = basepath
         self.sensor = sensor
+        self.everyN = everyN
         v = []
         a = v.append
         a('<table border="4" cellpadding="2" cellspacing="2" class="month">')
         a('\n')
-        a(self.formatmonthname(theyear, themonth, withyear=withyear))
+        a(self.formatdayname(theday.year, theday.month, theday.day, withyear=True))
         a('\n')
-        a(self.formatweekheader())
+        a(self.formatminuteheader())
         a('\n')
-        for week in self.monthdays2calendar(theyear, themonth):
-            a(self.formatweek(week))
+        for hour in range(0,24):
+            a(self.formathour(hour))
             a('\n')
         a('</table>')
         a('\n')
         return ''.join(v)
-        
-    def formatday(self, day, weekday):
-        """return a day as a table cell"""
-        if day == 0:
-            return '<td class="noday">&nbsp;</td>' # day outside month
-        else:
-            linkname = '%d_%02d_%02d_hh_mm_%srms.jpg' % (self.theyear, self.themonth, day, self.sensor)
-            link = os.path.join(self.basepath, linkname)
-            return '<td class="%s"><a href="%s">%d</a></td>' % (self.cssclasses[weekday], link, day)
 
-# return HTML code for calendar tables for this and last month
-def get_html_calendar_tables_last2months(sensor='121f05', basepath='/misc/yoda/www/plots/user/buffer'):
-    """return HTML code for calendar tables for this and last month"""
-    today = datetime.date.today()
-    this_month = datetime.date(today.year, today.month, 1)
-    eom = this_month - relativedelta(days=1)
-    prev_month = datetime.date(eom.year, eom.month, 1)
+# return HTML code for one day, every 5 minutes
+def get_html_oneday_every5min(theday):
+    """return HTML code for one day, every 5 minutes"""
+    cal = MyRmsCalendar(calendar.SUNDAY)
+    return cal.formatdayeveryNmin(theday, 'basepath', 'sensor', 5)
+
+def newUpdate():
+
+    # Create HTML doc with title and heading
+    doc = createDoc('EXAMPLE')
+   
+    doc.append(HR())
+    doc.append('<br>')
     
-    intrmsCal = IntRmsCalendar(calendar.SUNDAY)
-    last_month = intrmsCal.formatmonth(prev_month.year, prev_month.month, basepath, sensor)
-    this_month = intrmsCal.formatmonth(this_month.year, this_month.month, basepath, sensor)
-    
-    both_months = last_month + '<br><br>' + this_month
-    return both_months
+    # Append this and last month calendar tables
+    oneday_every5min = get_html_oneday_every5min(datetime.date.today())
+    doc.append(oneday_every5min)
+
+    # Write to output HTML file
+    doc.write("/tmp/oneday_every5min.html")
 
 if __name__ == "__main__":
-    last2months = get_html_calendar_tables_last2months(sensor='121f02')
-    print last2months
+    newUpdate()
