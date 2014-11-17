@@ -327,24 +327,28 @@ class PacketInspector(object):
             print 'ccsds_time:%s, ccsds_sequence_counter:%05d, pkt_time:%s, table:%s' % (ccsds_time_human, ccsds_sequence_counter, pkt_time_human, self.table)
 
 # use parameters to inspect packets in db table
-def query_and_display(table, host, details):
+def query_and_display(table, host, details, custom=None):
     """use parameters to inspect packets in db table"""
     
-    # create query object (without actually running the query)
-    if table.startswith('121f0'):
-        query = SamsSeHalfSecFoursomeQuery(host, table)
-
-    elif table.startswith('es0'):
-        query = SamsTshOneSecEightsomeQuery(host, table)
-
-    elif table == 'hirap':
-        # FIXME is hirap just a case where ccsds_seq is "mostly or nearly contiguous"?
-        query = StartLenAscendQuery(host, table, 1, 245) # does it show pattern at rec ~80, ~160, and ~240?
-        query = GeneralQuery(host, table, 'WHERE time > unix_timestamp("2014-10-09 18:00:00") ORDER BY time ASC LIMIT 2')
-
+    if custom:
+        query = GeneralQuery(host, table, custom)
     else:
-        query = DefaultQuery(host, table)
-        query = GeneralQuery(host, table, 'WHERE time > unix_timestamp("2014-09-01 18:00:00") ORDER BY time ASC LIMIT 11')
+        # create query object (without actually running the query)
+        if table.startswith('121f0'):
+            query = SamsSeHalfSecFoursomeQuery(host, table) # canned query to check for "half-sec foursome"
+    
+        elif table.startswith('es0'):
+            query = SamsTshOneSecEightsomeQuery(host, table) # canned query to check for "one-sec eightsome"
+    
+        elif table == 'hirap':
+            # FIXME is hirap just a case where ccsds_seq is "mostly or nearly contiguous"?
+            #query = StartLenAscendQuery(host, table, 1, 245) # does it show pattern at rec ~80, ~160, and ~240?
+            #query = GeneralQuery(host, table, 'WHERE time > unix_timestamp("2014-10-09 18:00:00") ORDER BY time ASC LIMIT 2')
+            query = GeneralQuery(host, table, 'WHERE time > unix_timestamp("2014-11-01 00:00:00") ORDER BY time ASC LIMIT 13')
+    
+        else:
+            query = DefaultQuery(host, table)
+            query = GeneralQuery(host, table, 'WHERE time > unix_timestamp("2014-09-01 18:00:00") ORDER BY time ASC LIMIT 11')
     
     # create packet inspector object using query object as input
     pkt_inspector = PacketInspector(host, table, query=query, details=details)
@@ -388,9 +392,16 @@ def main(argv):
     """iterate over db query results to show pertinent packet details (and header info when details=True)"""
     # parse command line
     args = dict([arg.split('=') for arg in sys.argv[1:]])
+    # special handling of details argument
     if 'details' in args:    
         parameters['details'] = args['details']
         del( args['details'] )
+    # special handling of custom argument
+    if 'custom' in args:
+        parameters['custom'] = args['custom']
+        del( args['custom'] )
+    else:
+        parameters['custom'] = None
     db_tables = args
     parameters['db_tables'] = db_tables
 
@@ -401,7 +412,7 @@ def main(argv):
         # FIXME a class that contains multiple PacketInspector objects (to add, sort, etc. those)
         df_cat = pd.DataFrame()
         for sensor, host in sensor_tables.iteritems():
-            df_cat = pd.concat( [df_cat, query_and_display(sensor, host, parameters['details'])] )
+            df_cat = pd.concat( [df_cat, query_and_display(sensor, host, parameters['details'], parameters['custom'])] )
             
         # sort by CCSDS sequence, then CCSDS time
         df_cat.sort(['ccsds_sequence', 'ccsds_time'], ascending=[True, True], inplace=True)
