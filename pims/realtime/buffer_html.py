@@ -110,7 +110,7 @@ def get_html_calendar_tables_last2months(basepath='/misc/yoda/www/plots/user/buf
     last_month = intrmsCal.formatmonth(prev_month.year, prev_month.month, basepath)
     this_month = intrmsCal.formatmonth(this_month.year, this_month.month, basepath)
     
-    both_months = this_month + '<br>' + last_month
+    both_months = last_month + '<br>' + this_month
     return both_months
 
 # this creates web page of links for past just one day (every 5 min)
