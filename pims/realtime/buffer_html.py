@@ -115,7 +115,7 @@ def get_html_calendar_tables_last2months(basepath='/misc/yoda/www/plots/user/buf
 
 # this creates web page of links for past just one day (every 5 min)
 def createIntRMSHTML(basepath, theyear, themonth, day, files):
-
+   
     # Build html filename and link
     htmlname = '%d_%02d_%02d_intrms.html' % (theyear, themonth, day)
     link = 'http://pims.grc.nasa.gov/plots/user/buffer/intrms/' + htmlname
@@ -131,10 +131,11 @@ def createIntRMSHTML(basepath, theyear, themonth, day, files):
     
     # Append ~2-day buffer links
     theday = datetime.date(theyear, themonth, day)
-    dc1 = DayContainerFive(day=theday, sensorSuperset=sensorSuperset)
-    doc.append(dc1)
-
-    doc.append(HR())
+    #dc1 = DayContainerFive(day=theday, sensorSuperset=sensorSuperset)
+    cal = IntRmsCalendar(calendar.SUNDAY)
+    for sensor in sensorSuperset:
+        doc.append( cal.formatdayeveryNmin(theday, basepath, sensor, 5, files) )
+        doc.append(HR())
 
     # Write to output HTML file
     doc.write(htmlfile)
@@ -143,6 +144,7 @@ def createIntRMSHTML(basepath, theyear, themonth, day, files):
 
 class IntRmsCalendar(calendar.HTMLCalendar):
     
+    # return a formatted month as a table
     def formatmonth(self, theyear, themonth, basepath, withyear=True):
         """return a formatted month as a table"""
         self.theyear = theyear
@@ -163,6 +165,7 @@ class IntRmsCalendar(calendar.HTMLCalendar):
         a('\n')
         return ''.join(v)
         
+    # return a day as a table cell
     def formatday(self, day, weekday):
         """return a day as a table cell"""
         # check for rms.jpg files on this day
@@ -173,16 +176,86 @@ class IntRmsCalendar(calendar.HTMLCalendar):
             recentpath = os.path.join(self.basepath, 'recent')
             files = listdir_filename_pattern(self.basepath, fname_pat) + listdir_filename_pattern(recentpath, fname_pat)
             
-            # no hyperlink for this day...
+            # no hyperlinks because no files for this day
             if not files:
-                return '<td class="%s">%d</td>' % (self.cssclasses[weekday], day)
-            # ... or within last 2 days (because legacy code gives those already)
-            if within2days(self.theyear, self.themonth, day):
                 return '<td class="%s">%d</td>' % (self.cssclasses[weekday], day)
             
             # create intrms.html page for this day
             link = createIntRMSHTML(self.basepath, self.theyear, self.themonth, day, files)
             return '<td class="%s"><a href="%s">%d</a></td>' % (self.cssclasses[weekday], link, day)
+
+    # return iterator for one day every N minutes
+    def iterminutes(self, everyN):
+        """return iterator for one day every N minutes"""
+        for i in [''] + ['%02d' % i for i in range(0, 60, everyN)]:
+            yield i
+            
+    # return a minute name as a table header
+    def formatminutes(self, m):
+        """return a minute name as a table header"""
+        if not m:
+            return '<th class="noday">%s</th>' % m
+        else:
+            return '<th class="noday">%sm</th>' % m
+        
+    # return hourminute entry
+    def formathourmin(self, h, mstr):
+        """return hourminute entry"""
+        if not mstr:
+            return '<th>%02dh</th>' % h
+        else:
+            # get file subset
+            regexPatString = '.*\d{4}_\d{2}_\d{2}_%02d_%s_%s\.jpg$' % (h, mstr, self.sensor)
+            regex = re.compile(regexPatString)
+            filesubset = [m.group(0) for m in [regex.match(f) for f in self.files] if m]
+            if filesubset:
+                thefile = filesubset[0] # FIXME should check for exactly one file match (2+ is unexpected)
+                thelink = thefile.replace(self.basepath, 'http://pims.grc.nasa.gov/plots/user/buffer')
+                return '<td><a href="%s">%02d:%02d</a></td>' % (thelink, h, int(mstr))
+            else:
+                return '<td>%02d:%02d</td>' % (h, int(mstr))
+        
+    # return day name as table row
+    def formatdayname(self, theyear, themonth, theday, withyear=True):
+        """return day name as table row"""
+        s = 'GMT %d-%02d-%02d' % (theyear, themonth, theday)
+        v = 60 / self.everyN
+        return '<tr><th colspan="%d" class="month">%s</th></tr>' % (v + 1, s)
+    
+    # return a header for minutes (everyN) as a table row
+    def formatminuteheader(self):
+        """return a header for a week as a table row"""
+        s = ''.join(self.formatminutes(i) for i in self.iterminutes(self.everyN))
+        return '<tr>%s</tr>' % s    
+
+    #  return a complete hour as a table row
+    def formathour(self, h):
+        """return a complete hour as a table row"""
+        s = ''.join(self.formathourmin(h, i) for i in self.iterminutes(self.everyN))
+        return '<tr>%s</tr>' % s    
+    
+    # return a formatted day as a table   
+    def formatdayeveryNmin(self, theday, basepath, sensor, everyN, files):
+        """return a formatted day as a table"""
+        self.theday = theday
+        self.basepath = basepath
+        self.sensor = sensor
+        self.everyN = everyN
+        self.files = files
+        v = []
+        a = v.append
+        a('<table border="4" cellpadding="2" cellspacing="2" class="month">')
+        a('\n')
+        a(self.formatdayname(theday.year, theday.month, theday.day, withyear=True))
+        a('\n')
+        a(self.formatminuteheader())
+        a('\n')
+        for hour in range(0,24):
+            a(self.formathour(hour))
+            a('\n')
+        a('</table>')
+        a('\n')
+        return ''.join(v)
 
 # class for every 30 minutes
 class SensorContainer(Container):
@@ -319,14 +392,17 @@ def updateRMSHTML(clean_msg, sensorSuperset):
     # Create HTML doc with title and heading
     doc = createDoc('PIMS ~30-Days of Near Real-Time Interval RMS Screenshots')
 
-    # Append ~2-day buffer links
-    today = datetime.date.today()
-    dc1 = DayContainerFive(day=today, sensorSuperset=sensorSuperset)
-    doc.append(dc1)
+    ### Append ~2-day buffer links
+    ##today = datetime.date.today()
+    ##dc1 = DayContainerFive(day=today, sensorSuperset=sensorSuperset)
+    ##doc.append(dc1)
+    ##
+    ##yesterday = datetime.date.today() - datetime.timedelta(days=1)  
+    ##dc2 = DayContainerFive(day=yesterday, sensorSuperset=sensorSuperset)
+    ##doc.append(dc2)
     
-    yesterday = datetime.date.today() - datetime.timedelta(days=1)  
-    dc2 = DayContainerFive(day=yesterday, sensorSuperset=sensorSuperset)
-    doc.append(dc2)
+    # Note about using calendar table of links
+    doc.append('Use hyperlinks in calendars below to navigate to day of interest.')
     
     doc.append(HR())
     doc.append('<br>')
