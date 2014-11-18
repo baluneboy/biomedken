@@ -17,16 +17,17 @@ class PadFile(object):
 
     This class will produce an object that can be used for converting the binary
     input file to Audio Interchange File Format (AIFF). The conversion will only
-    succeed if the underlying input file data are float32 binary data with txyz
-    frames t1, x1, y1, z1, t2, x2, y2, z2, ...
+    succeed if the underlying input file's data are formatted as float32 binary
+    values with txyz frames: t1, x1, y1, z1, t2, x2, y2, z2, ...
 
-    If a header file with same name as input file + ".header" extension, then
-    attempt to get parse SampleRate from the header file using the following
-    regular expression '.*\<SampleRate\>(.*)\</SampleRate\>.*'. So a line like
-    this <SampleRate>1234.5</SampleRate> would yield a sample rate of 1,234.5
-    samples per second. Alternatively, without an identifiable header file,
-    attempt to reckon rate from the time steps in the time (in seconds) from the
-    input file.
+    For a given input data file (e.g. "/some/path/to/my_pad_file"), if there
+    also exists a header file (e.g. "/some/path/to/my_pad_file.header"), then
+    attempt to parse the sample rate from the header file using a regular
+    expression so that a line like this "<SampleRate>1234.5</SampleRate>" yields
+    a sample rate of 1234.5 samples per second. Alternatively, without an
+    identifiable accompanying header file, calculate the sample rate assuming
+    that the time values in the data file are relative, in seconds, and start
+    with zero as the first time value.
 
     """
     
@@ -46,18 +47,15 @@ class PadFile(object):
         """str(self)"""
         bname = os.path.basename(self.filename)
         if self.ispad:
-            #return '%s named %s (native rate = %.3f sa/sec)' % (self.__class__.__name__, bname, self.samplerate)
             return '%s, native rate = %.2f sa/sec' % (bname, self.samplerate)
         elif self.exists:
             return '%s (non-%s)' % (bname, self.__class__.__name__)
         else:
             return '%s (non-file)' % bname
     
-    # loose check for pad file
+    # Return True if file exists, has non-zero length, and float32 txyz frames.
     def is_pad(self):
-        """loose check for pad file"""
-        # NOTE: this assumes PAD file that has 4 columns (like SAMS)
-        
+        """Return True if file exists, has non-zero length, and float32 txyz frames."""
         if not os.path.exists(self.filename):
             return False
         self.exists = True
@@ -69,39 +67,36 @@ class PadFile(object):
             return False
         return True
     
-    # get header filename if it exists
+    # Return header filename if it exists; otherwise, None.
     def get_headerfile(self):
-        """get header filename if it exists"""
-        
+        """Return header filename if it exists; otherwise, None."""
         hdrfile = self.filename + '.header'
         if os.path.exists(hdrfile):
             return hdrfile
         else:
             return None
     
-    # reckon sample rate from time step in data file
-    def _reckon_rate(self):
-        """reckon sample rate from time step in data file"""
-        
+    # Calculate sample rate from time step in data file.
+    def _calculate_sample_rate(self):
+        """Calculate sample rate from time step in data file."""
         with open(self.filename, 'rb') as f:
-            # FIXME THIS IS ONLY VALID WITH 4-COLUMN PAD FILES (LIKE SAMS, NOT MAMS OSS)
-            # PAD files use relative time in seconds with t1 = 0 and next time starting
-            # at byte 16, so seek to that position
+            # FIXME THIS IS ONLY VALID WITH 4-COLUMN PAD FILES.
+            # Note that *most* PAD files use relative time in seconds with t1 =
+            # 0 and next time starting at byte 16, so seek to that position
             f.seek(4*4)
         
-            # now we want just one 4-byte float (float32)
+            # Now we want just one of these 4-byte floats (float32)
             b = f.read(4)
         
-        # decode time step (delta t) as little-endian float32
+        # Decode time step (delta t) as little-endian float32.
         delta_t = struct.unpack('<f', b)[0]
         
-        # return sample rate
+        # Return calculated sample rate.
         return round(1.0 / delta_t, 3)
     
-    # try to parse sample rate from header file; otherwise reckon it from t 
+    # Attempt to parse sample rate from header file; otherwise calculate it.
     def get_samplerate(self):
-        """try to parse sample rate from header file; otherwise reckon it from t"""
-        
+        """Attempt to parse sample rate from header file; otherwise calculate it."""
         if self.headerfile:
             with open(self.headerfile, 'r') as f:
                 contents = f.read().replace('\n', '')
@@ -111,34 +106,29 @@ class PadFile(object):
                 else:
                     return None
         else:
-            return self._reckon_rate()
+            return self._calculate_sample_rate()
     
-    # TODO: include other parts of processing chain (taper, filter, pitch shifting, frequency shifting)
-    
-    # TODO: with processing chain, you should grow an encoded message to echo
-    
-    # convert designated axis to aiff and maybe plot too
+    # Convert designated axis to AIFF, and maybe plot it too.
     def convert(self, rate=None, axis='s', plot=False, taper=0):
-        """convert designated axis to aiff and maybe plot too"""
-    
-        # check loosely if pad file
+        """Convert designated axis to AIFF, and maybe plot it too."""
+        # If not properly formatted, then return without doing anything.
         if not self.ispad:
             return
     
-        # get sample rate
+        # Get sample rate.
         if not rate:
             samplerate = self.samplerate
         else:
             samplerate = rate
                 
-        # read data from file
+        # Read data from file.
         B = array_fromfile(self.filename)
     
-        # demean each column
+        # Demean each column.
         M = B.mean(axis=0)
         C = B - M[np.newaxis, :]
        
-        # determine axis
+        # Determine desired axis or axes.
         if axis == '4': axis = 'xyzs'
         for ax in axis.lower():
             if ax == 'x': data = C[:, -3] # x-axis is 3rd last column
@@ -149,29 +139,29 @@ class PadFile(object):
                 raise Exception( 'unhandled axis "%s"' % ax )
             stub = self.filename + ax
             
-            # maybe plot demeaned accel data
+            # Plot demeaned accel data (maybe).
             if plot:
                 png_file = stub + '.png'
                 plt.plot(data)
                 plt.savefig(png_file)
             
-            # normalize to range -32768:32767 (actually, use -32000:32000)
+            # Normalize to range -32768:32767 (actually, use -32000:32000).
             data = normalize(data) * 32000.0
             
-            # taper signal, if requested
+            # Taper signal, if requested.
             if taper > 0:
                 data = my_taper(data, samplerate, taper/1000.0)
         
-            # data conditioning
+            # Data conditioning.
             data = np.rint(data) # round to nearest integer
             data = data.astype(np.int16) # not sure why we need this...maybe aifc assumptions
             data = data.byteswap().newbyteorder() # need this on mac osx and linux (windows?)
         
-            # convert data to string for aifc to work write
+            # Convert data to string for aifc write to work right.
             strdata = data.tostring()
             aiff_file = stub + '.aiff'
             g = aifc.open(aiff_file, 'w')
-            sampwidth = 2 # we get this value based on data type (np.int16)
+            sampwidth = 2 # this value based on data type (2 bytes in np.int16)
             #         nchans, sampwidth, framerate, nframes, comptype, compname
             g.setparams((1, sampwidth, samplerate, len(data), 'NONE', 'not compressed'))
             g.writeframes(strdata)

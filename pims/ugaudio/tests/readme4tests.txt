@@ -1,3 +1,5 @@
+~/sox/play fiona.aiff gain -12 phaser 0.6 0.66 4 0.6 2 -t reverb stretch 3
+
 # Try the following to do some low-level testing on this package.
 
 # Change to tests directory, then use the following command for non-verbose testing...

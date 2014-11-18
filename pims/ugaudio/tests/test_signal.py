@@ -3,9 +3,10 @@
 import unittest
 import warnings
 import numpy as np
-from pims.ugaudio.signal import AlternateIntegers, normalize
+from pims.ugaudio.signal import normalize
 from pims.ugaudio.signal import clip_at_third, my_taper, timearray
-from pims.ugaudio.signal import speedx, stretch, pitchshift
+#from pims.ugaudio.signal import speed_scale, stretch, pitch_shift
+from pims.ugaudio.create import AlternateIntegers
 
 class SignalTestCase(unittest.TestCase):
     """
@@ -93,18 +94,6 @@ class SignalTestCase(unittest.TestCase):
             self.assertEqual( np.abs(not_tapered[-Nmidtaper]), 100 )      
             self.assertLess( np.abs(tapered[ Nmidtaper]),       51 )
             self.assertLess( np.abs(tapered[-Nmidtaper]),       51 )
-
-    @unittest.skip("not implemented yet")
-    def test_speedx(self):
-        pass
-
-    @unittest.skip("not implemented yet")
-    def test_stretch(self):
-        pass
-
-    @unittest.skip("not implemented yet")
-    def test_pitchshift(self):
-        pass
 
     @unittest.skip("not implemented yet")
     def test_spectrogram(self):

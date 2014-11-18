@@ -1,45 +1,21 @@
 #!/usr/bin/env python
 
 import copy
-import numpy as np
 import warnings
+import numpy as np
 from scipy.signal import hann
 
-# return signal of length numpts with alternating integers: +value, -value, +value,...
-class AlternateIntegers(object):
-    """
-    return signal of length numpts with alternating integers: +value, -value, +value,...
-    used as simple signal for test purposes
-    """
-    
-    def __init__(self, value=9, numpts=5):
-        self.value = value
-        self.numpts = numpts
-        self.signal = self.alternate_integers()
-        
-        idxmid = numpts // 2
-        if numpts % 2 == 0:
-            self.idx_midpts = [idxmid-1, idxmid]
-        else:
-            self.idx_midpts = [idxmid]
-
-    def alternate_integers(self):
-        x = np.empty((self.numpts,), int)
-        x[::2]  = +self.value
-        x[1::2] = -self.value
-        return x
-
-# normalize amplitude of the signal
+# Return amplitude normalized version of input signal.
 def normalize(a):
-    """normalize amplitude of the signal"""
+    """Return amplitude normalized version of input signal."""
     sf = max(abs(a))
     if sf == 0:
         return a
     return a / sf
 
-# return numpts; at most, this is one-third of signal duration
+# Return numpts (desired = fs * t); at most though, a third of signal duration.
 def clip_at_third(sig, fs, t):
-    """return numpts; at most, this is one-third of signal duration"""
+    """Return numpts (desired = fs * t); at most though, a third of signal duration."""
     # number of pts to taper (maybe)
     Ndesired = int(fs * t)
     
@@ -53,9 +29,9 @@ def clip_at_third(sig, fs, t):
     #print Ndesired, Nactual, len(sig), third
     return Nactual
 
-# taper signal for first & last t seconds
+# Return tapered copy of input signal; taper first & last t seconds.
 def my_taper(a, fs, t):
-    """taper signal for first & last t seconds"""
+    """Return tapered copy of input signal; taper first & last t seconds."""
     # number of pts to taper (at most, one-third of signal)
     N = clip_at_third(a, fs, t)
     
@@ -68,32 +44,30 @@ def my_taper(a, fs, t):
     b[-N:] *= w[-N:]
     return b
 
-# return time array (helpful to plot versus time)
+# Return time array derived from sample rate and length of input signal.
 def timearray(y, fs):
-    """return time array (helpful to plot vs. time)"""
+    """Return time array derived from sample rate and length of input signal."""
     T = len(y) / float(fs) # total time of the signal
     return np.linspace(0, T, len(y), endpoint=False)
 
-# multiply the sound's speed by some factor
-def speedx(sound_array, factor):
-    """multiply the sound's speed by some factor"""
-    indices = np.round( np.arange(0, len(sound_array), factor) )
-    indices = indices[indices < len(sound_array)].astype(int)
-    return sound_array[ indices.astype(int) ]
+# Return signal with "speed" scaled by some factor.
+def speed_scale(s, factor):
+    """Return signal with "speed" scaled by some factor."""
+    indices = np.round( np.arange(0, len(s), factor) )
+    indices = indices[indices < len(s)].astype(int)
+    return s[ indices.astype(int) ]
 
-# stretch the sound by a factor, f
-def stretch(sound_array, f, window_size, h):
-    """stretch the sound by a factor, f"""
-    
+# Return signal "stretched" by factor of f.
+def stretch(s, f, window_size, h):
+    """Return signal "stretched" by factor of f."""
     phase  = np.zeros(window_size)
     hanning_window = np.hanning(window_size)
-    result = np.zeros( len(sound_array) /f + window_size)
+    result = np.zeros( len(s) /f + window_size)
 
-    for i in np.arange(0, len(sound_array)-(window_size+h), h*f):
-
+    for i in np.arange(0, len(s)-(window_size+h), h*f):
         # two potentially overlapping subarrays
-        a1 = sound_array[i: i + window_size]
-        a2 = sound_array[i + h: i + window_size + h]
+        a1 = s[i: i + window_size]
+        a2 = s[i + h: i + window_size + h]
 
         # resynchronize the second array on the first
         s1 =  np.fft.fft(hanning_window * a1)
@@ -109,9 +83,9 @@ def stretch(sound_array, f, window_size, h):
 
     return result.astype('int16')
 
-# change the pitch of a sound by n semitones
-def pitchshift(snd_array, n, window_size=2**13, h=2**11):
-    """change the pitch of a sound by n semitones"""
+# Return signal with pitch shifted by n semitones.
+def pitch_shift(s, n, window_size=2**13, h=2**11):
+    """Return signal with pitch shifted by n semitones."""
     factor = 2**(1.0 * n / 12.0)
-    stretched = stretch(snd_array, 1.0/factor, window_size, h)
-    return speedx(stretched[window_size:], factor)
+    stretched = stretch(s, 1.0/factor, window_size, h)
+    return speed_scale(stretched[window_size:], factor)

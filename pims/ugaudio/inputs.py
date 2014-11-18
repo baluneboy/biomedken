@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-"""
+"""ugaudio
+
 For important considerations and disclaimers, see the readme.txt file.
 
 This program attempts to convert PIMS acceleration data (PAD) files into AIFF
@@ -37,34 +38,30 @@ python ugaudio.py -m plot -r 22050 filename1 filename2
 INPUT ARGUMENTS (see "usage" on first line above):
 """
 
-# Author: Ken Hrovat
-# Disclaimer: this project deserves more time than I am able to give it
-# FIXME - this code should be much more graceful in handling the unexpected
-
 import sys
 import argparse
 
 # /misc/yoda/pub/pad/year2014/month10/day09/sams2_accel_121f04/2014_10_09_13_32_23.772+2014_10_09_13_34_02.623.121f04
 
-# check for non-negative value
+# Help parser get non-negative value; otherwise, exception.
 def check_nonnegative(value):
-    """check for non-negative value"""
+    """Help parser get non-negative value; otherwise, exception."""
     ivalue = int(value)
     if ivalue < 0:
          raise argparse.ArgumentTypeError("%s is an invalid non-negative int value" % value)
     return ivalue
 
-# class to override argparse error message
+# A class to override argparse error message.
 class MyParser(argparse.ArgumentParser):
-    """class to override argparse error message"""
+    """A class to override argparse error message."""
     def error(self, message):
         sys.stderr.write('error: %s\n' % message)
         self.print_help()
         sys.exit(1)
 
-# courtesy echo arguments
+# Print arguments (nicely?).
 def show_args(mode, axis, rate, taper, files):
-    """courtesy echo arguments"""
+    """Print arguments (nicely?)."""
     if not mode == 'demo':
         print "mode = %s," % mode,
         if rate:
@@ -84,8 +81,9 @@ def show_args(mode, axis, rate, taper, files):
     
     print '~' * 80
 
-# parse input arguments
+# Parse input arguments.
 def parse_args():
+    """Parse input arguments."""
     parser = MyParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('-m', default="aiff", choices=['aiff', 'plot', 'demo'], help="mode choice")
     parser.add_argument('-a', default="s", choices=['x', 'y', 'z', 's', '4'], help="axis; default is s (for sum), use 4 to do all")

@@ -5,9 +5,9 @@ import aifc
 import struct
 import numpy as np
 
-# Ted Wright's original bin2asc routine was like this...
+# Ted Wright's original bin2asc routine convert file to ASCII.
 def ted_write(filename, columns=4):
-    """Ted Wright's original bin2asc routine was like this..."""    
+    """Ted Wright's original bin2asc routine convert file to ASCII."""    
     f = open(filename)
     d = f.read()
     f.close()
@@ -19,9 +19,9 @@ def ted_write(filename, columns=4):
             print
     sys.stdout.close()
 
-# return 2d numpy array read from filename input
+# Return 2d numpy array read from filename input.
 def array_fromfile(filename, columns=4, out_dtype=np.float32):
-    """return 2d numpy array read from filename input"""
+    """Return 2d numpy array read from filename input."""
     with open(filename, "rb") as f: 
         A = np.fromfile(f, dtype=np.float32) # accel file: 32-bit float "singles"
     B = np.reshape(A, (-1, columns))
@@ -29,9 +29,9 @@ def array_fromfile(filename, columns=4, out_dtype=np.float32):
         return B
     return B.astype(out_dtype)
 
-# load data from aiff file
+# Return array loaded from aiff file.
 def aiff_load(aiff_file, verbose=False):
-    """return array loaded from aiff file"""
+    """Return array loaded from aiff file."""
     f = aifc.open(aiff_file, 'r')
     if verbose:
         print "Reading", aiff_file

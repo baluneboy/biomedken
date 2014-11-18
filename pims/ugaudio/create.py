@@ -7,6 +7,30 @@ import matplotlib.pyplot as plt
 from scipy.signal import chirp
 from pims.ugaudio.load import aiff_load, array_fromfile
 
+# return signal of length numpts with alternating integers: +value, -value, +value,...
+class AlternateIntegers(object):
+    """
+    return signal of length numpts with alternating integers: +value, -value, +value,...
+    used as simple signal for test purposes
+    """
+    
+    def __init__(self, value=9, numpts=5):
+        self.value = value
+        self.numpts = numpts
+        self.signal = self.alternate_integers()
+        
+        idxmid = numpts // 2
+        if numpts % 2 == 0:
+            self.idx_midpts = [idxmid-1, idxmid]
+        else:
+            self.idx_midpts = [idxmid]
+
+    def alternate_integers(self):
+        x = np.empty((self.numpts,), int)
+        x[::2]  = +self.value
+        x[1::2] = -self.value
+        return x
+
 # quick demo to write 4-column PAD file
 def demo_write_pad_file(fname):
     """quick demo to write 4-column PAD file"""
