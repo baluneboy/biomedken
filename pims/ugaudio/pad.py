@@ -1,27 +1,37 @@
 #!/usr/bin/env python
 
-"""
-PAD file management...
-a very loose interpretation of what a PAD file is.
-"""
-
-# Author: Ken Hrovat
-# Disclaimer: this code can be much improved
+"""A loose interpretation for binary file handling and audio conversion."""
 
 import os
 import re
 import aifc
 import struct
 import numpy as np
+import matplotlib.pyplot as plt
 from pims.ugaudio.load import array_fromfile
 from pims.ugaudio.signal import normalize, my_taper
-import matplotlib.pyplot as plt
 
-# class for loosely managing PAD files
+# A class to implement a loose interpretation for binary file conversion to audio.
 class PadFile(object):
-    """class for loosely managing PAD files"""
+    """A class to implement a loose interpretation for binary file conversion to audio.
+
+    This class will produce an object that can be used for converting the binary
+    input file to Audio Interchange File Format (AIFF). The conversion will only
+    succeed if the underlying input file data are float32 binary data with txyz
+    frames t1, x1, y1, z1, t2, x2, y2, z2, ...
+
+    If a header file with same name as input file + ".header" extension, then
+    attempt to get parse SampleRate from the header file using the following
+    regular expression '.*\<SampleRate\>(.*)\</SampleRate\>.*'. So a line like
+    this <SampleRate>1234.5</SampleRate> would yield a sample rate of 1,234.5
+    samples per second. Alternatively, without an identifiable header file,
+    attempt to reckon rate from the time steps in the time (in seconds) from the
+    input file.
+
+    """
     
     def __init__(self, filename):
+        """Constructs a PadFile."""
         self.filename = filename
         self.headerfile = None
         self.samplerate = None
@@ -33,6 +43,7 @@ class PadFile(object):
             self.samplerate = self.get_samplerate()
 
     def __str__(self):
+        """str(self)"""
         bname = os.path.basename(self.filename)
         if self.ispad:
             #return '%s named %s (native rate = %.3f sa/sec)' % (self.__class__.__name__, bname, self.samplerate)
