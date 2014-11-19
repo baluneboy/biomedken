@@ -7,25 +7,31 @@ import matplotlib.pyplot as plt
 from scipy.signal import chirp
 from pims.ugaudio.load import aiff_load, array_fromfile
 
-# return signal of length numpts with alternating integers: +value, -value, +value,...
+# A class to implement a "signal" with alternating integers.
 class AlternateIntegers(object):
-    """
-    return signal of length numpts with alternating integers: +value, -value, +value,...
-    used as simple signal for test purposes
+    """A class to implement a "signal" with alternating integers.
+
+    This class will produce an array ("signal") of length numpts with
+    alternating integers: +value, -value, +value,... This is convenient for test
+    purposes.
+    
     """
     
     def __init__(self, value=9, numpts=5):
+        """Constructs an AlternateIntegers object."""
         self.value = value
         self.numpts = numpts
         self.signal = self.alternate_integers()
-        
+        # get approx midpoint index
         idxmid = numpts // 2
         if numpts % 2 == 0:
             self.idx_midpts = [idxmid-1, idxmid]
         else:
             self.idx_midpts = [idxmid]
 
+    # Return alternating integers with postive and negative values (first is positive).
     def alternate_integers(self):
+        """Fill alternates with postive and negative values (first is positive)."""
         x = np.empty((self.numpts,), int)
         x[::2]  = +self.value
         x[1::2] = -self.value
@@ -81,17 +87,13 @@ def write_rogue_pad_file(filename):
     a = np.array(values, dtype='float32')
     a.tofile(filename)
 
-# FIXME this may not work fully as expected
+# FIXME this does not work fully as expected (what about t, x, and z)
 def aiff2pad(fname):
     pad_file = fname + '.pad'
-    y = create_from_aiff(fname)
+    y = aiff_load(fname)
     print len(y)
     y[0:30264].astype('float32').tofile(pad_file)
     print 'wrote PAD file %s' % pad_file
-
-# FIXME this was just convenient wrapper find/replace create_from_aiff with aiff_load
-def create_from_aiff(aiff_file):
-    return aiff_load(aiff_file, verbose=True)
 
 def scenario1():
     """

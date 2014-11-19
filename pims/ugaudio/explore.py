@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
 from pims.ugaudio.signal import pitchshift, timearray
-from pims.ugaudio.create import create_from_aiff
+from pims.ugaudio.create import aiff_load
 
 def main():
     
@@ -16,7 +16,7 @@ def main():
     # FIXME this is a kludge to make this work (to just use 1st column)
     bowl_sound = bowl_sound[:, 0]
     
-    #bowl_sound = create_from_aiff('/Users/ken/Sounds/tibetan.aiff')
+    #bowl_sound = aiff_load('/Users/ken/Sounds/tibetan.aiff')
     #fps = 44100
     
     transposed = [pitchshift(bowl_sound, n) for n in tones]   

@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
 import tempfile
-from pims.ugaudio.create import write_chirp_pad, write_rogue_pad_file, create_from_aiff
+from pims.ugaudio.create import write_chirp_pad, write_rogue_pad_file
 from pims.ugaudio.pad import PadFile
 from pims.ugaudio.load import aiff_load
 

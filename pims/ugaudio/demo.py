@@ -4,7 +4,7 @@ import aifc
 import numpy as np
 import matplotlib.pyplot as plt
 from pims.ugaudio.load import array_fromfile
-from pims.ugaudio.create import get_chirp, create_from_aiff
+from pims.ugaudio.create import get_chirp
 from pims.ugaudio.signal import normalize
 
 def demo_chirp(fs=44100):

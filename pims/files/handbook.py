@@ -724,7 +724,8 @@ if __name__ == '__main__':
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan')
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat')
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Columbus_GLACIER-3')
-    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Bogus_Entry')
+    #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Bogus_Entry')
+    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_vehicle_Attitude_Catalog')
     
     if True: # True for process_pages (the first stage), False for process_build (the last stage)
         
