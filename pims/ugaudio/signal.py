@@ -13,9 +13,9 @@ def normalize(a):
         return a
     return a / sf
 
-# Return numpts (desired = fs * t); at most though, a third of signal duration.
+# Return numpts (desired = fs * t); but no more than one-third signal duration.
 def clip_at_third(sig, fs, t):
-    """Return numpts (desired = fs * t); at most though, a third of signal duration."""
+    """Return numpts (desired = fs * t); but no more than one-third signal duration."""
     # number of pts to taper (maybe)
     Ndesired = int(fs * t)
     
@@ -38,7 +38,7 @@ def my_taper(a, fs, t):
     # use portion of hann (w) to do the tapering
     w = hann(2*N+1)
     
-    # work on signal copy, leave input alone
+    # taper both ends of signal copy (leave input alone)
     b = a.copy()
     b[0:N] *= w[0:N]
     b[-N:] *= w[-N:]
