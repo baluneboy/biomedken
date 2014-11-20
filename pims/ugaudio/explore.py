@@ -8,6 +8,8 @@ from scipy.io import wavfile
 from pims.ugaudio.signal import pitchshift, timearray
 from pims.ugaudio.create import aiff_load
 
+# TODO put power to explore in users hands!?
+
 def main():
     
     fps, bowl_sound = wavfile.read("/Users/ken/dev/programs/python/pims/sandbox/data/bowl.wav")

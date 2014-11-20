@@ -25,7 +25,7 @@ class CreateTestCase(unittest.TestCase):
         Test the padwrite function.
         """
         fs = self.sample_rate
-        x = self.alt_ints.signal
+        x = self.alt_ints.signal # alternating ints: +5, -5,...
         y = x + 2
         z = x - y
         
@@ -34,17 +34,15 @@ class CreateTestCase(unittest.TestCase):
         self.pad_filename = self.pad_file_object.name
         t = padwrite(x, y, z, fs, self.pad_filename, return_time=True)
         self.pad_file_object.close()
+        txyz = np.c_[ t, x, y, z ] # this we wrote to file
         
-        # FIXME this is flimsy here because we rely on ouwr own array_fromfile
-        a = array_fromfile(self.pad_filename)
-        tout, xout, yout, zout = a[:,0], a[:,1], a[:,2], a[:,3]
+        # FIXME this is flimsy here because we rely on our own array_fromfile
+        txyzfile = array_fromfile(self.pad_filename)
 
         # verify each column (t,x,y,z) from file closely matches expected value
         small_delta = 1e-6 # true for our simple integer case with fs = 1 sa/sec
-        self.assertLess( np.max( np.abs(tout - t) ), small_delta)
-        self.assertLess( np.max( np.abs(xout - x) ), small_delta)
-        self.assertLess( np.max( np.abs(yout - y) ), small_delta)
-        self.assertLess( np.max( np.abs(zout - z) ), small_delta)
+        for i in range( txyzfile.shape[1] ):
+            self.assertLess( np.max( np.abs(txyzfile[:, i] - txyz[:, i]) ), small_delta)
 
     @unittest.skip("not implemented yet")
     def test_something(self):
