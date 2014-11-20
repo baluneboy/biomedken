@@ -37,39 +37,23 @@ class AlternateIntegers(object):
         x[1::2] = -self.value
         return x
 
-# quick demo to write 4-column PAD file
-def demo_write_pad_file(fname):
-    """quick demo to write 4-column PAD file"""
-    values = [
-        [0.0, -1.2,  1.3, -1.4],
-        [1.0,  2.2, -2.3,  2.4]
-        ]
-    a = np.array(values, dtype='float32')
-    a.tofile(fname)
-
-# quick demo to read 4-column PAD file   
-def demo_write_read_pad_file():
-    """quick demo to read 4-column PAD file"""    
-    fname = '/tmp/out.bin'
-    demo_write_pad_file(fname)
-    a = array_fromfile(fname)
-    print a
-
-# generate a tapered linear chirp
-def get_chirp():
-    """generate a tapered linear chirp"""
-    t = np.linspace(0, 1, 88200, endpoint=False)
-    #print t[0:3], t[1]
-    y = chirp(t, f0=20, f1=2000, t1=0.9, method='linear')
-    w = np.hanning(len(y))
-    return w*y
+# Write binary (PAD-like) file.
+def padwrite(x, y, z, fs, fname, return_time=False):
+    """Write binary (PAD-like) file."""
+    N = float(len(x))
+    T = float(N/fs)
+    t = np.linspace(0, T, N, endpoint=False)
+    data = np.c_[ t, x, y, z ]
+    data.astype('float32').tofile(fname)
+    if return_time:
+        return t
 
 # write PAD file for chirp (just data file, no header file)
 def write_chirp_pad(filename):
     """write PAD file for chirp (just data file, no header file)"""
     wy = get_chirp()
     wy.astype('float32').tofile(filename)
-
+    
 # write rogue PAD file (used for testing, no header file)
 def write_rogue_pad_file(filename):
     """write rogue PAD file (used for testing, no header file)"""
@@ -87,6 +71,15 @@ def write_rogue_pad_file(filename):
     a = np.array(values, dtype='float32')
     a.tofile(filename)
 
+# generate a tapered linear chirp
+def get_chirp():
+    """generate a tapered linear chirp"""
+    t = np.linspace(0, 1, 88200, endpoint=False)
+    #print t[0:3], t[1]
+    y = chirp(t, f0=20, f1=2000, t1=0.9, method='linear')
+    w = np.hanning(len(y))
+    return w*y
+
 # FIXME this does not work fully as expected (what about t, x, and z)
 def aiff2pad(fname):
     pad_file = fname + '.pad'
@@ -94,6 +87,24 @@ def aiff2pad(fname):
     print len(y)
     y[0:30264].astype('float32').tofile(pad_file)
     print 'wrote PAD file %s' % pad_file
+    
+# quick demo to write 4-column PAD file
+def demo_write_pad_file(fname):
+    """quick demo to write 4-column PAD file"""
+    values = [
+        [0.0, -1.2,  1.3, -1.4],
+        [1.0,  2.2, -2.3,  2.4]
+        ]
+    a = np.array(values, dtype='float32')
+    a.tofile(fname)
+
+# quick demo to read 4-column PAD file   
+def demo_write_read_pad_file():
+    """quick demo to read 4-column PAD file"""    
+    fname = '/tmp/out.bin'
+    demo_write_pad_file(fname)
+    a = array_fromfile(fname)
+    print a
 
 def scenario1():
     """
