@@ -44,6 +44,23 @@ class CreateTestCase(unittest.TestCase):
         for i in range( txyzfile.shape[1] ):
             self.assertLess( np.max( np.abs(txyzfile[:, i] - txyz[:, i]) ), small_delta)
 
+    def test_alternate_integers(self):
+        """
+        Test AlternateIntegers class.
+        """
+        # construct simple case
+        ai = AlternateIntegers()
+        self.assertEqual(ai.value, 9)
+        self.assertEqual(ai.numpts, 5)
+        self.assertEqual(ai.idx_midpts, [2])
+        self.assertEqual(len(ai.signal), 5)
+        np.testing.assert_array_equal (ai.signal, [+9, -9, +9, -9, +9])
+        
+        # construct case with even numpts to verify idx_midpts
+        ai = AlternateIntegers(value=2, numpts=6)
+        self.assertEqual(ai.idx_midpts, [2, 3])
+        np.testing.assert_array_equal (ai.signal, [+2, -2, +2, -2, +2, -2])
+        
     @unittest.skip("not implemented yet")
     def test_something(self):
         """

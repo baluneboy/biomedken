@@ -3,12 +3,13 @@
 import aifc
 import pygame
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.io import wavfile
-from pims.ugaudio.signal import pitchshift, timearray
+import matplotlib.pyplot as plt
 from pims.ugaudio.create import aiff_load
+from pims.ugaudio.signal import pitchshift, timearray
 
-# TODO put power to explore in users hands!?
+# TODO put power to explore in user's hands!?
+#      import and process iSeismograph files?
 
 def main():
     

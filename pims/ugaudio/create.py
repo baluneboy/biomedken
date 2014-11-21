@@ -18,7 +18,7 @@ class AlternateIntegers(object):
     """
     
     def __init__(self, value=9, numpts=5):
-        """Constructs an AlternateIntegers object."""
+        """Constructor."""
         self.value = value
         self.numpts = numpts
         self.signal = self.alternate_integers()
@@ -29,9 +29,9 @@ class AlternateIntegers(object):
         else:
             self.idx_midpts = [idxmid]
 
-    # Return alternating integers with postive and negative values (first is positive).
+    # Return numpts alternate integers: +x, -x, etc.
     def alternate_integers(self):
-        """Fill alternates with postive and negative values (first is positive)."""
+        """Return numpts alternate integers: +x, -x, etc."""
         x = np.empty((self.numpts,), int)
         x[::2]  = +self.value
         x[1::2] = -self.value

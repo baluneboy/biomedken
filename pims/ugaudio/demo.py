@@ -7,7 +7,7 @@ from pims.ugaudio.load import array_fromfile
 from pims.ugaudio.create import get_chirp
 from pims.ugaudio.signal import normalize
 
-# TODO Give the user 3 good, meaningful demos (narrate nuances)
+# TODO Give the user 3 good, meaningful demos with narrative on nuances
 
 def demo_chirp(fs=44100):
 
