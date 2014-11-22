@@ -5,7 +5,7 @@ import pygame
 import numpy as np
 from scipy.io import wavfile
 import matplotlib.pyplot as plt
-from pims.ugaudio.create import aiff_load
+from pims.ugaudio.create import aiffread
 from pims.ugaudio.signal import pitchshift, timearray
 
 # TODO put power to explore in user's hands!?
@@ -19,7 +19,7 @@ def main():
     # FIXME this is a kludge to make this work (to just use 1st column)
     bowl_sound = bowl_sound[:, 0]
     
-    #bowl_sound = aiff_load('/Users/ken/Sounds/tibetan.aiff')
+    #bowl_sound, params = aiffread('/Users/ken/Sounds/tibetan.aiff')
     #fps = 44100
     
     transposed = [pitchshift(bowl_sound, n) for n in tones]   

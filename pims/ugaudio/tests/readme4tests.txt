@@ -2,13 +2,13 @@
 
 # Try the following to do some low-level testing on this package.
 
-# Change to tests directory, then use the following command for non-verbose testing...
+# Change to ugaudio directory, then use the following command for non-verbose testing...
 # you should get "OK" in bottom line if all went okay.
-python -m unittest discover -s . -p 'test_*.py'
+python -m unittest discover -s tests -p 'test_*.py'
 
-# Change to tests directory, then use the following command for verbose testing...
+# Change to ugaudio directory, then use the following command for verbose testing...
 # you should get "OK" in bottom line if all went okay.
-python -m unittest discover -s . -p 'test_*.py' -v
+python -m unittest discover -s tests -p 'test_*.py' -v
 
 # Some other, higher-level testing that you might consider:
 # ------------------------------------------------------------------------------

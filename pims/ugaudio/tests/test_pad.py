@@ -8,9 +8,9 @@ from numpy.testing import assert_array_equal
 import tempfile
 from pims.ugaudio.create import write_chirp_pad, write_rogue_pad_file
 from pims.ugaudio.pad import PadFile
-from pims.ugaudio.load import aiff_load
+from pims.ugaudio.load import aiffread
 
-class SignalTestCase(unittest.TestCase):
+class PadTestCase(unittest.TestCase):
     """
     Test suite for ugaudio.signal.
     """
@@ -107,7 +107,7 @@ class SignalTestCase(unittest.TestCase):
         rogue_pad_file.convert()
         
         # get array from aiff file
-        s = aiff_load( rogue_pad_file.filename + 's.aiff' )
+        s, params = aiffread( rogue_pad_file.filename + 's.aiff' )
         assert_array_equal(s, np.array([-2268, 10127, -9559, 17418, -16851, 24709, -24142, 32000, -31433]) )
 
     #@unittest.skip("not implemented yet")
@@ -128,7 +128,7 @@ class SignalTestCase(unittest.TestCase):
         self.assertEqual(new_rate, aiff_rate)
         
 def suite():
-    return unittest.makeSuite(SignalTestCase, 'test')
+    return unittest.makeSuite(PadTestCase, 'test')
 
 if __name__ == '__main__':
     unittest.main(defaultTest='suite', verbosity=2)

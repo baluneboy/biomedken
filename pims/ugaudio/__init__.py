@@ -1,2 +1,1 @@
-"""Utility for converting binary float32 data files to Audio Interchange File
-Format (AIFF)."""
+"""A package to convert data files to Audio Interchange File Format (AIFF)."""

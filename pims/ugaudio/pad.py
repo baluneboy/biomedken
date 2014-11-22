@@ -8,7 +8,7 @@ import aifc
 import struct
 import numpy as np
 import matplotlib.pyplot as plt
-from pims.ugaudio.load import array_fromfile
+from pims.ugaudio.load import padread
 from pims.ugaudio.signal import normalize, my_taper
 
 # A class to implement a loose interpretation for binary file conversion to audio.
@@ -122,7 +122,7 @@ class PadFile(object):
             samplerate = rate
                 
         # Read data from file.
-        B = array_fromfile(self.filename)
+        B = padread(self.filename)
     
         # Demean each column.
         M = B.mean(axis=0)

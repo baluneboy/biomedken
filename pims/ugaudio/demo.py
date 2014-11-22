@@ -3,7 +3,7 @@
 import aifc
 import numpy as np
 import matplotlib.pyplot as plt
-from pims.ugaudio.load import array_fromfile
+from pims.ugaudio.load import padread
 from pims.ugaudio.create import get_chirp
 from pims.ugaudio.signal import normalize
 

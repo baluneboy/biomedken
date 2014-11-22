@@ -19,9 +19,9 @@ def ted_write(filename, columns=4):
             print
     sys.stdout.close()
 
-# Return 2d numpy array read from filename input.
-def array_fromfile(filename, columns=4, out_dtype=np.float32):
-    """Return 2d numpy array read from filename input."""
+# Return 2d numpy array of float32's read from filename input.
+def padread(filename, columns=4, out_dtype=np.float32):
+    """Return 2d numpy array of float32's read from filename input."""
     with open(filename, "rb") as f: 
         A = np.fromfile(f, dtype=np.float32) # accel file: 32-bit float "singles"
     B = np.reshape(A, (-1, columns))
@@ -29,24 +29,28 @@ def array_fromfile(filename, columns=4, out_dtype=np.float32):
         return B
     return B.astype(out_dtype)
 
-# Return array loaded from aiff file.
-def aiff_load(aiff_file, verbose=False):
-    """Return array loaded from aiff file."""
-    f = aifc.open(aiff_file, 'r')
-    if verbose:
-        print "Reading", aiff_file
-        print "nchannels =", f.getnchannels()   # 1 is mono: x, y, z, or sum [all after demean]
-        print "nframes   =", f.getnframes()     # nframes is number of rows in np array
-        print "sampwidth =", f.getsampwidth()   # use 4 (not 2)
-        print "framerate =", f.getframerate()   # sample rate, fs = 500 for fc = 200 Hz
-        print "comptype  =", f.getcomptype()    # 'NONE'
-        print "compname  =", f.getcompname()    # 'not compressed'
-        print f.getparams()
+# Return data loaded from aiff file.
+def aiffread(aiff_file):
+    """Return data loaded from aiff file.
+
+    First output is audio data array, and ...
+    
+    Params tuple is (in this order)
+    - num_chans   = number of audio channels; 1 is mono
+    - samp_width  = number of bytes per audio sample (use 2)
+    - sample_rate = sample rate in samples per second
+    - num_frames  = number of audio frames (rows in np array)
+    - comp_type   = compression type: 'NONE'
+    - comp_name   = compression name: 'not compressed'    
+    """
     data = ''
+    f = aifc.open(aiff_file, 'r')
+    params = f.getparams()
     while True:
         newdata = f.readframes(512)
         if not newdata:
             break
         data += newdata
     f.close()
-    return np.fromstring(data, np.short).byteswap()
+    arr = np.fromstring(data, np.short).byteswap()
+    return arr, params
