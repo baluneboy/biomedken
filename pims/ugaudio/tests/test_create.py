@@ -63,7 +63,7 @@ class CreateTestCase(unittest.TestCase):
         # construct case with even numpts to verify idx_midpts
         ai = AlternateIntegers(value=2, numpts=6)
         self.assertEqual(ai.idx_midpts, [2, 3])
-        np.testing.assert_array_equal (ai.signal, [+2, -2, +2, -2, +2, -2])
+        np.testing.assert_array_equal(ai.signal, [+2, -2, +2, -2, +2, -2])
 
     def test_alternate_integers_aiffwrite(self):
         """
