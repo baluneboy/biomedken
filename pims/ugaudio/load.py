@@ -6,7 +6,7 @@ import struct
 import numpy as np
 
 # Ted Wright's original bin2asc routine convert file to ASCII.
-def ted_write(filename, columns=4):
+def bin2asc_ted(filename, columns=4):
     """Ted Wright's original bin2asc routine convert file to ASCII."""    
     f = open(filename)
     d = f.read()

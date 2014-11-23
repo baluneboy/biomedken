@@ -22,7 +22,7 @@ class LoadTestCase(unittest.TestCase):
         tests_dir = os.path.dirname(__file__)
         samples_dir = os.path.join(os.path.dirname(tests_dir), 'samples')
         self.pad_file = os.path.join(samples_dir, '2014_10_17_06_31_15.515+2014_10_17_06_41_15.528.121f02')
-        
+
     def test_padread(self):
         """
         Test padread function with actual PAD file sample.
@@ -45,7 +45,7 @@ class LoadTestCase(unittest.TestCase):
                                         [6.00013367e+02, -2.88429856e-03,
                                         1.06823947e-02, -4.05408442e-03],
                                         decimal=6) 
-        
+
     def test_aiffread(self):
         """
         Test aiffread function.
