@@ -5,10 +5,11 @@ import subprocess
 import datetime
 from dateutil.relativedelta import relativedelta
 from dateutil import parser
-from pims.config.conf import get_config
 import pandas as pd
 from cStringIO import StringIO
 import socket
+from pims.config.conf import get_config
+from pims.utils.datetime_ranger import DateRange
 
 def get_samsops_db_params(app_name):
     cfg = get_config()
@@ -53,6 +54,75 @@ class EeStatusQuery(object):
         p = subprocess.Popen([cmdQuery], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         results, err = p.communicate()
         return results
+
+# FIXME this was abandoned for quicker, manual build of queries shown in comments below
+class SamsopsBak(object):
+    """workaround query for updating web page with EE status"""
+
+    def __init__(self, table, tfield, fmt):
+        self.host = 'yoda'
+        self.schema = 'samsops_bak'
+        self.uname = 'root'
+        self.pword = raw_input("Enter yoda db passwd: ")
+        self.table = table
+        self.tfield = tfield
+        self.format = fmt
+
+    def _get_query(self, start, stop):
+        query = "SELECT count(*) FROM %s WHERE %s >= '%s' AND %s < '%s';" % (self.table, self.tfield, start, self.tfield, stop)
+        return query
+
+    def run_query(self, start, stop):
+        query = self._get_query(start, stop)
+        cmdQuery = 'mysql -h %s -D %s -u %s -p%s --execute="%s"' % (self.host, self.schema, self.uname, self.pword, query)
+        print cmdQuery
+        p = subprocess.Popen([cmdQuery], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        results, err = p.communicate()
+        return results
+
+    def my_method(self):
+        d1 = datetime.date(2000, 1, 1)
+        d2 = datetime.date(2013, 8, 6)
+        date_range = DateRange(d1, d2)
+        d = d1
+        while d <= date_range.stop:
+            next_year = d + relativedelta(years=1)
+            print d, "<= d <", next_year
+            d += relativedelta(years=1)
+
+SAMSOPS_BAK = {
+    'EE_Packet'                        :'timestamp',
+    'GSE_EMBEDDED_EE_Health_Status'    :'TISS_time_value',
+    'GSE_ER_Health_Status'             :'TISS_time',
+    'GSE_MSG_Health_Status'            :'TISS_time',
+    'GSE_SAMS_ICU_Health_Status'       :'TISS_time',
+    'GSE_SAMS_RTS_Health_Status'       :'TISS_time',
+    'ICU_Packet'                       :'timestamp',
+    'ICU_messages'                     :'date',
+    'tshes_house_packet'               :'timestamp',
+    'command_receipt_log'              :'Timestamp',
+    'tshes_command_receipt_log'        :'Timestamp'
+}
+
+def show_query(tname, field, date_range):
+    fmt = '%Y-%m-%d'
+    d = date_range.start
+    while d <= date_range.stop:
+        next_year = d + relativedelta(years=1)
+        t1 = d.strftime(fmt)
+        t2 = next_year.strftime(fmt)
+        y1 = d.strftime('%Y')
+        #print "INSERT INTO table_subdiv_recs (tname, start, stop, count) SELECT '%s' as tname, '%s' as start, '%s' as stop, (SELECT count(*) FROM %s WHERE %s >= '%s' AND %s < '%s') as count;" % (tname, t1, t2, tname, field, t1, field, t2)
+        print "INSERT INTO samsops_bak_%s.%s SELECT * FROM samsops_bak.%s WHERE %s >= '%s' AND %s < '%s';" % (y1, tname, tname, field, t1, field, t2)
+        d += relativedelta(years=1)
+
+#d1 = datetime.date(2000, 1, 1)
+#d2 = datetime.date(2013, 8, 6)
+#date_range = DateRange(d1, d2)
+#for tname, field in SAMSOPS_BAK.iteritems():
+#    show_query(tname, field, date_range)
+#    print
+#raise SystemExit
 
 class CuStatusQuery(EeStatusQuery):
     """workaround query for updating web page with CU status"""
