@@ -3,6 +3,10 @@
 # Double pendulum formula translated from the C code at
 # http://www.physics.usyd.edu.au/~wheat/dpend_html/solve_dpend.c
 
+import sys
+if sys.platform == 'darwin':
+    import matplotlib
+    matplotlib.use('TKAgg')
 from numpy import sin, cos, pi, array
 import numpy as np
 import matplotlib.pyplot as plt
@@ -63,7 +67,7 @@ x2 = L2*sin(y[:,2]) + x1
 y2 = -L2*cos(y[:,2]) + y1
 
 fig = plt.figure()
-ax = fig.add_subplot(111, autoscale_on=False, xlim=(-2, 2), ylim=(-2, 2))
+ax = fig.add_subplot(111, autoscale_on=False, xlim=(-2, 2), ylim=(-2, 2), aspect='equal')
 ax.grid()
 
 line, = ax.plot([], [], 'o-', lw=2)
