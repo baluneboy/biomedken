@@ -20,8 +20,8 @@ class LoadTestCase(unittest.TestCase):
         """        
         # create simple test signals
         tests_dir = os.path.dirname(__file__)
-        samples_dir = os.path.join(os.path.dirname(tests_dir), 'samples')
-        self.pad_file = os.path.join(samples_dir, '2014_10_17_06_31_15.515+2014_10_17_06_41_15.528.121f02')
+        examples_dir = os.path.join(os.path.dirname(tests_dir), 'examples')
+        self.pad_file = os.path.join(examples_dir, '2014_10_17_06_31_15.515+2014_10_17_06_41_15.528.121f02')
 
     def test_padread(self):
         """

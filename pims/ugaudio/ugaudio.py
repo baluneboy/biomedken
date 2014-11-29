@@ -25,7 +25,7 @@ def main():
     # demo and exit
     if mode == 'demo':
         demo_chirp()
-        sys.exit(0)
+        return 0 # exit code zero for success
     
     # boolean: plot or not
     plot = ( mode == 'plot' )
@@ -34,22 +34,29 @@ def main():
     for i, filename in enumerate(files):
         pad_file = PadFile(filename)
         if pad_file.ispad:
+            
             try:
                 pad_file.convert(rate=rate, axis=axis, plot=plot, taper=taper)
                 msg = 'succeeded'
-            # FIXME with better exception handling
-            except Exception, e:
-                raise Exception(e)
-                msg = 'failed'
+                
+             # FIXME if you know how to handle ctrl-c more gracefully
+            except KeyboardInterrupt:
+                print '\nwe did not finish, but good-bye'
+                return 3
+            
+            # FIXME with better exception handling               
+            except:
+                msg = 'failed' # just this one file, not total failure
+                
         else:
-            # file not properly formatted
+            
+            # file must not be properly formatted
             msg = 'not attempted'
-
+            
         # show one-line message for each conversion
         print '%d. %s: conversion %s' % (i + 1, pad_file, msg)
-
-    # return with status zero (success)
-    sys.exit(0)
+        
+    return 0  # exit code zero for success
 
 if __name__ == "__main__":
-    main()
+    sys.exit( main() )
