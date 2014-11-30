@@ -14,9 +14,9 @@ from pims.ugaudio.pad import PadFile
 from pims.ugaudio.demo import demo_chirp
 from pims.ugaudio.inputs import parse_args, show_args
 
-# Parse input arguments and, if possible, convert to AIFF.
+# Parse input arguments and, if possible, convert to AIFF and return exit (status) code.
 def main():
-    """Parse input arguments and, if possible, convert to AIFF."""
+    """Parse input arguments and, if possible, convert to AIFF and return exit (status) code."""
 
     # parse input arguments and show'em
     mode, axis, rate, taper, files = parse_args()
@@ -41,7 +41,7 @@ def main():
                 
              # FIXME if you know how to handle ctrl-c more gracefully
             except KeyboardInterrupt:
-                print '\nwe did not finish, but good-bye'
+                print '\nuser pressed ctrl-c to exit...good-bye'
                 return 3
             
             # FIXME with better exception handling               
