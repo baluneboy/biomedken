@@ -59,23 +59,22 @@ class EeStatusQuery(object):
 class SamsopsBak(object):
     """workaround query for updating web page with EE status"""
 
-    def __init__(self, table, tfield, fmt):
+    def __init__(self, table, tfield, pword, fmt='%Y-%m-%d'):
         self.host = 'yoda'
-        self.schema = 'samsops_bak'
         self.uname = 'root'
-        self.pword = raw_input("Enter yoda db passwd: ")
+        self.pword = pword
         self.table = table
         self.tfield = tfield
         self.format = fmt
 
-    def _get_query(self, start, stop):
-        query = "SELECT count(*) FROM %s WHERE %s >= '%s' AND %s < '%s';" % (self.table, self.tfield, start, self.tfield, stop)
+    def _get_query(self, schema, start, stop):
+        query = "SELECT count(*) FROM %s.%s WHERE %s >= '%s' AND %s < '%s';" % (schema, self.table, self.tfield, start, self.tfield, stop)
         return query
 
-    def run_query(self, start, stop):
-        query = self._get_query(start, stop)
-        cmdQuery = 'mysql -h %s -D %s -u %s -p%s --execute="%s"' % (self.host, self.schema, self.uname, self.pword, query)
-        print cmdQuery
+    def run_query(self, schema, start, stop):
+        query = self._get_query(schema, start, stop)
+        cmdQuery = 'mysql -h %s -u %s -p%s --skip-column-names --execute="%s"' % (self.host, self.uname, self.pword, query)
+        #print cmdQuery
         p = subprocess.Popen([cmdQuery], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         results, err = p.communicate()
         return results
@@ -116,12 +115,31 @@ def show_query(tname, field, date_range):
         print "INSERT INTO samsops_bak_%s.%s SELECT * FROM samsops_bak.%s WHERE %s >= '%s' AND %s < '%s';" % (y1, tname, tname, field, t1, field, t2)
         d += relativedelta(years=1)
 
+def compare_samsops_bak(pword, d1, d2):
+    fmt = '%Y-%m-%d'
+    date_range = DateRange(d1, d2)
+    for tname, field in SAMSOPS_BAK.iteritems():
+        d = date_range.start
+        while d <= date_range.stop:
+            next_year = d + relativedelta(years=1)
+            t1 = d.strftime(fmt)
+            t2 = next_year.strftime(fmt)
+            y1 = d.strftime('%Y')
+            sob = SamsopsBak(tname, field, pword)
+            schema = 'samsops_bak_' + y1
+            #print sob._get_query(schema, d, next_year)
+            num1 = int( sob.run_query('samsops_bak', d, next_year).rstrip() )
+            num2 = int( sob.run_query(schema, d, next_year).rstrip() )
+            print '%s, year %s, diff = %d, count1 = %d, count2 = %d' % (tname, y1, num1-num2, num1, num2)
+            d += relativedelta(years=1)
+
+#pword = raw_input("Enter yoda db passwd: ")
 #d1 = datetime.date(2000, 1, 1)
-#d2 = datetime.date(2013, 8, 6)
-#date_range = DateRange(d1, d2)
-#for tname, field in SAMSOPS_BAK.iteritems():
-#    show_query(tname, field, date_range)
-#    print
+#d2 = datetime.date(2000, 12, 31)
+#d3 = datetime.date(2009, 1, 1)
+#d4 = datetime.date(2013, 8, 6)
+#compare_samsops_bak(pword, d1, d2)
+#compare_samsops_bak(pword, d3, d4)
 #raise SystemExit
 
 class CuStatusQuery(EeStatusQuery):

@@ -20,6 +20,7 @@ fig.canvas.mpl_connect('button_press_event', onClick)
 ax = fig.add_axes([0, 0, 1, 1], xlim=(-0.02, 13.02), ylim=(-0.02, 5.02),
                   xticks=range(14), yticks=range(6), aspect='equal', frameon=False)
 ax.grid(True)
+plt.title('Click on graph to toggle pause...')
 
 # Define the shapes of the polygons
 P1 = np.array([[0, 0], [5, 0], [5, 2], [0, 0]])
