@@ -36,6 +36,12 @@ def run(cmd):
         sys.exit(stderr)
     return stdout
 
+_UPDATE_SEC = 3
+_NORMAL = curses.A_NORMAL
+_REVERSE = curses.A_REVERSE
+_BOLD = curses.A_BOLD
+_UNDERLINE = curses.A_UNDERLINE
+
 # loop to repeat run of command 
 def main():
     """loop to repeat run of command"""
@@ -49,15 +55,15 @@ def main():
         while True:
             w.erase()
             try:
-                w.addstr(0, 0, "Ctrl-C to quit")
-                w.addstr(1, 0, text)
-                w.addstr(1, 30, text, curses.A_REVERSE)
-                w.addstr(text, curses.A_BOLD)
-                w.addstr(text, curses.A_UNDERLINE)
+                w.addstr(0, 0, "Ctrl-C to quit / update every %ds" % _UPDATE_SEC)
+                w.addstr(1, 0, run('date'), _BOLD)
+                w.addstr(cmd + '\n', _UNDERLINE)
+                w.addstr(text, _NORMAL)
+                w.addstr(text, _REVERSE)
             except curses.error:
                 pass
             w.refresh()
-            time.sleep(1)
+            time.sleep(_UPDATE_SEC)
             text = run(cmd)
     finally:
         curses.endwin()
