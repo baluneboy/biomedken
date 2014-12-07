@@ -121,8 +121,6 @@ def get_example_tree():
 
 def main():
     sample = get_example_tree()
-    print sample
-    raise SystemExit
     ExampleTreeBrowser(sample).main()
 
 if __name__=="__main__":
