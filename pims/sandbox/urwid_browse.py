@@ -281,23 +281,20 @@ class DirectoryBrowser(object):
 
     def _get_header(self):
         t1 = time.clock()
-        node = self.listbox.get_focus()[0].get_node()
-        parent_node = node.get_parent()
-        parent_name = parent_node.get_value()
-        depth = node.get_depth()
-        focus = str( self.listbox.get_focus()[0].get_display_text() )
-        focus = str( parent_name )
+        
+        # get flagged dirs
         flagged_dirs = get_flagged_names(just_dirs=True)
         count = 0
         for d in flagged_dirs:
             count += len( find_files(d, '*.aiff') )
         time_str = datetime.datetime.now().strftime('%H:%M:%S')
+        
         # simulate long-running file system checking
         for junk in range(6234567): pass
+        
         elapsed_sec = (time.clock() - t1)        
         s = time_str + ' (every %ds) urwid browsing' % self.alarm_sec
         s += '\n%d flagged dirs, %d files, elapsed = %.1fs' % (len(flagged_dirs), count, elapsed_sec)
-        s += '\n%s' % focus
         return urwid.Text(s)
 
     def loop_callback(self, main_loop_obj, user_data):
@@ -307,9 +304,7 @@ class DirectoryBrowser(object):
 
     def main(self):
         """Run the program."""
-
-        self.loop = urwid.MainLoop(self.view, self.palette,
-            unhandled_input=self.unhandled_input)
+        self.loop = urwid.MainLoop(self.view, self.palette, unhandled_input=self.unhandled_input)
         self.loop.set_alarm_in(self.alarm_sec, self.loop_callback, user_data=None)
         self.loop.run()
 
@@ -321,6 +316,20 @@ class DirectoryBrowser(object):
         # update display of focus directory
         if k in ('q','Q'):
             raise urwid.ExitMainLoop()
+        
+        if k in ('u', 'U'):
+            # get node structure
+            node_with_focus = self.listbox.get_focus()[0].get_node()
+            depth = node_with_focus.get_depth()
+            s = [ str(depth) ]
+            while depth > 0:
+                parent_node = node_with_focus.load_parent()
+                depth = parent_node.get_depth()
+                s.append( str(depth) )
+                node_with_focus = parent_node
+            footstr = '>'.join(s)
+            self.footer = urwid.AttrWrap(urwid.Text(footstr), 'foot')
+            self.view.set_footer( self.footer )
 
 def main():
     DirectoryBrowser().main()

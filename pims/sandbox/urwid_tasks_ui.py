@@ -21,7 +21,7 @@ class JobInterface:
     ## different colours used. Most text will be 'informational', labels and
     ## headers are likely to be 'header', 'focus' is used for currently selected
     ## items in the listbox, while 'pb *' are used to colour the progress bar
-    pallete = [
+    palette = [
                ('header',        'yellow,bold', 'dark blue' ),
                ('informational', 'white',       'dark blue' ),
                ('focus',         'white,bold',  'light cyan'),
@@ -197,7 +197,7 @@ class JobInterface:
         urwid.connect_signal(self.build_window, 'title', self.set_title)
         urwid.connect_signal(self.build_window, 'closed', self.quit)
 
-        self.loop = urwid.MainLoop(self.mainframe, self.pallete, handle_mouse=False, unhandled_input=self.handle_key)
+        self.loop = urwid.MainLoop(self.mainframe, self.palette, handle_mouse=False, unhandled_input=self.handle_key)
 
         self.write_fd = self.loop.watch_pipe(self.update)
 
