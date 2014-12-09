@@ -17,7 +17,7 @@ import os
 ## Implements a UI that takes a list of commands to execute in the shell and  ##
 ## wraps a pretty urwid based UI around it                                    ##
 ################################################################################
-class JobInterface:
+class JobInterface(object):
     ## different colours used. Most text will be 'informational', labels and
     ## headers are likely to be 'header', 'focus' is used for currently selected
     ## items in the listbox, while 'pb *' are used to colour the progress bar
@@ -61,7 +61,7 @@ class JobInterface:
         self.progress = urwid.ProgressBar('pb normal', 'pb complete')
 
         ## process job information prior to adding to UI
-        ## - how long should the label field be, at least 11 to cater for "Progress:"
+        ## how long should the label field be, at least 11 to cater to "Progress:"
         max_header_len = max(max(len(x[0]) for x in info_list) + 4, 11)
 
         ## split list of tuples into two columns
