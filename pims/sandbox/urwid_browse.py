@@ -270,7 +270,8 @@ class DirectoryBrowser(object):
         cwd = os.getcwd()
         store_initial_cwd(cwd)
         self.alarm_sec = alarm_sec
-        self.listbox = urwid.TreeListBox(urwid.TreeWalker(DirectoryNode(cwd)))
+        self.treewalker = urwid.TreeWalker(DirectoryNode(cwd))
+        self.listbox = urwid.TreeListBox(self.treewalker)
         self.listbox.offset_rows = 3
         self.header = self._get_header()
         self.footer = urwid.AttrWrap(urwid.Text(self.footer_text), 'foot')
@@ -324,12 +325,14 @@ class DirectoryBrowser(object):
             s = [ str(depth) ]
             while depth > 0:
                 parent_node = node_with_focus.load_parent()
+                self.listbox.set_focus(parent_node)
                 depth = parent_node.get_depth()
+                node_with_focus.get_depth()
                 s.append( str(depth) )
                 node_with_focus = parent_node
             footstr = '>'.join(s)
             self.footer = urwid.AttrWrap(urwid.Text(footstr), 'foot')
-            self.view.set_footer( self.footer )
+            self.view.set_footer( self.footer )         
 
 def main():
     DirectoryBrowser().main()
