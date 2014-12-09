@@ -486,9 +486,11 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # convert datetimes to str and overwrite GMT with those strings
     df['GMT'] = [ d.strftime('%Y-%m-%d/%j,%H:%M:%S') for d in df.Date ]
 
+    ### CIR ###
     # new dataframe (subset) for CIR
     df_cir, grouped_cir = process_cir_fir(df, 'cir', 'TSH_ES05_CIR_Power_Status', column_list, stofile)
 
+    ### FIR ###
     # new dataframe (subset) for FIR
     df_fir, grouped_fir = process_cir_fir(df, 'fir', 'TSH_ES06_FIR_Power_Status', column_list, stofile)
     
@@ -496,6 +498,7 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # - move zero_list and one_list up to here
     # - refactor commonanilty for ER3, ER4, MSG1, and MSG2
     
+    ### ER3 ###
     # new dataframe (subset) for ER3 (ER3_EE_F04_Power_Status == 'CLOSED')
     df_er3 = dataframe_subset(df, 'er3', 'ER3_EE_F04_Power_Status', column_list)
     
@@ -507,6 +510,7 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # pivot to aggregate daily sum for "rack hours" column
     grouped_er3 = df_er3.groupby('Date').aggregate(np.sum)
     
+    ### ER4 ###    
     # new dataframe (subset) for ER4 (ER4_Drawer2_Power_Status == 'CLOSED')
     df_er4 = dataframe_subset(df, 'er4', 'ER4_Drawer2_Power_Status', column_list)
     
@@ -516,6 +520,7 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # pivot to aggregate daily sum for "rack hours" column
     grouped_er4 = df_er4.groupby('Date').aggregate(np.sum)    
 
+    ### MSG1 ###
     # new dataframe (subset) for MSG1 (MSG_Outlet1_Status == 'ON')
     df_msg1 = dataframe_subset(df, 'msg1', 'MSG_Outlet1_Status', column_list)
     
@@ -525,6 +530,7 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # pivot to aggregate daily sum for "rack hours" column
     grouped_msg1 = df_msg1.groupby('Date').aggregate(np.sum)    
 
+    ### MSG2 ###
     # new dataframe (subset) for MSG2 (MSG_Outlet2_Status == 'ON')
     df_msg2 = dataframe_subset(df, 'msg2', 'MSG_Outlet2_Status', column_list)
     

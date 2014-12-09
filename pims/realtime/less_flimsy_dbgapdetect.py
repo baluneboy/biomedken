@@ -35,7 +35,7 @@ defaults = {
     ('121f04',  'mr-hankey'),
     ('121f05',  'chef'),
     ('121f08',  'timmeh'),
-    ('es03',    'butters'),
+    ('es03',    'manbearpig'),
     ('es05',    'ike'),
     ('es06',    'butters')
     ],          
