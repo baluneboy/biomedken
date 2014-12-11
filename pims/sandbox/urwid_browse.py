@@ -319,18 +319,25 @@ class DirectoryBrowser(object):
             raise urwid.ExitMainLoop()
         
         if k in ('u', 'U'):
+            # get flagged names
+            flagged_names = get_flagged_names()
             # get node structure
             node_with_focus = self.listbox.get_focus()[0].get_node()
             depth = node_with_focus.get_depth()
             s = [ str(depth) ]
+            n = [ os.path.basename( node_with_focus.get_value() ) ]
             while depth > 0:
                 parent_node = node_with_focus.load_parent()
-                self.listbox.set_focus(parent_node)
+                #self.listbox.set_focus(parent_node)
                 depth = parent_node.get_depth()
-                node_with_focus.get_depth()
                 s.append( str(depth) )
+                if parent_node.get_value() in flagged_names:
+                    n.append( 'F' + os.path.basename( parent_node.get_value() ) )
+                else:
+                    n.append( os.path.basename( parent_node.get_value() ) )
                 node_with_focus = parent_node
             footstr = '>'.join(s)
+            footstr = '&'.join(n)
             self.footer = urwid.AttrWrap(urwid.Text(footstr), 'foot')
             self.view.set_footer( self.footer )         
 
