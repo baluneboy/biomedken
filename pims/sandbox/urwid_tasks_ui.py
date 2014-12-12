@@ -22,11 +22,11 @@ class JobInterface(object):
     ## headers are likely to be 'header', 'focus' is used for currently selected
     ## items in the listbox, while 'pb *' are used to colour the progress bar
     palette = [
-               ('header',        'yellow,bold', 'dark blue' ),
-               ('informational', 'white',       'dark blue' ),
-               ('focus',         'white,bold',  'light cyan'),
-               ('pb normal',     'yellow,bold',      'light blue' ),
-               ('pb complete',   'black,bold',   'light cyan'),
+               ('header',        'yellow,bold',     'dark blue' ),
+               ('informational', 'white',           'dark blue' ),
+               ('focus',         'white,bold',      'light cyan'),
+               ('pb normal',     'yellow,bold',     'light blue' ),
+               ('pb complete',   'black,bold',      'light cyan'),
               ]
 
     ##############################################################################
@@ -162,7 +162,7 @@ class JobInterface(object):
     ##
     ## Callback for any unhandled key presses. If the Q key happens to make it
     ## through the mess of concurrent apps, then call the quit() callback which
-    ## subsequently terminates the program
+    ## subsequently terminates the program. THIS IS NOT TRUSTWORTHY.
     ##############################################################################
     def handle_key(self, key):
         if key in ('q', 'Q'):
