@@ -31,8 +31,17 @@ else:
 # need this to override warnings default "only once/first"
 warnings.simplefilter('always', UserWarning)
 
-class TkGeometryKeeper(object):
+# simple circular generator to yield x coordinate value
+def circular(xstart, xstop, xstep):
+    """simple circular generator to yield x coordinate value"""
+    while True:
+        for x in range(xstart, xstop, xstep):
+            yield x
 
+# tk geometry set with limit checking
+class TkGeometryKeeper(object):
+    """tk geometry set with limit checking"""
+    
     root = Tk()
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
@@ -90,14 +99,9 @@ class TkGeometryKeeper(object):
         self.y = val
         if msg: warnings.warn('y-coordinate ' + msg)
 
-# simple circular generator to yield x coordinate value
-def circular(xstart, xstop, xstep):
-    """simple circular generator to yield x coordinate value"""
-    while True:
-        for x in range(xstart, xstop, xstep):
-            yield x
-
+# tk geometry set with limit checking with circular x-value generator method
 class TkGeometryIterator(TkGeometryKeeper):
+    """tk geometry set with limit checking with circular x-value generator method"""
     
     def __init__(self, cross_hours, dt_minutes, w, h, x, y, sound_on=False):
         super(TkGeometryIterator, self).__init__(w, h, x, y, sound_on=sound_on)
