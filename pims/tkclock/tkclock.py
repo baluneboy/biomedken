@@ -15,7 +15,7 @@ root = tgi.root
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
 time1 = ''
-clock = Label(root, font=('arial', 80, 'bold'), bg='white')
+clock = Label(root, font=('arial', 60, 'bold'), bg='white')
 clock.pack(fill=BOTH, expand=1)
 
 def tick():
@@ -23,10 +23,11 @@ def tick():
     # get the current local time from the PC
     time2 = time.strftime('%H:%M:%S')
     # if time string has changed, update it
+    # label update should be once per second
     if time2 != time1:
         time1 = time2
         clock.config(text=time2)
-        if time2[-1] in ['0', '2', '4' , '6', '8']:
+        if time2[-4:] in ['0:00', '5:00']:
             clock.config(bg='red')
             xnew = tgi.xnext()
             tgi.set_x( xnew )

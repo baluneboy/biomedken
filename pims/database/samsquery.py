@@ -168,11 +168,19 @@ class CuMonthlyQuery(EeStatusQuery):
                                                                         d2.strftime(fmt))
         return query
 
-class GseStatusQuery(EeStatusQuery):
+class OldGseStatusQuery(EeStatusQuery):
     """workaround query for updating web page with GSE status"""
 
     def _get_query(self):
         query = 'SELECT * FROM samsnew.gse_packet_rt;' # ORDER BY ku_timestamp DESC LIMIT 11;'
+        return query
+
+class GseStatusQuery(EeStatusQuery):
+    """workaround query for updating web page with GSE status"""
+
+    def _get_query(self):
+        fivemin_agostr = (datetime.datetime.now() - relativedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+        query = "SELECT ku_timestamp, sams_cu_hs_counter FROM samsnew.gse_packet WHERE ku_timestamp >= '%s' ORDER BY ku_timestamp DESC LIMIT 5;" % fivemin_agostr
         return query
 
 class SimpleQueryAOS(object):
@@ -384,8 +392,22 @@ def workaroundRTtable(htmlFile):
     fo.close()    
         
 def demo():
+    #right_now = (datetime.datetime.now()).strftime('%Y-%m-%d %H:%M:%S')
+    #print '%s is GMT now' % right_now
     aos = SimpleQueryAOS(_HOST, _SCHEMA, _UNAME, _PASSWD)
     print aos
+    gse = GseStatusQuery(_HOST, _SCHEMA, _UNAME, _PASSWD)
+    gse_results = gse.run_query()
+    if len(gse_results) == 0:
+        print '\nNO RESULTS from following query:'
+        print gse.query
+    else:
+        print '\nFive recent GSE packet records'
+        print  '------------------------------'
+        print gse_results
+
+demo()
+raise SystemExit
 
 def demo3():
     df = pd.DataFrame({'correlation':[0.5, 0.1,0.9], 'p_value':[0.1,0.8,0.01]})
