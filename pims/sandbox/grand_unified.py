@@ -100,6 +100,26 @@ def ypr_filter(ypr):
 # read tab-delimited file (not csv, because some cells have commas)
 tab_file = '/home/pims/dev/programs/python/pims/sandbox/data/scratch.csv'
 tab_file = '/home/pims/Downloads/Grand_Unified_ATL_tabdelim.txt'
+tab_file = '/home/pims/Documents/ATL/raw/inc40a.txt'
+
+##import csv
+##def replace_nonprint(s):
+##    return ''.join([i if ord(i) < 128 else ' ' for i in s])
+### open the csv file to read line-by-line
+##with open(tab_file) as fin:
+##    #read the csv
+##    reader = csv.reader(fin)
+##    #enumerate the rows, so that you can
+##    #get the row index for the xlsx
+##    for index,row in enumerate(reader):
+##        #clean_row = replace_nonprint(row[0])
+##        #columns = row[0].split('\t')
+##        print '%03d %02d' % (index, row[0].count('\t')), row
+##        #print index, row[0].split('\t')
+##        #for c in columns:
+##        #    print c,
+##raise SystemExit
+
 df = pd.read_csv(tab_file, sep='\t')
 
 # get rid of rows that have NaN as a value for "set"
