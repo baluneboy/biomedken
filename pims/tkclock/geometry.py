@@ -18,15 +18,6 @@ x(k) = W + ( num / den )
 import math
 import warnings
 from Tkinter import Tk
-try:
-    import winsound
-except ImportError:
-    import os
-    def playsound(frequency, duration):
-        os.system('echo "\a"')
-else:
-    def playsound(frequency, duration):
-        winsound.Beep(frequency, duration)
 
 # need this to override warnings default "only once/first"
 warnings.simplefilter('always', UserWarning)
@@ -68,7 +59,7 @@ class TkGeometryKeeper(object):
         else:
             msg = None
             val = value
-        if msg and self.sound_on: playsound(440, 1)
+        #if msg and self.sound_on: playsound(440, 1)
         return val, msg
 
     # set width without going out of bounds
@@ -105,10 +96,37 @@ class TkGeometryIterator(TkGeometryKeeper):
     
     def __init__(self, cross_hours, dt_minutes, w, h, x, y, sound_on=False):
         super(TkGeometryIterator, self).__init__(w, h, x, y, sound_on=sound_on)
-        xstart = 0
-        xstop = self.screen_width - w
-        xstep = int( math.ceil( (xstop - xstart) * dt_minutes / (60 * cross_hours) ) )
-        self.cycle = circular(xstart, xstop, xstep)
+        self.cross_hours = cross_hours
+        self.dt_minutes = dt_minutes
+        self.reset()
     
     def xnext(self):
         return self.cycle.next()
+    
+    def reset(self):
+        self.xstart = 0
+        self.xstop = self.screen_width - self.w
+        self.xstep = int( math.ceil( (self.xstop - self.xstart) * self.dt_minutes / (60 * self.cross_hours) ) )
+        self.cycle = circular(self.xstart, self.xstop, self.xstep)        
+
+#cross_hours, dt_minutes = 8.5, 5
+#w, h = 350, 100
+#x, y = 0, 450
+#tgi = TkGeometryIterator(cross_hours, dt_minutes, w, h, x, y, sound_on=True)
+#print tgi.xnext()
+#print tgi.xnext()
+#print tgi.xnext()
+#tgi.reset()
+#print tgi.xnext()
+#print tgi.xnext()
+#print tgi.xnext()
+#print tgi.xnext()
+#print tgi.xnext()
+#print tgi.xnext()
+#print tgi.xnext()
+#print tgi.xnext()
+#print tgi.xnext()
+#tgi.reset()
+#print tgi.xnext()
+#print tgi.xnext()
+#print tgi.xnext()
