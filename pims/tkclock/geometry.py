@@ -15,19 +15,32 @@ x(k) = W + ( num / den )
 
 """
 
+import time
 import math
 import warnings
+import numpy as np
+from datetime import datetime
+from datetime import time as dtmtime
 from Tkinter import Tk
 
 # need this to override warnings default "only once/first"
 warnings.simplefilter('always', UserWarning)
 
-# simple circular generator to yield x coordinate value
-def circular(xstart, xstop, xstep):
-    """simple circular generator to yield x coordinate value"""
-    while True:
-        for x in range(xstart, xstop, xstep):
-            yield x
+# seconds since midnight
+def sec_since_midnight(hms=None):
+    """seconds since midnight"""
+    utcnow = datetime.utcnow()
+    midnight_utc = datetime.combine(utcnow.date(), dtmtime(0))
+    if hms:
+        if isinstance(hms, str):
+            hms = tuple( [ int(i) for i in hms.split(':') ] )
+        if not isinstance(hms, tuple):
+            raise Exception('this function needs either HH:MM:SS string or (H,M,S) tuple input')
+        utc = datetime.combine(utcnow.date(), dtmtime(hms[0], hms[1], hms[2]))
+    else:
+        utc = utcnow
+    delta = utc - midnight_utc
+    return int( delta.total_seconds() )
 
 # tk geometry set with limit checking
 class TkGeometryKeeper(object):
@@ -94,39 +107,34 @@ class TkGeometryKeeper(object):
 class TkGeometryIterator(TkGeometryKeeper):
     """tk geometry set with limit checking with circular x-value generator method"""
     
-    def __init__(self, cross_hours, dt_minutes, w, h, x, y, sound_on=False):
+    def __init__(self, w, h, x, y, sound_on=False):
         super(TkGeometryIterator, self).__init__(w, h, x, y, sound_on=sound_on)
-        self.cross_hours = cross_hours
-        self.dt_minutes = dt_minutes
-        self.reset()
+        self.is_dst = time.localtime().tm_isdst
+        if self.is_dst:
+            self.startstr = '10:30:00'
+        else:
+            self.startstr = '11:30:00'
+        self.startsec_since_midnight = sec_since_midnight(self.startstr)
+        self.hours2cross = 8.5
+        self.sec_array = self.build_sec_array()
     
-    def xnext(self):
-        return self.cycle.next()
-    
-    def reset(self):
-        self.xstart = 0
-        self.xstop = self.screen_width - self.w
-        self.xstep = int( math.ceil( (self.xstop - self.xstart) * self.dt_minutes / (60 * self.cross_hours) ) )
-        self.cycle = circular(self.xstart, self.xstop, self.xstep)        
+    def build_sec_array(self):
+        arr = np.zeros(24*60*60)
+        i1 = self.startsec_since_midnight
+        sec2cross = self.hours2cross * 60 * 60
+        i2 = i1 + sec2cross
+        num_pts = i2 - i1
+        arr[i1:i2] = np.linspace(0, self.screen_width, num_pts, endpoint=True )
+        return np.rint(arr)
+        
+    def xpos(self, timestr):
+        idx = sec_since_midnight(timestr)
+        return self.sec_array[idx]
 
-#cross_hours, dt_minutes = 8.5, 5
-#w, h = 350, 100
-#x, y = 0, 450
-#tgi = TkGeometryIterator(cross_hours, dt_minutes, w, h, x, y, sound_on=True)
-#print tgi.xnext()
-#print tgi.xnext()
-#print tgi.xnext()
-#tgi.reset()
-#print tgi.xnext()
-#print tgi.xnext()
-#print tgi.xnext()
-#print tgi.xnext()
-#print tgi.xnext()
-#print tgi.xnext()
-#print tgi.xnext()
-#print tgi.xnext()
-#print tgi.xnext()
-#tgi.reset()
-#print tgi.xnext()
-#print tgi.xnext()
-#print tgi.xnext()
+w, h = 350, 100
+x, y = 0, 450
+tgi = TkGeometryIterator(w, h, x, y, sound_on=True)
+#print tgi.xpos('10:30:00')
+#print tgi.xpos('14:30:00')
+#print tgi.xpos('18:59:30')
+#print tgi.xpos('19:00:00')
