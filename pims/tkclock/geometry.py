@@ -20,27 +20,11 @@ import math
 import warnings
 import numpy as np
 from datetime import datetime
-from datetime import time as dtmtime
 from Tkinter import Tk
+from pims.utils.pimsdateutil import sec_since_midnight
 
 # need this to override warnings default "only once/first"
 warnings.simplefilter('always', UserWarning)
-
-# seconds since midnight
-def sec_since_midnight(hms=None):
-    """seconds since midnight"""
-    utcnow = datetime.utcnow()
-    midnight_utc = datetime.combine(utcnow.date(), dtmtime(0))
-    if hms:
-        if isinstance(hms, str):
-            hms = tuple( [ int(i) for i in hms.split(':') ] )
-        if not isinstance(hms, tuple):
-            raise Exception('this function needs either HH:MM:SS string or (H,M,S) tuple input')
-        utc = datetime.combine(utcnow.date(), dtmtime(hms[0], hms[1], hms[2]))
-    else:
-        utc = utcnow
-    delta = utc - midnight_utc
-    return int( delta.total_seconds() )
 
 # tk geometry set with limit checking
 class TkGeometryKeeper(object):
@@ -104,11 +88,11 @@ class TkGeometryKeeper(object):
         if msg: warnings.warn('y-coordinate ' + msg)
 
 # tk geometry set with limit checking with circular x-value generator method
-class TkGeometryIterator(TkGeometryKeeper):
+class TkGeometrySlider(TkGeometryKeeper):
     """tk geometry set with limit checking with circular x-value generator method"""
     
     def __init__(self, w, h, x, y, sound_on=False):
-        super(TkGeometryIterator, self).__init__(w, h, x, y, sound_on=sound_on)
+        super(TkGeometrySlider, self).__init__(w, h, x, y, sound_on=sound_on)
         self.is_dst = time.localtime().tm_isdst
         if self.is_dst:
             self.startstr = '10:30:00'
@@ -124,17 +108,19 @@ class TkGeometryIterator(TkGeometryKeeper):
         sec2cross = self.hours2cross * 60 * 60
         i2 = i1 + sec2cross
         num_pts = i2 - i1
-        arr[i1:i2] = np.linspace(0, self.screen_width, num_pts, endpoint=True )
+        arr[i1:i2] = np.linspace(0, self.screen_width-self.w, num_pts, endpoint=True )
         return np.rint(arr)
         
-    def xpos(self, timestr):
+    def time2xpos(self, timestr):
         idx = sec_since_midnight(timestr)
         return self.sec_array[idx]
 
-w, h = 350, 100
-x, y = 0, 450
-tgi = TkGeometryIterator(w, h, x, y, sound_on=True)
-#print tgi.xpos('10:30:00')
-#print tgi.xpos('14:30:00')
-#print tgi.xpos('18:59:30')
-#print tgi.xpos('19:00:00')
+def quick_test():
+    w, h = 350, 100
+    x, y = 0, 450
+    tgi = TkGeometrySlider(w, h, x, y, sound_on=True)
+    root = tgi.root
+    print sec_since_midnight(hms='23:59:59')
+    
+if __name__ == "__main__":
+    quick_test()
