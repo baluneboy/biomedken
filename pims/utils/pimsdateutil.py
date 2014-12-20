@@ -161,6 +161,27 @@ def days_ago_to_datetime(n):
     d = days_ago_to_date(n)
     return datetime.datetime.combine(d, datetime.time(0))
 
+# Return seconds since midnight.
+def sec_since_midnight(hms=None):
+    """Return seconds since midnight.
+    
+    >>> print sec_since_midnight(hms='23:59:59')
+    86399
+    
+    """
+    utcnow = datetime.datetime.utcnow()
+    midnight_utc = datetime.datetime.combine(utcnow.date(), datetime.time(0))
+    if hms:
+        if isinstance(hms, str):
+            hms = tuple( [ int(i) for i in hms.split(':') ] )
+        if not isinstance(hms, tuple):
+            raise Exception('this function needs either HH:MM:SS string or (H,M,S) tuple input')
+        utc = datetime.datetime.combine(utcnow.date(), datetime.time(hms[0], hms[1], hms[2]))
+    else:
+        utc = utcnow
+    delta = utc - midnight_utc
+    return int( delta.total_seconds() )
+
 def is_leap_year(dt):
     """True if date in a leap year, False if not.
 
