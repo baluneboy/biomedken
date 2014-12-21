@@ -11,7 +11,7 @@
 
 import sys
 from pims.ugaudio.pad import PadFile
-from pims.ugaudio.demo import demo_chirp
+from pims.ugaudio.demo import demo_chirp, demo_accel
 from pims.ugaudio.inputs import parse_args, show_args
 
 # Parse input arguments and, if possible, convert to AIFF and return exit (status) code.
@@ -24,7 +24,8 @@ def main():
 
     # demo and exit
     if mode == 'demo':
-        demo_chirp()
+        demo_chirp() # not representative of accel data
+        demo_accel() # somewhat representative of accel data
         return 0 # exit code zero for success
     
     # boolean: plot or not
