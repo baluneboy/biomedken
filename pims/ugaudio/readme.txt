@@ -5,30 +5,31 @@ Before attempting to listen to any of the AIFF files that this program
 produces, adjust your system volume to a safe level.  I cannot guarantee
 that the sound produced will be pleasant or at a comfortable level.
 
-NATURE NOTES
+TRADEOFF NOTES
 
 There are important considerations and tradeoffs that come with converting
-acceleration data into sound (vibrations) audible to humans. Perhaps the most
+acceleration data into sound that is audible to humans. Perhaps the most
 important consideration is the human hearing system and its limitations.
 
 Wikipedia suggests that humans can hear sound in the frequency range (pass-band)
 from about 20 to 20 kHz. Some humans likely have a narrower or truncated
-pass-band.  A typical SAMS data file is sampled at 500 sa/sec with a pass-band
+pass-band. A typical SAMS data file is sampled at 500 sa/sec with a pass-band
 from about 0.01 Hz to about 200 Hz, so there is a relatively small amount of
-overlap between SAMS pass-band and human hearing pass-band.  If you're a purist,
+overlap between SAMS pass-band and human hearing pass-band. If you're a purist,
 then you'd leave the "-r" switch off of the command line and attempt to listen
 and probably miss some interesting features in the ug environment below 20 Hz.
 If you want to explore, then adjust frequencies by using the "-r" switch and
 keep in mind that what you hear has been distorted in time/frequency to enable
-you to hear more, kinda like using an infrared camera for seeing other portions
-of the visible spectrum.
+you to hear more of the measurement information...this is kinda like using an
+infrared camera for seeing otherwise invisible portions of the electromagnetic
+(light) spectrum.
 
 Another consideration is how to map spatial coordinates from acceleration
-measurements for audio.  One method is to use the x-axis as left channel and
-y-axis for right channel of say a stereo track, but what about the z-axis?
-This deserves more thought and attention, but here (for now) we just happily
-ignore the issue.  The "s" output is a "cocktail party" approach, with each of
-the x-, y-, and z-axis as different "conversations" all superimposed.
+measurements to audio. One method is to use the x-axis as left channel and
+y-axis for right channel of a stereo track, but what about the z-axis? This
+deserves more thought and attention, but here (for now) we just happily ignore
+the issue. The "s" output is a "cocktail party" approach, with each of the x-,
+y-, and z-axis as different "conversations" all superimposed.
 
 FIXME with better versions of these and with better explanations too
 HOME BREWED SAMPLES
@@ -43,7 +44,6 @@ then listen, you you should not likely hear the x-axis sound file
 then listen, you should only hear the z-axis and s-axis sound file
 
 test2.pad - 
-
 
 
 ################################################################################
@@ -80,7 +80,7 @@ test2.pad -
 # failed to handle filenaming as expected. That is, if I overwrite a file
 # including "RETFS" in suffix with one that had "rETFS", it still showed up with
 # capital R (instead of lowercase) in filename. Sadly, Mavericks seems to behave
-# like Windows in this regard.  C'mon man!
+# like Windows in this regard.  C'mon mac!
 #
 # R A T F S  process-chain encoding to include with suffix on output filename
 # : : : : :
