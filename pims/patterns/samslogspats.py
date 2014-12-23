@@ -10,7 +10,8 @@ __all__ = [
 ###############################################################################################################################
 #root     17074     1  0 Aug06 ?        01:34:49 /usr/local/bin/generic_client 121-f05 ee122-f03 9803
 #root      6010  6009  0 15:00 ?        00:00:00 /bin/sh /usr/local/sams-ii/scripts/monday
-_SAMSLOGS_PS = '(?P<uid>\w+)\s+(?P<pid>\d+)\s+(?P<ppid>\d+)\s+(?P<c>\d+)\s+(?P<stime>.*)\s+(?P<tty>\?|\w+)\s+(?P<time>\d{2}:\d{2}:\d{2})\s+(?P<cmd>.*)'
+#_SAMSLOGS_PS = '(?P<uid>\w+)\s+(?P<pid>\d+)\s+(?P<ppid>\d+)\s+(?P<c>\d+)\s+(?P<stime>.*)\s+(?P<tty>\?|\w+)\s+(?P<time>\d{2}:\d{2}:\d{2})\s+(?P<cmd>.*)'
+_SAMSLOGS_PS = '(?P<uid>\w+)\s+(?P<pid>\d+)\s+(?P<ppid>\d+)\s+(?P<c>\d+)\s+(?P<stime>.*)\s+(?P<tty>\?|\w+)\s+(?P<time>(?P<dd>\d+-){0,1}\d{2}:\d{2}:\d{2})\s+(?P<cmd>.*)'
 
 ###############################################################################################################################
 #/usr/local/bin/generic_client tshes-06-accel tshes-06 9760

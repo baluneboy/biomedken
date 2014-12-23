@@ -56,6 +56,7 @@ __date__   = "$19-Dec-2011$"
 # Jen
 
 MINPCT = 50 # FIXME make this more like 75 maybe?
+MAXCPU = 10 # FIXME what value should be max CPU pct to trigger flag?
 
 # dict for SAMS CU processes and count of each
 sams_procs = {
@@ -78,8 +79,12 @@ def make_int(text):
     return int(text.strip('" '))
 
 # give each cmd a grade
-def grade_command(c):
-    if c in sams_procs.keys():
+def grade_process(r):
+    if r['C'] >= MAXCPU:
+        return '#SAMSCPUHOG'
+    if len(r['TIME']) > 8:
+        return '#SAMSLONGRUN'
+    if r['CMD'] in sams_procs.keys():
         return '#SAMSLISTOKAY'
     else:
         return 0
@@ -151,24 +156,33 @@ def summarize_samslist(input_file):
     procs.seek(0) # "rewind" to the beginning of the StringIO object
     df_procs = pd.read_csv(procs, sep='\t')
     
+    # check count of processes that we know should be running
     proc_summary_str = ''
     for p, c in sams_procs.iteritems():
         dfss = df_procs[df_procs['CMD'].str.contains(p)]
         dfcount = len(dfss)
         if c != dfcount:
-            proc_summary_str += 'NOTE: %s HAS COUNT OF %d, WHICH IS NOT THE DESIRED COUNT OF %d #SAMSLISTBAD\n' % (p, dfcount, c)   
+            proc_summary_str += 'NOTE: %s HAS COUNT OF %d, WHICH IS NOT THE DESIRED COUNT OF %d #SAMSLISTBAD\n' % (p, dfcount, c)
+    
     formatters = [
         ('PID',    lambda x: '%d' % x),
         ('CMD',    lambda x: '%44s' % str(x))
         ]
-    df_procs['Grade'] = df_procs.apply(lambda row: grade_command(row['CMD']), axis=1)
+    df_procs['Grade'] = df_procs.apply(lambda row: grade_process(row), axis=1)
     
     out.write('# PROCESS GRADES #\n')
+    
+    if len( df_procs[ df_procs['Grade'] == '#SAMSCPUHOG' ]) > 0:
+        proc_summary_str += 'NOTE: CPU HOG(S) #SAMSLISTBAD\n'
+    
+    if len( df_procs[ df_procs['Grade'] == '#SAMSLONGRUN' ]) > 0:
+        proc_summary_str += 'NOTE: LONG RUNNER(S) #SAMSLISTBAD\n'
+    
     if proc_summary_str:
         out.write( proc_summary_str ) # keep trailing newline char
     else:
         # empty string (a good thing)
-        out.write( 'NOTE: All %d processes matched their expected counts. #SAMSLISTGOOD\n' % len(sams_procs) )
+        out.write( 'NOTE: All %d processes matched their expected counts and no hogs or long runners. #SAMSLISTGOOD\n' % len(sams_procs) )
 
     # FIXME we use weak method to set Grade to zero to signify it's not graded (and won't show up in output)
     df_procs = df_procs[df_procs.Grade != 0]
