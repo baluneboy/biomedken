@@ -16,11 +16,6 @@ function data = padread(strFile)
 % strFile = '/tmp/2013_12_09_00_51_11.508+2013_12_09_01_01_11.565.es03';
 % data = padread(strFile);
 % data(1:5,:)
-%
-% MAMS EXAMPLE:
-% strFile = '/tmp/2014_05_18_10_36_34.714+2014_05_18_12_36_31.652.ossbtmf';
-% data = padread(strFile);
-% data(1:5,:)
 
 fid = fopen(strFile,'r','l');
 % change 4 in next line to number of columns in PAD data file

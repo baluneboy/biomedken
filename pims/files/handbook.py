@@ -163,8 +163,8 @@ class RvtxPdf(SpgxRoadmapPdf):
         super(RvtxPdf, self).__init__(name, pattern, show_warnings=show_warnings)
     
     def _get_pdfjam_cmd(self):
-        xoffset, yoffset = -4.10, 1.0
-        scale = 0.85
+        xoffset, yoffset = -4.25, 1.0
+        scale = 0.8
         orient = 'landscape'
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)    
     
@@ -453,6 +453,7 @@ class HandbookEntry(object):
         """Process the files found in source_dir."""
         err_msg = None
         
+        # FIXME prompt user to write PDF even when db has this hb entry
         # make sure the ultimate hb pdf filename is not already in db
         if self.db_entry_exists:
             err_msg = 'Database entry with filename %s already exists' % self._hb_pdf_basename
