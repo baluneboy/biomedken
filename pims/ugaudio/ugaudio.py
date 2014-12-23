@@ -3,7 +3,7 @@
 """Convert binary files to Audio Interchange File Format (AIFF).
 
     Given properly-formatted binary data file(s), convert and write the
-    information in Audio Interchange File Format (AIFF).
+    information in Audio Interchange File Format (AIFF) file(s).
 
     DISCLAIMER: this project deserves more time than I am able to give and
     probably could benefit from more graceful handling of the unexpected.
@@ -28,7 +28,7 @@ def main():
         demo_accel() # somewhat representative of accel data
         return 0 # exit code zero for success
     
-    # boolean: plot or not
+    # boolean: to plot or not to plot
     plot = ( mode == 'plot' )
 
     # iterate over input file list
@@ -47,11 +47,11 @@ def main():
             
             # FIXME with better exception handling               
             except:
-                msg = 'failed' # just this one file, not total failure
+                msg = 'failed' # just this one file, not a total failure
                 
         else:
             
-            # file must not be properly formatted
+            # file must not be properly formatted!?
             msg = 'not attempted'
             
         # show one-line message for each conversion

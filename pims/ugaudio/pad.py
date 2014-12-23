@@ -21,11 +21,11 @@ class PadFile(object):
     values with txyz frames: t1, x1, y1, z1, t2, x2, y2, z2, ...
 
     For a given input data file (e.g. "/some/path/to/my_pad_file"), if there
-    also exists a header file (e.g. "/some/path/to/my_pad_file.header"), then
+    also exists a header file (e.g. "/some/path/to/my_pad_file.header"), then we
     attempt to parse the sample rate from the header file using a regular
     expression so that a line like this "<SampleRate>1234.5</SampleRate>" yields
-    a sample rate of 1234.5 samples per second. Alternatively, without an
-    identifiable accompanying header file, calculate the sample rate assuming
+    a sample rate of 1234.5 samples per second. In the absence of a readily
+    identifiable (accompanying) header file, calculate the sample rate assuming
     that the time values in the data file are relative, in seconds, and start
     with zero as the first time value.
 

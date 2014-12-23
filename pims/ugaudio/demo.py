@@ -9,8 +9,6 @@ from pims.ugaudio.create import get_chirp
 from pims.ugaudio.signal import normalize
 from pims.ugaudio.pad import PadFile
 
-# TODO Give the user good, meaningful demos with narrative on nuances
-
 # simple demo of chirp signal (not representative of accel data)
 def demo_chirp(fs=44100):
     """simple demo of chirp signal (not representative of accel data)"""

@@ -41,8 +41,6 @@ INPUT ARGUMENTS LISTED BELOW (see "usage" syntax above):
 import sys
 import argparse
 
-# /misc/yoda/pub/pad/year2014/month10/day09/sams2_accel_121f04/2014_10_09_13_32_23.772+2014_10_09_13_34_02.623.121f04
-
 # Help parser get a non-negative value; otherwise, exception.
 def check_nonnegative(value):
     """Help parser get a non-negative value; otherwise, exception."""

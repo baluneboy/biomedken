@@ -5,7 +5,7 @@ Before attempting to listen to any of the AIFF files that this program
 produces, adjust your system volume to a safe level.  I cannot guarantee
 that the sound produced will be pleasant or at a comfortable level.
 
-TRADEOFF NOTES
+PRACTICAL CONSIDERATIONS
 
 There are important considerations and tradeoffs that come with converting
 acceleration data into sound that is audible to humans. Perhaps the most
@@ -13,16 +13,16 @@ important consideration is the human hearing system and its limitations.
 
 Wikipedia suggests that humans can hear sound in the frequency range (pass-band)
 from about 20 to 20 kHz. Some humans likely have a narrower or truncated
-pass-band. A typical SAMS data file is sampled at 500 sa/sec with a pass-band
-from about 0.01 Hz to about 200 Hz, so there is a relatively small amount of
-overlap between SAMS pass-band and human hearing pass-band. If you're a purist,
-then you'd leave the "-r" switch off of the command line and attempt to listen
-and probably miss some interesting features in the ug environment below 20 Hz.
-If you want to explore, then adjust frequencies by using the "-r" switch and
-keep in mind that what you hear has been distorted in time/frequency to enable
-you to hear more of the measurement information...this is kinda like using an
-infrared camera for seeing otherwise invisible portions of the electromagnetic
-(light) spectrum.
+pass-band. A typical Space Acceleration Measurement System (SAMS) data file is
+sampled at 500 sa/sec with a pass-band from about 0.01 Hz to about 200 Hz, so
+there is a relatively small amount of overlap between SAMS pass-band and human
+hearing pass-band. If you're a purist, then you'd leave the "-r" switch off of
+the command line and attempt to listen and probably miss some interesting
+features in the ug environment below 20 Hz. If you want to explore, then adjust
+frequencies by using the "-r" switch and keep in mind that what you hear has
+been distorted in time/frequency to enable you to hear more of the measurement
+information...this is kinda like using an infrared camera for seeing otherwise
+invisible portions of the electromagnetic (light) spectrum.
 
 Another consideration is how to map spatial coordinates from acceleration
 measurements to audio. One method is to use the x-axis as left channel and

@@ -1,5 +1,17 @@
 #!/usr/bin/env python
 
+"""explore...
+
+"Fall in love with some activity, and do it! Nobody ever figures out what life
+is all about, and it doesn't matter. Explore the world. Nearly everything is
+really interesting if you go into it deeply enough. Work as hard and as much as
+you want to on the things you like to do the best. Don't think about what you
+want to be, but what you want to do. Keep up some kind of a minimum with other
+things so that society doesn't stop you from doing anything at all."
+- Richard P. Feynman
+
+"""
+
 import aifc
 import pygame
 import numpy as np
@@ -8,8 +20,8 @@ import matplotlib.pyplot as plt
 from pims.ugaudio.create import aiffread
 from pims.ugaudio.signal import pitchshift, timearray
 
-# TODO put power to explore in user's hands!?
-#      import and process iSeismograph files?
+# TODO put more power to explore in user's hands!
+# TODO import and [completely] process iSeismograph files?
 
 def main():
     
