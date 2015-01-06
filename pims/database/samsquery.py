@@ -406,8 +406,8 @@ def demo():
         print  '------------------------------'
         print gse_results
 
-demo()
-raise SystemExit
+#demo()
+#raise SystemExit
 
 def demo3():
     df = pd.DataFrame({'correlation':[0.5, 0.1,0.9], 'p_value':[0.1,0.8,0.01]})

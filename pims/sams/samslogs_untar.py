@@ -199,7 +199,7 @@ def get_latest_tgz():
     """get most recent tgz file, then text prompt to continue with it or not"""
     
     # get most recent tgz file along a default dir
-    tgz_file = most_recent_file_with_suffix('/misc/yoda/secure/2014_downlink', '.tgz')
+    tgz_file = most_recent_file_with_suffix('/misc/yoda/secure/2015_downlink', '.tgz')
 
     # check if dir exists that we might overwrite
     #if os.path.exists( tgz_dir ):
