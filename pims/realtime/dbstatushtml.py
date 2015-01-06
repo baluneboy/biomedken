@@ -2,17 +2,64 @@
 
 import re
 import sys
+import datetime
 from cStringIO import StringIO
 import pandas as pd
 from pims.patterns.dbstatuspats import _DBSTATUSLINE_PATTERN
 
-_KEEP_SENSORS = ['121f02', '121f03', '121f04', '121f05', '121f08', 'es03', 'es05', 'es06', 'oss', 'hirap']
+# max age (seconds) of packet max time; otherwise, turn red
+_MAX_AGE_SEC = 1 * 60 * 60 # try 1 hour for now
+
+# table names (i.e. sensors) to ignore
+_IGNORE_SENSORS = ['121f08badtime', '121f08goodtime', 'Abias',
+                   'Abiasavg', 'Abiasavg', 'Bbias', 'Bbiasavg',
+                   'Bbiasavg', 'besttmf', 'Cbias', 'Cbiasavg',
+                   'Cbiasavg', 'cmg', 'finalbias_combine', 'gse',
+                   'hirap_bogus', 'housek', 'mcor_121f03',
+                   'mcor_hirap', 'mcor_oss', 'pbesttmf', 'poss',
+                   'powerup', 'radgse', 'sec_hirap', 'sec_oss',
+                   'soss', 'soss', 'textm'] 
+
+_HEADER = """<HEAD>
+<META HTTP-EQUIV=Refresh CONTENT='300'>
+</HEAD>
+<HTML>
+<BODY BGCOLOR=#FFFFFF TEXT=#000000 LINK=#0000FF VLINK=#800040 ALINK=#800040>
+<TITLE>Active Sensors</TITLE>
+<CENTER>
+<B>This page will automatically refresh every 5 minutes.</B><BR>
+<a href="http://pims.grc.nasa.gov/plots/user/sams/samsresources.html">SAMS Resources</a>
+<BR><B>Last refreshed GMT %s<B>
+<BR>""" % datetime.datetime.now().strftime('%d-%b-%Y, %j/%H:%M:%S ')
+
+_FOOTER = """<BR><FORM><INPUT type='Button' VALUE='Close' onClick='self.close();'></FORM>
+</CENTER>
+</BODY></HTML>"""
+
+# function to format age
+def age_fmt(x):
+    """function to format age"""
+    if x > _MAX_AGE_SEC: s = '<span style="color: red">%d' % x
+    else:                s = '%d' % x
+    return s
+
+# function to format DOY GMT
+def doy_fmt(x):
+    """function to format DOY GMT"""
+    d = pd.to_datetime(x)
+    delta = datetime.datetime.now() - d
+    deltasec = delta.total_seconds()
+    if deltasec <= _MAX_AGE_SEC:
+        s = '%s' % d.strftime('%j/%H:%M:%S ')
+    else:
+        s = '<span style="color: red">%s' % d.strftime('%j/%H:%M:%S ')
+    return s
 
 # return dataframe converted from stdin (file) object
 def stdin_to_dataframe():
     """return dataframe converted from stdin (file) object"""
     buf = StringIO()
-    buf.write('computer,sensor,count,mintime,maxtime,age\n')
+    buf.write('Host,Sensor,PktCount,FirstPkt,LastPkt,AgeSec\n')
     got_topline = False
     # sys.stdin is a file object, so all the same functions that
     # can be applied to a file object can be applied to sys.stdin    
@@ -20,7 +67,7 @@ def stdin_to_dataframe():
         if got_topline:
             m = re.match(_DBSTATUSLINE_PATTERN, line)
             if m:
-                buf.write( '%s,%s,%s,%s,%s,%s\n' % (m.group('computer'), m.group('sensor'), m.group('count'), m.group('mintime'), m.group('maxtime'), m.group('age')) )
+                buf.write( '%s,%s,%s,%s,%s,%s\n' % (m.group('Host'), m.group('Sensor'), m.group('PktCount'), m.group('FirstPkt'), m.group('LastPkt'), m.group('AgeSec')) )
             else:
                 buf.write( 'no match\n' )        
         if re.match('.*COMPUTER.*', line):
@@ -36,7 +83,7 @@ def stdin_to_dataframe():
 
     # replace min/max times that are either zero or "None" with '1970-01-01 00:00:00'
     dict_replace = {'^0$': '1970-01-01 00:00:00', 'None': '1970-01-01 00:00:00'}
-    df.replace(to_replace={'mintime': dict_replace, 'maxtime': dict_replace}, inplace=True)
+    df.replace(to_replace={'FirstPkt': dict_replace, 'LastPkt': dict_replace}, inplace=True)
     
     return df
 
@@ -44,15 +91,32 @@ def stdin_to_dataframe():
 def right_align_html(df):
     """write right-aligned html converted from dataframe to stdout"""
     buf_html = StringIO()
-    df.to_html(buf_html, index=False, na_rep='nan')
+    df.to_html(buf_html, formatters={
+        'LastPkt': doy_fmt,
+        'AgeSec': age_fmt},
+        escape=False, index=False, na_rep='nan')
     s = buf_html.getvalue()
     s = s.replace('<tr>', '<tr style="text-align: right;">')
     sys.stdout.write( s )            
 
-# filter dataframe to keep "typical active sensors"
+# filter dataframe to get rid of non-interesting sensors (table names, that is)
 def filter_active_sensors(df):
-    df = df[df['sensor'].isin(_KEEP_SENSORS)]
-    df.sort(columns='sensor', axis=0, ascending=True, inplace=True)
+    """filter dataframe to get rid of non-interesting sensors (table names, that is)"""
+    # get rid of some sensor (rows)
+    df = df[~df['Sensor'].isin(_IGNORE_SENSORS)]
+    
+    # sort
+    df.sort(columns='LastPkt', axis=0, ascending=False, inplace=True)
+    
+    df = df[['Sensor', 'LastPkt', 'FirstPkt', 'PktCount', 'Host', 'AgeSec']]
+    return df
+
+# drop unwanted columns from dataframe
+def drop_unwanted_columns(df):
+    """drop unwanted columns from dataframe"""
+    unwanted_columns = [ 'FirstPkt', 'PktCount' ]
+    for uc in unwanted_columns:
+        df = df.drop(uc, 1)    
     return df
 
 # dbstatus.py | dbstatushtml.py > /tmp/trash2.html
@@ -62,5 +126,11 @@ if __name__ == "__main__":
     # filter out for "Active Sensors" page
     df_filt = filter_active_sensors(df)
     
+    # drop some columns that we do not want
+    df = drop_unwanted_columns(df_filt)
+    
     # for piped output write html
-    right_align_html(df_filt)
+    sys.stdout.write(_HEADER)
+    right_align_html(df)
+    sys.stdout.write(_FOOTER)
+    
