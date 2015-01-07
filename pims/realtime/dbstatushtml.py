@@ -7,10 +7,14 @@ from cStringIO import StringIO
 import pandas as pd
 from pims.patterns.dbstatuspats import _DBSTATUSLINE_PATTERN
 
+# TODO
+# - new column for sensor location info from kyle
+# - new column for [cutoff/sample rate?] from packet header
+
 # max age (seconds) of packet max time; otherwise, turn red
 _MAX_AGE_SEC = 1 * 60 * 60 # try 1 hour for now
 
-# table names (i.e. sensors) to ignore
+# table names (i.e. sensors) to ignore that otherwise get displayed with dbstatus.py
 _IGNORE_SENSORS = ['121f08badtime', '121f08goodtime', 'Abias',
                    'Abiasavg', 'Abiasavg', 'Bbias', 'Bbiasavg',
                    'Bbiasavg', 'besttmf', 'Cbias', 'Cbiasavg',
@@ -20,6 +24,7 @@ _IGNORE_SENSORS = ['121f08badtime', '121f08goodtime', 'Abias',
                    'powerup', 'radgse', 'sec_hirap', 'sec_oss',
                    'soss', 'soss', 'textm'] 
 
+# HTML header
 _HEADER = """<HEAD>
 <META HTTP-EQUIV=Refresh CONTENT='300'>
 </HEAD>
@@ -29,9 +34,10 @@ _HEADER = """<HEAD>
 <CENTER>
 <B>This page will automatically refresh every 5 minutes.</B><BR>
 <B>Last refreshed GMT %s<B><BR>
-<a href="http://pims.grc.nasa.gov/plots/user/sams/samsresources.html">SAMS Resources</a><BR><BR><BR>
+<a href="http://pims.grc.nasa.gov/plots/user/sams/samsresources.html">SAMS Resources</a><BR><BR>
 """ % datetime.datetime.now().strftime('%d-%b-%Y, %j/%H:%M:%S ')
 
+# HTML footer
 _FOOTER = """<BR><FORM><INPUT type='Button' VALUE='Close' onClick='self.close();'></FORM>
 </CENTER>
 </BODY></HTML>"""
@@ -97,7 +103,7 @@ def right_align_html(df):
         escape=False, index=False, na_rep='nan')
     s = buf_html.getvalue()
     s = s.replace('<tr>', '<tr style="text-align: right;">')
-    sys.stdout.write( s )            
+    return s
 
 # filter dataframe to get rid of non-interesting sensors (table names, that is)
 def filter_active_sensors(df):
@@ -129,8 +135,8 @@ if __name__ == "__main__":
     # drop some columns that we do not want
     df = drop_unwanted_columns(df_filt)
     
-    # for piped output write html
+    # write for piped output
     sys.stdout.write(_HEADER)
-    right_align_html(df)
+    sys.stdout.write( right_align_html(df) )
     sys.stdout.write(_FOOTER)
     
