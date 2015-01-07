@@ -28,8 +28,8 @@ _HEADER = """<HEAD>
 <TITLE>Active Sensors</TITLE>
 <CENTER>
 <B>This page will automatically refresh every 5 minutes.</B><BR>
-<a href="http://pims.grc.nasa.gov/plots/user/sams/samsresources.html">SAMS Resources</a>
 <BR><B>Last refreshed GMT %s<B>
+<BR><a href="http://pims.grc.nasa.gov/plots/user/sams/samsresources.html">SAMS Resources</a>
 <BR>""" % datetime.datetime.now().strftime('%d-%b-%Y, %j/%H:%M:%S ')
 
 _FOOTER = """<BR><FORM><INPUT type='Button' VALUE='Close' onClick='self.close();'></FORM>
