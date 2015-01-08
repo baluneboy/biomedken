@@ -16,13 +16,11 @@ _MAX_AGE_SEC = 1 * 60 * 60 # try 1 hour for now
 
 # table names (i.e. sensors) to ignore that otherwise get displayed with dbstatus.py
 _IGNORE_SENSORS = ['121f08badtime', '121f08goodtime', 'Abias',
-                   'Abiasavg', 'Abiasavg', 'Bbias', 'Bbiasavg',
-                   'Bbiasavg', 'besttmf', 'Cbias', 'Cbiasavg',
-                   'Cbiasavg', 'cmg', 'finalbias_combine', 'gse',
-                   'hirap_bogus', 'housek', 'mcor_121f03',
-                   'mcor_hirap', 'mcor_oss', 'pbesttmf', 'poss',
-                   'powerup', 'radgse', 'sec_hirap', 'sec_oss',
-                   'soss', 'soss', 'textm'] 
+            'Abiasavg', 'Bbias', 'Bbiasavg', 'besttmf', 'Cbias', 'Cbiasavg',
+            'cmg', 'finalbias_combine', 'gse', 'hirap_bogus', 'housek',
+            'mcor_121f03', 'mcor_hirap', 'mcor_oss', 'pbesttmf', 'poss',
+            'powerup', 'radgse', 'sec_hirap', 'sec_oss', 'soss', 'soss', 'textm'
+            ] 
 
 # HTML header
 _HEADER = """<HEAD>
@@ -41,6 +39,11 @@ _HEADER = """<HEAD>
 _FOOTER = """<BR><FORM><INPUT type='Button' VALUE='Close' onClick='self.close();'></FORM>
 </CENTER>
 </BODY></HTML>"""
+
+# function to format location
+def loc_fmt(s):
+    """function to format location"""
+    return s.replace(';', ',')
 
 # function to format age
 def age_fmt(x):
@@ -65,15 +68,18 @@ def doy_fmt(x):
 def stdin_to_dataframe():
     """return dataframe converted from stdin (file) object"""
     buf = StringIO()
-    buf.write('Host,Sensor,PktCount,FirstPkt,LastPkt,AgeSec\n')
+    buf.write('Host,Sensor,PktCount,FirstPkt,LastPkt,AgeSec,Rate,Location\n')
     got_topline = False
     # sys.stdin is a file object, so all the same functions that
     # can be applied to a file object can be applied to sys.stdin    
     for line in sys.stdin.readlines():
         if got_topline:
+            line = line.replace(',', ';')
             m = re.match(_DBSTATUSLINE_PATTERN, line)
             if m:
-                buf.write( '%s,%s,%s,%s,%s,%s\n' % (m.group('Host'), m.group('Sensor'), m.group('PktCount'), m.group('FirstPkt'), m.group('LastPkt'), m.group('AgeSec')) )
+                buf.write( '%s,%s,%s,%s,%s,%s,%s,%s\n' % (
+                    m.group('Host'), m.group('Sensor'), m.group('PktCount'),
+                    m.group('FirstPkt'), m.group('LastPkt'), m.group('AgeSec'), m.group('Rate'), m.group('Location')) )
             else:
                 buf.write( 'no match\n' )        
         if re.match('.*COMPUTER.*', line):
@@ -99,7 +105,8 @@ def right_align_html(df):
     buf_html = StringIO()
     df.to_html(buf_html, formatters={
         'LastPkt': doy_fmt,
-        'AgeSec': age_fmt},
+        'AgeSec': age_fmt,
+        'Location': loc_fmt},
         escape=False, index=False, na_rep='nan')
     s = buf_html.getvalue()
     s = s.replace('<tr>', '<tr style="text-align: right;">')
@@ -114,7 +121,11 @@ def filter_active_sensors(df):
     # sort
     df.sort(columns='LastPkt', axis=0, ascending=False, inplace=True)
     
-    df = df[['Sensor', 'LastPkt', 'FirstPkt', 'PktCount', 'Host', 'AgeSec']]
+    # clarify rate
+    df.rename(columns={'Rate': 'Rate(sa/sec)', 'AgeSec': 'Age(sec)'}, inplace=True)    
+    
+    # order the columns
+    df = df[['Location', 'Sensor', 'LastPkt', 'FirstPkt', 'Age(sec)', 'Rate(sa/sec)', 'PktCount', 'Host']]
     return df
 
 # drop unwanted columns from dataframe
@@ -128,7 +139,7 @@ def drop_unwanted_columns(df):
 # dbstatus.py | dbstatushtml.py > /tmp/trash2.html
 if __name__ == "__main__":
     df = stdin_to_dataframe()
-    
+
     # filter out for "Active Sensors" page
     df_filt = filter_active_sensors(df)
     
