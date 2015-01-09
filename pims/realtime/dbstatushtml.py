@@ -105,7 +105,7 @@ def right_align_html(df):
     buf_html = StringIO()
     df.to_html(buf_html, formatters={
         'LastPkt': doy_fmt,
-        'AgeSec': age_fmt,
+        'Age(sec)': age_fmt,
         'Location': loc_fmt},
         escape=False, index=False, na_rep='nan')
     s = buf_html.getvalue()
