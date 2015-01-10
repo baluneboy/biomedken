@@ -57,6 +57,18 @@ def runlength_consumer(a, mask):
         else:
             print "no consume"    
 
+def runlength_blocks(data):
+    """Return run-length encoded blocks of input data.
+    
+    The result consists of (count, length, value) tuples.
+    
+    >>> runlength_blocks([1,1,1,1,0,0,0,0,0,1,1,1,0,0])
+    [[0, 3, 1], [4, 8, 0], [9, 11, 1], [12, 13, 0]]
+    """
+    itemgetter = operator.itemgetter
+    blocks = [map(itemgetter(0), itemgetter(0, -1)(list(g))) + [k] for k, g in groupby(enumerate(data), itemgetter(1))]
+    return blocks
+
 def dedupe_adjacent(alist):
     """Return list with adjacent duplicates removed.
     
