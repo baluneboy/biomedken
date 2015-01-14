@@ -338,7 +338,7 @@ class jaxaFile(object):
 	def dbGetISSConfig(self):
 		"""Retrieves the ISS config for a given time period"""
 		
-		padConn = jaxaConnection(host='kyle', user='pims', passwd='pims2000', db='pad')
+		padConn = jaxaConnection(host='kyle', user='pims', passwd='YOUKNOW', db='pad')
 		
 		cmd = """SELECT iss_config FROM iss_config where time < %s ORDER BY TIME DESC LIMIT 1"""
 		#print cmd
@@ -347,7 +347,7 @@ class jaxaFile(object):
 			self.header.ISSConfiguration = results[0]
 		
 	def dbGetDataCoordSys(self):
-		padConn = jaxaConnection(host='kyle', user='pims', passwd='pims2000', db='pad')
+		padConn = jaxaConnection(host='kyle', user='pims', passwd='YOUKNOW', db='pad')
 		cmd = """SELECT coord_name FROM data_coord_system WHERE sensor = '%s' ORDER BY TIME DESC LIMIT 1"""
 		results = sqlFetchOne(cmd % self.header.SensorID,padConn)
 		

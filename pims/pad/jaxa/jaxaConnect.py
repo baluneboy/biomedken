@@ -47,7 +47,7 @@ def HumanToUnixTime(month, day, year, hour, minute, second, fraction = 0.0):
 		raise 'ValueError', err
 	return result
 
-def jaxaConnection(host='localhost', user='pims', passwd='pims2000', db='jaxa',init_command = 'SET sql_mode=STRICT_ALL_TABLES'):
+def jaxaConnection(host='localhost', user='pims', passwd='YOUKNOW', db='jaxa',init_command = 'SET sql_mode=STRICT_ALL_TABLES'):
 	try:
 		con = Connection(host=host, user=user, passwd=passwd, db=db)
 		return con
