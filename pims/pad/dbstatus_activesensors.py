@@ -8,16 +8,17 @@ from MySQLdb import *
 from time import *
 from commands import *
 from accelPacket import guessPacket
+from pims.database.pimsquery import db_connect
 
 # table names (i.e. sensors) to ignore that would otherwise get displayed note
 # that these might not have sensor sample rate or location, so it's not an
 # active sensor
 _IGNORE = [ '121f08badtime', '121f08goodtime', 'Abias',
-			'Abiasavg', 'Bbias', 'Bbiasavg', 'besttmf',
-			'Cbias', 'Cbiasavg', 'cmg', 'finalbias_combine', 'gse',
-			'hirap_bogus', 'housek', 'mcor_121f03', 'mcor_hirap', 'mcor_oss',
-			'pbesttmf', 'poss', 'powerup', 'radgse', 'sec_hirap', 'sec_oss',
-			'soss', 'soss', 'textm' ] 
+			'Abiasavg', 'Bbias', 'Bbiasavg', 'besttmf', 'Cbias', 'Cbiasavg',
+			'cmg', 'finalbias_combine', 'gse', 'hirap_bogus', 'housek',
+			'mcor_121f03', 'mcor_hirap', 'mcor_oss', 'pbesttmf', 'poss',
+			'powerup', 'radgse', 'sec_hirap', 'sec_oss',
+			'soss', 'soss', 'textm', 'emptytable' ] 
 
 # convert "Unix time" to "Human readable" time
 def UnixToHumanTime(utime):
@@ -26,27 +27,12 @@ def UnixToHumanTime(utime):
 	s[5] = atoi(s[5]) + fraction
 	return "%s-%s-%s %s:%s:%06.4f" % tuple(s)
 
-# create a connection (with possible defaults), submit command, return all results
-def sqlConnect(command, shost='localhost', suser='pims', spasswd='pims2000', sdb='pims'):
-	try:
-		con = Connection(host=shost, user=suser, passwd=spasswd, db=sdb)
-		cursor = con.cursor()
-		cursor.execute(command)
-		results = cursor.fetchall()
-		cursor.close()
-		con.close()
-		return results
-	except MySQLError, msg:
-		print msg[1]
-		print 'MySQL call to %s failed, exiting' % shost
-		sys.exit()
-
 # create dict of distinct coord_name (i.e. sensor) entries from pad.coord_system_db on kyle
 def get_locations():
 	locations = {}
-	results = sqlConnect('select distinct(coord_name) from pad.coord_system_db', 'kyle')
+	results = db_connect('select distinct(coord_name) from pad.coord_system_db', 'kyle')
 	for r in results:
-		locs = sqlConnect('select location_name from pad.coord_system_db where coord_name = "%s" order by time desc limit 1' % r[0], 'kyle')
+		locs = db_connect('select location_name from pad.coord_system_db where coord_name = "%s" order by time desc limit 1' % r[0], 'kyle')
 		locations[ r[0]] = locs[0][0]
 	return locations
 
@@ -89,14 +75,14 @@ if __name__ == '__main__':
 				n = 'localhost' # mysql permissions require localhost if you are local
 			
 			# iterate over tables (i.e. sensors) on this computer
-			results = sqlConnect('show tables', n)
+			results = db_connect('show tables', n)
 			
 			# flatten nested tuple (results) using list comprehension
 			table_list = [element for tupl in results for element in tupl]
 			sensors = list( set(table_list) - set(_IGNORE) )
 			
 			for sensor in sensors:
-				r = sqlConnect('show columns from %s' % sensor, n)
+				r = db_connect('show columns from %s' % sensor, n)
 				timeFound = 0
 				for col in r:
 					if col[0] == 'time':
@@ -104,7 +90,7 @@ if __name__ == '__main__':
 						break
 
 				if timeFound:
-					r = sqlConnect('select count(time) from %s' % sensor, n)
+					r = db_connect('select count(time) from %s' % sensor, n)
 					count = r[0][0]
 					if count == 0:
 						minTime = 0
@@ -112,12 +98,12 @@ if __name__ == '__main__':
 						age = time() # time now
 					else:
 						# get three values in one pass in case slow database is not indexed
-						r = sqlConnect('select max(time), from_unixtime(min(time)), from_unixtime(max(time)) from %s' % sensor, n)
+						r = db_connect('select max(time), from_unixtime(min(time)), from_unixtime(max(time)) from %s' % sensor, n)
 						maxTimeF = r[0][0]
 						minTime = r[0][1]
 						maxTime = r[0][2]
 						age = time() - maxTimeF
-						rp = sqlConnect('select time, packet from %s order by time desc limit 1' % sensor, n)
+						rp = db_connect('select time, packet from %s order by time desc limit 1' % sensor, n)
 						packet = rp[0][1]
 
 					# get location info

@@ -19,7 +19,8 @@ _IGNORE_SENSORS = ['121f08badtime', '121f08goodtime', 'Abias',
             'Abiasavg', 'Bbias', 'Bbiasavg', 'besttmf', 'Cbias', 'Cbiasavg',
             'cmg', 'finalbias_combine', 'gse', 'hirap_bogus', 'housek',
             'mcor_121f03', 'mcor_hirap', 'mcor_oss', 'pbesttmf', 'poss',
-            'powerup', 'radgse', 'sec_hirap', 'sec_oss', 'soss', 'soss', 'textm'
+            'powerup', 'radgse', 'sec_hirap', 'sec_oss', 'soss', 'soss',
+            'textm', 'emptytable'
             ] 
 
 # HTML header
