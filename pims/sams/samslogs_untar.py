@@ -197,9 +197,12 @@ def get_path(wildcard):
 # convert most recent tgz file, then text prompt to continue with it or not
 def get_latest_tgz():
     """get most recent tgz file, then text prompt to continue with it or not"""
+
+    # subdir is like 2015_downlink
+    subdir = '%4d_downlink' % datetime.datetime.now().year
     
     # get most recent tgz file along a default dir
-    tgz_file = most_recent_file_with_suffix('/misc/yoda/secure/2015_downlink', '.tgz')
+    tgz_file = most_recent_file_with_suffix('/misc/yoda/secure/' + subdir, '.tgz')
 
     # check if dir exists that we might overwrite
     #if os.path.exists( tgz_dir ):
