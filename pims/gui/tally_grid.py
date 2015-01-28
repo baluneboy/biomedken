@@ -12,6 +12,7 @@ from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_
 #from pims.utils import pyperclip
 from pims.utils.commands import timeLogRun
 from pims.gui.pywxgrideditmixin import PyWXGridEditMixin
+from pims.pad.newestpadheaderfile import newest_pad_header_file_endtime
 
 # TODO add Pause button so that we can freeze state to do remedy or maybe "digging"
 #      initially, remedy will just be a filtered look at data frame [or pivot table?]
@@ -471,8 +472,16 @@ class CheapPadHoursOutputGrid(TallyOutputGrid):
                 #u2 = dtm2unix(dtm+timedelta(days=1))
                 #print "rm packetWriterState; python /usr/local/bin/pims/packetWriter.py tables=%s ancillaryHost=kyle cutoffDelay=0 delete=0 startTime=%.1f endTime=%.1f" %( sensor, u1, u2)
                 s1 = format_datetime_as_pad_underscores(dtm)
-                s2 = format_datetime_as_pad_underscores(dtm+timedelta(days=1))
-                cmdstr = prefix_cmd + "python /home/pims/dev/programs/python/packet/resample.py fcNew=6 sensor=%s dateStart=%s dateStop=%s" %( sensor.strip('006'), s1, s2)
+                s2 = format_datetime_as_pad_underscores(dtm + timedelta(days=1))
+                hours_tally = float(self.GetCellValue(cell[0], cell[1]))
+                if hours_tally == 0.0:
+                    # if selected cell value is zero (hours), then do cmdstr for whole day
+                    cmdstr = prefix_cmd + "python /home/pims/dev/programs/python/packet/resample.py fcNew=6 sensor=%s dateStart=%s dateStop=%s" %( sensor.strip('006'), s1, s2)
+                else:
+                    # otherwise, do some form of remedy_resample instead                     
+                    endtime = newest_pad_header_file_endtime(dtm, sensor), self.GetCellValue(cell[0], cell[1])
+                    s1 = format_datetime_as_pad_underscores(endtime[0] + timedelta(seconds=1))
+                    cmdstr = prefix_cmd + "python /home/pims/dev/programs/python/packet/resample.py fcNew=6 sensor=%s dateStart=%s dateStop=%s" %( sensor.strip('006'), s1, s2)
                 timeLogRun(cmdstr, 2700, None) # timeout of 2700 seconds for 45 minutes
 
 class RoadmapsOutputGrid(TallyOutputGrid):
