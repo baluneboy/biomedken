@@ -206,7 +206,31 @@ def timeit_tempfiles():
         ts = timeit.timeit("demo_spool()", setup="from __main__ import demo_spool", number=num)
         tn = timeit.timeit("demo_name()", setup="from __main__ import demo_name", number=num)
         print tn/ts, tn, ts, num
-        
+
+#import numpy as np
+#from scipy import signal
+#data = np.fromfile('/data/fin.dat','float32')
+#data = np.reshape(data, [-1, 3])
+#print data
+#from pims.signal.filter import load_filter_coeffs
+#mat_file = '/home/pims/dev/programs/octave/pad/filters/testing/padlowpassauto_500d0sps_6d0hz.mat'
+#a, b, fsNew = load_filter_coeffs(mat_file)
+#y = signal.filtfilt(b, a, data, axis=0)
+#print y
+#yy = np.fromfile('/tmp/fout.dat', 'float32')
+#print yy
+#yy = np.reshape(yy, (-1, 3))
+#print yy
+#print y
+#from pylab import plot
+#plot(y)
+#show()
+#plt.show()
+#from pylab import show
+#show()
+#plot(yy)
+#show()
+
 if __name__ == '__main__':
     
     #timeit_tempfiles()
