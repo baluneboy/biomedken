@@ -179,6 +179,12 @@ def demo_filtfilt():
     xhigh = np.sin(2 * np.pi * 60 * t)
     x = xlow + xhigh
     y = pad_lowpass_filtfilt(x, fc, fs)
+    xx = xlow
+    yy = xhigh
+    zz = xx + yy
+    arr = np.concatenate((xx,yy,zz), axis=1)
+    print arr
+    raise SystemExit
 
     #------------------------------------------------
     # Plot the original and filtered signals.
@@ -222,7 +228,7 @@ if __name__ == '__main__':
     
     #demo_spool()
     #demo_filt()    
-    #demo_filtfilt()
+    demo_filtfilt(); raise SystemExit
     
     #main()
 
