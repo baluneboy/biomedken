@@ -207,29 +207,14 @@ def timeit_tempfiles():
         tn = timeit.timeit("demo_name()", setup="from __main__ import demo_name", number=num)
         print tn/ts, tn, ts, num
 
-#import numpy as np
-#from scipy import signal
-#data = np.fromfile('/data/fin.dat','float32')
-#data = np.reshape(data, [-1, 3])
-#print data
-#from pims.signal.filter import load_filter_coeffs
-#mat_file = '/home/pims/dev/programs/octave/pad/filters/testing/padlowpassauto_500d0sps_6d0hz.mat'
-#a, b, fsNew = load_filter_coeffs(mat_file)
-#y = signal.filtfilt(b, a, data, axis=0)
-#print y
-#yy = np.fromfile('/tmp/fout.dat', 'float32')
-#print yy
-#yy = np.reshape(yy, (-1, 3))
-#print yy
-#print y
-#from pylab import plot
-#plot(y)
-#show()
-#plt.show()
-#from pylab import show
-#show()
-#plot(yy)
-#show()
+def demo_LPF(filter_mat_file, fin, fout):
+    data = np.fromfile(fin, 'float32')
+    data = np.reshape(data, [-1, 3])
+    a, b, fsNew = load_filter_coeffs(filter_mat_file)
+    y = signal.filtfilt(b, a, data, axis=0)
+    # FIXME VERIFY FLATTEN IS USING PROPER ORDER
+    y = y.flatten(order='C')
+    y.tofile(fout)
 
 if __name__ == '__main__':
     
@@ -239,4 +224,13 @@ if __name__ == '__main__':
     #demo_filt()    
     #demo_filtfilt()
     
-    main()
+    #main()
+
+    # ---------------------------------------------------------------------------------------------------
+    # USE THE LEGACY MAT FILE
+    # ---------------------------------------------------------------------------------------------------    
+    #filt_mat_file = '/home/pims/dev/programs/octave/pad/filters/testing/padlowpassauto_500d0sps_6d0hz.mat'
+    filt_mat_file = '/home/pims/dev/programs/octave/pad/filters/testing/padlowpassauto_500sps_5hz.mat'
+    fin = '/home/pims/dev/programs/python/pims/sandbox/data/fin.dat'
+    fout = '/tmp/FOUT.DAT'
+    demo_LPF(filt_mat_file, fin, fout)
