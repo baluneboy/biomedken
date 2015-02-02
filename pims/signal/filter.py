@@ -1,12 +1,13 @@
 #!/usr/bin/python
 
 import os
-import scipy.io
+import numpy as np
+from scipy import io, signal
 
 # return tuple (b, a, fsNew) from matlab mat-file
 def load_filter_coeffs(mat_file):
     """return tuple (b, a, fsNew) from matlab mat-file"""
-    matdict = scipy.io.loadmat(mat_file)
+    matdict = io.loadmat(mat_file)
     a = matdict['aDen']
     b = matdict['bNum']
     fsNew = matdict['fsNew']
@@ -33,12 +34,33 @@ def pad_lowpass_filtfilt(x, fcNew, fsOld):
     y = signal.filtfilt(b, a, x)
     return y
 
+# read infile, load filter coeffs from filter_mat_file, apply filtfilt, & write filtered data to outfile
+def lowpass_filter_viafile(filter_mat_file, infile, outfile):
+    """read infile, load filter coeffs from filter_mat_file, apply filtfilt, & write filtered data to outfile"""
+    # load filter coeffs from file
+    a, b, fsNew = load_filter_coeffs(filter_mat_file)
+    
+    # read input data file
+    data = np.fromfile(infile, 'float32')
+    
+    # reshape as XYZ columns to apply columnwise filtfilt    
+    data = np.reshape(data, [-1, 3])
+    
+    # apply filter
+    y = signal.filtfilt(b, a, data, axis=0)
+    
+    # flatten columns so we can write proper order to outfile
+    y = y.flatten(order='C')
+    
+    # write to outfile (see numpy help on tofile for possible pitfalls)
+    y.astype('float32').tofile(outfile)
+
 def demo():
     # ---------------------------------------------------------------------------------------------------
     # USE THE LEGACY MAT FILE
     # ---------------------------------------------------------------------------------------------------    
     #filt_mat_file = '/home/pims/dev/programs/octave/pad/filters/testing/padlowpassauto_500d0sps_6d0hz.mat'
-    filt_mat_file = '/home/pims/dev/programs/octave/pad/filters/testing/padlowpassauto_500sps_5hz.mat'    
+    #filt_mat_file = '/home/pims/dev/programs/octave/pad/filters/testing/padlowpassauto_500sps_5hz.mat'    
     a, b, fsNew = load_filter_coeffs(filt_mat_file)
     print b
     print a

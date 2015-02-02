@@ -4,7 +4,7 @@ import numpy as np
 from scipy import signal
 from tempfile import SpooledTemporaryFile, NamedTemporaryFile
 from pims.pad.padlowpasscreate import pad_lowpass_create
-from pims.signal.filter import load_filter_coeffs, pad_lowpass_filtfilt
+from pims.signal.filter import load_filter_coeffs, pad_lowpass_filtfilt, lowpass_filter_viafile
 from pylab import figure, plot, xlabel, ylabel, xlim, ylim, title, grid, axes, show
 
 ONE_HUNDRED_MB = 100.0 * 1024.0 * 1024.0
@@ -182,7 +182,7 @@ def demo_filtfilt():
     xx = xlow
     yy = xhigh
     zz = xx + yy
-    arr = np.concatenate((xx,yy,zz), axis=1)
+    arr = np.column_stack((xx,yy,zz))
     print arr
     raise SystemExit
 
@@ -213,23 +213,12 @@ def timeit_tempfiles():
         tn = timeit.timeit("demo_name()", setup="from __main__ import demo_name", number=num)
         print tn/ts, tn, ts, num
 
-def demo_LPF(filter_mat_file, fin, fout):
-    data = np.fromfile(fin, 'float32')
-    data = np.reshape(data, [-1, 3])
-    a, b, fsNew = load_filter_coeffs(filter_mat_file)
-    y = signal.filtfilt(b, a, data, axis=0)
-    # FIXME VERIFY FLATTEN IS USING PROPER ORDER
-    y = y.flatten(order='C')
-    y.tofile(fout)
-
 if __name__ == '__main__':
     
     #timeit_tempfiles()
-    
     #demo_spool()
     #demo_filt()    
-    demo_filtfilt(); raise SystemExit
-    
+    #demo_filtfilt()
     #main()
 
     # ---------------------------------------------------------------------------------------------------
@@ -239,4 +228,4 @@ if __name__ == '__main__':
     filt_mat_file = '/home/pims/dev/programs/octave/pad/filters/testing/padlowpassauto_500sps_5hz.mat'
     fin = '/home/pims/dev/programs/python/pims/sandbox/data/fin.dat'
     fout = '/tmp/FOUT.DAT'
-    demo_LPF(filt_mat_file, fin, fout)
+    lowpass_filter_viafile(filt_mat_file, fin, fout)
