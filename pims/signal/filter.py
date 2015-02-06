@@ -34,9 +34,9 @@ def pad_lowpass_filtfilt(x, fcNew, fsOld):
     y = signal.filtfilt(b, a, x)
     return y
 
-# read infile, load filter coeffs from filter_mat_file, apply filtfilt, & write filtered data to outfile
-def lowpass_filter_viafile(filter_mat_file, infile, outfile):
-    """read infile, load filter coeffs from filter_mat_file, apply filtfilt, & write filtered data to outfile"""
+# read infile, load filter coeffs from filter_mat_file, apply filtfilt, & write filtered/resampled data to outfile
+def lowpass_filter_viafile(filter_mat_file, infile, outfile, fsOld):
+    """read infile, load filter coeffs from filter_mat_file, apply filtfilt, & write filtered/resampled data to outfile"""
     # load filter coeffs from file
     a, b, fsNew = load_filter_coeffs(filter_mat_file)
     
@@ -49,17 +49,22 @@ def lowpass_filter_viafile(filter_mat_file, infile, outfile):
     # apply filter
     y = signal.filtfilt(b, a, data, axis=0)
     
+    # resample
+    numin = y.shape[0]
+    numout = numin * fsNew / fsOld
+    yout = signal.resample(y, numout)
+    
     # flatten columns so we can write proper order to outfile
-    y = y.flatten(order='C')
+    yout = yout.flatten(order='C')
     
     # write to outfile (see numpy help on tofile for possible pitfalls)
-    y.astype('float32').tofile(outfile)
+    yout.astype('float32').tofile(outfile)
 
 def demo():
     # ---------------------------------------------------------------------------------------------------
     # USE THE LEGACY MAT FILE
     # ---------------------------------------------------------------------------------------------------    
-    #filt_mat_file = '/home/pims/dev/programs/octave/pad/filters/testing/padlowpassauto_500d0sps_6d0hz.mat'
+    filt_mat_file = '/home/pims/dev/programs/octave/pad/filters/testing/padlowpassauto_500d0sps_6d0hz.mat'
     #filt_mat_file = '/home/pims/dev/programs/octave/pad/filters/testing/padlowpassauto_500sps_5hz.mat'    
     a, b, fsNew = load_filter_coeffs(filt_mat_file)
     print b
@@ -70,5 +75,14 @@ def demo2():
     a, b, fsNew = pad_lowpass_create(6.0, 500.0)
     print b, a, fsNew
     
+def demo3():
+    filt_mat_file = '/home/pims/dev/programs/octave/pad/filters/testing/padlowpassauto_500d0sps_6d0hz.mat'
+    infile = '/home/pims/dev/programs/python/pims/sandbox/data/fin.dat'
+    outfile = '/tmp/fo.dat'
+    lowpass_filter_viafile(filt_mat_file, infile, outfile)
+    
 if __name__=="__main__":
-    demo2()
+    #demo()
+    #demo2()
+    demo3()
+    
