@@ -1,5 +1,8 @@
 import numpy as np
 
+# THIS WAS SIMPLE EXAMPLE LOOKING AT EDGE DETECTION FOR
+# BLUE REGIONS IN ROADMAPS TO DETERMINE INCOMPLETE ONES
+
 data = {
     'right01': np.array([
            [1, 0, 0, 0, 1],
