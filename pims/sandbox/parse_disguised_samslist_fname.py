@@ -5,7 +5,8 @@ import re
 from datetime import datetime
 from dateutil import parser
 
-DOWNLINKFILEPAT = '(?P<pth>.*)\{(?P<ymd>\d{4}_\d{2}_\d{2})\}\{(?P<hms>\d{2}_\d{2}_\d{2})\}_cmd_\d+_.*\.txt$'
+DOWNLINKFILEPAT = '(?P<pth>.*)\{(?P<ymd>\d{4}-\d{2}-\d{2})\}\{(?P<hms>\d{2}-\d{2}-\d{2})\}_\d+_cmd_.*\.txt$'
+SAMSLISTSTRINGS = ['ps ax', 'df -k', 'ls -l']
 
 class CommandDownlinkFile(object):
     
@@ -41,7 +42,7 @@ class CommandDownlinkFile(object):
         return dtm_mtime
 
     def is_disguised_samslist(self):
-        return self.contains(['ps ax', 'two', 'once'])
+        return self.contains(SAMSLISTSTRINGS)
     
     def contains(self, strings):
         if isinstance(strings, str):
@@ -54,7 +55,7 @@ class CommandDownlinkFile(object):
         return True
 
 if __name__ == '__main__':
-    file_name = '/tmp/{2015_02_21}{01_02_03}_cmd_12345_wx3yz.txt'
+    file_name = '/tmp/{2015-01-26}{15-07-33}_1422284716_cmd_12345_wx3yz.txt'
     cdf = CommandDownlinkFile(file_name)
     if cdf.is_disguised_samslist():
         print 'YES disguised samslist file %s' % file_name
