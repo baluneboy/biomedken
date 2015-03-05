@@ -24,6 +24,18 @@ def most_recent_file_with_suffix(pth, suffix):
     files.sort(key=lambda x: os.path.getmtime(x))
     return os.path.join(pth, files[-1])
 
+# prepend to text file
+def prepend_tofile(s, txtfile):
+    """prepend to text file"""
+    bool_success = False
+    try:
+        with open(txtfile, 'r') as original: old_text = original.read()
+        with open(txtfile, 'w') as modified: modified.write(s + '\n' + old_text)
+        bool_success = True
+    except:
+        print 'FAILED to prepend to %s' % txtfile
+    return bool_success
+
 def overwrite_file_with_non_ascii_chars_removed(f):
     with open (f, "r") as myfile:
         data = myfile.read()

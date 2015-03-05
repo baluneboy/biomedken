@@ -41,7 +41,7 @@ defaults = {
     ],          
 'packets_per_sec':  '8',    # expected value for this sensor for this gap check period
 'min_pct':          '0',    # show hourly periods with pkt count < min_pct (USE ZERO TO SHOW ALL)
-'hours_ago':        '23',   # start checking this many hours ago
+'hours_ago':        '18',   # start checking this many hours ago
 }
 parameters = defaults.copy()
 
@@ -274,8 +274,9 @@ def params_okay():
     parameters['min_pct'] = float(parameters['min_pct'])
     parameters['hours_ago'] = int(parameters['hours_ago'])
     if parameters['hours_ago'] > 23:
+        parameters['hours_ago'] = 23
         print 'FIXME: currently MySQL GROUP BY mucks up queries longer than 23 hours ago'
-        return False
+        print 'CHANGED hours_ago PARAMETER TO MAX VALUE OF 23'
     return True
 
 def print_usage():
@@ -303,7 +304,7 @@ def main(argv):
             df_merged = pd.DataFrame({'hour':[]})
             df_formatters = dict()
             for sensor, host in parameters['sensorhosts']:
-                print sensor, host
+                msg_preamble = '{:<20s}:'.format('%s, %s' % (sensor, host))
                 df_formatters['%s<br>%%' % sensor] = percentage_fmt
                 try:
                     # first, get all info on gaps
@@ -318,13 +319,14 @@ def main(argv):
                     # filter using min_pct
                     df_gaps = dbgaps.filt_min_pct()
                     # get result into string
-                    msg = df_gaps.to_string(formatters=dbgaps.formatters, index=False)
+                    #msg = df_gaps.to_string(formatters=dbgaps.formatters, index=False)
                     df_merged = pd.merge(df_merged, df_gaps, how='outer')
-    
+                    msg = '%s %02d hourly recs' % (msg_preamble, len(df_merged))
                 except Exception as e:
-                    msg = "Exception %s" % e[1]
+                    msg = '%s Exception %s' % (msg_preamble, e[1])
     
                 #print msg or 'done'
+                print msg
             
             df_merged.sort(columns=['hour'], inplace=True)
             df_merged.to_html(buf, formatters=df_formatters, escape=False, index=False, na_rep='nan')
