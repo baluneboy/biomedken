@@ -208,7 +208,8 @@ def main(argv):
             mail = mail + "\n\n" + str(total_items) + " podcasts totalling " + str(total_size) + " bytes have been downloaded."
             if has_mail_users(cursor, connection):
                 print "Have e-mail address(es) - attempting e-mail..."
-                mail_updates(cursor, connection, mail, str(total_items))
+                #mail_updates(cursor, connection, mail, str(total_items))
+                print "Did not actually attempt to email."
         elif mode == MODE_DOWNLOAD or mode == MODE_SUBSCRIBE:
             print iterate_feed(data, mode, download_directory, todays_date, cursor, connection, feed_url)
         elif mode == MODE_MAIL_ADD:
