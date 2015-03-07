@@ -50,7 +50,7 @@ MODE_EXPORT = 79
 MODE_IMPORT = 80
 HOSTNAME = socket.gethostname()
 
-if HOSTNAME == 'macmini3':
+if HOSTNAME == 'macmini3.local':
     DOWNLOAD_DIRECTORY = "/Volumes/serverHD2/data/podcasts"
 elif HOSTNAME == 'raspberrypi':
     DOWNLOAD_DIRECTORY = "/media/hp16GB/podcasts"
