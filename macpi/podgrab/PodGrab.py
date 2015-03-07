@@ -48,9 +48,14 @@ MODE_MAIL_DELETE = 77
 MODE_MAIL_LIST = 78
 MODE_EXPORT = 79
 MODE_IMPORT = 80
+HOSTNAME = socket.gethostname()
 
-
-DOWNLOAD_DIRECTORY = "/Volumes/serverHD2/data/podcasts"
+if HOSTNAME == 'macmini3':
+    DOWNLOAD_DIRECTORY = "/Volumes/serverHD2/data/podcasts"
+elif HOSTNAME == 'raspberrypi':
+    DOWNLOAD_DIRECTORY = "/media/hp16GB/podcasts"
+else:
+    DOWNLOAD_DIRECTORY = "podcasts"
 
 total_item = 0
 total_size = 0
@@ -68,8 +73,10 @@ def main(argv):
     message = ""
     mail = ""
     current_directory = os.path.realpath(os.path.dirname(sys.argv[0]))
-    #download_directory = current_directory + os.sep + DOWNLOAD_DIRECTORY
-    download_directory = DOWNLOAD_DIRECTORY
+    if DOWNLOAD_DIRECTORY == 'podcasts':
+        download_directory = current_directory + os.sep + DOWNLOAD_DIRECTORY
+    else:
+        download_directory = DOWNLOAD_DIRECTORY
     global total_items
     global total_size
     total_items = 0
