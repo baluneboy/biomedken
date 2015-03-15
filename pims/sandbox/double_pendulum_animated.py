@@ -88,7 +88,7 @@ def animate(i):
     return line, time_text
 
 ani = animation.FuncAnimation(fig, animate, np.arange(1, len(y)),
-    interval=25, blit=True, init_func=init)
+    interval=25, blit=False, init_func=init)
 
 #ani.save('double_pendulum.mp4', fps=15, clear_temp=True)
 plt.show()
