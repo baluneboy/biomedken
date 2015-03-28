@@ -130,7 +130,7 @@ def main(argv):
 
     print_usage()  
 
-# mysql --batch -h timmeh -u pims -p pims -ppims2000 -e 'select from_unixtime(time) as GMT from 121f08 where time > unix_timestamp("2015-01-13 00:00:00") and time < unix_timestamp("2015-01-14 00:00:00");' | dbhist.py > /tmp/trash1.txt
+# mysql --batch -h timmeh -u pims -p pims -pPASSWD -e 'select from_unixtime(time) as GMT from 121f08 where time > unix_timestamp("2015-01-13 00:00:00") and time < unix_timestamp("2015-01-14 00:00:00");' | dbhist.py > /tmp/trash1.txt
 if __name__ == "__main__":
     main(sys.argv)
     
